@@ -287,7 +287,7 @@ public:
      */
     void SetLength( int aLength );
 
-    int GetLength() { return m_length; }
+    int GetLength() const { return m_length; }
 
     /**
      * Set the pin part number.

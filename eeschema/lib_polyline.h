@@ -74,6 +74,8 @@ public:
      */
     unsigned GetCornerCount() const { return m_PolyPoints.size(); }
 
+    const wxPoint& Corner ( int aIndex ) const { return m_PolyPoints[aIndex]; }
+
     bool HitTest( const wxPoint& aPosition );
 
     bool HitTest( wxPoint aPosition, int aThreshold, const TRANSFORM& aTransform );

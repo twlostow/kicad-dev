@@ -1048,6 +1048,13 @@ EDA_RECT LIB_COMPONENT::GetBoundingBox( int aUnit, int aConvert ) const
     return bBox;
 }
 
+const BOX2I LIB_COMPONENT::ViewBBox() const
+{
+    EDA_RECT rect = GetBoundingBox( 1, 0 );
+    
+    return BOX2I( VECTOR2I( rect.GetOrigin() ),
+                  VECTOR2I( rect.GetSize() ) );
+}
 
 EDA_RECT LIB_COMPONENT::GetBodyBoundingBox( int aUnit, int aConvert ) const
 {

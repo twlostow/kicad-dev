@@ -314,6 +314,9 @@ public:
      **/
     EDA_RECT GetBodyBoundingBox( int aUnit, int aConvert ) const;
 
+    virtual const BOX2I ViewBBox() const;
+
+
     /**
      * Function SaveDateAndTime
      * write the date and time of component to \a aFile in the format:
@@ -641,6 +644,8 @@ public:
      * @return LIB_ITEMS& - Reference to the draw item object list.
      */
     LIB_ITEMS& GetDrawItemList() { return drawings; }
+    
+    const LIB_ITEMS& GetCDrawItemList() const { return drawings; }
 
     /**
      * Set the part per package count.

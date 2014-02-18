@@ -85,6 +85,8 @@ public:
 
     wxPoint GetPosition() const { return m_Pos; }
 
+    int GetRadius() const { return m_Radius; }
+
     void MirrorHorizontal( const wxPoint& aCenter );
 
     void MirrorVertical( const wxPoint& aCenter );

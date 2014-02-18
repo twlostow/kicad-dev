@@ -343,7 +343,7 @@ public:
      *
      * @return True if draw object is visible otherwise false.
      */
-    bool IsVisible() { return ( m_attributes & PIN_INVISIBLE ) == 0; }
+    bool IsVisible() const { return ( m_attributes & PIN_INVISIBLE ) == 0; }
 
     int GetPenSize() const;
 

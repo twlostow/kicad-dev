@@ -124,6 +124,12 @@ public:
 
     wxPoint GetPosition() const { return m_Pos; }
 
+    int GetRadius() const { return m_Radius; }
+
+    int GetStartAngle () const { return m_t1; }
+
+    int GetEndAngle () const { return m_t2; }
+
     void MirrorHorizontal( const wxPoint& aCenter );
 
     void MirrorVertical( const wxPoint& aCenter );

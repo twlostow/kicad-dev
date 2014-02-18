@@ -160,7 +160,7 @@ public:
      * Function IsVisible
      * @return true is this field is visible, false if flagged invisible
      */
-    bool IsVisible()
+    bool IsVisible() const
     {
         return (m_Attributs & TEXT_NO_VISIBLE) == 0 ? true : false;
     }
@@ -205,7 +205,7 @@ public:
      */
     wxString GetFullText( int unit = 1 );
 
-    EDA_COLOR_T GetDefaultColor();
+    EDA_COLOR_T GetDefaultColor() const;
 
     void BeginEdit( STATUS_FLAGS aEditMode, const wxPoint aStartPoint = wxPoint( 0, 0 ) );
 

@@ -153,7 +153,7 @@ void LIB_ITEM::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
 }
 
 
-EDA_COLOR_T LIB_ITEM::GetDefaultColor()
+EDA_COLOR_T LIB_ITEM::GetDefaultColor() const
 {
     return GetLayerColor( LAYER_DEVICE );
 }

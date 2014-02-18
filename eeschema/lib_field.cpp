@@ -545,7 +545,7 @@ const EDA_RECT LIB_FIELD::GetBoundingBox() const
 }
 
 
-EDA_COLOR_T LIB_FIELD::GetDefaultColor()
+EDA_COLOR_T LIB_FIELD::GetDefaultColor() const
 {
     EDA_COLOR_T color;
 

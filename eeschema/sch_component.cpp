@@ -164,7 +164,9 @@ SCH_COMPONENT::SCH_COMPONENT( LIB_COMPONENT& libComponent, SCH_SHEET_PATH* sheet
 
     // update the reference -- just the prefix for now.
     msg += wxT( "?" );
-    SetRef( sheet, msg );
+    
+    if (sheet)
+        SetRef( sheet, msg );
 
     /* Use the schematic component name instead of the library value field
      * name.

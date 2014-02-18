@@ -404,7 +404,7 @@ public:
 
     void SetEraseLastDrawItem( bool aErase = true ) { m_eraseLastDrawItem = aErase; }
 
-    virtual EDA_COLOR_T GetDefaultColor();
+    virtual EDA_COLOR_T GetDefaultColor() const;
 
     void SetUnit( int aUnit ) { m_Unit = aUnit; }
 

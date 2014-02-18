@@ -49,10 +49,6 @@ DIALOG_CHOOSE_COMPONENT::DIALOG_CHOOSE_COMPONENT( wxWindow* aParent, const wxStr
     m_searchBox->SetFocus();
     m_componentDetails->SetEditable( false );
     m_componentView
-        ->Connect( wxEVT_PAINT,
-                   wxPaintEventHandler( DIALOG_CHOOSE_COMPONENT::OnHandlePreviewRepaint ),
-                   NULL, this );
-    m_componentView
         ->Connect( wxEVT_LEFT_UP,
                    wxMouseEventHandler( DIALOG_CHOOSE_COMPONENT::OnStartComponentBrowser ),
                    NULL, this );
@@ -176,8 +172,7 @@ bool DIALOG_CHOOSE_COMPONENT::updateSelection()
     int unit = 0;
     LIB_ALIAS* selection = m_search_container->GetSelectedAlias( &unit );
 
-    renderPreview( selection ? selection->GetComponent() : NULL, unit );
-
+    m_componentView->PreviewComponent( selection ? selection->GetComponent() : NULL, unit == 0 ? 1 : unit);
     m_componentDetails->Clear();
 
     if( selection == NULL )
@@ -219,70 +214,6 @@ bool DIALOG_CHOOSE_COMPONENT::updateSelection()
 
     return true;
 }
-
-
-void DIALOG_CHOOSE_COMPONENT::OnHandlePreviewRepaint( wxPaintEvent& aRepaintEvent )
-{
-    int unit = 0;
-    LIB_ALIAS* selection = m_search_container->GetSelectedAlias( &unit );
-
-    renderPreview( selection ? selection->GetComponent() : NULL, unit );
-}
-
-
-// Render the preview in our m_componentView. If this gets more complicated, we should
-// probably have a derived class from wxPanel; but this keeps things local.
-void DIALOG_CHOOSE_COMPONENT::renderPreview( LIB_COMPONENT* aComponent, int aUnit )
-{
-    if( !m_ready_to_render )
-        return;
-
-    wxPaintDC dc( m_componentView );
-    dc.SetBackground( *wxWHITE_BRUSH );
-    dc.Clear();
-
-    if( aComponent == NULL )
-        return;
-
-    if( aUnit <= 0 )
-        aUnit = 1;
-
-    const wxSize dc_size = dc.GetSize();
-    dc.SetDeviceOrigin( dc_size.x / 2, dc_size.y / 2 );
-
-    // Find joint bounding box for everything we are about to draw.
-    EDA_RECT bBox;
-
-    BOOST_FOREACH( LIB_ITEM& item, aComponent->GetDrawItemList() )
-    {
-        if( ( item.GetUnit() && item.GetUnit() != aUnit )
-             || ( item.GetConvert() && item.GetConvert() != m_deMorganConvert ) )
-            continue;
-        bBox.Merge( item.GetBoundingBox() );
-    }
-
-    const double xscale = (double) dc_size.x / bBox.GetWidth();
-    const double yscale = (double) dc_size.y / bBox.GetHeight();
-    const double scale  = std::min( xscale, yscale ) * 0.85;
-
-    dc.SetUserScale( scale, scale );
-
-    wxPoint offset =  bBox.Centre();
-    NEGATE( offset.x );
-    NEGATE( offset.y );
-
-    GRResetPenAndBrush( &dc );
-
-    BOOST_FOREACH( LIB_ITEM& item, aComponent->GetDrawItemList() )
-    {
-        if( ( item.GetUnit() && item.GetUnit() != aUnit )
-             || ( item.GetConvert() && item.GetConvert() != m_deMorganConvert ) )
-            continue;
-        item.Draw( NULL, &dc, offset, UNSPECIFIED_COLOR, GR_COPY,
-                   NULL, DefaultTransform );
-    }
-}
-
 
 static wxTreeItemId GetPrevItem( const wxTreeCtrl& tree, const wxTreeItemId& item )
 {

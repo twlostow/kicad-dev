@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb  8 2014)
+// C++ code generated with wxFormBuilder (version Oct  8 2012)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -37,10 +37,8 @@ DIALOG_CHOOSE_COMPONENT_BASE::DIALOG_CHOOSE_COMPONENT_BASE( wxWindow* parent, wx
 	wxBoxSizer* bSizer3;
 	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_componentView = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	m_componentView->SetMinSize( wxSize( 100,100 ) );
-	
-	bSizer3->Add( m_componentView, 1, wxEXPAND | wxALL, 5 );
+	m_componentView = new SCH_COMPONENT_PREVIEW_PANEL( this ); 
+	bSizer3->Add( m_componentView, 1, wxALL|wxEXPAND, 5 );
 	
 	m_componentDetails = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxTE_MULTILINE );
 	m_componentDetails->SetMinSize( wxSize( -1,100 ) );

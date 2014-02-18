@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb  8 2014)
+// C++ code generated with wxFormBuilder (version Oct  8 2012)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -22,7 +22,7 @@ class DIALOG_SHIM;
 #include <wx/textctrl.h>
 #include <wx/sizer.h>
 #include <wx/treectrl.h>
-#include <wx/panel.h>
+#include <sch_component_preview_panel.h>
 #include <wx/button.h>
 #include <wx/dialog.h>
 
@@ -40,7 +40,7 @@ class DIALOG_CHOOSE_COMPONENT_BASE : public DIALOG_SHIM
 		wxStaticText* m_searchLabel;
 		wxTextCtrl* m_searchBox;
 		wxTreeCtrl* m_libraryComponentTree;
-		wxPanel* m_componentView;
+		SCH_COMPONENT_PREVIEW_PANEL *m_componentView;
 		wxTextCtrl* m_componentDetails;
 		wxStdDialogButtonSizer* m_button;
 		wxButton* m_buttonOK;

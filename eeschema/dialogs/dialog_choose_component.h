@@ -61,8 +61,7 @@ protected:
     virtual void OnTreeMouseUp( wxMouseEvent& aMouseEvent );
 
     virtual void OnStartComponentBrowser( wxMouseEvent& aEvent );
-    virtual void OnHandlePreviewRepaint( wxPaintEvent& aRepaintEvent );
-
+    
 private:
     bool updateSelection();
     void selectIfValid( const wxTreeItemId& aTreeId );

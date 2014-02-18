@@ -46,7 +46,7 @@ VIEW::VIEW( bool aIsDynamic ) :
     m_painter( NULL ),
     m_gal( NULL ),
     m_dynamic( aIsDynamic ),
-    m_scaleLimits( 15000.0, 1.0 )
+    m_scaleLimits( 150000000000.0, 0.0000000000001 )
 {
     m_panBoundary.SetMaximum();
 
@@ -121,7 +121,9 @@ void VIEW::Remove( VIEW_ITEM* aItem )
     for( int i = 0; i < layers_count; ++i )
     {
         VIEW_LAYER& l = m_layers[layers[i]];
-        l.items->Remove( aItem );
+ 
+        if(l.items)
+            l.items->Remove( aItem );
     }
 }
 
@@ -274,7 +276,7 @@ void VIEW::SetViewport( const BOX2D& aViewport, bool aKeepAspect )
     VECTOR2D ssize  = ToWorld( m_gal->GetScreenPixelSize(), false );
     VECTOR2D centre = aViewport.Centre();
     VECTOR2D vsize  = aViewport.GetSize();
-    double   zoom   = 1.0 / std::min( fabs( vsize.x / ssize.x ), fabs( vsize.y / ssize.y ) );
+    double   zoom   = 1.0 / std::max( fabs( vsize.x / ssize.x ), fabs( vsize.y / ssize.y ) );
 
     SetCenter( centre );
     SetScale( GetScale() * zoom );
@@ -598,6 +600,7 @@ struct VIEW::drawItem
 
 void VIEW::redrawRect( const BOX2I& aRect )
 {
+
     BOOST_FOREACH( VIEW_LAYER* l, m_orderedLayers )
     {
         if( l->enabled && IsTargetDirty( l->target ) && areRequiredLayersEnabled( l->id ) )
@@ -614,6 +617,7 @@ void VIEW::redrawRect( const BOX2I& aRect )
 
 void VIEW::draw( VIEW_ITEM* aItem, int aLayer, bool aImmediate ) const
 {
+
     if( IsCached( aLayer ) && !aImmediate )
     {
         // Draw using cached information or create one
@@ -702,6 +706,7 @@ struct VIEW::recacheItem
 
     bool operator()( VIEW_ITEM* aItem )
     {
+
         // Remove previously cached group
         int prevGroup = aItem->getGroup( layer );
 
@@ -1020,4 +1025,39 @@ bool VIEW::IsTargetDirty( int aTarget ) const
         return true;
 
     return false;
+}
+
+struct VIEW::extentsVisitor {
+        BOX2I extents;
+        bool first;
+
+        extentsVisitor()
+        {
+            first = true;
+        }
+
+        bool operator()( VIEW_ITEM* aItem )
+        {
+            if(first)
+                extents = aItem->ViewBBox();
+            else
+                extents.Merge ( aItem->ViewBBox() );
+            return false;
+        }
+    };
+
+const BOX2I VIEW::CalculateExtents() 
+{
+  
+    extentsVisitor v;
+    BOX2I fullScene;
+    fullScene.SetMaximum();
+
+
+    BOOST_FOREACH( VIEW_LAYER* l, m_orderedLayers )
+    {
+        l->items->Query( fullScene, v );
+    }
+    
+    return v.extents;
 }

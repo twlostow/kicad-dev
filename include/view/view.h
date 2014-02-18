@@ -491,7 +491,10 @@ public:
         wxASSERT_MSG( aMaximum > aMinimum, wxT( "I guess you passed parameters in wrong order" ) );
 
         m_scaleLimits = VECTOR2D( aMaximum, aMinimum );
+
     }
+
+	const BOX2I CalculateExtents() ;
 
     static const int VIEW_MAX_LAYERS = 128;      ///* maximum number of layers that may be shown
 
@@ -520,6 +523,8 @@ private:
     struct unlinkItem;
     struct updateItemsColor;
     struct changeItemsDepth;
+    struct extentsVisitor;
+
 
     ///* Redraws contents within rect aRect
     void redrawRect( const BOX2I& aRect );

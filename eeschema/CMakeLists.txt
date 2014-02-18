@@ -138,6 +138,8 @@ set( EESCHEMA_SRCS
     sch_no_connect.cpp
     sch_screen.cpp
     sch_sheet.cpp
+    sch_painter.cpp
+    sch_component_preview_panel.cpp
     sch_sheet_path.cpp
     sch_sheet_pin.cpp
     sch_text.cpp
@@ -303,7 +305,11 @@ else()
     endif()
 
     target_link_libraries( eeschema
-        common
+        gal
+        ${GLEW_LIBRARIES}
+        ${CAIRO_LIBRARIES}
+       	${OPENGL_LIBRARIES}
+       	common
         bitmaps
         polygon
         ${wxWidgets_LIBRARIES}

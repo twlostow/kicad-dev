@@ -99,6 +99,8 @@ OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
     }
 
     gluTessProperty( tesselator, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_POSITIVE );
+
+    SetTarget ( TARGET_NONCACHED );
 }
 
 
@@ -825,6 +827,7 @@ inline void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2
 
     currentManager->Shader( SHADER_LINE, vector.x, vector.y, lineWidth );
     currentManager->Vertex( aEndPoint.x, aEndPoint.y, layerDepth );        // v2
+
 }
 
 

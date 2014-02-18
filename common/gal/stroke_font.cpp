@@ -159,19 +159,17 @@ void STROKE_FONT::Draw( const UTF8& aText, const VECTOR2D& aPosition, double aRo
     int lineHeight = getInterline();
 
     // The overall height of all lines of text
-    double textBlockHeight = lineHeight * ( linesCount( aText ) - 1 );
+    double textBlockHeight = lineHeight * ( linesCount( aText ) );
 
     switch( m_verticalJustify )
     {
-    case GR_TEXT_VJUSTIFY_CENTER:
+    
+    case GR_TEXT_VJUSTIFY_BOTTOM:
         m_gal->Translate( VECTOR2D( 0, -textBlockHeight / 2.0 ) );
         break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        m_gal->Translate( VECTOR2D( 0, -textBlockHeight ) );
-        break;
-
     case GR_TEXT_VJUSTIFY_TOP:
+        m_gal->Translate( VECTOR2D( 0, textBlockHeight / 2.0 ) );
         break;
 
     default:

@@ -117,6 +117,13 @@ public:
      */
     void StopDrawing();
 
+    /**
+     * Function SetPainter()
+     * Assigns a PAINTER for this draw panel.
+     * @param aPainter the painter to be assigned. EDA_DRAW_PANEL_GAL takes ownership of the painter.
+     */
+    void SetPainter ( KIGFX::PAINTER *aPainter );
+
 protected:
     void onPaint( wxPaintEvent& WXUNUSED( aEvent ) );
     void onSize( wxSizeEvent& aEvent );

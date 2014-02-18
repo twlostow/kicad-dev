@@ -66,10 +66,7 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
     m_gal->SetZoomFactor( 1.0 );
     m_gal->ComputeWorldScreenMatrix();
 
-    m_painter = new KIGFX::PCB_PAINTER( m_gal );
-
     m_view = new KIGFX::VIEW( true );
-    m_view->SetPainter( m_painter );
     m_view->SetGAL( m_gal );
 
     m_viewControls = new KIGFX::WX_VIEW_CONTROLS( m_view, this );
@@ -118,18 +115,26 @@ EDA_DRAW_PANEL_GAL::~EDA_DRAW_PANEL_GAL()
         delete m_gal;
 }
 
+void EDA_DRAW_PANEL_GAL::SetPainter ( KIGFX::PAINTER *aPainter )
+{
+    m_painter = aPainter;
+    m_view->SetPainter( m_painter );
+}
 
 void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
     m_pendingRefresh = false;
     m_lastRefresh = wxGetLocalTimeMillis();
 
+    if( !m_painter )
+        return;
+
     if( !m_drawing )
     {
         m_drawing = true;
 
         m_gal->BeginDrawing();
-        m_gal->SetBackgroundColor( KIGFX::COLOR4D( 0.0, 0.0, 0.0, 1.0 ) );
+        m_gal->SetBackgroundColor( m_painter->GetSettings()->GetBackgroundColor() ); 
         m_gal->ClearScreen();
 
         m_view->ClearTargets();
@@ -148,6 +153,9 @@ void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 
 void EDA_DRAW_PANEL_GAL::onSize( wxSizeEvent& aEvent )
 {
+    if(!m_painter)
+        return;
+
     m_gal->ResizeScreen( aEvent.GetSize().x, aEvent.GetSize().y );
     m_view->MarkTargetDirty( KIGFX::TARGET_CACHED );
     m_view->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
@@ -200,8 +208,9 @@ void EDA_DRAW_PANEL_GAL::SwitchBackend( GalType aGalType )
     // Do not do anything if the currently used GAL is correct
     if( aGalType == m_currentGal && m_gal != NULL )
         return;
-
-    delete m_gal;
+    
+    if(m_gal)
+        delete m_gal;
 
     switch( aGalType )
     {

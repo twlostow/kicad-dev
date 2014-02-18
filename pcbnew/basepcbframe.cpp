@@ -152,9 +152,12 @@ PCB_BASE_FRAME::PCB_BASE_FRAME( wxWindow* aParent, ID_DRAWFRAME_TYPE aFrameType,
     m_FastGrid1           = 0;
     m_FastGrid2           = 0;
 
-    SetGalCanvas( new EDA_DRAW_PANEL_GAL(
+	EDA_DRAW_PANEL_GAL *drawPanel = new EDA_DRAW_PANEL_GAL(
             this, -1, wxPoint( 0, 0 ), m_FrameSize,
-            EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) );
+            EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
+
+	drawPanel->SetPainter ( new KIGFX::PCB_PAINTER( drawPanel->GetGAL() ) );
+    SetGalCanvas( drawPanel );
 
     // Hide by default, it has to be explicitly shown
     GetGalCanvas()->Hide();

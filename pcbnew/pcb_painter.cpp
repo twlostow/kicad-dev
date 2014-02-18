@@ -45,6 +45,7 @@ using namespace KIGFX;
 
 PCB_RENDER_SETTINGS::PCB_RENDER_SETTINGS()
 {
+    m_backgroundColor = COLOR4D(0.0, 0.0, 0.0, 1.0);
     // By default everything should be displayed as filled
     for( unsigned int i = 0; i < END_PCB_VISIBLE_LIST; ++i )
     {

@@ -159,6 +159,16 @@ public:
         return m_worksheetLineWidth;
     }
 
+    const COLOR4D TranslateColor ( EDA_COLOR_T aColor ) 
+    {
+        return m_legacyColorMap[ aColor ];
+    }
+
+    const COLOR4D& GetBackgroundColor() const
+    {
+        return m_backgroundColor;
+    }
+
 protected:
     /**
      * Function update
@@ -184,6 +194,8 @@ protected:
     float   m_layerOpacity;         ///< Determines opacity of all layers
     float   m_outlineWidth;         ///< Line width used when drawing outlines
     float   m_worksheetLineWidth;   ///< Line width used when drawing worksheet
+
+    COLOR4D m_backgroundColor;      ///< The background color
 
     /// Map of colors that were usually used for display
     std::map<EDA_COLOR_T, COLOR4D> m_legacyColorMap;

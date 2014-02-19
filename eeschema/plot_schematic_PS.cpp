@@ -136,7 +136,7 @@ bool DIALOG_PLOT_SCHEMATIC::plotOneSheetPS( const wxString&     aFileName,
     plotter->SetPageSettings( aPageInfo );
     plotter->SetDefaultLineWidth( GetDefaultLineThickness() );
     plotter->SetColorMode( getModeColor() );
-    plotter->SetViewport( aPlot0ffset, IU_PER_DECIMILS, aScale, false );
+    plotter->SetViewport( aPlot0ffset, g_SchUnits.DMilsToIu (1.0), aScale, false );
 
     // Init :
     plotter->SetCreator( wxT( "Eeschema-PS" ) );

@@ -103,7 +103,13 @@ set( COMMON_SRCS
     class_marker_base.cpp
     class_plotter.cpp
     class_undoredo_container.cpp
+    dialogs/dialog_page_settings.cpp
+    base_screen.cpp
+    eda_text.cpp
+    class_page_info.cpp
+    base_units.cpp
     common.cpp
+    layer_widget.cpp
     common_plot_functions.cpp
     common_plotHPGL_functions.cpp
     common_plotPS_functions.cpp

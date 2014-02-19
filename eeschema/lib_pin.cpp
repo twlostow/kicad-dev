@@ -817,7 +817,7 @@ void LIB_PIN::drawGraphic( EDA_DRAW_PANEL*  aPanel,
         aColor = GetInvisibleItemColor();
     }
 
-    LIB_COMPONENT* Entry = GetParent();
+LIB_COMPONENT* Entry = GetParent();
     bool           DrawPinText = true;
 
     if( ( aData != NULL ) && ( (bool*) aData == false ) )
@@ -1860,7 +1860,7 @@ void LIB_PIN::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
     aList.push_back( MSG_PANEL_ITEM( _( "Visible" ), Text, DARKGREEN ) );
 
     // Display pin length
-    Text = ReturnStringFromValue( g_UserUnit, m_length, true );
+    Text = g_SchUnits.StringFromValue( m_length, true );
     aList.push_back( MSG_PANEL_ITEM( _( "Length" ), Text, MAGENTA ) );
 
     Text = wxGetTranslation( pin_orientation_names[ GetOrientationCodeIndex( m_orientation ) ] );
@@ -1879,6 +1879,7 @@ const EDA_RECT LIB_PIN::GetBoundingBox() const
     bool           showNum = m_number != 0;
     int            minsizeV = TARGET_PIN_RADIUS;
 
+    printf("PIN::BBox\n");
 
     if( entry )
     {

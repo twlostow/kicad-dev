@@ -46,7 +46,8 @@
 #include <fctsys.h>
 #include <common.h>
 #include <layers_id_colors_and_visibility.h>
-
+#include <base_units.h>
+ 
 #ifdef USE_WX_OVERLAY
 #include <wx/overlay.h>
 #endif
@@ -71,6 +72,7 @@ class PAGE_INFO;
 class PLOTTER;
 class TITLE_BLOCK;
 class MSG_PANEL_ITEM;
+class UNITS;
 
 
 enum id_librarytype {
@@ -112,7 +114,7 @@ extern const wxChar traceAutoSave[];
  * to do nothing, or rely on basic SaveSettings() support in this base class to do
  * most of the work by calling it from the derived class's SaveSettings().
  */
-class EDA_BASE_FRAME : public wxFrame
+class EDA_BASE_FRAME : public wxFrame, public IUNIT_HOLDER
 {
     /**
      * Function windowClosing
@@ -979,6 +981,7 @@ public:
      */
     virtual void PrintPage( wxDC* aDC, LAYER_MSK aPrintMask, bool aPrintMirrorMode, void* aData = NULL );
 
+    #if 0
     /**
      * Function CoordinateToString
      * is a helper to convert the \a integer coordinate \a aValue to a string in inches or mm
@@ -1000,6 +1003,7 @@ public:
      * @return The converted string for display in user interface elements.
      */
     wxString LengthDoubleToString( double aValue, bool aConvertToMils = false ) const;
+#endif
 
     /**
      * Function UseGalCanvas

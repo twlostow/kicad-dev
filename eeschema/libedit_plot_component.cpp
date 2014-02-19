@@ -150,7 +150,7 @@ void LIB_EDIT_FRAME::SVG_PlotComponent( const wxString& aFullFileName )
 
     wxPoint plot_offset;
     const double scale = 1.0;
-    plotter->SetViewport( plot_offset, IU_PER_DECIMILS, scale, false );
+    plotter->SetViewport( plot_offset, g_SchUnits.DMilsToIu( 1.0 ), scale, false );
 
     // Init :
     plotter->SetCreator( wxT( "Eeschema-SVG" ) );
@@ -169,8 +169,8 @@ void LIB_EDIT_FRAME::SVG_PlotComponent( const wxString& aFullFileName )
     {
         TRANSFORM temp;     // Uses default transform
         wxPoint plotPos;
-        plotPos.x = pageInfo.GetWidthIU() /2;
-        plotPos.y = pageInfo.GetHeightIU()/2;
+        plotPos.x = g_SchUnits.MilsToIu ( pageInfo.GetWidthMils() ) / 2;
+        plotPos.y = g_SchUnits.MilsToIu ( pageInfo.GetHeightMils() ) / 2;
 
         m_component->Plot( plotter, GetUnit(), GetConvert(), plotPos, temp );
 
@@ -188,8 +188,11 @@ void LIB_EDIT_FRAME::PrintPage( wxDC* aDC, LAYER_MSK aPrintMask, bool aPrintMirr
     if( ! m_component )
         return;
 
-    wxSize pagesize = GetScreen()->GetPageSettings().GetSizeIU();
 
+    wxSize pagesizeMils = GetScreen()->GetPageSettings().GetSizeMils();
+    wxSize pagesize ( g_SchUnits.MilsToIu (pagesizeMils.x),
+                      g_SchUnits.MilsToIu (pagesizeMils.y) );
+     
     /* Plot item centered to the page
      * In libedit, the component is centered at 0,0 coordinates.
      * So we must plot it with an offset = pagesize/2.

@@ -95,9 +95,9 @@ void SCH_EDIT_FRAME::OnFindDrcMarker( wxFindDialogEvent& event )
         RedrawScreen( lastMarker->GetPosition(), warpCursor );
 
         wxString path = sheetFoundIn->Path();
-        wxString units = GetAbbreviatedUnitsLabel();
-        double x = To_User_Unit( g_UserUnit, (double) lastMarker->GetPosition().x );
-        double y = To_User_Unit( g_UserUnit, (double) lastMarker->GetPosition().y );
+        wxString units = GetAbbreviatedUnitsLabel( g_SchUnits.GetUserUnit() );
+        double x = g_SchUnits.ToUser( (double) lastMarker->GetPosition().x );
+        double y = g_SchUnits.ToUser( (double) lastMarker->GetPosition().y );
         msg.Printf( _( "Design rule check marker found in sheet %s at %0.3f%s, %0.3f%s" ),
                     GetChars( path ), x, GetChars( units ), y, GetChars( units) );
         SetStatusText( msg );

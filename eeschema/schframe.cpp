@@ -515,8 +515,8 @@ double SCH_EDIT_FRAME::BestZoom()
     int    dx, dy;
     wxSize size;
 
-    dx = GetScreen()->GetPageSettings().GetWidthIU();
-    dy = GetScreen()->GetPageSettings().GetHeightIU();
+    dx = g_SchUnits.MilsToIu ( GetScreen()->GetPageSettings().GetWidthMils() );
+    dy = g_SchUnits.MilsToIu ( GetScreen()->GetPageSettings().GetHeightMils() );
 
     size = m_canvas->GetClientSize();
 
@@ -865,7 +865,7 @@ void SCH_EDIT_FRAME::PrintPage( wxDC* aDC, LAYER_MSK aPrintMask, bool aPrintMirr
                                 void* aData )
 {
     GetScreen()->Draw( m_canvas, aDC, GR_DEFAULT_DRAWMODE );
-    DrawWorkSheet( aDC, GetScreen(), GetDefaultLineThickness(), IU_PER_MILS,
+    DrawWorkSheet( aDC, GetScreen(), GetDefaultLineThickness(), g_SchUnits.MilsToIu(1.0),
                    GetScreen()->GetFileName() );
 }
 

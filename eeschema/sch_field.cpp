@@ -70,6 +70,8 @@ SCH_FIELD::SCH_FIELD( const wxPoint& aPos, int aFieldId, SCH_COMPONENT* aParent,
     SCH_ITEM( aParent, SCH_FIELD_T ),
     EDA_TEXT()
 {
+    SetDefaultSize ( Units()->MilsToIu ( DEFAULT_SIZE_TEXT ) );
+
     m_Pos = aPos;
     m_id = aFieldId;
     m_Attributs = TEXT_NO_VISIBLE;

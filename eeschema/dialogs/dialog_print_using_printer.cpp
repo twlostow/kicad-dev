@@ -406,7 +406,8 @@ void SCH_PRINTOUT::DrawPage( SCH_SCREEN* aScreen )
     // Change scale factor and offset to print the whole page.
     bool printReference = parent->GetPrintSheetReference();
 
-    pageSizeIU = aScreen->GetPageSettings().GetSizeIU();
+    wxSize pageSizeMils = aScreen->GetPageSettings().GetSizeMils();
+    pageSizeIU = wxSize ( g_SchUnits.MilsToIu ( pageSizeMils.x), g_SchUnits.MilsToIu ( pageSizeMils.y) );
     FitThisSizeToPaper( pageSizeIU );
     fitRect = GetLogicalPaperRect();
 
@@ -431,7 +432,7 @@ void SCH_PRINTOUT::DrawPage( SCH_SCREEN* aScreen )
 
     if( printReference )
         parent->DrawWorkSheet( dc, aScreen, GetDefaultLineThickness(),
-                IU_PER_MILS, aScreen->GetFileName() );
+                g_SchUnits.MilsToIu (1.0), aScreen->GetFileName() );
 
     g_DrawBgColor = bg_color;
     aScreen->m_IsPrinting = false;

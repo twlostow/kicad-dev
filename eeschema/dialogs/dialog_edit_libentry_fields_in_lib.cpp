@@ -41,6 +41,7 @@
 #include <sch_field.h>
 #include <template_fieldnames.h>
 #include <dialog_helpers.h>
+#include <sch_graphic_text_ctrl.h>
 
 #include <dialog_edit_libentry_fields_in_lib_base.h>
 
@@ -179,9 +180,10 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::OnInitDialog( wxInitDialogEvent& event 
     columnLabel.SetText( _( "Value" ) );
     fieldListCtrl->InsertColumn( COLUMN_TEXT, columnLabel );
 
-    m_staticTextUnitSize->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_staticTextUnitPosX->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_staticTextUnitPosY->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    wxString label = GetAbbreviatedUnitsLabel( g_SchUnits.GetUserUnit() );
+    m_staticTextUnitSize->SetLabel( label );
+    m_staticTextUnitPosX->SetLabel( label );
+    m_staticTextUnitPosY->SetLabel( label );
 
     initBuffers();
     copySelectedFieldToPanel();
@@ -650,7 +652,8 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::copySelectedFieldToPanel()
 
     fieldValueTextCtrl->SetValue( field.GetText() );
 
-    textSizeTextCtrl->SetValue( EDA_GRAPHIC_TEXT_CTRL::FormatSize( g_UserUnit, field.GetSize().x ) );
+    
+    textSizeTextCtrl->SetValue( SCH_GRAPHIC_TEXT_CTRL::FormatSize( g_SchUnits.GetUserUnit(), field.GetSize().x ) );
 
     m_show_datasheet_button->Enable( fieldNdx == DATASHEET );
 
@@ -675,13 +678,13 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::copySelectedFieldToPanel()
         // top of each other.
     }
 
-    wxString coordText = ReturnStringFromValue( g_UserUnit, coord.x );
+    wxString coordText = g_SchUnits.StringFromValue( coord.x );
     posXTextCtrl->SetValue( coordText );
 
     // Note: the Y axis for components in lib is from bottom to top
     // and the screen axis is top to bottom: we must change the y coord sign for editing
     NEGATE( coord.y );
-    coordText = ReturnStringFromValue( g_UserUnit, coord.y );
+    coordText = g_SchUnits.StringFromValue( coord.y );
     posYTextCtrl->SetValue( coordText );
 }
 
@@ -738,7 +741,8 @@ bool DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::copyPanelToSelectedField()
 
     setRowItem( fieldNdx, field );  // update fieldListCtrl
 
-    int tmp = EDA_GRAPHIC_TEXT_CTRL::ParseSize( textSizeTextCtrl->GetValue(), g_UserUnit );
+    
+    int tmp = SCH_GRAPHIC_TEXT_CTRL::ParseSize( textSizeTextCtrl->GetValue(), g_SchUnits.GetUserUnit() );
 
     field.SetSize( wxSize( tmp, tmp ) );
 
@@ -747,8 +751,8 @@ bool DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::copyPanelToSelectedField()
     field.SetItalic( (style & 1 ) != 0 );
     field.SetBold( (style & 2 ) != 0 );
 
-    wxPoint pos( ReturnValueFromString( g_UserUnit, posXTextCtrl->GetValue() ),
-                 ReturnValueFromString( g_UserUnit, posYTextCtrl->GetValue() ) );
+    wxPoint pos( g_SchUnits.ValueFromString( posXTextCtrl->GetValue() ),
+                 g_SchUnits.ValueFromString( posYTextCtrl->GetValue() ) );
 
     // Note: the Y axis for components in lib is from bottom to top
     // and the screen axis is top to bottom: we must change the y coord sign for editing

@@ -268,8 +268,8 @@ void EDA_DRAW_FRAME::AddMenuZoomAndGrid( wxMenu* MasterMenu )
         for( size_t i = 0; i < screen->GetGridCount(); i++ )
         {
             tmp = screen->GetGrid( i );
-            double gridValueInch = To_User_Unit( INCHES, tmp.m_Size.x );
-            double gridValue_mm = To_User_Unit( MILLIMETRES, tmp.m_Size.x );
+            double gridValueInch = Units()->ToUser( INCHES, tmp.m_Size.x );
+            double gridValue_mm = Units()->ToUser( MILLIMETRES, tmp.m_Size.x );
 
             if( tmp.m_Id == ID_POPUP_GRID_USER )
             {
@@ -277,7 +277,7 @@ void EDA_DRAW_FRAME::AddMenuZoomAndGrid( wxMenu* MasterMenu )
             }
             else
             {
-                switch( g_UserUnit )
+                switch( Units()->GetUserUnit() )
                 {
                 case INCHES:
                     msg.Printf( wxT( "%.1f mils, (%.4f mm)" ),

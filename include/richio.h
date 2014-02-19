@@ -457,7 +457,7 @@ public:
  * Since this is an abstract interface, only classes derived from
  * this one may actually be used.
  */
-class OUTPUTFORMATTER
+class OUTPUTFORMATTER 
 {
     std::vector<char>   buffer;
     char                quoteChar[2];

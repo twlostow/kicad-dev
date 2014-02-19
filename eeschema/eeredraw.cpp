@@ -28,6 +28,7 @@
  */
 
 #include <fctsys.h>
+#include <base_units.h>
 #include <gr_basic.h>
 #include <class_drawpanel.h>
 #include <wxEeschemaStruct.h>
@@ -60,7 +61,7 @@ void SCH_EDIT_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
 
     GetScreen()->Draw( m_canvas, DC, GR_DEFAULT_DRAWMODE );
 
-    DrawWorkSheet( DC, GetScreen(), GetDefaultLineThickness(), IU_PER_MILS,
+    DrawWorkSheet( DC, GetScreen(), GetDefaultLineThickness(), g_SchUnits.MilsToIu ( 1 ),
                     GetScreen()->GetFileName() );
 
 #ifdef USE_WX_OVERLAY

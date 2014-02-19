@@ -37,13 +37,8 @@
 #include <gr_basic.h>
 #include <layers_id_colors_and_visibility.h>
 
-/// Abbrevation for fomatting internal units to a string.
-#define FMT_IU     BOARD_ITEM::FormatInternalUnits
-#define FMT_ANGLE  BOARD_ITEM::FormatAngle
-
 class BOARD;
 class EDA_DRAW_PANEL;
-
 
 /**
  * Enum STROKE_T

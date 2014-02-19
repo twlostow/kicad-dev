@@ -242,14 +242,14 @@ void EDA_DRAW_FRAME::OnToggleGridState( wxCommandEvent& aEvent )
 
 void EDA_DRAW_FRAME::OnSelectUnits( wxCommandEvent& aEvent )
 {
-    if( aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_MM && g_UserUnit != MILLIMETRES )
+    if( aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_MM && Units()->GetUserUnit() != MILLIMETRES )
     {
-        g_UserUnit = MILLIMETRES;
+        ModifiableUnits()->SetUserUnit ( MILLIMETRES );
         unitsChangeRefresh();
     }
-    else if( aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_INCH && g_UserUnit != INCHES )
+    else if( aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_INCH && Units()->GetUserUnit() != INCHES )
     {
-        g_UserUnit = INCHES;
+        ModifiableUnits()->SetUserUnit ( INCHES );
         unitsChangeRefresh();
     }
 }
@@ -282,8 +282,8 @@ void EDA_DRAW_FRAME::OnUpdateUnits( wxUpdateUIEvent& aEvent )
 {
     bool enable;
 
-    enable = ( ((aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_MM) && (g_UserUnit == MILLIMETRES))
-            || ((aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_INCH) && (g_UserUnit == INCHES)) );
+    enable = ( ((aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_MM) && (Units()->GetUserUnit() == MILLIMETRES))
+            || ((aEvent.GetId() == ID_TB_OPTIONS_SELECT_UNIT_INCH) && (Units()->GetUserUnit() == INCHES)) );
 
     aEvent.Check( enable );
     DisplayUnitsMsg();
@@ -471,7 +471,7 @@ void EDA_DRAW_FRAME::DisplayUnitsMsg()
 {
     wxString msg;
 
-    switch( g_UserUnit )
+    switch( Units()->GetUserUnit() )
     {
     case INCHES:
         msg = _( "Inches" );
@@ -664,7 +664,7 @@ void EDA_DRAW_FRAME::SetMsgPanel( EDA_ITEM* aItem )
 }
 
 
-wxString EDA_DRAW_FRAME::CoordinateToString( int aValue, bool aConvertToMils ) const
+/*wxString EDA_DRAW_FRAME::CoordinateToString( int aValue, bool aConvertToMils ) const
 {
     return ::CoordinateToString( aValue, aConvertToMils );
 }
@@ -672,7 +672,7 @@ wxString EDA_DRAW_FRAME::CoordinateToString( int aValue, bool aConvertToMils ) c
 wxString EDA_DRAW_FRAME::LengthDoubleToString( double aValue, bool aConvertToMils ) const
 {
     return ::LengthDoubleToString( aValue, aConvertToMils );
-}
+}*/
 
 
 bool EDA_DRAW_FRAME::HandleBlockBegin( wxDC* aDC, int aKey, const wxPoint& aPosition )

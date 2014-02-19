@@ -279,8 +279,8 @@ void BASE_SCREEN::AddGrid( const wxRealPoint& size, EDA_UNITS_T aUnit, int id )
     wxRealPoint new_size;
     GRID_TYPE new_grid;
 
-    new_size.x = From_User_Unit( aUnit, size.x );
-    new_size.y = From_User_Unit( aUnit, size.y );
+    new_size.x = Units()->FromUser( aUnit, size.x );
+    new_size.y = Units()->FromUser( aUnit, size.y );
     new_grid.m_Id = id;
     new_grid.m_Size = new_size;
 

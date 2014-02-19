@@ -94,10 +94,10 @@ void DIALOG_LIB_EDIT_PIN::OnPropertiesChange( wxCommandEvent& event )
     if( ! IsShown() )   // do nothing at init time
         return;
 
-    int pinNameSize = ReturnValueFromString( g_UserUnit, GetNameTextSize() );
-    int pinNumSize = ReturnValueFromString( g_UserUnit, GetPadNameTextSize());
+    int pinNameSize = g_SchUnits.ValueFromString( GetNameTextSize() );
+    int pinNumSize = g_SchUnits.ValueFromString( GetPadNameTextSize());
     int pinOrient = LIB_PIN::GetOrientationCode( GetOrientation() );
-    int pinLength = ReturnValueFromString( g_UserUnit, GetLength() );
+    int pinLength = g_SchUnits.ValueFromString( GetLength() );
     int pinShape = LIB_PIN::GetStyleCode( GetStyle() );
     int pinType = GetElectricalType();
 

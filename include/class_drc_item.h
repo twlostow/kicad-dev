@@ -26,7 +26,7 @@
 #define _CLASS_DRC_ITEM_H
 
 #include <macros.h>
-
+#include <base_units.h>
 
 /**
  * Class DRC_ITEM
@@ -40,7 +40,7 @@
  * Some errors involve only one item (item with an incorrect param) so
  * m_hasSecondItem is set to false in this case.
  */
-class DRC_ITEM
+class DRC_ITEM 
 {
 protected:
     int      m_ErrorCode;                       ///< the error code's numeric value
@@ -137,13 +137,57 @@ public:
     wxString GetAuxiliaryText() const { return m_AuxiliaryText; }
 
 
+    virtual wxString ShowHtml( ) const { };
+    virtual wxString ShowReport( UNITS *aUnits ) const { };
+
+    /**
+     * Function GetErrorCode
+     * returns the error code.
+     */
+    int GetErrorCode() const
+    {
+        return m_ErrorCode;
+    }
+
+    /**
+     * Function GetErrorText
+     * returns the string form of a drc error code.
+     */
+    virtual wxString GetErrorText() const {
+        return wxT("unknown");
+    };
+
+    const wxString& GetTextA() const
+    {
+        return m_MainText;
+    }
+
+
+    const wxString& GetTextB() const
+    {
+        return m_AuxiliaryText;
+    }
+
+
+    const wxPoint& GetPointA() const
+    {
+        return m_MainPosition;
+    }
+
+
+    const wxPoint& GetPointB() const
+    {
+        return m_AuxiliaryPosition;
+    }
+
+protected:
     /**
      * Function ShowHtml
      * translates this object into a fragment of HTML suitable for the
      * wxWidget's wxHtmlListBox class.
      * @return wxString - the html text.
      */
-    wxString ShowHtml() const
+    wxString showHtml( UNITS *aAppUnits ) const
     {
         wxString ret;
         wxString mainText = m_MainText;
@@ -176,15 +220,15 @@ public:
             ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s: %s </li><li> %s: %s </li></ul>" ),
                         m_ErrorCode,
                         GetChars( errText ),
-                        GetChars( ShowCoord( m_MainPosition )), GetChars( mainText ),
-                        GetChars( ShowCoord( m_AuxiliaryPosition )), GetChars( auxText ) );
+                        GetChars( aAppUnits->PointToString( m_MainPosition )), GetChars( mainText ),
+                        GetChars( aAppUnits->PointToString( m_AuxiliaryPosition )), GetChars( auxText ) );
         }
         else
         {
             ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s: %s </li></ul>" ),
                         m_ErrorCode,
                         GetChars( errText ),
-                        GetChars( ShowCoord( m_MainPosition ) ), GetChars( mainText ) );
+                        GetChars( aAppUnits->PointToString( m_MainPosition ) ), GetChars( mainText ) );
         }
 
         return ret;
@@ -197,7 +241,7 @@ public:
      * to disk in a report.
      * @return wxString - the simple multi-line report text.
      */
-    wxString ShowReport() const
+    wxString showReport( UNITS *aUnits ) const
     {
         wxString ret;
 
@@ -206,67 +250,20 @@ public:
             ret.Printf( wxT( "ErrType(%d): %s\n    %s: %s\n    %s: %s\n" ),
                         m_ErrorCode,
                         GetChars( GetErrorText() ),
-                        GetChars( ShowCoord( m_MainPosition ) ), GetChars( m_MainText ),
-                        GetChars( ShowCoord( m_AuxiliaryPosition ) ), GetChars( m_AuxiliaryText ) );
+                        GetChars( aUnits->PointToString( m_MainPosition ) ), GetChars( m_MainText ),
+                        GetChars( aUnits->PointToString( m_AuxiliaryPosition ) ), GetChars( m_AuxiliaryText ) );
         }
         else
         {
             ret.Printf( wxT( "ErrType(%d): %s\n    %s: %s\n" ),
                         m_ErrorCode,
                         GetChars( GetErrorText() ),
-                        GetChars( ShowCoord( m_MainPosition ) ), GetChars( m_MainText ) );
+                        GetChars( aUnits->PointToString( m_MainPosition ) ), GetChars( m_MainText ) );
         }
 
         return ret;
     }
 
-
-    /**
-     * Function GetErrorCode
-     * returns the error code.
-     */
-    int GetErrorCode() const
-    {
-        return m_ErrorCode;
-    }
-
-    /**
-     * Function GetErrorText
-     * returns the string form of a drc error code.
-     */
-    wxString GetErrorText() const;
-
-    const wxString& GetTextA() const
-    {
-        return m_MainText;
-    }
-
-
-    const wxString& GetTextB() const
-    {
-        return m_AuxiliaryText;
-    }
-
-
-    const wxPoint& GetPointA() const
-    {
-        return m_MainPosition;
-    }
-
-
-    const wxPoint& GetPointB() const
-    {
-        return m_AuxiliaryPosition;
-    }
-
-
-    /**
-     * Function ShowCoord
-     * formats a coordinate or position to text.
-     * @param aPos The position to format
-     * @return wxString - The formated string
-     */
-    static wxString ShowCoord( const wxPoint& aPos );
 };
 
 

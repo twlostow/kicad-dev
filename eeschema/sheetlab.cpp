@@ -56,10 +56,10 @@ int SCH_EDIT_FRAME::EditSheetPin( SCH_SHEET_PIN* aSheetPin, wxDC* aDC )
     DIALOG_SCH_EDIT_SHEET_PIN dlg( this );
 
     dlg.SetLabelName( aSheetPin->GetText() );
-    dlg.SetTextHeight( ReturnStringFromValue( g_UserUnit, aSheetPin->GetSize().y ) );
-    dlg.SetTextHeightUnits( GetUnitsLabel( g_UserUnit ) );
-    dlg.SetTextWidth( ReturnStringFromValue( g_UserUnit, aSheetPin->GetSize().x ) );
-    dlg.SetTextWidthUnits( GetUnitsLabel( g_UserUnit ) );
+    dlg.SetTextHeight( g_SchUnits.StringFromValue( aSheetPin->GetSize().y ) );
+    dlg.SetTextHeightUnits( GetUnitsLabel( g_SchUnits.GetUserUnit() ) );
+    dlg.SetTextWidth( g_SchUnits.StringFromValue( aSheetPin->GetSize().x ) );
+    dlg.SetTextWidthUnits( GetUnitsLabel( g_SchUnits.GetUserUnit() ) );
     dlg.SetConnectionType( aSheetPin->GetShape() );
 
     /* This ugly hack fixes a bug in wxWidgets 2.8.7 and likely earlier versions for
@@ -84,8 +84,8 @@ int SCH_EDIT_FRAME::EditSheetPin( SCH_SHEET_PIN* aSheetPin, wxDC* aDC )
     }
 
     aSheetPin->SetText( dlg.GetLabelName() );
-    aSheetPin->SetSize( wxSize( ReturnValueFromString( g_UserUnit, dlg.GetTextHeight() ),
-                                ReturnValueFromString( g_UserUnit, dlg.GetTextWidth() ) ) );
+    aSheetPin->SetSize( wxSize( g_SchUnits.ValueFromString( dlg.GetTextHeight() ),
+                                g_SchUnits.ValueFromString( dlg.GetTextWidth() ) ) );
     aSheetPin->SetShape( dlg.GetConnectionType() );
 
     if( aDC )

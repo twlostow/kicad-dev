@@ -218,6 +218,7 @@ public:
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const;     // override
 #endif
+
 };
 
 

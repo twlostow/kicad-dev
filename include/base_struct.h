@@ -36,7 +36,8 @@
 #include <bitmaps.h>
 #include <richio.h>
 #include <view/view_item.h>
-
+#include <base_units.h>
+ 
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #if defined(DEBUG)
@@ -79,7 +80,7 @@ class EDA_DRAW_FRAME;
 class EDA_RECT;
 class DHEAD;
 class MSG_PANEL_ITEM;
-
+class UNITS;
 
 /**
  * Class INSPECTOR
@@ -329,7 +330,7 @@ typedef unsigned STATUS_FLAGS;
  * is a base class for most all the KiCad significant classes, used in
  * schematics and boards.
  */
-class EDA_ITEM : public KIGFX::VIEW_ITEM
+class EDA_ITEM : public KIGFX::VIEW_ITEM, public IUNIT_HOLDER
 {
 private:
 
@@ -547,7 +548,7 @@ public:
     /**
      * Function GetClass
      * returns the class name.
-     * @return wxString
+         * @return wxString
      */
     virtual wxString GetClass() const
     {

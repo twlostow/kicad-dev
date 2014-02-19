@@ -128,20 +128,8 @@ void DIALOG_PAGES_SETTINGS::initDialog()
     // initialize the page layout descr filename
     SetWksFileName( BASE_SCREEN::m_PageLayoutDescrFileName );
 
-
-#ifdef EESCHEMA
-    // Init display value for schematic sub-sheet number
-    wxString format = m_TextSheetCount->GetLabel();
-    msg.Printf( format, m_screen->m_NumberOfScreens );
-    m_TextSheetCount->SetLabel( msg );
-
-    format = m_TextSheetNumber->GetLabel();
-    msg.Printf( format, m_screen->m_ScreenNumber );
-    m_TextSheetNumber->SetLabel( msg );
-#else
-    m_TextSheetCount->Show( false );
+   	m_TextSheetCount->Show( false );
     m_TextSheetNumber->Show( false );
-#endif
 
     m_pageInfo = m_parent->GetPageSettings();
     SetCurrentPageSizeSelection( m_pageInfo.GetType() );
@@ -162,7 +150,9 @@ void DIALOG_PAGES_SETTINGS::initDialog()
         customSizeY = m_pageInfo.GetCustomHeightMils();
     }
 
-    switch( g_UserUnit )
+    EDA_UNITS_T userUnit = m_parent->Units()->GetUserUnit();
+
+    switch( userUnit )
     {
     case MILLIMETRES:
         customSizeX *= 25.4e-3;
@@ -197,7 +187,6 @@ void DIALOG_PAGES_SETTINGS::initDialog()
     m_TextComment3->SetValue( m_tb.GetComment3() );
     m_TextComment4->SetValue( m_tb.GetComment4() );
 
-#ifndef EESCHEMA
     m_RevisionExport->Show( false );
     m_DateExport->Show( false );
     m_TitleExport->Show( false );
@@ -206,7 +195,6 @@ void DIALOG_PAGES_SETTINGS::initDialog()
     m_Comment2Export->Show( false );
     m_Comment3Export->Show( false );
     m_Comment4Export->Show( false );
-#endif
 
     GetPageLayoutInfoFromDialog();
     UpdatePageLayoutExample();
@@ -434,6 +422,8 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
 
     const wxString paperType = m_pageFmt[idx];
 
+    EDA_UNITS_T userUnit = m_parent->Units()->GetUserUnit();
+
     if( paperType.Contains( PAGE_INFO::Custom ) )
     {
         GetCustomSizeMilsFromDialog();
@@ -447,9 +437,9 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
             {
                 wxString msg = wxString::Format( _( "Selected custom paper size\nis out of the permissible \
 limits\n%.1f - %.1f %s!\nSelect another custom paper size?" ),
-                        g_UserUnit == INCHES ? MIN_PAGE_SIZE / 1000. : MIN_PAGE_SIZE * 25.4 / 1000,
-                        g_UserUnit == INCHES ? MAX_PAGE_SIZE / 1000. : MAX_PAGE_SIZE * 25.4 / 1000,
-                        g_UserUnit == INCHES ? _( "inches" ) : _( "mm" ) );
+                        userUnit == INCHES ? MIN_PAGE_SIZE / 1000. : MIN_PAGE_SIZE * 25.4 / 1000,
+                        userUnit == INCHES ? MAX_PAGE_SIZE / 1000. : MAX_PAGE_SIZE * 25.4 / 1000,
+                        userUnit == INCHES ? _( "inches" ) : _( "mm" ) );
 
                 if( wxMessageBox( msg, _( "Warning!" ), wxYES_NO | wxICON_EXCLAMATION, this ) == wxYES )
                 {
@@ -759,7 +749,9 @@ void DIALOG_PAGES_SETTINGS::GetCustomSizeMilsFromDialog()
     msg = m_TextUserSizeY->GetValue();
     msg.ToDouble( &customSizeY );
 
-    switch( g_UserUnit )
+    EDA_UNITS_T userUnit = m_parent->Units()->GetUserUnit();
+
+    switch( userUnit )
     {
     case MILLIMETRES:
         customSizeX *= 1000. / 25.4;

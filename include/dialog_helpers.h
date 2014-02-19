@@ -37,6 +37,9 @@
 #include <../common/dialogs/dialog_list_selector_base.h>
 
 
+#include <base_units.h>
+
+class UNITS;
 class EDA_DRAW_FRAME;
 
 #define SORT_LIST true
@@ -100,51 +103,11 @@ private:
 };
 
 
-/**
- * Class EDA_GRAPHIC_TEXT_CTRL
- * is a custom text edit control to edit/enter Kicad dimensions ( INCHES or MM )
- */
-class EDA_GRAPHIC_TEXT_CTRL
-{
-public:
-    EDA_UNITS_T   m_UserUnit;
-
-    wxTextCtrl*   m_FrameText;
-    wxTextCtrl*   m_FrameSize;
-private:
-    wxStaticText* m_Title;
-
-public:
-    EDA_GRAPHIC_TEXT_CTRL( wxWindow* parent, const wxString& Title,
-                           const wxString& TextToEdit, int textsize,
-                           EDA_UNITS_T user_unit, wxBoxSizer* BoxSizer, int framelen = 200 );
-
-    ~EDA_GRAPHIC_TEXT_CTRL();
-
-    const wxString  GetText() const;
-    int             GetTextSize();
-    void            Enable( bool state );
-    void            SetTitle( const wxString& title );
-
-    void            SetFocus() { m_FrameText->SetFocus(); }
-    void            SetValue( const wxString& value );
-    void            SetValue( int value );
-
-    /**
-     * Function FormatSize
-     * formats a string containing the size in the desired units.
-     */
-    static wxString FormatSize( EDA_UNITS_T user_unit, int textSize );
-
-    static int      ParseSize( const wxString& sizeText, EDA_UNITS_T user_unit );
-};
-
-
 /**************************************************************************/
 /* Class to edit/enter a coordinate (pair of values) ( INCHES or MM ) in  */
 /* dialog boxes,                                                          */
 /**************************************************************************/
-class EDA_POSITION_CTRL
+class EDA_POSITION_CTRL : public IUNIT_HOLDER
 {
 public:
     EDA_UNITS_T   m_UserUnit;
@@ -154,10 +117,10 @@ public:
     wxTextCtrl*   m_FramePosY;
 private:
     wxStaticText* m_TextX, * m_TextY;
-
+    
 public:
     EDA_POSITION_CTRL( wxWindow* parent, const wxString& title,
-                       const wxPoint& pos_to_edit, EDA_UNITS_T user_unit, wxBoxSizer* BoxSizer );
+                       const wxPoint& pos_to_edit, EDA_UNITS_T user_unit, UNITS *appUnits, wxBoxSizer* BoxSizer );
 
     ~EDA_POSITION_CTRL();
 
@@ -175,7 +138,7 @@ class EDA_SIZE_CTRL : public EDA_POSITION_CTRL
 {
 public:
     EDA_SIZE_CTRL( wxWindow* parent, const wxString& title,
-                   const wxSize& size_to_edit, EDA_UNITS_T user_unit, wxBoxSizer* BoxSizer );
+                   const wxSize& size_to_edit, EDA_UNITS_T user_unit, UNITS *appUnits, wxBoxSizer* BoxSizer );
 
     ~EDA_SIZE_CTRL() { }
     wxSize GetValue();
@@ -185,7 +148,7 @@ public:
 /****************************************************************/
 /* Class to edit/enter a value ( INCHES or MM ) in dialog boxes */
 /****************************************************************/
-class EDA_VALUE_CTRL
+class EDA_VALUE_CTRL : public IUNIT_HOLDER
 {
 public:
     EDA_UNITS_T   m_UserUnit;
@@ -193,10 +156,10 @@ public:
     wxTextCtrl*   m_ValueCtrl;
 private:
     wxStaticText* m_Text;
-
+    
 public:
     EDA_VALUE_CTRL( wxWindow* parent, const wxString& title, int value,
-                    EDA_UNITS_T user_unit, wxBoxSizer* BoxSizer );
+                    EDA_UNITS_T user_unit, UNITS *appUnits, wxBoxSizer* BoxSizer );
 
     ~EDA_VALUE_CTRL();
 

@@ -264,7 +264,7 @@ void SCH_EDIT_FRAME::OnSetOptions( wxCommandEvent& event )
     units.Add( GetUnitsLabel( INCHES ) );
     units.Add( GetUnitsLabel( MILLIMETRES ) );
 
-    dlg.SetUnits( units, g_UserUnit );
+    dlg.SetUnits( units, g_SchUnits.GetUserUnit() );
     dlg.SetGridSizes( grid_list, GetScreen()->GetGridId() );
     dlg.SetBusWidth( GetDefaultBusThickness() );
     dlg.SetLineWidth( GetDefaultLineThickness() );
@@ -300,7 +300,7 @@ void SCH_EDIT_FRAME::OnSetOptions( wxCommandEvent& event )
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
 
-    g_UserUnit = (EDA_UNITS_T)dlg.GetUnitsSelection();
+    g_SchUnits.SetUserUnit  ( (EDA_UNITS_T)dlg.GetUnitsSelection() );
 
     wxRealPoint  gridsize = grid_list[ (size_t) dlg.GetGridSelection() ].m_Size;
     m_LastGridSizeId = GetScreen()->SetGrid( gridsize );
@@ -502,6 +502,7 @@ static const wxString ReplaceStringHistoryEntry( wxT( "ReplaceStringHistoryList%
 static const wxString FieldNamesEntry( wxT( "FieldNames" ) );
 static const wxString SimulatorCommandEntry( wxT( "SimCmdLine" ) );
 
+static EDA_UNITS_T hackConfigUserUnit;
 
 PARAM_CFG_ARRAY& SCH_EDIT_FRAME::GetConfigurationSettings( void )
 {
@@ -509,7 +510,7 @@ PARAM_CFG_ARRAY& SCH_EDIT_FRAME::GetConfigurationSettings( void )
         return m_configSettings;
 
     m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "Units" ),
-                                                   (int*)&g_UserUnit, MILLIMETRES ) );
+                                                   (int*)&hackConfigUserUnit, MILLIMETRES ) );
     m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorWireEx" ),
                                                         &s_layerColor[LAYER_WIRE],
                                                         GREEN ) );
@@ -604,6 +605,8 @@ void SCH_EDIT_FRAME::LoadSettings()
 
     wxGetApp().ReadCurrentSetupValues( GetConfigurationSettings() );
 
+    g_SchUnits.SetUserUnit(hackConfigUserUnit);
+
     // This is required until someone gets rid of the global variable s_layerColor.
     m_GridColor = GetLayerColor( LAYER_GRID );
 
@@ -695,6 +698,8 @@ void SCH_EDIT_FRAME::SaveSettings()
     wxConfig* cfg = wxGetApp().GetSettings();
 
     EDA_DRAW_FRAME::SaveSettings();
+
+    hackConfigUserUnit = g_SchUnits.GetUserUnit();
 
     wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
 

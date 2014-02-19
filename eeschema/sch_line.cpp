@@ -496,10 +496,10 @@ wxString SCH_LINE::GetSelectMenuText() const
     }
 
     menuText.Printf( txtfmt, GetChars( orient ),
-                     GetChars( CoordinateToString( m_start.x ) ),
-                     GetChars( CoordinateToString( m_start.y ) ),
-                     GetChars( CoordinateToString( m_end.x ) ),
-                     GetChars( CoordinateToString( m_end.y ) ) );
+                     GetChars( g_SchUnits.CoordinateToString( m_start.x ) ),
+                     GetChars( g_SchUnits.CoordinateToString( m_start.y ) ),
+                     GetChars( g_SchUnits.CoordinateToString( m_end.x ) ),
+                     GetChars( g_SchUnits.CoordinateToString( m_end.y ) ) );
 
     return menuText;
 }

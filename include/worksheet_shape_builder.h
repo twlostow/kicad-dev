@@ -9,7 +9,6 @@
 
 #include <math/vector2d.h>
 #include <eda_text.h>
-#include <eda_text.h>
 #include <class_bitmap_base.h>
 
 class WORKSHEET_DATAITEM;        // Forward declaration
@@ -27,7 +26,7 @@ class TITLE_BLOCK;
  * bitmaps, also for logos, but they cannot be plot by SVG, GERBER
  * and HPGL plotters (In this case, only the bounding box is plotted)
  */
-class WS_DRAW_ITEM_BASE     // This basic class, not directly usable.
+class WS_DRAW_ITEM_BASE : public IUNIT_HOLDER   // This basic class, not directly usable.
 {
 public:
     enum WS_DRAW_TYPE {
@@ -245,6 +244,11 @@ public:
      * return true if the point aPosition is on the starting point of this item.
      */
     virtual bool HitTestStartPoint( const wxPoint& aPosition);
+
+private:
+    virtual const UNITS *getUnits () const {
+        return IUNIT_HOLDER::Units();
+    }
 };
 
 // This class draws a bitmap.

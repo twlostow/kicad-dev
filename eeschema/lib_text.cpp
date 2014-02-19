@@ -47,6 +47,8 @@ LIB_TEXT::LIB_TEXT( LIB_COMPONENT * aParent ) :
     LIB_ITEM( LIB_TEXT_T, aParent ),
     EDA_TEXT()
 {
+    SetDefaultSize ( Units()->MilsToIu ( DEFAULT_SIZE_TEXT ) );
+
     m_Size       = wxSize( 50, 50 );
     m_typeName   = _( "Text" );
     m_rotate     = false;
@@ -423,7 +425,7 @@ void LIB_TEXT::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 
     LIB_ITEM::GetMsgPanelInfo( aList );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Thickness, true );
+    msg = g_SchUnits.StringFromValue( m_Thickness, true );
 
     aList.push_back( MSG_PANEL_ITEM( _( "Line width" ), msg, BLUE ) );
 }

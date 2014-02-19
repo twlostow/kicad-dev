@@ -66,6 +66,8 @@ LIB_FIELD::~LIB_FIELD()
 
 void LIB_FIELD::Init( int id )
 {
+    SetDefaultSize ( Units()->MilsToIu ( DEFAULT_SIZE_TEXT ) );
+
     m_id = id;
     m_Size.x = m_Size.y = DEFAULT_SIZE_TEXT;
     m_typeName = _( "Field" );
@@ -763,10 +765,10 @@ void LIB_FIELD::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
     msg = GetTextStyleName();
     aList.push_back( MSG_PANEL_ITEM( _( "Style" ), msg, MAGENTA ) );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Size.x, true );
+    msg = g_SchUnits.StringFromValue( m_Size.x, true );
     aList.push_back( MSG_PANEL_ITEM( _( "Size X" ), msg, BLUE ) );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Size.y, true );
+    msg = g_SchUnits.StringFromValue( m_Size.y, true );
     aList.push_back( MSG_PANEL_ITEM( _( "Size Y" ), msg, BLUE ) );
 
     // Display field name (ref, value ...)

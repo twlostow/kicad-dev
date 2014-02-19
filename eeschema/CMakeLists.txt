@@ -56,6 +56,7 @@ set( EESCHEMA_DLGS
     dialogs/dialog_sch_edit_sheet_pin_base.cpp
     dialogs/dialog_sch_sheet_props.cpp
     dialogs/dialog_sch_sheet_props_base.cpp
+    dialogs/dialog_sch_page_settings.cpp
     dialogs/dialog_schematic_find.cpp
     dialogs/dialog_schematic_find_base.cpp
     )
@@ -67,7 +68,7 @@ set( EESCHEMA_SRCS
     block_libedit.cpp
     busentry.cpp
     bus-wire-junction.cpp
-    class_drc_erc_item.cpp
+    class_sch_drc_item.cpp
     class_libentry.cpp
     class_library.cpp
     class_netlist_object.cpp
@@ -141,6 +142,7 @@ set( EESCHEMA_SRCS
     sch_sheet_path.cpp
     sch_sheet_pin.cpp
     sch_text.cpp
+    sch_graphic_text_ctrl.cpp
     schedit.cpp
     schematic_undo_redo.cpp
     schframe.cpp
@@ -160,18 +162,8 @@ set( EESCHEMA_SRCS
 
     # This file does not look common.
     # Keep it after template_fieldnames_keywords.cpp
-    ../common/sch_item_struct.cpp
+  	sch_item_struct.cpp
     )
-
-
-set( EESCHEMA_COMMON_SRCS
-    ../common/dialogs/dialog_page_settings.cpp
-    ../common/base_screen.cpp
-    ../common/eda_text.cpp
-    ../common/class_page_info.cpp
-    ../common/base_units.cpp
-    )
-
 
 if( MINGW )
     # EESCHEMA_RESOURCES variable is set by the macro.
@@ -251,7 +243,6 @@ if( USE_KIWAY_DLLS )
 
     add_library( eeschema_kiface MODULE
         ${EESCHEMA_SRCS}
-        ${EESCHEMA_COMMON_SRCS}
         ${EESCHEMA_RESOURCES}
         )
     set_target_properties( eeschema_kiface PROPERTIES
@@ -292,7 +283,6 @@ if( USE_KIWAY_DLLS )
 else()
     add_executable( eeschema WIN32 MACOSX_BUNDLE
         ${EESCHEMA_SRCS}
-        ${EESCHEMA_COMMON_SRCS}
         ${EESCHEMA_RESOURCES}
         )
 

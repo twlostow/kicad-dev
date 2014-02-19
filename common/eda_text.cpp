@@ -40,23 +40,8 @@
 // because the text position is sometimes critical.
 #define FIX_MULTILINE_VERT_JUSTIF
 
-// Conversion to application internal units defined at build time.
-#if defined( PCBNEW )
-    #include <class_board_item.h>
-#elif defined( EESCHEMA )
-    #include <sch_item_struct.h>
-#elif defined( GERBVIEW )
-#elif defined( PL_EDITOR )
-    #include <base_units.h>
-    #define FMT_IU Double2Str
-#else
-#error "Cannot resolve units formatting due to no definition of EESCHEMA or PCBNEW."
-#endif
-
-
-EDA_TEXT::EDA_TEXT( const wxString& text )
+EDA_TEXT::EDA_TEXT( const wxString& text)
 {
-    m_Size.x    = m_Size.y = Mils2iu( DEFAULT_SIZE_TEXT );  // Width and height of font.
     m_Orient    = 0;                             // Rotation angle in 0.1 degrees.
     m_Attributs = 0;
     m_Mirror    = false;                         // display mirror if true
@@ -67,10 +52,11 @@ EDA_TEXT::EDA_TEXT( const wxString& text )
     m_Bold      = false;
     m_MultilineAllowed = false;                  // Set to true for multiline text.
     m_Text = text;
+    m_Size.x = -1;
 }
 
 
-EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText )
+EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) 
 {
     m_Pos = aText.m_Pos;
     m_Size = aText.m_Size;
@@ -84,6 +70,7 @@ EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText )
     m_Bold = aText.m_Bold;
     m_MultilineAllowed = aText.m_MultilineAllowed;
     m_Text = aText.m_Text;
+    m_DefaultSize = aText.m_DefaultSize;
 }
 
 
@@ -386,8 +373,8 @@ wxString EDA_TEXT::GetTextStyleName()
 
 bool EDA_TEXT::IsDefaultFormatting() const
 {
-    return (  ( m_Size.x == Mils2iu( DEFAULT_SIZE_TEXT ) )
-           && ( m_Size.y == Mils2iu( DEFAULT_SIZE_TEXT ) )
+    return (  ( m_Size.x == m_DefaultSize.x )
+           && ( m_Size.y == m_DefaultSize.y )
            && ( m_Attributs == 0 )
            && ( m_Mirror == false )
            && ( m_HJustify == GR_TEXT_HJUSTIFY_CENTER )
@@ -398,26 +385,26 @@ bool EDA_TEXT::IsDefaultFormatting() const
            && ( m_MultilineAllowed == false ) );
 }
 
-void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControlBits ) const
+void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, UNITS *aUnits, int aNestLevel, int aControlBits ) const
     throw( IO_ERROR )
 {
-#ifndef GERBVIEW        // Gerbview does not use EDA_TEXT::Format
-                        // and does not define FMT_IU, used here
-                        // however this function should exist
+
+    #define FMT_IU aUnits->FormatIU
+
     if( !IsDefaultFormatting() )
     {
         aFormatter->Print( aNestLevel+1, "(effects" );
 
-        if( ( m_Size.x != Mils2iu( DEFAULT_SIZE_TEXT ) )
-          || ( m_Size.y != Mils2iu( DEFAULT_SIZE_TEXT ) )
+        if( ( m_Size.x != m_DefaultSize.x )
+          || ( m_Size.y != m_DefaultSize.y )
           || ( m_Thickness != 0 ) || m_Bold || m_Italic )
         {
             aFormatter->Print( 0, " (font" );
 
             // Add font support here at some point in the future.
 
-            if( ( m_Size.x != Mils2iu( DEFAULT_SIZE_TEXT ) )
-              || ( m_Size.y != Mils2iu( DEFAULT_SIZE_TEXT ) ) )
+            if( m_Size.x != m_DefaultSize.x
+              || m_Size.y != m_DefaultSize.y )
                 aFormatter->Print( 0, " (size %s %s)", FMT_IU( m_Size.GetHeight() ).c_str(),
                                    FMT_IU( m_Size.GetWidth() ).c_str() );
 
@@ -456,5 +443,13 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
         aFormatter->Print( 0, ")\n" );
     }
-#endif
+    #undef FMT_IU
 }
+
+void EDA_TEXT::SetDefaultSize( const wxSize& aNewSize )
+{
+    if(m_DefaultSize.x < 0)
+        m_Size = aNewSize;
+    m_DefaultSize = aNewSize;
+}
+        

@@ -555,7 +555,7 @@ void LIB_ARC::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
 
     LIB_ITEM::GetMsgPanelInfo( aList );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Width, true );
+    msg = g_SchUnits.StringFromValue( m_Width, true );
 
     aList.push_back( MSG_PANEL_ITEM( _( "Line width" ), msg, BLUE ) );
 
@@ -569,9 +569,9 @@ void LIB_ARC::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
 wxString LIB_ARC::GetSelectMenuText() const
 {
     return wxString::Format( _( "Arc center (%s, %s), radius %s" ),
-                             GetChars( CoordinateToString( m_Pos.x ) ),
-                             GetChars( CoordinateToString( m_Pos.y ) ),
-                             GetChars( CoordinateToString( m_Radius ) ) );
+                             GetChars( g_SchUnits.CoordinateToString( m_Pos.x ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_Pos.y ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_Radius ) ) );
 }
 
 

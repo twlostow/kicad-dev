@@ -250,7 +250,7 @@ void LIB_RECTANGLE::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 
     LIB_ITEM::GetMsgPanelInfo( aList );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Width, true );
+    msg = g_SchUnits.StringFromValue( m_Width, true );
 
     aList.push_back( MSG_PANEL_ITEM( _( "Line width" ), msg, BLUE ) );
 }
@@ -326,10 +326,10 @@ bool LIB_RECTANGLE::HitTest( wxPoint aPosition, int aThreshold, const TRANSFORM&
 wxString LIB_RECTANGLE::GetSelectMenuText() const
 {
     return wxString::Format( _( "Rectangle from (%s, %s) to (%s, %s)" ),
-                             GetChars( CoordinateToString( m_Pos.x ) ),
-                             GetChars( CoordinateToString( m_Pos.y ) ),
-                             GetChars( CoordinateToString( m_End.x ) ),
-                             GetChars( CoordinateToString( m_End.y ) ) );
+                             GetChars( g_SchUnits.CoordinateToString( m_Pos.x ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_Pos.y ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_End.x ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_End.y ) ) );
 }
 
 

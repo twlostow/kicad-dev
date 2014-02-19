@@ -98,7 +98,7 @@ void DIALOG_PLOT_SCHEMATIC::initDlg()
 
     // HPGL Pen Size is stored in mm in config
     m_config->Read( PLOT_HPGL_PEN_SIZE_KEY, &m_HPGLPenSize, 0.5 );
-    m_HPGLPenSize *= IU_PER_MM;
+    m_HPGLPenSize *= g_SchUnits.MmToIu ( 1.0 ); 
 
     // Switch to the last save plot format
     long plotfmt;
@@ -130,12 +130,12 @@ void DIALOG_PLOT_SCHEMATIC::initDlg()
 
     // Set the default line width (pen width which should be used for
     // items that do not have a pen size defined (like frame ref)
-    AddUnitSymbol( *m_defaultLineWidthTitle, g_UserUnit );
-    PutValueInLocalUnits( *m_DefaultLineSizeCtrl, GetDefaultLineThickness() );
-
+    AddUnitSymbol( *m_defaultLineWidthTitle, g_SchUnits.GetUserUnit() );
+    m_DefaultLineSizeCtrl-> SetValue ( g_SchUnits.StringFromValue( GetDefaultLineThickness( ) ) );
+    
     // Initialize HPGL specific widgets
-    AddUnitSymbol( *m_penHPLGWidthTitle, g_UserUnit );
-    PutValueInLocalUnits( *m_penHPGLWidthCtrl, m_HPGLPenSize );
+    AddUnitSymbol( *m_penHPLGWidthTitle, g_SchUnits.GetUserUnit() );
+    m_penHPGLWidthCtrl->SetValue ( g_SchUnits.StringFromValue( m_HPGLPenSize ) );
     m_HPGLPaperSizeOption->SetSelection( m_HPGLPaperSizeSelect );
 
     // Hide/show widgets that are not always displayed:
@@ -174,10 +174,10 @@ void DIALOG_PLOT_SCHEMATIC::getPlotOptions()
     m_HPGLPaperSizeSelect = m_HPGLPaperSizeOption->GetSelection();
     m_config->Write( PLOT_HPGL_PAPERSIZE_KEY, m_HPGLPaperSizeSelect );
     // HPGL Pen Size is stored in mm in config
-    m_config->Write( PLOT_HPGL_PEN_SIZE_KEY, m_HPGLPenSize/IU_PER_MM );
+    m_config->Write( PLOT_HPGL_PEN_SIZE_KEY, m_HPGLPenSize / g_SchUnits.MmToIu ( 1.0 ));
 
     m_pageSizeSelect    = m_PaperSizeOption->GetSelection();
-    SetDefaultLineThickness( ReturnValueFromTextCtrl( *m_DefaultLineSizeCtrl ) );
+    SetDefaultLineThickness( g_SchUnits.ValueFromString( m_DefaultLineSizeCtrl ->GetValue() ) );
 }
 
 

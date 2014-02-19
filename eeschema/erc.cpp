@@ -33,6 +33,7 @@
 #include <kicad_string.h>
 #include <wxEeschemaStruct.h>
 
+#include <base_units.h>
 #include <netlist.h>
 #include <class_netlist_object.h>
 #include <lib_pin.h>
@@ -520,7 +521,7 @@ bool WriteDiagnosticERC( const wxString& aFullFileName )
             if( marker->GetMarkerType() == ERR )
                 count++;
 
-            msg = marker->GetReporter().ShowReport();
+            msg = marker->GetReporter().ShowReport( &g_SchUnits );
             fprintf( file, "%s", TO_UTF8( msg ) );
         }
     }

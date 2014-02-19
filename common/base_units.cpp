@@ -40,17 +40,6 @@
 #include <common.h>
 #include <base_units.h>
 
-
-#if defined( PCBNEW ) || defined( CVPCB ) || defined( EESCHEMA ) || defined( GERBVIEW ) || defined( PL_EDITOR )
-#define IU_TO_MM( x )       ( x / IU_PER_MM )
-#define IU_TO_IN( x )       ( x / IU_PER_MILS / 1000 )
-#define MM_TO_IU( x )       ( x * IU_PER_MM )
-#define IN_TO_IU( x )       ( x * IU_PER_MILS * 1000 )
-#else
-#error "Cannot resolve internal units due to no definition of EESCHEMA, CVPCB or PCBNEW."
-#endif
-
-
 // Helper function to print a float number without using scientific notation
 // and no trailing 0
 // So we cannot always just use the %g or the %f format to print a fp number
@@ -86,81 +75,6 @@ std::string Double2Str( double aValue )
     return std::string( buf, len );;
 }
 
-
-double To_User_Unit( EDA_UNITS_T aUnit, double aValue )
-{
-    switch( aUnit )
-    {
-    case MILLIMETRES:
-        return IU_TO_MM( aValue );
-
-    case INCHES:
-        return IU_TO_IN( aValue );
-
-    default:
-        return aValue;
-    }
-}
-
-/* Convert a value to a string using double notation.
- * For readability, the mantissa has 0, 1, 3 or 4 digits, depending on units
- * for unit = inch the mantissa has 3 digits (Eeschema) or 4 digits
- * for unit = mil the mantissa has 0 digits (Eeschema) or 1 digits
- * for unit = mm the mantissa has 3 digits (Eeschema) or 4 digits
- * Should be used only to display info in status,
- * but not in dialogs, because 4 digits only
- * could truncate the actual value
- */
-wxString CoordinateToString( int aValue, bool aConvertToMils )
-{
-    return LengthDoubleToString( (double) aValue, aConvertToMils );
-}
-
-wxString LengthDoubleToString( double aValue, bool aConvertToMils )
-{
-    wxString      text;
-    const wxChar* format;
-    double        value = To_User_Unit( g_UserUnit, aValue );
-
-    if( g_UserUnit == INCHES )
-    {
-        if( aConvertToMils )
-        {
-#if defined( EESCHEMA )
-            format = wxT( "%.0f" );
-#else
-            format = wxT( "%.1f" );
-#endif
-            value *= 1000;
-        }
-        else
-        {
-#if defined( EESCHEMA )
-            format = wxT( "%.3f" );
-#else
-            format = wxT( "%.4f" );
-#endif
-        }
-    }
-    else
-    {
-#if defined( EESCHEMA )
-        format = wxT( "%.2f" );
-#else
-        format = wxT( "%.3f" );
-#endif
-    }
-
-    text.Printf( format, value );
-
-    if( g_UserUnit == INCHES )
-        text += ( aConvertToMils ) ? _( " mils" ) : _( " in" );
-    else
-        text += _( " mm" );
-
-    return text;
-}
-
 /* Remove trailing 0 from a string containing a converted float number.
  * the trailing 0 are removed if the mantissa has more
  * than aTrailingZeroAllowed digits and some trailing 0
@@ -186,57 +100,156 @@ void StripTrailingZeros( wxString& aStringValue, unsigned aTrailingZeroAllowed )
     }
 }
 
-
-/* Convert a value to a string using double notation.
- * For readability, the mantissa has 3 or more digits,
- * the trailing 0 are removed if the mantissa has more than 3 digits
- * and some trailing 0
- * This function should be used to display values in dialogs because a value
- * entered in mm (for instance 2.0 mm) could need up to 8 digits mantissa
- * if displayed in inch to avoid truncation or rounding made just by the printf function.
- * otherwise the actual value is rounded when read from dialog and converted
- * in internal units, and therefore modified.
+/**
+ * Function AngleToStringDegrees
+ * is a helper to convert the \a double \a aAngle (in internal unit)
+ * to a string in degrees
  */
-wxString ReturnStringFromValue( EDA_UNITS_T aUnit, int aValue, bool aAddUnitSymbol )
+
+wxString AngleToStringDegrees( double aAngle )
 {
-    double  value_to_print = To_User_Unit( aUnit, aValue );
+    wxString text;
 
-#if defined( EESCHEMA )
-    wxString    stringValue = wxString::Format( wxT( "%.3f" ), value_to_print );
+    text.Printf( wxT( "%.3f" ), aAngle/10.0 );
+    StripTrailingZeros( text, 1 );
 
-    // Strip trailing zeros. However, keep at least 3 digits in mantissa
-    // For readability
-    StripTrailingZeros( stringValue, 3 );
+    return text;
+}
 
-#else
 
-    char    buf[50];
-    int     len;
+double UNITS::FromUser ( double aValue )const
+{
+    return FromUser ( m_userUnit, aValue );
+}
 
-    if( value_to_print != 0.0 && fabs( value_to_print ) <= 0.0001 )
+double UNITS::FromUser ( EDA_UNITS_T aUnits, double aValue )const
+{
+    double value;
+
+    switch ( aUnits )
     {
-        len = sprintf( buf, "%.10f", value_to_print );
+    case MILLIMETRES:
+        value = aValue * m_IUPerMm;
+        break;
 
-        while( --len > 0 && buf[len] == '0' )
-            buf[len] = '\0';
+    case INCHES:
+        value = aValue * m_IUPerMils * 1000.0;
+        break;
 
-        if( buf[len]=='.' || buf[len]==',' )
-            buf[len] = '\0';
+    default:
+    case UNSCALED_UNITS:
+        value = aValue;
+    }
+
+    return value;
+}
+
+double UNITS::ToUser ( EDA_UNITS_T aUnits, double aValue )const
+{
+    switch( aUnits )
+    {
+        case MILLIMETRES:
+            return aValue / m_IUPerMm;
+
+        case INCHES:
+            return aValue / m_IUPerMils / 1000.0;
+
+    default:
+        return aValue;
+    }
+}
+
+double UNITS::ToUser ( double aValue )const
+{
+    return ToUser(m_userUnit, aValue);
+}
+
+wxString UNITS::CoordinateToString( int aValue, bool aConvertToMils )const
+{
+    return LengthToString( (double) aValue, aConvertToMils );
+}
+
+wxString UNITS::LengthToString( double aValue, bool aConvertToMils )const
+{
+    wxString      text;
+    const wxChar* format;
+    double        value = ToUser ( aValue );
+
+    if( m_userUnit == INCHES )
+    {
+        if( aConvertToMils )
+        {
+            if( m_app == APP_EESCHEMA_T )
+                format = wxT( "%.0f" );
+            else
+                format = wxT( "%.1f" );
+            value *= 1000;
+        }
         else
-            ++len;
+        {
+            if( m_app == APP_EESCHEMA_T )
+                format = wxT( "%.3f" );
+            else
+                format = wxT( "%.4f" );
+        }
     }
     else
     {
-        len = sprintf( buf, "%.10g", value_to_print );
+            if( m_app == APP_EESCHEMA_T )
+                format = wxT( "%.2f" );
+            else
+                format = wxT( "%.3f" );
     }
 
-    wxString    stringValue( buf, wxConvUTF8 );
+    text.Printf( format, value );
 
-#endif
+    if( m_userUnit == INCHES )
+        text += ( aConvertToMils ) ? _( " mils" ) : _( " in" );
+    else
+        text += _( " mm" );
+
+    return text;
+}
+        
+wxString UNITS::StringFromValue( int aValue, bool aAddUnitSymbol )const
+{
+    double  value_to_print = ToUser( aValue );
+    wxString stringValue;
+    
+    if( m_app == APP_EESCHEMA_T )
+    {
+        stringValue = wxString::Format( wxT( "%.3f" ), value_to_print );
+
+        // Strip trailing zeros. However, keep at least 3 digits in mantissa
+        // For readability
+        StripTrailingZeros( stringValue, 3 );
+    } else {
+        char    buf[50];
+        int     len;
+
+        if( value_to_print != 0.0 && fabs( value_to_print ) <= 0.0001 )
+        {
+            len = sprintf( buf, "%.10f", value_to_print );
+
+            while( --len > 0 && buf[len] == '0' )
+                buf[len] = '\0';
+
+            if( buf[len]=='.' || buf[len]==',' )
+                buf[len] = '\0';
+            else
+                ++len;
+        }
+        else
+        {
+            len = sprintf( buf, "%.10g", value_to_print );
+        }
+
+        stringValue = wxString ( buf, wxConvUTF8 );
+    }
 
     if( aAddUnitSymbol )
     {
-        switch( aUnit )
+        switch( m_userUnit )
         {
         case INCHES:
             stringValue += _( " \"" );
@@ -254,40 +267,9 @@ wxString ReturnStringFromValue( EDA_UNITS_T aUnit, int aValue, bool aAddUnitSymb
     return stringValue;
 }
 
-
-void PutValueInLocalUnits( wxTextCtrl& aTextCtr, int aValue )
+int UNITS::ValueFromString( const wxString& aTextValue ) const
 {
-    wxString msg = ReturnStringFromValue( g_UserUnit, aValue );
 
-    aTextCtr.SetValue( msg );
-}
-
-
-double From_User_Unit( EDA_UNITS_T aUnit, double aValue )
-{
-    double value;
-
-    switch( aUnit )
-    {
-    case MILLIMETRES:
-        value = MM_TO_IU( aValue );
-        break;
-
-    case INCHES:
-        value = IN_TO_IU( aValue );
-        break;
-
-    default:
-    case UNSCALED_UNITS:
-        value = aValue;
-    }
-
-    return value;
-}
-
-
-int ReturnValueFromString( EDA_UNITS_T aUnits, const wxString& aTextValue )
-{
     double value;
     double dtmp = 0;
 
@@ -328,67 +310,79 @@ int ReturnValueFromString( EDA_UNITS_T aUnits, const wxString& aTextValue )
     // Check the optional unit designator (2 ch significant)
     wxString unit( buf.Mid( brk_point ).Strip( wxString::leading ).Left( 2 ).Lower() );
 
+    EDA_UNITS_T units = m_userUnit;
+
     if( unit == wxT( "in" ) || unit == wxT( "\"" ) )
     {
-        aUnits = INCHES;
+        units = INCHES;
     }
     else if( unit == wxT( "mm" ) )
     {
-        aUnits = MILLIMETRES;
+        units = MILLIMETRES;
     }
     else if( unit == wxT( "mi" ) || unit == wxT( "th" ) ) // Mils or thous
     {
-        aUnits = INCHES;
+        units = INCHES;
         dtmp /= 1000;
     }
 
-    value = From_User_Unit( aUnits, dtmp );
+    value = FromUser ( units, dtmp );
 
     return KiROUND( value );
 }
 
-
-int ReturnValueFromString( const wxString& aTextValue )
+std::string PCB_UNITS::FormatIU( int aValue ) const
 {
-    int      value;
+    char    buf[50];
+    int     len;
+    double  mm = aValue / m_IUPerMm;
 
-    value = ReturnValueFromString( g_UserUnit, aTextValue);
+    if( mm != 0.0 && fabs( mm ) <= 0.0001 )
+    {
+        len = sprintf( buf, "%.10f", mm );
 
-    return value;
+        while( --len > 0 && buf[len] == '0' )
+            buf[len] = '\0';
+
+        if( buf[len] == '.' )
+            buf[len] = '\0';
+        else
+            ++len;
+    }
+    else
+    {
+        len = sprintf( buf, "%.10g", mm );
+    }
+
+    return std::string( buf, len );
 }
 
-int ReturnValueFromTextCtrl( const wxTextCtrl& aTextCtr )
+
+std::string PCB_UNITS::FormatAngle( double aAngle ) const
 {
-    int      value;
-    wxString msg = aTextCtr.GetValue();
+    char temp[50];
 
-    value = ReturnValueFromString( g_UserUnit, msg );
+    int len = snprintf( temp, sizeof(temp), "%.10g", aAngle / 10.0 );
 
-    return value;
+    return std::string( temp, len );
 }
 
 
-wxString& operator <<( wxString& aString, const wxPoint& aPos )
+std::string PCB_UNITS::FormatIU( const wxPoint& aPoint ) const
 {
-    aString << wxT( "@ (" ) << CoordinateToString( aPos.x );
-    aString << wxT( "," ) << CoordinateToString( aPos.y );
-    aString << wxT( ")" );
-
-    return aString;
+    return FormatIU( aPoint.x ) + " " + FormatIU( aPoint.y );
 }
 
-/**
- * Function AngleToStringDegrees
- * is a helper to convert the \a double \a aAngle (in internal unit)
- * to a string in degrees
- */
-wxString AngleToStringDegrees( double aAngle )
+
+std::string PCB_UNITS::FormatIU( const wxSize& aSize ) const
 {
-    wxString text;
-
-    text.Printf( wxT( "%.3f" ), aAngle/10.0 );
-    StripTrailingZeros( text, 1 );
-
-    return text;
+    return FormatIU( aSize.GetWidth() ) + " " + FormatIU ( aSize.GetHeight() );
 }
 
+std::string UNITS::FormatIU( int aValue ) const { assert(false); }
+std::string UNITS::FormatAngle( double aAngle ) const{ assert(false); }
+std::string UNITS::FormatIU( const wxPoint& aPoint ) const{ assert(false); }
+std::string UNITS::FormatIU( const wxSize& aSize ) const{ assert(false); }
+
+PCB_UNITS g_PcbUnits;
+SCH_UNITS g_SchUnits;

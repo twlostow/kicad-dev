@@ -270,6 +270,7 @@ private:
      *      - Field height.
      */
     int compare( const LIB_ITEM& aOther ) const;
+    
 };
 
 typedef std::vector< LIB_FIELD > LIB_FIELDS;

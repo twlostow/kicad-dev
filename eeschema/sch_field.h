@@ -199,6 +199,10 @@ public:
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); } // override
 #endif
+private:
+    virtual const UNITS *getUnits () const {
+        return IUNIT_HOLDER::Units();
+    }
 };
 
 

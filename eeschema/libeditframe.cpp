@@ -397,9 +397,9 @@ double LIB_EDIT_FRAME::BestZoom()
     {
         const PAGE_INFO& pageInfo = GetScreen()->GetPageSettings();
 
-        dx = pageInfo.GetSizeIU().x;
-        dy = pageInfo.GetSizeIU().y;
-
+        dx = g_SchUnits.MilsToIu( pageInfo.GetWidthMils() );
+        dy = g_SchUnits.MilsToIu( pageInfo.GetHeightMils() );
+        
         SetScrollCenterPosition( wxPoint( 0, 0 ) );
     }
 

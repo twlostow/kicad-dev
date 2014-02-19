@@ -42,6 +42,8 @@
 #include <sch_component.h>
 #include <dialog_helpers.h>
 #include <dialog_edit_component_in_schematic_fbp.h>
+#include <sch_graphic_text_ctrl.h>
+
 
 
 /**
@@ -173,9 +175,11 @@ DIALOG_EDIT_COMPONENT_IN_SCHEMATIC::DIALOG_EDIT_COMPONENT_IN_SCHEMATIC( wxWindow
     columnLabel.SetText( _( "Value" ) );
     fieldListCtrl->InsertColumn( 1, columnLabel );
 
-    m_staticTextUnitSize->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_staticTextUnitPosX->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_staticTextUnitPosY->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    wxString label = GetAbbreviatedUnitsLabel( g_SchUnits.GetUserUnit() );
+    
+    m_staticTextUnitSize->SetLabel( label );
+    m_staticTextUnitPosX->SetLabel( label );
+    m_staticTextUnitPosY->SetLabel( label );
 
     copySelectedFieldToPanel();
 
@@ -742,7 +746,7 @@ void DIALOG_EDIT_COMPONENT_IN_SCHEMATIC::copySelectedFieldToPanel()
     else
         fieldValueTextCtrl->Enable( true );
 
-    textSizeTextCtrl->SetValue( EDA_GRAPHIC_TEXT_CTRL::FormatSize( g_UserUnit, field.GetSize().x ) );
+    textSizeTextCtrl->SetValue( SCH_GRAPHIC_TEXT_CTRL::FormatSize( g_SchUnits.GetUserUnit(), field.GetSize().x ) );
 
     wxPoint coord = field.GetTextPosition();
     wxPoint zero  = -m_Cmp->m_Pos;  // relative zero
@@ -766,10 +770,10 @@ void DIALOG_EDIT_COMPONENT_IN_SCHEMATIC::copySelectedFieldToPanel()
         // top of each other.
     }
 
-    wxString coordText = ReturnStringFromValue( g_UserUnit, coord.x );
+    wxString coordText = g_SchUnits.StringFromValue( coord.x );
     posXTextCtrl->SetValue( coordText );
 
-    coordText = ReturnStringFromValue( g_UserUnit, coord.y );
+    coordText = g_SchUnits.StringFromValue( coord.y );
     posYTextCtrl->SetValue( coordText );
 }
 
@@ -820,7 +824,7 @@ bool DIALOG_EDIT_COMPONENT_IN_SCHEMATIC::copyPanelToSelectedField()
 
     setRowItem( fieldNdx, field );  // update fieldListCtrl
 
-    int tmp = EDA_GRAPHIC_TEXT_CTRL::ParseSize( textSizeTextCtrl->GetValue(), g_UserUnit );
+    int tmp = SCH_GRAPHIC_TEXT_CTRL::ParseSize( textSizeTextCtrl->GetValue(), g_SchUnits.GetUserUnit() );
     field.SetSize( wxSize( tmp, tmp ) );
     int style = m_StyleRadioBox->GetSelection();
 
@@ -828,8 +832,8 @@ bool DIALOG_EDIT_COMPONENT_IN_SCHEMATIC::copyPanelToSelectedField()
     field.SetBold( (style & 2 ) != 0 );
 
     wxPoint pos;
-    pos.x = ReturnValueFromString( g_UserUnit, posXTextCtrl->GetValue() );
-    pos.y = ReturnValueFromString( g_UserUnit, posYTextCtrl->GetValue() );
+    pos.x = g_SchUnits.ValueFromString( posXTextCtrl->GetValue() );
+    pos.y = g_SchUnits.ValueFromString( posYTextCtrl->GetValue() );
     field.SetTextPosition( pos );
 
     return true;

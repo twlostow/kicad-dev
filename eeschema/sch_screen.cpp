@@ -119,7 +119,10 @@ SCH_SCREEN::SCH_SCREEN() : BASE_SCREEN( SCH_SCREEN_T ),
     // Suitable for schematic only. For libedit and viewlib, must be set to true
     m_Center = false;
 
-    InitDataPoints( m_paper.GetSizeIU() );
+     wxSize size = m_paper.GetSizeMils();
+    
+    InitDataPoints(  wxSize(g_SchUnits.MilsToIu (size.x), 
+                            g_SchUnits.MilsToIu (size.y) ) );
 }
 
 

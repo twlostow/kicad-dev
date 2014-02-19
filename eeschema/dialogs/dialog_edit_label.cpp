@@ -199,11 +199,11 @@ void DIALOG_LABEL_EDITOR::InitDialog()
 
     m_TextStyle->SetSelection( style );
 
-    wxString units = ReturnUnitSymbol( g_UserUnit, wxT( "(%s)" ) );
+    wxString units = ReturnUnitSymbol( g_SchUnits.GetUserUnit(), wxT( "(%s)" ) );
     msg.Printf( _( "H%s x W%s" ), GetChars( units ), GetChars( units ) );
     m_staticSizeUnits->SetLabel( msg );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_CurrentText->GetSize().x );
+    msg = g_SchUnits.StringFromValue( m_CurrentText->GetSize().x );
     m_TextSize->SetValue( msg );
 
     if( m_CurrentText->Type() != SCH_GLOBAL_LABEL_T
@@ -272,7 +272,7 @@ void DIALOG_LABEL_EDITOR::TextPropertiesAccept( wxCommandEvent& aEvent )
 
     m_CurrentText->SetOrientation( m_TextOrient->GetSelection() );
     text  = m_TextSize->GetValue();
-    value = ReturnValueFromString( g_UserUnit, text );
+    value = g_SchUnits.ValueFromString( text );
     m_CurrentText->SetSize( wxSize( value, value ) );
 
     if( m_TextShape )

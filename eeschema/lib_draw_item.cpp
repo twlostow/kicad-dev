@@ -47,6 +47,8 @@ LIB_ITEM::LIB_ITEM( KICAD_T        aType,
                     FILL_T         aFillType ) :
     EDA_ITEM( aType )
 {
+    SetUnits ( &g_SchUnits );
+    
     m_Unit              = aUnit;
     m_Convert           = aConvert;
     m_Fill              = aFillType;

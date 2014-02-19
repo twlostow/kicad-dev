@@ -34,7 +34,7 @@
 
 class DIALOG_PAGES_SETTINGS: public DIALOG_PAGES_SETTINGS_BASE
 {
-private:
+protected:
     EDA_DRAW_FRAME* m_parent;
     BASE_SCREEN*    m_screen;
     wxArrayString   m_pageFmt;          /// list of page sizes (not translated)
@@ -66,8 +66,8 @@ public:
          m_buttonBrowse->Enable( aEnable );
     }
 
-private:
-    void initDialog();  // Initialisation of member variables
+protected:
+	virtual void initDialog();  // Initialisation of member variables
 
     // event handler for wxID_OK
     void OnOkClick( wxCommandEvent& event );
@@ -95,11 +95,11 @@ private:
     void OnDateApplyClick( wxCommandEvent& event );
 
     // .kicad_wks file description selection
-	void OnWksFileSelection( wxCommandEvent& event );
+  	void OnWksFileSelection( wxCommandEvent& event );
 
     // Save in the current title block the new page settings
     // return true if changes are made, or false if not
-    bool SavePageSettings();
+    virtual bool SavePageSettings();
 
     void SetCurrentPageSizeSelection( const wxString& aPaperSize );
 

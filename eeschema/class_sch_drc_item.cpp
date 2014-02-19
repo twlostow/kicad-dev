@@ -28,11 +28,10 @@
 #include <fctsys.h>
 #include <common.h>
 
-#include <class_drc_item.h>
+#include <class_sch_drc_item.h>
 #include <erc.h>
-#include <base_units.h>
 
-wxString DRC_ITEM::GetErrorText() const
+wxString SCH_DRC_ITEM::GetErrorText() const
 {
     switch( m_ErrorCode )
     {
@@ -58,9 +57,3 @@ wxString DRC_ITEM::GetErrorText() const
     }
 }
 
-wxString DRC_ITEM::ShowCoord( const wxPoint& aPos )
-{
-    wxString ret;
-    ret << aPos;
-    return ret;
-}

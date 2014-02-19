@@ -111,7 +111,7 @@ bool DIALOG_PLOT_SCHEMATIC::PlotOneSheetDXF( const wxString&    aFileName,
     const PAGE_INFO&   pageInfo = aScreen->GetPageSettings();
     plotter->SetPageSettings( pageInfo );
     plotter->SetColorMode( getModeColor() );
-    plotter->SetViewport( aPlotOffset, IU_PER_DECIMILS, aScale, false );
+    plotter->SetViewport( aPlotOffset, g_SchUnits.DMilsToIu (1.0), aScale, false );
 
     // Init :
     plotter->SetCreator( wxT( "Eeschema-DXF" ) );

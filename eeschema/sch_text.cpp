@@ -103,6 +103,8 @@ SCH_TEXT::SCH_TEXT( const wxPoint& pos, const wxString& text, KICAD_T aType ) :
     SCH_ITEM( NULL, aType ),
     EDA_TEXT( text )
 {
+    SetDefaultSize ( Units()->MilsToIu ( DEFAULT_SIZE_TEXT ) );
+
     m_Layer = LAYER_NOTES;
     m_Pos = pos;
     m_shape = 0;
@@ -795,7 +797,7 @@ void SCH_TEXT::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
     }
 
     // Display text size (X or Y value, with are the same value in Eeschema)
-    msg = ReturnStringFromValue( g_UserUnit, m_Size.x, true );
+    msg = g_SchUnits.StringFromValue( m_Size.x, true );
     aList.push_back( MSG_PANEL_ITEM( _( "Size" ), msg, RED ) );
 }
 

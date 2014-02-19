@@ -133,7 +133,7 @@ bool DIALOG_PLOT_SCHEMATIC::plotOneSheetSVG( EDA_DRAW_FRAME*    aFrame,
     plotter->SetColorMode( aPlotBlackAndWhite ? false : true );
     wxPoint plot_offset;
     double scale = 1.0;
-    plotter->SetViewport( plot_offset, IU_PER_DECIMILS, scale, false );
+    plotter->SetViewport( plot_offset, g_SchUnits.DMilsToIu (1.0), scale, false );
 
     // Init :
     plotter->SetCreator( wxT( "Eeschema-SVG" ) );

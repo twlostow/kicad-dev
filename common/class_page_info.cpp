@@ -26,7 +26,8 @@
 #include <common.h>
 #include <macros.h>
 
-
+#include <page_info.h>
+ 
 // late arriving wxPAPER_A0, wxPAPER_A1
 #if wxABI_VERSION >= 20999
  #define PAPER_A0   wxPAPER_A0

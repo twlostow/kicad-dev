@@ -64,7 +64,7 @@ void DIALOG_LIB_EDIT_TEXT::initDlg( )
 
     if ( m_graphicText )
     {
-        msg = ReturnStringFromValue( g_UserUnit, m_graphicText->GetSize().x );
+        msg = g_SchUnits.StringFromValue( m_graphicText->GetSize().x );
         m_TextSize->SetValue( msg );
         m_TextValue->SetValue( m_graphicText->GetText() );
 
@@ -116,7 +116,7 @@ void DIALOG_LIB_EDIT_TEXT::initDlg( )
     }
     else
     {
-        msg = ReturnStringFromValue( g_UserUnit, m_parent->m_textSize );
+        msg = g_SchUnits.StringFromValue( m_parent->m_textSize );
         m_TextSize->SetValue( msg );
 
         if ( ! m_parent->m_drawSpecificUnit )
@@ -127,7 +127,7 @@ void DIALOG_LIB_EDIT_TEXT::initDlg( )
             m_Orient->SetValue( true );
     }
 
-    msg = m_TextSizeText->GetLabel() + ReturnUnitSymbol();
+    msg = m_TextSizeText->GetLabel() + ReturnUnitSymbol( g_SchUnits.GetUserUnit() );
     m_TextSizeText->SetLabel( msg );
 
     m_sdbSizerButtonsOK->SetDefault();
@@ -148,7 +148,7 @@ void DIALOG_LIB_EDIT_TEXT::OnOkClick( wxCommandEvent& event )
     Line = m_TextValue->GetValue();
     m_parent->m_textOrientation = m_Orient->GetValue() ? TEXT_ORIENT_VERT : TEXT_ORIENT_HORIZ;
     wxString msg = m_TextSize->GetValue();
-    m_parent->m_textSize = ReturnValueFromString( g_UserUnit, msg );
+    m_parent->m_textSize = g_SchUnits.ValueFromString( msg );
     m_parent->m_drawSpecificConvert = m_CommonConvert->GetValue() ? false : true;
     m_parent->m_drawSpecificUnit = m_CommonUnit->GetValue() ? false : true;
 

@@ -97,13 +97,13 @@ static const wxChar* plot_sheet_list( int aSize )
 
 void DIALOG_PLOT_SCHEMATIC::SetHPGLPenWidth()
 {
-    m_HPGLPenSize = ReturnValueFromTextCtrl( *m_penHPGLWidthCtrl );
+    m_HPGLPenSize = g_SchUnits.ValueFromString( m_penHPGLWidthCtrl ->GetValue () );
 
-    if( m_HPGLPenSize > Millimeter2iu( 2 ) )
-        m_HPGLPenSize = Millimeter2iu( 2 );
+    if( m_HPGLPenSize > g_SchUnits.MmToIu( 2 ) )
+        m_HPGLPenSize = g_SchUnits.MmToIu( 2 );
 
-    if( m_HPGLPenSize < Millimeter2iu( 0.01 ) )
-        m_HPGLPenSize = Millimeter2iu( 0.01 );
+    if( m_HPGLPenSize < g_SchUnits.MmToIu( 0.01 ) )
+        m_HPGLPenSize = g_SchUnits.MmToIu( 0.01 );
 }
 
 
@@ -169,8 +169,8 @@ void DIALOG_PLOT_SCHEMATIC::createHPGLFile( bool aPlotAll, bool aPlotFrameRef )
 
         if( GetPlotOriginCenter() )
         {
-            plotOffset.x    = plotPage.GetWidthIU() / 2;
-            plotOffset.y    = -plotPage.GetHeightIU() / 2;
+            plotOffset.x    =  g_SchUnits.MilsToIu ( plotPage.GetWidthMils() ) / 2;
+            plotOffset.y    = -g_SchUnits.MilsToIu ( plotPage.GetHeightMils() ) / 2;
         }
 
         plotFileName = m_parent->GetUniqueFilenameForCurrentSheet() + wxT( "." )
@@ -207,7 +207,7 @@ bool DIALOG_PLOT_SCHEMATIC::Plot_1_Page_HPGL( const wxString&   aFileName,
     HPGL_PLOTTER* plotter = new HPGL_PLOTTER();
 
     plotter->SetPageSettings( aPageInfo );
-    plotter->SetViewport( aPlot0ffset, IU_PER_DECIMILS, aScale, false );
+    plotter->SetViewport( aPlot0ffset, g_SchUnits.DMilsToIu (1.0), aScale, false );
 
     // Init :
     plotter->SetCreator( wxT( "Eeschema-HPGL" ) );

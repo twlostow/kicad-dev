@@ -34,6 +34,7 @@ SCH_BASE_FRAME::SCH_BASE_FRAME( wxWindow* aParent,
                                 long aStyle, const wxString & aFrameName ) :
     EDA_DRAW_FRAME( aParent, aWindowType, aTitle, aPosition, aSize, aStyle, aFrameName )
 {
+    SetUnits (&g_SchUnits);
 }
 
 
@@ -68,8 +69,10 @@ const PAGE_INFO& SCH_BASE_FRAME::GetPageSettings () const
 
 const wxSize SCH_BASE_FRAME::GetPageSizeIU() const
 {
-    // GetSizeIU is compile time dependent:
-    return GetScreen()->GetPageSettings().GetSizeIU();
+    wxSize size = GetScreen()->GetPageSettings().GetSizeMils();
+    
+    return wxSize(g_SchUnits.MilsToIu (size.x), 
+                  g_SchUnits.MilsToIu (size.y) );
 }
 
 
@@ -113,10 +116,10 @@ void SCH_BASE_FRAME::UpdateStatusBar()
     EDA_DRAW_FRAME::UpdateStatusBar();
 
     // Display absolute coordinates:
-    double dXpos = To_User_Unit( g_UserUnit, GetCrossHairPosition().x );
-    double dYpos = To_User_Unit( g_UserUnit, GetCrossHairPosition().y );
+    double dXpos = g_SchUnits.ToUser( GetCrossHairPosition().x );
+    double dYpos = g_SchUnits.ToUser( GetCrossHairPosition().y );
 
-    if ( g_UserUnit == MILLIMETRES )
+    if ( g_SchUnits.GetUserUnit() == MILLIMETRES )
     {
         dXpos = RoundTo0( dXpos, 100.0 );
         dYpos = RoundTo0( dYpos, 100.0 );
@@ -125,7 +128,7 @@ void SCH_BASE_FRAME::UpdateStatusBar()
     wxString absformatter;
     wxString locformatter;
 
-    switch( g_UserUnit )
+    switch( g_SchUnits.GetUserUnit() )
     {
     case INCHES:
         absformatter = wxT( "X %.3f  Y %.3f" );
@@ -150,10 +153,10 @@ void SCH_BASE_FRAME::UpdateStatusBar()
     dx = GetCrossHairPosition().x - screen->m_O_Curseur.x;
     dy = GetCrossHairPosition().y - screen->m_O_Curseur.y;
 
-    dXpos = To_User_Unit( g_UserUnit, dx );
-    dYpos = To_User_Unit( g_UserUnit, dy );
+    dXpos = g_SchUnits.ToUser( dx );
+    dYpos = g_SchUnits.ToUser( dy );
 
-    if( g_UserUnit == MILLIMETRES )
+    if( g_SchUnits.GetUserUnit() == MILLIMETRES )
     {
         dXpos = RoundTo0( dXpos, 100.0 );
         dYpos = RoundTo0( dYpos, 100.0 );

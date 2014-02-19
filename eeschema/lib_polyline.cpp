@@ -400,7 +400,7 @@ void LIB_POLYLINE::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 
     LIB_ITEM::GetMsgPanelInfo( aList );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Width, true );
+    msg = g_SchUnits.StringFromValue( m_Width, true );
 
     aList.push_back( MSG_PANEL_ITEM( _( "Line width" ), msg, BLUE ) );
 
@@ -414,8 +414,8 @@ void LIB_POLYLINE::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 wxString LIB_POLYLINE::GetSelectMenuText() const
 {
     return wxString::Format( _( "Polyline at (%s, %s) with %zu points" ),
-                             GetChars( CoordinateToString( m_PolyPoints[0].x ) ),
-                             GetChars( CoordinateToString( m_PolyPoints[0].y ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_PolyPoints[0].x ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_PolyPoints[0].y ) ),
                              m_PolyPoints.size() );
 }
 

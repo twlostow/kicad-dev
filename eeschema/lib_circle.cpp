@@ -270,11 +270,11 @@ void LIB_CIRCLE::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 
     LIB_ITEM::GetMsgPanelInfo( aList );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Width, true );
+    msg = g_SchUnits.StringFromValue( m_Width, true );
 
     aList.push_back( MSG_PANEL_ITEM(  _( "Line width" ), msg, BLUE ) );
 
-    msg = ReturnStringFromValue( g_UserUnit, m_Radius, true );
+    msg = g_SchUnits.StringFromValue( m_Radius, true );
     aList.push_back( MSG_PANEL_ITEM( _( "Radius" ), msg, RED ) );
 
     msg.Printf( wxT( "(%d, %d, %d, %d)" ), bBox.GetOrigin().x,
@@ -287,9 +287,9 @@ void LIB_CIRCLE::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 wxString LIB_CIRCLE::GetSelectMenuText() const
 {
     return wxString::Format( _( "Circle center (%s, %s), radius %s" ),
-                             GetChars( CoordinateToString( m_Pos.x ) ),
-                             GetChars( CoordinateToString( m_Pos.y ) ),
-                             GetChars( CoordinateToString( m_Radius ) ) );
+                             GetChars( g_SchUnits.CoordinateToString( m_Pos.x ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_Pos.y ) ),
+                             GetChars( g_SchUnits.CoordinateToString( m_Radius ) ) );
 }
 
 

@@ -223,12 +223,11 @@ class UNITS {
     		return str;
 		}
 
-		///> IU Formatting functions for the s-expr file I/O. May be overloaded
-		///  by application-specific derived classes.
-		virtual std::string FormatIU( int aValue ) const;
-		virtual std::string FormatAngle( double aAngle ) const;
-		virtual std::string FormatIU( const wxPoint& aPoint ) const;
-		virtual std::string FormatIU( const wxSize& aSize ) const;
+		///> IU Formatting functions for the s-expressions. 
+		std::string FormatIU( int aValue ) const;
+		std::string FormatAngle( double aAngle ) const;
+		std::string FormatIU( const wxPoint& aPoint ) const;
+		std::string FormatIU( const wxSize& aSize ) const;
 
 		/**
 		 * Function GetUserUnit()
@@ -348,11 +347,6 @@ class PCB_UNITS : public UNITS
     	   m_IUPerDecimils = 1e6 * 0.00254 ;
     	   m_app = APP_PCBNEW_T;
     	}
-
-    	virtual std::string FormatIU( int aValue ) const;
-		virtual std::string FormatAngle( double aAngle ) const;
-		virtual std::string FormatIU( const wxPoint& aPoint ) const;
-		virtual std::string FormatIU( const wxSize& aSize ) const;
 };
 
 class SCH_UNITS : public UNITS

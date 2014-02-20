@@ -334,7 +334,7 @@ int UNITS::ValueFromString( const wxString& aTextValue ) const
     return KiROUND( value );
 }
 
-std::string PCB_UNITS::FormatIU( int aValue ) const
+std::string UNITS::FormatIU( int aValue ) const
 {
     char    buf[50];
     int     len;
@@ -361,7 +361,7 @@ std::string PCB_UNITS::FormatIU( int aValue ) const
 }
 
 
-std::string PCB_UNITS::FormatAngle( double aAngle ) const
+std::string UNITS::FormatAngle( double aAngle ) const
 {
     char temp[50];
 
@@ -371,18 +371,14 @@ std::string PCB_UNITS::FormatAngle( double aAngle ) const
 }
 
 
-std::string PCB_UNITS::FormatIU( const wxPoint& aPoint ) const
+std::string UNITS::FormatIU( const wxPoint& aPoint ) const
 {
     return FormatIU( aPoint.x ) + " " + FormatIU( aPoint.y );
 }
 
 
-std::string PCB_UNITS::FormatIU( const wxSize& aSize ) const
+std::string UNITS::FormatIU( const wxSize& aSize ) const
 {
     return FormatIU( aSize.GetWidth() ) + " " + FormatIU ( aSize.GetHeight() );
 }
 
-std::string UNITS::FormatIU( int aValue ) const { assert(false); }
-std::string UNITS::FormatAngle( double aAngle ) const{ assert(false); }
-std::string UNITS::FormatIU( const wxPoint& aPoint ) const{ assert(false); }
-std::string UNITS::FormatIU( const wxSize& aSize ) const{ assert(false); }

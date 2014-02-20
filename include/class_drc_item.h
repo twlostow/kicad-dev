@@ -131,16 +131,14 @@ public:
 
     void SetShowNoCoordinate() { m_noCoordinate = true; }
 
+    bool ShowNoCoordinate() const { return m_noCoordinate; }
+
     /** acces to A and B texts
      */
     wxString GetMainText() const { return m_MainText; }
     wxString GetAuxiliaryText() const { return m_AuxiliaryText; }
 
-
-    virtual wxString ShowHtml( ) const { };
-    virtual wxString ShowReport( UNITS *aUnits ) const { };
-
-    /**
+    /*
      * Function GetErrorCode
      * returns the error code.
      */
@@ -148,14 +146,6 @@ public:
     {
         return m_ErrorCode;
     }
-
-    /**
-     * Function GetErrorText
-     * returns the string form of a drc error code.
-     */
-    virtual wxString GetErrorText() const {
-        return wxT("unknown");
-    };
 
     const wxString& GetTextA() const
     {
@@ -179,91 +169,6 @@ public:
     {
         return m_AuxiliaryPosition;
     }
-
-protected:
-    /**
-     * Function ShowHtml
-     * translates this object into a fragment of HTML suitable for the
-     * wxWidget's wxHtmlListBox class.
-     * @return wxString - the html text.
-     */
-    wxString showHtml( UNITS *aAppUnits ) const
-    {
-        wxString ret;
-        wxString mainText = m_MainText;
-        // a wxHtmlWindows does not like < and > in the text to display
-        // because these chars have a special meaning in html
-        mainText.Replace( wxT("<"), wxT("&lt;") );
-        mainText.Replace( wxT(">"), wxT("&gt;") );
-
-        wxString errText = GetErrorText();
-        errText.Replace( wxT("<"), wxT("&lt;") );
-        errText.Replace( wxT(">"), wxT("&gt;") );
-
-
-        if( m_noCoordinate )
-        {
-            // omit the coordinate, a NETCLASS has no location
-            ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s </li></ul>" ),
-                        m_ErrorCode,
-                        GetChars( errText ),
-                        GetChars( mainText ) );
-        }
-        else if( m_hasSecondItem )
-        {
-            wxString auxText = m_AuxiliaryText;
-            auxText.Replace( wxT("<"), wxT("&lt;") );
-            auxText.Replace( wxT(">"), wxT("&gt;") );
-
-            // an html fragment for the entire message in the listbox.  feel free
-            // to add color if you want:
-            ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s: %s </li><li> %s: %s </li></ul>" ),
-                        m_ErrorCode,
-                        GetChars( errText ),
-                        GetChars( aAppUnits->PointToString( m_MainPosition )), GetChars( mainText ),
-                        GetChars( aAppUnits->PointToString( m_AuxiliaryPosition )), GetChars( auxText ) );
-        }
-        else
-        {
-            ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s: %s </li></ul>" ),
-                        m_ErrorCode,
-                        GetChars( errText ),
-                        GetChars( aAppUnits->PointToString( m_MainPosition ) ), GetChars( mainText ) );
-        }
-
-        return ret;
-    }
-
-
-    /**
-     * Function ShowReport
-     * translates this object into a text string suitable for saving
-     * to disk in a report.
-     * @return wxString - the simple multi-line report text.
-     */
-    wxString showReport( UNITS *aUnits ) const
-    {
-        wxString ret;
-
-        if( m_hasSecondItem )
-        {
-            ret.Printf( wxT( "ErrType(%d): %s\n    %s: %s\n    %s: %s\n" ),
-                        m_ErrorCode,
-                        GetChars( GetErrorText() ),
-                        GetChars( aUnits->PointToString( m_MainPosition ) ), GetChars( m_MainText ),
-                        GetChars( aUnits->PointToString( m_AuxiliaryPosition ) ), GetChars( m_AuxiliaryText ) );
-        }
-        else
-        {
-            ret.Printf( wxT( "ErrType(%d): %s\n    %s: %s\n" ),
-                        m_ErrorCode,
-                        GetChars( GetErrorText() ),
-                        GetChars( aUnits->PointToString( m_MainPosition ) ), GetChars( m_MainText ) );
-        }
-
-        return ret;
-    }
-
 };
 
 

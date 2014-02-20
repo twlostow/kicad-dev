@@ -175,7 +175,7 @@ public:
      * Function DisplayMarkerInfo
      * displays the full info of this marker, in a HTML window.
      */
-    void DisplayMarkerInfo( EDA_DRAW_FRAME* aFrame );
+    virtual void DisplayMarkerInfo( EDA_DRAW_FRAME* aFrame ) {};
 
     /**
      * Function HitTestMarker

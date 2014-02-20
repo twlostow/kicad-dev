@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2012 CERN
+ * Copyright (C) 2012-2014 CERN
  * Copyright (C) 1992-2011 KiCad Developers, see change_log.txt for contributors.
  *
  *
@@ -25,13 +25,11 @@
 
 /**
  * @author Wayne Stambaugh <stambaughw@verizon.net>
+ * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  * @file base_units.cpp
  * @brief Code to handle objects that require both schematic and board internal units.
- * @note This file is an ugly hack to solve the problem of formatting the base units
+ * @note This file is an a less uglier hack to solve the problem of formatting the base units
  *       for either schematics or boards in objects that are include in both domains.
- *       At some point in the future.  This code should be rolled back into the
- *       appropriate object and build with the correct internal unit formatting
- *       depending on the application.
  */
 
 #include <macros.h>
@@ -39,6 +37,11 @@
 #include <class_title_block.h>
 #include <common.h>
 #include <base_units.h>
+
+PCB_UNITS g_PcbUnits;
+SCH_UNITS g_SchUnits;
+GERBVIEW_UNITS g_GerbviewUnits;
+PL_EDITOR_UNITS g_PLEditorUnits;
 
 // Helper function to print a float number without using scientific notation
 // and no trailing 0
@@ -383,7 +386,3 @@ std::string UNITS::FormatIU( int aValue ) const { assert(false); }
 std::string UNITS::FormatAngle( double aAngle ) const{ assert(false); }
 std::string UNITS::FormatIU( const wxPoint& aPoint ) const{ assert(false); }
 std::string UNITS::FormatIU( const wxSize& aSize ) const{ assert(false); }
-
-PCB_UNITS g_PcbUnits;
-SCH_UNITS g_SchUnits;
-GERBVIEW_UNITS g_GerbviewUnits;

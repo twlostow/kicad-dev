@@ -9,11 +9,14 @@
 #include <base_units.h>
 #include <gerbview_id.h>
 
+#define GRID_SIZE(x)     wxRealPoint(x, x)
+
 /**
     Default GerbView zoom values.
     Roughly a 1.5 progression.
 */
-static const double gbrZoomList[] =
+
+static const double gbrZoomListDecimils[] =
 {
      0.5,
      1.0,
@@ -36,66 +39,50 @@ static const double gbrZoomList[] =
      2000.0
 };
 
-
-struct GRID_DEF {
-    int id;
-    bool metric;
-    double value;
-};
-
-static const GRID_DEF gbrGridList [] =
+static const GRID_TYPE gbrImperialGridList[] =
 {
     // predefined grid list in 0.0001 inches
-    { ID_POPUP_GRID_LEVEL_1000,      false, 1000   },
-    { ID_POPUP_GRID_LEVEL_500,       false, 500    },
-    { ID_POPUP_GRID_LEVEL_250,       false, 250    },
-    { ID_POPUP_GRID_LEVEL_200,       false, 200    },
-    { ID_POPUP_GRID_LEVEL_100,       false, 100    },
-    { ID_POPUP_GRID_LEVEL_50,        false, 50     },
-    { ID_POPUP_GRID_LEVEL_25,        false, 25     },
-    { ID_POPUP_GRID_LEVEL_20,        false, 20     },
-    { ID_POPUP_GRID_LEVEL_10,        false, 10     },
-    { ID_POPUP_GRID_LEVEL_5,         false, 5      },
-    { ID_POPUP_GRID_LEVEL_2,         false, 2      },
-    { ID_POPUP_GRID_LEVEL_1,         false, 1      },
-    { ID_POPUP_GRID_LEVEL_5MM,       true, 5.0    },
-    { ID_POPUP_GRID_LEVEL_2_5MM,     true, 2.5    },
-    { ID_POPUP_GRID_LEVEL_1MM,       true, 1.0    },
-    { ID_POPUP_GRID_LEVEL_0_5MM,     true, 0.5    },
-    { ID_POPUP_GRID_LEVEL_0_25MM,    true, 0.25   },
-    { ID_POPUP_GRID_LEVEL_0_2MM,     true, 0.2    },
-    { ID_POPUP_GRID_LEVEL_0_1MM,     true, 0.1    },
-    { ID_POPUP_GRID_LEVEL_0_0_5MM,   true, 0.05   },
-    { ID_POPUP_GRID_LEVEL_0_0_25MM,  true, 0.025  },
-    { ID_POPUP_GRID_LEVEL_0_0_1MM,   true, 0.01   }
+    { ID_POPUP_GRID_LEVEL_1000,     GRID_SIZE( 1000 )  },
+    { ID_POPUP_GRID_LEVEL_500,      GRID_SIZE( 500 )   },
+    { ID_POPUP_GRID_LEVEL_250,      GRID_SIZE( 250 )   },
+    { ID_POPUP_GRID_LEVEL_200,      GRID_SIZE( 200 )   },
+    { ID_POPUP_GRID_LEVEL_100,      GRID_SIZE( 100 )   },
+    { ID_POPUP_GRID_LEVEL_50,       GRID_SIZE( 50 )    },
+    { ID_POPUP_GRID_LEVEL_25,       GRID_SIZE( 25 )    },
+    { ID_POPUP_GRID_LEVEL_20,       GRID_SIZE( 20 )    },
+    { ID_POPUP_GRID_LEVEL_10,       GRID_SIZE( 10 )    },
+    { ID_POPUP_GRID_LEVEL_5,        GRID_SIZE( 5 )     },
+    { ID_POPUP_GRID_LEVEL_2,        GRID_SIZE( 2 )     },
+    { ID_POPUP_GRID_LEVEL_1,        GRID_SIZE( 1 )     }
 };
 
+static const GRID_TYPE gbrMetricGridList[] =
+{
+    // predefined grid list in mm
+    { ID_POPUP_GRID_LEVEL_5MM,      GRID_SIZE( 5.0 )     },
+    { ID_POPUP_GRID_LEVEL_2_5MM,    GRID_SIZE( 2.5 )     },
+    { ID_POPUP_GRID_LEVEL_1MM,      GRID_SIZE( 1.0 )     },
+    { ID_POPUP_GRID_LEVEL_0_5MM,    GRID_SIZE( 0.5 )     },
+    { ID_POPUP_GRID_LEVEL_0_25MM,   GRID_SIZE( 0.25 )    },
+    { ID_POPUP_GRID_LEVEL_0_2MM,    GRID_SIZE( 0.2 )     },
+    { ID_POPUP_GRID_LEVEL_0_1MM,    GRID_SIZE( 0.1 )     },
+    { ID_POPUP_GRID_LEVEL_0_0_5MM,  GRID_SIZE( 0.05 )    },
+    { ID_POPUP_GRID_LEVEL_0_0_25MM, GRID_SIZE( 0.025 )   },
+    { ID_POPUP_GRID_LEVEL_0_0_1MM,  GRID_SIZE( 0.01 )    }
+};
 
 GBR_SCREEN::GBR_SCREEN( const wxSize& aPageSizeIU ) :
     BASE_SCREEN( SCREEN_T )
 {
-    for( unsigned i = 0; i < DIM( gbrZoomList );  ++i )
-        m_ZoomList.push_back( g_GerbviewUnits.DMilsToIu(gbrZoomList[i] ) );
+    
+    SetUnits( &g_GerbviewUnits );
 
-    for( unsigned i = 0; i < DIM( gbrGridList );  ++i )
-    {
-        const GRID_DEF *gdef = &gbrGridList[i];
-        GRID_TYPE gtype;
-        gtype.m_Id = gdef->id;
+    SetDefaultZoomFactors( gbrZoomListDecimils, DIM (gbrZoomListDecimils) );
+    SetDefaultGrids ( gbrMetricGridList, DIM (gbrMetricGridList), true );
+    SetDefaultGrids ( gbrImperialGridList, DIM (gbrImperialGridList), false );
 
-        int s;
-        if( gdef->metric )
-            s = g_GerbviewUnits.MmToIu ( gdef->value );
-        else
-            s = g_GerbviewUnits.DMilsToIu ( gdef->value );
-
-        gtype.m_Size = wxRealPoint ( s, s );
-
-        AddGrid( gtype);
-    }
-
-    int g = g_GerbviewUnits.DMilsToIu (500);
     // Set the working grid size to a reasonable value (in 1/10000 inch)
+    int g = g_GerbviewUnits.DMilsToIu (500);
     SetGrid(  wxRealPoint (g, g) );
 
     m_Active_Layer       = LAYER_N_BACK;      // default active layer = bottom layer

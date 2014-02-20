@@ -1,5 +1,3 @@
-add_definitions(-DGERBVIEW)
-
 ###
 # Includes
 ###

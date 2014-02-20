@@ -395,6 +395,27 @@ PICKED_ITEMS_LIST* BASE_SCREEN::PopCommandFromRedoList( )
 }
 
 
+void BASE_SCREEN::SetDefaultZoomFactors( const double *aZoomFactors, int aCount )
+{
+    for( int i = 0; i < aCount; i++)
+        m_ZoomList.push_back( Units()->DMilsToIu ( aZoomFactors[i] ));
+}
+
+void BASE_SCREEN::SetDefaultGrids ( const GRID_TYPE *aGrids, int aCount, bool aIsMetric )
+{
+    for( int i = 0; i < aCount; i++)
+    {
+        GRID_TYPE g = aGrids[i];
+        if(aIsMetric)
+            g.m_Size = wxRealPoint ( g_GerbviewUnits.MmToIu ( g.m_Size.x ),
+                                     g_GerbviewUnits.MmToIu ( g.m_Size.y ) );
+        else     
+            g.m_Size = wxRealPoint ( g_GerbviewUnits.DMilsToIu ( g.m_Size.x ),
+                                     g_GerbviewUnits.DMilsToIu ( g.m_Size.y ) );
+        AddGrid (g);
+    }
+}
+
 #if defined(DEBUG)
 
 void BASE_SCREEN::Show( int nestLevel, std::ostream& os ) const

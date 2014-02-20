@@ -465,6 +465,9 @@ public:
 
     void ClearBlockCommand() { m_BlockLocate.Clear(); }
 
+    void SetDefaultZoomFactors( const double *aZoomFactors, int aCount );    
+    void SetDefaultGrids ( const GRID_TYPE *aDefs, int aCount, bool aIsMetric );
+
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const;     // overload
 #endif

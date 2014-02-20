@@ -137,8 +137,11 @@ void GERBVIEW_FRAME::OnHotKey( wxDC* aDC, int aHotkeyCode, const wxPoint& aPosit
         break;
 
     case HK_SWITCH_UNITS:
-        g_UserUnit = (g_UserUnit == INCHES ) ? MILLIMETRES : INCHES;
+    {
+        EDA_UNITS_T currentUnit = Units()->GetUserUnit();
+        ModifiableUnits()->SetUserUnit(  (currentUnit == INCHES ) ? MILLIMETRES : INCHES );
         break;
+    }
 
     case HK_SWITCH_GBR_ITEMS_DISPLAY_MODE:
         m_DisplayOptions.m_DisplayLinesFill = not m_DisplayOptions.m_DisplayLinesFill;

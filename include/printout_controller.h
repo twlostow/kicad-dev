@@ -34,19 +34,27 @@
 
 #include <wx/dcps.h>
 #include <layers_id_colors_and_visibility.h>
-#define DEFAULT_ORIENTATION_PAPER wxLANDSCAPE   // other option is wxPORTRAIT
+#include <fctsys.h>
+#include <appl_wxstruct.h>
+#include <gr_basic.h>
+#include <class_drawpanel.h>
+#include <confirm.h>
+#include <base_units.h>
+#include <layers_id_colors_and_visibility.h>
 
+#define DEFAULT_ORIENTATION_PAPER wxLANDSCAPE   // other option is wxPORTRAIT
 
 /**
  * Class PRINT_PARAMETERS
  * handles the parameters used to print a board drawing.
  */
 
+class EDA_DRAW_FRAME;
+
 class PRINT_PARAMETERS
 {
 public:
-    int    m_PenDefaultSize;                 // The default value pen size to plot/print items
-                                             // that have no defined pen size
+    double m_PenDefaultSizeMils;             // default pen size, in Mils
     double m_PrintScale;                     // general scale when printing
     double m_XScaleAdjust;                   // fine scale adjust for X axis
     double m_YScaleAdjust;                   // fine scale adjust for Y axis
@@ -94,19 +102,19 @@ public:
 
 
 /**
- * Class BOARD_PRINTOUT_CONTROLLER
+ * Class PRINTOUT_CONTROLLER
  * is a class derived from wxPrintout to handle the necessary information to control a printer
  * when printing a board
  */
 
-class BOARD_PRINTOUT_CONTROLLER : public wxPrintout
+class PRINTOUT_CONTROLLER : public wxPrintout, public IUNIT_HOLDER
 {
-private:
+protected:
     EDA_DRAW_FRAME*     m_Parent;
     PRINT_PARAMETERS    m_PrintParams;
 
 public:
-    BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
+    PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
                                EDA_DRAW_FRAME*         aParent,
                                const wxString&         aTitle );
 
@@ -123,6 +131,15 @@ public:
     void GetPageInfo( int* minPage, int* maxPage, int* selPageFrom, int* selPageTo );
 
     void DrawPage();
+
+private:
+
+    virtual LAYER_NUM getAppLayerCount() const = 0;
+    virtual void setupExtents() {} ;
+    virtual void applyDrawingHacks() {};
+    virtual void applyOnPrintHacks() {};
+    virtual wxString getTitleBlockText() = 0;
+    virtual EDA_RECT getBoundingBox() = 0;
 };
 
 #endif      // PRINTOUT_CONTROLLER_H

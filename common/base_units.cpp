@@ -386,3 +386,4 @@ std::string UNITS::FormatIU( const wxSize& aSize ) const{ assert(false); }
 
 PCB_UNITS g_PcbUnits;
 SCH_UNITS g_SchUnits;
+GERBVIEW_UNITS g_GerbviewUnits;

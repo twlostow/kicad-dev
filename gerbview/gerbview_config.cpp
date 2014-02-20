@@ -41,6 +41,11 @@
 #include <hotkeys.h>
 #include <dialog_hotkeys_editor.h>
 
+// Config keywords
+static const wxString   cfgShowPageSizeOption( wxT( "PageSizeOpt" ) );
+static const wxString   cfgShowDCodes( wxT( "ShowDCodesOpt" ) );
+static const wxString   cfgShowNegativeObjects( wxT( "ShowNegativeObjectsOpt" ) );
+static const wxString   cfgShowBorderAndTitleBlock( wxT( "ShowBorderAndTitleBlock" ) );
 
 #define GROUP wxT("/gerbview")
 
@@ -79,6 +84,7 @@ void GERBVIEW_FRAME::Process_Config( wxCommandEvent& event )
     }
 }
 
+static EDA_UNITS_T hackConfigUserUnit;
 
 PARAM_CFG_ARRAY& GERBVIEW_FRAME::GetConfigurationSettings()
 {
@@ -86,7 +92,7 @@ PARAM_CFG_ARRAY& GERBVIEW_FRAME::GetConfigurationSettings()
         return m_configSettings;
 
     m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "Units" ),
-                                                   (int*) &g_UserUnit, 0, 0, 1 ) );
+                                                   (int*) &hackConfigUserUnit, 0, 0, 1 ) );
 
     m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "DrawModeOption" ),
                                                    &m_displayMode, 2, 0, 2 ) );
@@ -147,3 +153,81 @@ PARAM_CFG_ARRAY& GERBVIEW_FRAME::GetConfigurationSettings()
 
     return m_configSettings;
 }
+
+void GERBVIEW_FRAME::SaveSettings()
+{
+    wxConfig* config = wxGetApp().GetSettings();
+
+    if( config == NULL )
+        return;
+
+    EDA_DRAW_FRAME::SaveSettings();
+
+    hackConfigUserUnit = Units()->GetUserUnit();
+
+    wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
+
+    config->Write( cfgShowPageSizeOption, GetPageSettings().GetType() );
+    config->Write( cfgShowBorderAndTitleBlock, m_showBorderAndTitleBlock );
+    config->Write( cfgShowDCodes, IsElementVisible( DCODES_VISIBLE ) );
+    config->Write( cfgShowNegativeObjects,
+                   IsElementVisible( NEGATIVE_OBJECTS_VISIBLE ) );
+
+    // Save the drill file history list.
+    // Because we have 2 file histories, we must save this one
+    // in a specific path
+    config->SetPath( wxT( "drl_files" ) );
+    m_drillFileHistory.Save( *config );
+    config->SetPath( wxT( ".." ) );
+}
+
+void GERBVIEW_FRAME::LoadSettings()
+{
+    wxConfig* config = wxGetApp().GetSettings();
+
+    if( config == NULL )
+        return;
+
+    EDA_DRAW_FRAME::LoadSettings();
+
+    wxGetApp().ReadCurrentSetupValues( GetConfigurationSettings() );
+
+    ModifiableUnits()->SetUserUnit ( hackConfigUserUnit );
+
+    PAGE_INFO pageInfo( wxT( "GERBER" ) );
+
+    config->Read( cfgShowBorderAndTitleBlock, &m_showBorderAndTitleBlock, false );
+
+    if( m_showBorderAndTitleBlock )
+    {
+        wxString pageType;
+
+        config->Read( cfgShowPageSizeOption, &pageType, wxT( "GERBER" ) );
+
+        pageInfo.SetType( pageType );
+    }
+
+    SetPageSettings( pageInfo );
+
+    wxSize pageSize ( Units() -> MilsToIu (  pageInfo.GetSizeMils() ));
+
+    GetScreen()->InitDataPoints( pageSize );
+
+    bool tmp;
+    config->Read( cfgShowDCodes, &tmp, true );
+    SetElementVisibility( DCODES_VISIBLE, tmp );
+    config->Read( cfgShowNegativeObjects, &tmp, false );
+    SetElementVisibility( NEGATIVE_OBJECTS_VISIBLE, tmp );
+
+    // because we have 2 file historues, we must read this one
+    // using a specific path
+    config->SetPath( wxT( "drl_files" ) );
+    m_drillFileHistory.Load( *config );
+    config->SetPath( wxT( ".." ) );
+
+    // WxWidgets 2.9.1 seems call setlocale( LC_NUMERIC, "" )
+    // when reading doubles in config,
+    // but forget to back to current locale. So we call SetLocaleTo_Default
+    SetLocaleTo_Default();
+}
+

@@ -39,7 +39,7 @@
 #include <colors_selection.h>
 #include <class_gerber_draw_item.h>
 #include <class_GERBER.h>
-#include <printout_controler.h>
+#include <gerbview_printout_controller.h>
 
 
 void GERBVIEW_FRAME::PrintPage( wxDC* aDC, LAYER_MSK aPrintMasklayer,
@@ -110,7 +110,7 @@ void GERBVIEW_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
     if( IsElementVisible( DCODES_VISIBLE ) )
         DrawItemsDCodeID( DC, GR_COPY );
 
-    DrawWorkSheet( DC, screen, 0, IU_PER_MILS, wxEmptyString );
+    DrawWorkSheet( DC, screen, 0, g_GerbviewUnits.IuPerMils(), wxEmptyString );
 
     if( m_canvas->IsMouseCaptured() )
         m_canvas->CallMouseCapture( DC, wxDefaultPosition, false );

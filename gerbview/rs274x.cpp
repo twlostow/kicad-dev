@@ -163,7 +163,7 @@ bool GERBER_IMAGE::ExecuteRS274XCommand( int       command,
     bool     y_fmt_known = false;
 
     // conv_scale = scaling factor from inch to Internal Unit
-    double   conv_scale = IU_PER_MILS * 1000;
+    double   conv_scale = g_GerbviewUnits.IuPerMils() * 1000.0 ;
     if( m_GerbMetric )
         conv_scale /= 25.4;
 
@@ -312,7 +312,9 @@ bool GERBER_IMAGE::ExecuteRS274XCommand( int       command,
             m_GerbMetric = false;
         else if( code == MILLIMETER )
             m_GerbMetric = true;
-        conv_scale = m_GerbMetric ? IU_PER_MILS / 25.4 : IU_PER_MILS;
+        conv_scale = g_GerbviewUnits.IuPerMils();
+        if ( m_GerbMetric )
+            conv_scale /= 25.4;
         break;
 
     case OFFSET:        // command: OFAnnBnn (nn = float number) = layer Offset

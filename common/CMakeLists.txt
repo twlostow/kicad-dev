@@ -153,6 +153,7 @@ set( COMMON_SRCS
     wxwineda.cpp
     xnode.cpp
     zoom.cpp
+    printout_controller.cpp
     )
 
 # We will not want edaappl.cpp linked into the KIFACE, only into the KIWAY.

@@ -23,7 +23,7 @@
  */
 
 /**
- * @file printout_controler.cpp
+ * @file printout_controller.cpp
  * @brief Board print handler implementation file.
  */
 
@@ -37,17 +37,10 @@
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <base_units.h>
-#ifdef PCBNEW
-    #include <wxBasePcbFrame.h>
-    #include <class_board.h>
-    #include <pcbnew.h>
-#else
-    #include <wxstruct.h>
-    #include <class_base_screen.h>
-    #include <layers_id_colors_and_visibility.h>
-    #include <gerbview_frame.h>
-#endif
-#include <printout_controler.h>
+#include <layers_id_colors_and_visibility.h>
+#include <wxstruct.h>
+#include <class_base_screen.h>
+#include <printout_controller.h>
 
 
 /**
@@ -59,8 +52,7 @@ static const wxString tracePrinting( wxT( "KicadPrinting" ) );
 
 PRINT_PARAMETERS::PRINT_PARAMETERS()
 {
-    m_PenDefaultSize        = Millimeter2iu( 0.2 ); // A reasonable default value to draw items
-                                      // which do not have a specified line width
+    m_PenDefaultSizeMils    = 0.2;
     m_PrintScale            = 1.0;
     m_XScaleAdjust          = 1.0;
     m_YScaleAdjust          = 1.0;
@@ -77,7 +69,7 @@ PRINT_PARAMETERS::PRINT_PARAMETERS()
 }
 
 
-BOARD_PRINTOUT_CONTROLLER::BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
+PRINTOUT_CONTROLLER::PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
                                                       EDA_DRAW_FRAME*         aParent,
                                                       const wxString&         aTitle ) :
     wxPrintout( aTitle )
@@ -87,13 +79,9 @@ BOARD_PRINTOUT_CONTROLLER::BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aP
 }
 
 
-bool BOARD_PRINTOUT_CONTROLLER::OnPrintPage( int aPage )
+bool PRINTOUT_CONTROLLER::OnPrintPage( int aPage )
 {
-#ifdef PCBNEW
-    LAYER_NUM layers_count = NB_PCB_LAYERS;
-#else
-    LAYER_NUM layers_count = NB_LAYERS;
-#endif
+    LAYER_NUM layers_count = getAppLayerCount();
 
     LAYER_MSK mask_layer = m_PrintParams.m_PrintMaskLayer;
 
@@ -120,12 +108,7 @@ bool BOARD_PRINTOUT_CONTROLLER::OnPrintPage( int aPage )
     if( m_PrintParams.m_PrintMaskLayer == 0 )
         return false;
 
-#ifdef PCBNEW
-    // In Pcbnew we can want the layer EDGE always printed
-    if( m_PrintParams.m_Flags == 1 )
-        m_PrintParams.m_PrintMaskLayer |= EDGE_LAYER;
-#endif
-
+    applyOnPrintHacks();
     DrawPage();
 
     m_PrintParams.m_PrintMaskLayer = mask_layer;
@@ -134,7 +117,7 @@ bool BOARD_PRINTOUT_CONTROLLER::OnPrintPage( int aPage )
 }
 
 
-void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
+void PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
                                              int* selPageFrom, int* selPageTo )
 {
     *minPage     = 1;
@@ -150,7 +133,7 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 }
 
 
-void BOARD_PRINTOUT_CONTROLLER::DrawPage()
+void PRINTOUT_CONTROLLER::DrawPage()
 {
     wxPoint       offset;
     double        userscale;
@@ -163,16 +146,8 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
 
     wxBusyCursor  dummy;
 
-#if defined (PCBNEW)
-    BOARD * brd = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
-    boardBoundingBox = brd->ComputeBoundingBox();
-    wxString titleblockFilename = brd->GetFileName();
-#elif defined (GERBVIEW)
-    boardBoundingBox = ((GERBVIEW_FRAME*) m_Parent)->GetGerberLayoutBoundingBox();
-    wxString titleblockFilename;    // TODO see if we uses the gerber file name
-#else
-    #error BOARD_PRINTOUT_CONTROLLER::DrawPage() works only for PCBNEW or GERBVIEW
-#endif
+    boardBoundingBox = getBoundingBox();
+    wxString titleblockFilename = getTitleBlockText();
 
     // Use the page size as the drawing area when the board is shown or the user scale
     // is less than 1.
@@ -190,7 +165,7 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
     {
         if(boardBoundingBox.GetWidth() && boardBoundingBox.GetHeight())
         {
-            int margin = Millimeter2iu( 10.0 ); // add a margin around the drawings
+            int margin = Units()->MmToIu( 10.0 ); // add a margin around the drawings
             double scaleX = (double)(pageSizeIU.x - (2 * margin)) /
                             boardBoundingBox.GetWidth();
             double scaleY = (double)(pageSizeIU.y - (2 * margin)) /
@@ -224,8 +199,8 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
         MapScreenSizeToPaper(); // set best scale and offset (scale is not used)
         int w, h;
         GetPPIPrinter( &w, &h );
-        double accurate_Xscale = (double) w / (IU_PER_MILS*1000);
-        double accurate_Yscale = (double) h / (IU_PER_MILS*1000);
+        double accurate_Xscale = (double) w / Units()->MilsToIu(1000);
+        double accurate_Yscale = (double) h / Units()->MilsToIu(1000);
 
         if( IsPreview() )  // Scale must take in account the DC size in Preview
         {
@@ -306,8 +281,10 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
         GRForceBlackPen( true );
 
     if( m_PrintParams.PrintBorderAndTitleBlock() )
-        m_Parent->DrawWorkSheet( dc, screen, m_PrintParams.m_PenDefaultSize,
-                                  IU_PER_MILS, titleblockFilename );
+        m_Parent->DrawWorkSheet( dc, screen, 
+                                  Units()->MmToIu( m_PrintParams.m_PenDefaultSizeMils ),
+                                  Units()->MilsToIu (1.0), 
+                                  titleblockFilename );
 
     if( printMirror )
     {
@@ -371,12 +348,7 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
         GRForceBlackPen( true );
 
 
-#if defined (GERBVIEW)
-    // In B&W mode, do not force black pen for Gerbview
-    // because negative objects need a white pen, not a black pen
-    // B&W mode is handled in print page
-    GRForceBlackPen( false );
-#endif
+    applyDrawingHacks();
     m_Parent->PrintPage( dc, m_PrintParams.m_PrintMaskLayer, printMirror,
                          &m_PrintParams );
 

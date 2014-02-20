@@ -10,8 +10,6 @@
 #include <class_base_screen.h>
 #include <layers_id_colors_and_visibility.h>
 
-#define ZOOM_FACTOR( x )       ( x * IU_PER_DECIMILS )
-
 
 /* Handle info to display a board */
 class GBR_SCREEN : public BASE_SCREEN

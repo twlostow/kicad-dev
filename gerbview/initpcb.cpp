@@ -63,7 +63,13 @@ bool GERBVIEW_FRAME::Clear_Pcb( bool query )
 
     GetGerberLayout()->SetBoundingBox( EDA_RECT() );
 
-    SetScreen( new GBR_SCREEN( GetPageSettings().GetSizeIU() ) );
+    
+    wxSize pageSize;
+
+    pageSize.x = Units()->MilsToIu ( GetPageSettings().GetWidthMils() );
+    pageSize.y = Units()->MilsToIu ( GetPageSettings().GetHeightMils() );
+
+    SetScreen( new GBR_SCREEN( pageSize ) );
 
     setActiveLayer( FIRST_LAYER );
     m_LayersManager->UpdateLayerIcons();

@@ -50,11 +50,6 @@
 #include <class_gbr_screen.h>
 
 
-// Config keywords
-static const wxString   cfgShowPageSizeOption( wxT( "PageSizeOpt" ) );
-static const wxString   cfgShowDCodes( wxT( "ShowDCodesOpt" ) );
-static const wxString   cfgShowNegativeObjects( wxT( "ShowNegativeObjectsOpt" ) );
-static const wxString   cfgShowBorderAndTitleBlock( wxT( "ShowBorderAndTitleBlock" ) );
 
 
 /*************************************/
@@ -69,6 +64,8 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( wxWindow* aParent, const wxString& aTitle,
     EDA_DRAW_FRAME( aParent, GERBER_FRAME_TYPE, aTitle, aPosition, aSize,
                     aStyle, GERBVIEW_FRAME_NAME )
 {
+    SetUnits( &g_GerbviewUnits );
+
     m_colorsSettings = &g_ColorsSettings;
     m_gerberLayout = NULL;
 
@@ -95,7 +92,9 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( wxWindow* aParent, const wxString& aTitle,
 
     SetVisibleLayers( FULL_LAYERS );     // All 32 layers visible.
 
-    SetScreen( new GBR_SCREEN( GetGerberLayout()->GetPageSettings().GetSizeIU() ) );
+    wxSize pageSize ( Units()->MilsToIu ( GetGerberLayout()->GetPageSettings().GetSizeMils() ) );
+    
+    SetScreen( new GBR_SCREEN( pageSize ) );
 
     // Create the PCB_LAYER_WIDGET *after* SetLayout():
     wxFont  font = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
@@ -187,7 +186,7 @@ double GERBVIEW_FRAME::BestZoom()
 
     // gives a minimal value to zoom, if no item in list
     if( item == NULL  )
-        return ZOOM_FACTOR( 350.0 );
+        return Units()->IuPerDMils() * 350.0;
 
     EDA_RECT bbox = GetGerberLayout()->ComputeBoundingBox();
 
@@ -201,78 +200,6 @@ double GERBVIEW_FRAME::BestZoom()
     return best_zoom;
 }
 
-
-void GERBVIEW_FRAME::LoadSettings()
-{
-    wxConfig* config = wxGetApp().GetSettings();
-
-    if( config == NULL )
-        return;
-
-    EDA_DRAW_FRAME::LoadSettings();
-
-    wxGetApp().ReadCurrentSetupValues( GetConfigurationSettings() );
-
-    PAGE_INFO pageInfo( wxT( "GERBER" ) );
-
-    config->Read( cfgShowBorderAndTitleBlock, &m_showBorderAndTitleBlock, false );
-
-    if( m_showBorderAndTitleBlock )
-    {
-        wxString pageType;
-
-        config->Read( cfgShowPageSizeOption, &pageType, wxT( "GERBER" ) );
-
-        pageInfo.SetType( pageType );
-    }
-
-    SetPageSettings( pageInfo );
-
-    GetScreen()->InitDataPoints( pageInfo.GetSizeIU() );
-
-    bool tmp;
-    config->Read( cfgShowDCodes, &tmp, true );
-    SetElementVisibility( DCODES_VISIBLE, tmp );
-    config->Read( cfgShowNegativeObjects, &tmp, false );
-    SetElementVisibility( NEGATIVE_OBJECTS_VISIBLE, tmp );
-
-    // because we have 2 file historues, we must read this one
-    // using a specific path
-    config->SetPath( wxT( "drl_files" ) );
-    m_drillFileHistory.Load( *config );
-    config->SetPath( wxT( ".." ) );
-
-    // WxWidgets 2.9.1 seems call setlocale( LC_NUMERIC, "" )
-    // when reading doubles in config,
-    // but forget to back to current locale. So we call SetLocaleTo_Default
-    SetLocaleTo_Default();
-}
-
-
-void GERBVIEW_FRAME::SaveSettings()
-{
-    wxConfig* config = wxGetApp().GetSettings();
-
-    if( config == NULL )
-        return;
-
-    EDA_DRAW_FRAME::SaveSettings();
-
-    wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
-
-    config->Write( cfgShowPageSizeOption, GetPageSettings().GetType() );
-    config->Write( cfgShowBorderAndTitleBlock, m_showBorderAndTitleBlock );
-    config->Write( cfgShowDCodes, IsElementVisible( DCODES_VISIBLE ) );
-    config->Write( cfgShowNegativeObjects,
-                   IsElementVisible( NEGATIVE_OBJECTS_VISIBLE ) );
-
-    // Save the drill file history list.
-    // Because we have 2 file histories, we must save this one
-    // in a specific path
-    config->SetPath( wxT( "drl_files" ) );
-    m_drillFileHistory.Save( *config );
-    config->SetPath( wxT( ".." ) );
-}
 
 
 void GERBVIEW_FRAME::ReFillLayerWidget()
@@ -383,8 +310,7 @@ void GERBVIEW_FRAME::Liste_D_Codes()
     D_CODE*         pt_D_code;
     wxString        Line;
     wxArrayString   list;
-    double          scale = g_UserUnit == INCHES ? IU_PER_MILS * 1000 :
-                            IU_PER_MM;
+    double          scale = Units()->GetUserUnit() == INCHES ? Units() -> MilsToIu(1000.0):Units()->MmToIu (1.0);
     LAYER_NUM       curr_layer = getActiveLayer();
 
     for( LAYER_NUM layer = FIRST_LAYER; layer < NB_LAYERS; ++layer )
@@ -404,7 +330,7 @@ void GERBVIEW_FRAME::Liste_D_Codes()
 
         list.Add( Line );
 
-        const char* units = g_UserUnit == INCHES ? "\"" : "mm";
+        const char* units = Units()->GetUserUnit() == INCHES ? "\"" : "mm";
         for( ii = 0, jj = 1; ii < TOOLS_MAX_COUNT; ii++ )
         {
             pt_D_code = gerber->GetDCODE( ii + FIRST_DCODE, false );
@@ -697,7 +623,7 @@ void GERBVIEW_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
     m_gerberLayout->SetPageSettings( aPageSettings );
 
     if( GetScreen() )
-        GetScreen()->InitDataPoints( aPageSettings.GetSizeIU() );
+        GetScreen()->InitDataPoints( Units()->MilsToIu ( aPageSettings.GetSizeMils() ) );
 }
 
 
@@ -715,7 +641,7 @@ const wxSize GERBVIEW_FRAME::GetPageSizeIU() const
     // this function is only needed because EDA_DRAW_FRAME is not compiled
     // with either -DPCBNEW or -DEESCHEMA, so the virtual is used to route
     // into an application specific source file.
-    return m_gerberLayout->GetPageSettings().GetSizeIU();
+    return Units()->MilsToIu ( m_gerberLayout->GetPageSettings().GetSizeMils() );
 }
 
 
@@ -808,7 +734,7 @@ void GERBVIEW_FRAME::UpdateStatusBar()
 
         ro = hypot( dx, dy );
         wxString formatter;
-        switch( g_UserUnit )
+        switch( Units()->GetUserUnit() )
         {
         case INCHES:
             formatter = wxT( "Ro %.6f Th %.1f" );
@@ -823,18 +749,18 @@ void GERBVIEW_FRAME::UpdateStatusBar()
             break;
         }
 
-        line.Printf( formatter, To_User_Unit( g_UserUnit, ro ), theta );
+        line.Printf( formatter, Units()->ToUser( ro ), theta );
 
         SetStatusText( line, 3 );
     }
 
     // Display absolute coordinates:
-    dXpos = To_User_Unit( g_UserUnit, GetCrossHairPosition().x );
-    dYpos = To_User_Unit( g_UserUnit, GetCrossHairPosition().y );
+    dXpos = Units()->ToUser( GetCrossHairPosition().x );
+    dYpos = Units()->ToUser( GetCrossHairPosition().y );
 
     wxString absformatter;
 
-    switch( g_UserUnit )
+    switch( Units()->GetUserUnit() )
     {
     case INCHES:
         absformatter = wxT( "X %.6f  Y %.6f" );
@@ -860,8 +786,8 @@ void GERBVIEW_FRAME::UpdateStatusBar()
         // Display relative coordinates:
         dx = GetCrossHairPosition().x - screen->m_O_Curseur.x;
         dy = GetCrossHairPosition().y - screen->m_O_Curseur.y;
-        dXpos = To_User_Unit( g_UserUnit, dx );
-        dYpos = To_User_Unit( g_UserUnit, dy );
+        dXpos = Units()->ToUser( dx );
+        dYpos = Units()->ToUser( dy );
 
         // We already decided the formatter above
         line.Printf( locformatter, dXpos, dYpos, hypot( dXpos, dYpos ) );

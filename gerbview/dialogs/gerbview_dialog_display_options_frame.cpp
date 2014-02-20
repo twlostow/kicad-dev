@@ -70,7 +70,7 @@ void DIALOG_DISPLAY_OPTIONS::OnCancelButtonClick( wxCommandEvent& event )
 void DIALOG_DISPLAY_OPTIONS::initOptDialog( )
 {
     m_PolarDisplay->SetSelection( m_Parent->m_DisplayOptions.m_DisplayPolarCood ? 1 : 0 );
-    m_BoxUnits->SetSelection( g_UserUnit ? 1 : 0 );
+    m_BoxUnits->SetSelection( g_GerbviewUnits.GetUserUnit() ? 1 : 0 );
     m_CursorShape->SetSelection( m_Parent->GetCursorShape() ? 1 : 0 );
 
     // Show Option Draw Lines. We use DisplayPcbTrackFill as Lines draw option
@@ -110,7 +110,7 @@ void DIALOG_DISPLAY_OPTIONS::OnOKBUttonClick( wxCommandEvent& event )
 {
     m_Parent->m_DisplayOptions.m_DisplayPolarCood =
         (m_PolarDisplay->GetSelection() == 0) ? false : true;
-    g_UserUnit  = (m_BoxUnits->GetSelection() == 0) ? INCHES : MILLIMETRES;
+    g_GerbviewUnits.SetUserUnit ((m_BoxUnits->GetSelection() == 0) ? INCHES : MILLIMETRES);
     m_Parent->SetCursorShape( m_CursorShape->GetSelection() );
 
     if( m_OptDisplayLines->GetSelection() == 1 )

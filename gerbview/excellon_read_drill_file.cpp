@@ -467,7 +467,7 @@ bool EXCELLON_IMAGE::Execute_HEADER_Command( char*& text )
         if( dcode == NULL )
             break;
         // conv_scale = scaling factor from inch to Internal Unit
-        double conv_scale = IU_PER_MILS * 1000;
+        double conv_scale = g_GerbviewUnits.IuPerMils() * 1000.0;
         if( m_GerbMetric )
             conv_scale /= 25.4;
 

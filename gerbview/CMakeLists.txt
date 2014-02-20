@@ -50,6 +50,7 @@ set(GERBVIEW_SRCS
     gerbview.cpp
     gerbview_config.cpp
     gerbview_frame.cpp
+    gerbview_printout_controller.cpp
     hotkeys.cpp
     initpcb.cpp
     locate.cpp
@@ -65,18 +66,6 @@ set(GERBVIEW_SRCS
     toolbars_gerber.cpp
     )
 
-###
-# We need some extra sources from common and pcbnew
-###
-set(GERBVIEW_EXTRA_SRCS
-    ../common/base_screen.cpp
-    ../common/base_units.cpp
-    ../common/eda_text.cpp
-    ../common/class_layer_box_selector.cpp
-    ../common/class_page_info.cpp
-    ../pcbnew/layer_widget.cpp
-    ../pcbnew/printout_controler.cpp
-)
 
 ###
 # Windows resource file
@@ -109,7 +98,6 @@ endif(APPLE)
 add_executable(gerbview WIN32 MACOSX_BUNDLE
                ${GERBVIEW_SRCS}
                ${DIALOGS_SRCS}
-               ${GERBVIEW_EXTRA_SRCS}
                ${GERBVIEW_RESOURCES})
 
 ###

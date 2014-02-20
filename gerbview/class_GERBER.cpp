@@ -351,7 +351,7 @@ void GERBER_IMAGE::DisplayImageInfo( void )
     msg = m_ImageJustifyYCenter ? _("Center") : _("Normal");
     m_Parent->AppendMsgPanel( _( "Y Justify" ), msg, DARKRED );
 
-    if( g_UserUnit == INCHES )
+    if( g_GerbviewUnits.GetUserUnit() == INCHES )
         msg.Printf( wxT( "X=%f Y=%f" ), (double) m_ImageJustifyOffset.x/10000,
                                     (double) m_ImageJustifyOffset.y/10000 );
     else

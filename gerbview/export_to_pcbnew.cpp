@@ -19,7 +19,7 @@
 #include <build_version.h>
 #include <wildcards_and_files_ext.h>
 
-#define TO_PCB_UNIT( x ) KiROUND( x / IU_PER_DECIMILS )
+#define TO_PCB_UNIT( x ) KiROUND( x / g_GerbviewUnits.IuPerDMils() )
 
 #define TRACK_TYPE  0
 #define VIA_TYPE    1

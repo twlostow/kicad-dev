@@ -85,6 +85,12 @@ class UNITS {
 		    double x = mils * m_IUPerMils;
 		    return int( x < 0 ? x - 0.5 : x + 0.5 );
 		}
+		
+		wxSize MilsToIu( const wxSize &aSize ) const
+		{
+		    return wxSize ( MilsToIu (aSize.x), MilsToIu(aSize.y ));
+		}
+		
 		int DMilsToIu( int dmils ) const
 		{
 		    double x = dmils * m_IUPerDecimils;
@@ -119,6 +125,14 @@ class UNITS {
 		{
 			m_userUnit = aUserUnit;
 		}
+
+		double MmPerIu() const { return m_mmPerIU; }
+		double MilsPerIu() const { return m_milsPerIU; }
+		double DMilsPerIU() const { return m_deciMilsPerIU; }
+
+		double IuPerMm() const { return m_IUPerMm; }
+		double IuPerMils() const { return m_IUPerMils; }
+		double IuPerDMils() const { return m_IUPerDecimils; }
 
 	protected:
 		
@@ -173,6 +187,21 @@ class SCH_UNITS : public UNITS
     	}   
 };
 
+class GERBVIEW_UNITS : public UNITS
+{
+	public:
+		GERBVIEW_UNITS ()
+		{
+		   m_mmPerIU  = 1.0 / 1e5;
+    	   m_milsPerIU =  1.0 / 1e5 * 0.0254;
+    	   m_deciMilsPerIU = 1.0 / 1e5 * 0.00254;
+    	   m_IUPerMm = 1e5;
+    	   m_IUPerMils = 1e5 * 0.0254;
+    	   m_IUPerDecimils = 1e5 * 0.00254 ;
+    	   m_app = APP_GERBVIEW_T;
+    	}   
+};
+
 class IUNIT_HOLDER {
 	public:
 
@@ -216,6 +245,7 @@ class IUNIT_HOLDER {
 
 extern PCB_UNITS g_PcbUnits;
 extern SCH_UNITS g_SchUnits;
+extern GERBVIEW_UNITS g_GerbviewUnits;
 
 
 /** Helper function Double2Str to print a float number without
@@ -238,128 +268,11 @@ void StripTrailingZeros( wxString& aStringValue, unsigned aTrailingZeroAllowed =
 
 
 /**
- * Function To_User_Unit
- * convert \a aValue in internal units to the appropriate user units defined by \a aUnit.
- *
- * @return The converted value, in double
- * @param aUnit The units to convert \a aValue to.
- * @param aValue The value in internal units to convert.
- */
-//double To_User_Unit( EDA_UNITS_T aUnit, double aValue );
-
-/**
- * Function CoordinateToString
- * is a helper to convert the \a integer coordinate \a aValue to a string in inches,
- * millimeters, or unscaled units according to the current user units setting.
- *
- * Should be used only to display a coordinate in status, but not in dialogs,
- * because the mantissa of the number displayed has 4 digits max for readability.
- * (i.e. the value shows the decimils or the microns )
- * However the actual internal value could need up to 8 digits to be printed
- *
- * @param aValue The integer coordinate to convert.
- * @param aConvertToMils Convert inch values to mils if true.  This setting has no effect if
- *                       the current user unit is millimeters.
- * @return The converted string for display in user interface elements.
- */
-//wxString CoordinateToString( int aValue, bool aConvertToMils = false );
-
-/**
  * Function AngleToStringDegrees
  * is a helper to convert the \a double \a aAngle (in internal unit)
  * to a string in degrees
  */
 wxString AngleToStringDegrees( double aAngle );
-
-/**
- * Function LenghtDoubleToString
- * is a helper to convert the \a double length \a aValue to a string in inches,
- * millimeters, or unscaled units according to the current user units setting.
- *
- * Should be used only to display a coordinate in status, but not in dialogs,
- * because the mantissa of the number displayed has 4 digits max for readability.
- * (i.e. the value shows the decimils or the microns )
- * However the actual internal value could need up to 8 digits to be printed
- *
- * @param aValue The double value to convert.
- * @param aConvertToMils Convert inch values to mils if true.  This setting has no effect if
- *                       the current user unit is millimeters.
- * @return The converted string for display in user interface elements.
- */
-//wxString LengthDoubleToString( double aValue, bool aConvertToMils = false );
-
-/**
- * Function ReturnStringFromValue
- * returns the string from \a aValue according to units (inch, mm ...) for display,
- * and the initial unit for value.
- *
- * For readability, the mantissa has 3 or more digits (max 8 digits),
- * the trailing 0 are removed if the mantissa has more than 3 digits
- * and some trailing 0
- * This function should be used to display values in dialogs because a value
- * entered in mm (for instance 2.0 mm) could need up to 8 digits mantissa
- * if displayed in inch to avoid truncation or rounding made just by the printf function.
- * otherwise the actual value is rounded when read from dialog and converted
- * in internal units, and therefore modified.
- *
- * @param aUnit = display units (INCHES, MILLIMETRE ..)
- * @param aValue = value in Internal_Unit
- * @param aAddUnitSymbol = true to add symbol unit to the string value
- * @return A wxString object containing value and optionally the symbol unit (like 2.000 mm)
- */
-//wxString ReturnStringFromValue( EDA_UNITS_T aUnit, int aValue, bool aAddUnitSymbol = false );
-
-/**
- * Operator << overload
- * outputs a point to the argument string in a format resembling
- * "@ (x,y)
- * @param aString Where to put the text describing the point value
- * @param aPoint  The point to output.
- * @return wxString& - the input string
- */
-//wxString& operator <<( wxString& aString, const wxPoint& aPoint );
-
-/**
- * Function PutValueInLocalUnits
- * converts \a aValue from internal units to user units and append the units notation
- * (mm or ")then inserts the string an \a aTextCtrl.
- *
- * This function is used in dialog boxes for entering values depending on selected units.
- */
-//void PutValueInLocalUnits( wxTextCtrl& aTextCtr, int aValue );
-
-/**
- * Return in internal units the value "val" given in inch or mm
- */
-//double From_User_Unit( EDA_UNITS_T aUnit, double aValue );
-
-/**
- * Function ReturnValueFromString
- * converts \a aTextValue in \a aUnits to internal units used by the application.
- *
- * @param aUnits The units of \a aTextValue.
- * @param aTextValue A reference to a wxString object containing the string to convert.
- * @return The string from Value, according to units (inch, mm ...) for display,
- */
-//int ReturnValueFromString( EDA_UNITS_T aUnits, const wxString& aTextValue );
-
-/**
- * Function ReturnValueFromString
-
- * converts \a aTextValue in \a aUnits to internal units used by the application,
- * unit type will be obtained from g_UserUnit.
- *
- * @param aTextValue A reference to a wxString object containing the string to convert.
- * @return The string from Value, according to units (inch, mm ...) for display,
- */
-
-//int ReturnValueFromString( const wxString& aTextValue );
-
-/**
- * Convert the number Value in a string according to the internal units
- *  and the selected unit (g_UserUnit) and put it in the wxTextCtrl TextCtrl
- */
-//int ReturnValueFromTextCtrl( const wxTextCtrl& aTextCtr );
 
 #endif   // _BASE_UNITS_H_
 

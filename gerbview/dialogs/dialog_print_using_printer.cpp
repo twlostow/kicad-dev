@@ -12,7 +12,7 @@
 #include <confirm.h>
 
 #include <dialog_print_using_printer_base.h>
-#include <printout_controler.h>
+#include <gerbview_printout_controller.h>
 
 #include <gerbview.h>
 #include <pcbplot.h>
@@ -198,7 +198,7 @@ void DIALOG_PRINT_USING_PRINTER::InitValues( )
     else
         m_ModeColorOption->SetSelection( 0 );
 
-    s_Parameters.m_PenDefaultSize = 0;
+    s_Parameters.m_PenDefaultSizeMils = 0;
 
     // Create scale adjust option
     msg.Printf( wxT( "%f" ), s_Parameters.m_XScaleAdjust );
@@ -331,8 +331,8 @@ void DIALOG_PRINT_USING_PRINTER::OnPrintPreview( wxCommandEvent& event )
     // Pass two printout objects: for preview, and possible printing.
     wxString        title   = _( "Print Preview" );
     wxPrintPreview* preview =
-        new wxPrintPreview( new BOARD_PRINTOUT_CONTROLLER( s_Parameters, m_Parent, title ),
-                            new BOARD_PRINTOUT_CONTROLLER( s_Parameters, m_Parent, title ),
+        new wxPrintPreview( new GERBVIEW_PRINTOUT_CONTROLLER( s_Parameters, m_Parent, title ),
+                            new GERBVIEW_PRINTOUT_CONTROLLER( s_Parameters, m_Parent, title ),
                             g_PrintData );
 
     if( preview == NULL )
@@ -386,7 +386,7 @@ void DIALOG_PRINT_USING_PRINTER::OnPrintButtonClick( wxCommandEvent& event )
     wxPrinter         printer( &printDialogData );
 
     wxString          title = _( "Print" );
-    BOARD_PRINTOUT_CONTROLLER      printout( s_Parameters, m_Parent, title );
+    GERBVIEW_PRINTOUT_CONTROLLER      printout( s_Parameters, m_Parent, title );
 
 #if !defined(__WINDOWS__) && !wxCHECK_VERSION(2,9,0)
     wxDC*             dc = printout.GetDC();

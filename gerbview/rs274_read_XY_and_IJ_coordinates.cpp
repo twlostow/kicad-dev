@@ -19,19 +19,23 @@
 // depending on the gerber file format
 // this scale list assumes gerber units are imperial.
 // for metric gerber units, the imperial to metric conversion is made in read functions
-static double scale_list[10] =
+
+static double GetGScale(int n) 
 {
-    1000.0 * IU_PER_MILS,
-    100.0 * IU_PER_MILS,
-    10.0 * IU_PER_MILS,
-    1.0 * IU_PER_MILS,
-    0.1 * IU_PER_MILS,
-    0.01 * IU_PER_MILS,
-    0.001 * IU_PER_MILS,
-    0.0001 * IU_PER_MILS,
-    0.00001 * IU_PER_MILS,
-    0.000001 * IU_PER_MILS
-};
+    static const double scaleList [] = {
+    1000.0,
+    100.0,
+    10.0,
+    1.0,
+    0.1,
+    0.01,
+    0.001,
+    0.0001,
+    0.00001,
+    0.000001 };
+
+    return g_GerbviewUnits.IuPerMils() * scaleList [n];
+}
 
 
 /**
@@ -44,9 +48,9 @@ int scaletoIU( double aCoord, bool isMetric )
     int ret;
 
     if( isMetric )  // gerber are units in mm
-        ret = KiROUND( aCoord * IU_PER_MM );
+        ret = KiROUND( g_GerbviewUnits.IuPerMm() * aCoord );
     else            // gerber are units in inches
-        ret = KiROUND( aCoord * IU_PER_MILS * 1000.0);
+        ret = KiROUND( g_GerbviewUnits.IuPerMils() * 1000.0 * aCoord );
 
     return ret;
 }
@@ -94,9 +98,9 @@ wxPoint GERBER_IMAGE::ReadXYCoord( char*& Text )
             {
                 // When X or Y values are float numbers, they are given in mm or inches
                 if( m_GerbMetric )  // units are mm
-                    current_coord = KiROUND( atof( line ) * IU_PER_MILS / 0.0254 );
+                    current_coord = KiROUND( atof( line ) * g_GerbviewUnits.IuPerMils() / 0.0254 );
                 else    // units are inches
-                    current_coord = KiROUND( atof( line ) * IU_PER_MILS * 1000 );
+                    current_coord = KiROUND( atof( line ) * g_GerbviewUnits.IuPerMils() * 1000 );
             }
             else
             {
@@ -114,7 +118,7 @@ wxPoint GERBER_IMAGE::ReadXYCoord( char*& Text )
                     *text = 0;
                 }
                 current_coord = atoi( line );
-                double real_scale = scale_list[fmt_scale];
+                double real_scale = GetGScale (fmt_scale);
 
                 if( m_GerbMetric )
                     real_scale = real_scale / 25.4;
@@ -185,9 +189,9 @@ wxPoint GERBER_IMAGE::ReadIJCoord( char*& Text )
             {
                 // When X or Y values are float numbers, they are given in mm or inches
                 if( m_GerbMetric )  // units are mm
-                    current_coord = KiROUND( atof( line ) * IU_PER_MILS / 0.0254 );
+                    current_coord = KiROUND( atof( line ) * g_GerbviewUnits.IuPerMils() / 0.0254 );
                 else    // units are inches
-                    current_coord = KiROUND( atof( line ) * IU_PER_MILS * 1000 );
+                    current_coord = KiROUND( atof( line ) * g_GerbviewUnits.IuPerMils() * 1000 );
             }
             else
             {
@@ -210,7 +214,7 @@ wxPoint GERBER_IMAGE::ReadIJCoord( char*& Text )
                 if( fmt_scale < 0 || fmt_scale > 9 )
                     fmt_scale = 4;      // select scale 1.0
 
-                double real_scale = scale_list[fmt_scale];
+                double real_scale = GetGScale( fmt_scale );
                 if( m_GerbMetric )
                     real_scale = real_scale / 25.4;
                 current_coord = KiROUND( current_coord * real_scale );

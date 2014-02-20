@@ -1,8 +1,5 @@
 set( MAKE_LINK_MAPS false )
 
-add_definitions( -DEESCHEMA )
-
-
 include_directories( BEFORE ${INC_BEFORE} )
 include_directories(
     ./dialogs
@@ -68,7 +65,6 @@ set( EESCHEMA_SRCS
     block_libedit.cpp
     busentry.cpp
     bus-wire-junction.cpp
-    class_sch_drc_item.cpp
     class_libentry.cpp
     class_library.cpp
     class_netlist_object.cpp

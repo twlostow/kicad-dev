@@ -521,7 +521,7 @@ bool WriteDiagnosticERC( const wxString& aFullFileName )
             if( marker->GetMarkerType() == ERR )
                 count++;
 
-            msg = marker->GetReporter().ShowReport( &g_SchUnits );
+            msg = marker->ShowReport( );
             fprintf( file, "%s", TO_UTF8( msg ) );
         }
     }

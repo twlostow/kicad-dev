@@ -171,12 +171,3 @@ void MARKER_BASE::DrawMarker( EDA_DRAW_PANEL* aPanel, wxDC* aDC, GR_DRAWMODE aDr
 }
 
 
-void MARKER_BASE::DisplayMarkerInfo( EDA_DRAW_FRAME* aFrame )
-{
-    wxString msg = m_drc.ShowHtml();
-    DIALOG_DISPLAY_HTML_TEXT_BASE infodisplay( (wxWindow*)aFrame, wxID_ANY, _( "Marker Info" ),
-                                               wxGetMousePosition(), wxSize( 550, 140 ) );
-
-    infodisplay.m_htmlWindow->SetPage( msg );
-    infodisplay.ShowModal();
-}

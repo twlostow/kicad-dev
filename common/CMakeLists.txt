@@ -192,9 +192,6 @@ set( COMMON_SRCS
 add_library( common STATIC ${COMMON_SRCS} )
 
 set( PCB_COMMON_SRCS
-    base_screen.cpp
-    eda_text.cpp
-    class_page_info.cpp
     convert_basic_shapes_to_polygon.cpp
     pcbcommon.cpp
     footprint_info.cpp
@@ -205,7 +202,6 @@ set( PCB_COMMON_SRCS
     ../pcbnew/class_board_item.cpp
     ../pcbnew/class_dimension.cpp
     ../pcbnew/class_drawsegment.cpp
-    ../pcbnew/class_drc_item.cpp
     ../pcbnew/class_edge_mod.cpp
     ../pcbnew/class_netclass.cpp
     ../pcbnew/class_netinfo_item.cpp
@@ -243,12 +239,8 @@ set( PCB_COMMON_SRCS
     fp_lib_table_keywords.cpp
     fpid.cpp
     fp_lib_table.cpp
-)
-
-set( PCB_COMMON_SRCS
-    ${PCB_COMMON_SRCS}
     ../pcbnew/pcb_painter.cpp
-    )
+)
 
 # add -DPCBNEW to compilation of these PCBNEW sources
 set_source_files_properties( ${PCB_COMMON_SRCS} PROPERTIES

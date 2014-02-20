@@ -33,6 +33,7 @@
 #include <sch_item_struct.h>
 #include <class_marker_base.h>
 
+class EDA_DRAW_FRAME;
 
 /* Marker are mainly used to show an ERC error
  */
@@ -116,6 +117,14 @@ public:
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const;     // override
 #endif
+
+    virtual void DisplayMarkerInfo ( EDA_DRAW_FRAME* aFrame );
+
+    wxString ShowHtml() const;
+    wxString ShowReport() const;
+
+private:
+    wxString getErrorText() const;
 };
 
 #endif // TYPE_SCH_MARKER_H_

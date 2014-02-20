@@ -32,6 +32,7 @@
 #include <class_drawpanel.h>
 #include <trigo.h>
 #include <msgpanel.h>
+#include <html_messagebox.h>
 
 #include <general.h>
 #include <sch_marker.h>
@@ -161,8 +162,8 @@ void SCH_MARKER::GetMsgPanelInfo( MSG_PANEL_ITEMS& aList )
 {
     wxString msg;
 
-    aList.push_back( MSG_PANEL_ITEM( _( "Electronics rule check error" ),
-                                     GetReporter().GetErrorText(), DARKRED ) );
+    aList.push_back( MSG_PANEL_ITEM( _( "Electrical Rule Check error" ),
+                                     getErrorText(), DARKRED ) );
 }
 
 
@@ -206,3 +207,113 @@ bool SCH_MARKER::HitTest( const wxPoint& aPosition, int aAccuracy ) const
     return HitTestMarker( aPosition );
 }
 
+wxString SCH_MARKER::getErrorText() const
+{
+    switch( GetReporter().GetErrorCode() )
+    {
+    case ERCE_UNSPECIFIED:
+        return wxString( _("Unspecified ERC error") );
+    case ERCE_DUPLICATE_SHEET_NAME:
+        return wxString( _("Duplicate sheet names within a given sheet") );
+    case ERCE_PIN_NOT_CONNECTED:
+        return wxString( _("Pin not connected (and no \"No Connect\" symbol found)") );
+    case ERCE_PIN_NOT_DRIVEN:
+        return wxString( _("Pin connected to some others pins but no pin to drive it") );
+    case ERCE_PIN_TO_PIN_WARNING:
+        return wxString( _("Conflicting pin types (severity: warning)") );
+    case ERCE_PIN_TO_PIN_ERROR:
+        return wxString( _("Conflicting pin types (severity: error") );
+    case ERCE_HIERACHICAL_LABEL:
+        return wxString( _("Mismatch between hierarchical labels and sheet pins"));
+    case ERCE_NOCONNECT_CONNECTED:
+        return wxString( _("A No Connect symbol is connected to more than one pin"));
+
+    default:
+        return wxString( wxT("Unknown") );
+    }
+}
+
+/**
+ * Function ShowHtml
+ * translates this object into a fragment of HTML suitable for the
+ * wxWidget's wxHtmlListBox class.
+ * @return wxString - the html text.
+ */
+
+wxString SCH_MARKER::ShowHtml() const
+{
+    const DRC_ITEM& item = GetReporter();
+    wxString ret;
+    wxString mainText = item.GetTextA();
+    // a wxHtmlWindows does not like < and > in the text to display
+    // because these chars have a special meaning in html
+    mainText.Replace( wxT("<"), wxT("&lt;") );
+    mainText.Replace( wxT(">"), wxT("&gt;") );
+
+        wxString errText = getErrorText();
+        errText.Replace( wxT("<"), wxT("&lt;") );
+        errText.Replace( wxT(">"), wxT("&gt;") );
+
+
+        if( item.ShowNoCoordinate() )
+        {
+            // omit the coordinate, a NETCLASS has no location
+            ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s </li></ul>" ),
+                        item.GetErrorCode(),
+                        GetChars( errText ),
+                        GetChars( mainText ) );
+        }
+        else if( item.HasSecondItem() )
+        {
+            wxString auxText = item.GetAuxiliaryText();
+            auxText.Replace( wxT("<"), wxT("&lt;") );
+            auxText.Replace( wxT(">"), wxT("&gt;") );
+
+            // an html fragment for the entire message in the listbox.  feel free
+            // to add color if you want:
+            ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s: %s </li><li> %s: %s </li></ul>" ),
+                        item.GetErrorCode(),
+                        GetChars( errText ),
+                        GetChars( g_SchUnits.PointToString( item.GetPointA() )), GetChars( mainText ),
+                        GetChars( g_SchUnits.PointToString( item.GetPointB() )), GetChars( auxText ) );
+        }
+        else
+        {
+            ret.Printf( _( "ErrType(%d): <b>%s</b><ul><li> %s: %s </li></ul>" ),
+                        item.GetErrorCode(),
+                        GetChars( errText ),
+                        GetChars( g_SchUnits.PointToString( item.GetPointA() ) ), GetChars( mainText ) );
+        }
+
+        return ret;
+    }
+
+wxString SCH_MARKER::ShowReport( ) const
+{
+    const DRC_ITEM& item = GetReporter();
+
+    wxString ret;
+    if( item.HasSecondItem() )
+    {
+        ret.Printf( wxT( "ErrType(%d): %s\n    %s: %s\n    %s: %s\n" ),
+                    item.GetErrorCode(),
+                    GetChars( getErrorText() ),
+                    GetChars( g_SchUnits.PointToString( item.GetPointA() ) ), GetChars( item.GetMainText() ),
+                    GetChars( g_SchUnits.PointToString( item.GetPointB() ) ), GetChars( item.GetAuxiliaryText() ) );
+    } else {
+        ret.Printf( wxT( "ErrType(%d): %s\n    %s: %s\n" ),
+                    item.GetErrorCode(),
+                    GetChars( getErrorText() ),
+                    GetChars( g_SchUnits.PointToString( item.GetPointA() ) ), GetChars( item.GetMainText() ) );
+    }
+    return ret;
+}
+
+void SCH_MARKER::DisplayMarkerInfo( EDA_DRAW_FRAME* aFrame )
+{
+    DIALOG_DISPLAY_HTML_TEXT_BASE infodisplay( (wxWindow*)aFrame, wxID_ANY, _( "Marker Info" ),
+                                               wxGetMousePosition(), wxSize( 550, 140 ) );
+
+    infodisplay.m_htmlWindow->SetPage( ShowHtml() );
+    infodisplay.ShowModal();
+}

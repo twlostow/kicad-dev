@@ -80,7 +80,7 @@ public:
         {
             const SCH_MARKER* item = m_MarkerList[ n ];
             if( item )
-                return item->GetReporter().ShowHtml();
+                return item->ShowHtml();
         }
         return wxString();
     }

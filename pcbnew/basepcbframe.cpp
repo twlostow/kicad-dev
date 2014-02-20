@@ -132,6 +132,8 @@ PCB_BASE_FRAME::PCB_BASE_FRAME( wxWindow* aParent, ID_DRAWFRAME_TYPE aFrameType,
                                 long aStyle, const wxString & aFrameName) :
     EDA_DRAW_FRAME( aParent, aFrameType, aTitle, aPos, aSize, aStyle, aFrameName )
 {
+    SetUnits ( &g_PcbUnits );
+
     m_Pcb                 = NULL;
     m_toolManager         = NULL;
     m_toolDispatcher      = NULL;
@@ -184,8 +186,10 @@ void PCB_BASE_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
     wxASSERT( m_Pcb );
     m_Pcb->SetPageSettings( aPageSettings );
 
+    wxSize ps = aPageSettings.GetSizeMils();
+
     if( GetScreen() )
-        GetScreen()->InitDataPoints( aPageSettings.GetSizeIU() );
+        GetScreen()->InitDataPoints( wxSize ( Units()->MilsToIu (ps.x), Units()->MilsToIu(ps.y) ) );
 }
 
 
@@ -199,11 +203,12 @@ const PAGE_INFO& PCB_BASE_FRAME::GetPageSettings() const
 const wxSize PCB_BASE_FRAME::GetPageSizeIU() const
 {
     wxASSERT( m_Pcb );
+    wxSize ps = m_Pcb->GetPageSettings().GetSizeMils();
 
     // this function is only needed because EDA_DRAW_FRAME is not compiled
     // with either -DPCBNEW or -DEESCHEMA, so the virtual is used to route
     // into an application specific source file.
-    return m_Pcb->GetPageSettings().GetSizeIU();
+    return wxSize ( Units()->MilsToIu(ps.x), Units()->MilsToIu(ps.y) );
 }
 
 
@@ -647,7 +652,7 @@ void PCB_BASE_FRAME::UpdateStatusBar()
 
         ro = hypot( dx, dy );
         wxString formatter;
-        switch( g_UserUnit )
+        switch( Units()->GetUserUnit() )
         {
 #if defined( USE_PCBNEW_NANOMETRE )
         case INCHES:
@@ -672,19 +677,19 @@ void PCB_BASE_FRAME::UpdateStatusBar()
             break;
         }
 
-        line.Printf( formatter, To_User_Unit( g_UserUnit, ro ), theta );
+        line.Printf( formatter, Units()->ToUser( ro ), theta );
 
         SetStatusText( line, 3 );
     }
 
     // Display absolute coordinates:
-    dXpos = To_User_Unit( g_UserUnit, GetCrossHairPosition().x );
-    dYpos = To_User_Unit( g_UserUnit, GetCrossHairPosition().y );
+    dXpos = Units()->ToUser( GetCrossHairPosition().x );
+    dYpos = Units()->ToUser( GetCrossHairPosition().y );
 
     // The following sadly is an if Eeschema/if Pcbnew
     wxString absformatter;
 
-    switch( g_UserUnit )
+    switch( Units()->GetUserUnit() )
     {
     case INCHES:
         absformatter = wxT( "X %.6f  Y %.6f" );
@@ -710,8 +715,8 @@ void PCB_BASE_FRAME::UpdateStatusBar()
         // Display relative coordinates:
         dx = GetCrossHairPosition().x - screen->m_O_Curseur.x;
         dy = GetCrossHairPosition().y - screen->m_O_Curseur.y;
-        dXpos = To_User_Unit( g_UserUnit, dx );
-        dYpos = To_User_Unit( g_UserUnit, dy );
+        dXpos = Units()->ToUser( dx );
+        dYpos = Units()->ToUser( dy );
 
         // We already decided the formatter above
         line.Printf( locformatter, dXpos, dYpos, hypot( dXpos, dYpos ) );
@@ -869,7 +874,7 @@ void PCB_BASE_FRAME::updateGridSelectBox()
     wxString msg;
     wxString format = _( "Grid:");
 
-    switch( g_UserUnit )
+    switch( Units()->GetUserUnit() )
     {
     case INCHES:    // the grid size is displayed in mils
     case MILLIMETRES:
@@ -884,8 +889,8 @@ void PCB_BASE_FRAME::updateGridSelectBox()
     for( size_t i = 0; i < GetScreen()->GetGridCount(); i++ )
     {
         GRID_TYPE& grid = GetScreen()->GetGrid( i );
-        double value = To_User_Unit( g_UserUnit, grid.m_Size.x );
-        if( g_UserUnit == INCHES )
+        double value = Units()->ToUser( grid.m_Size.x );
+        if( Units()->GetUserUnit() == INCHES )
             value *= 1000;
 
         if( grid.m_Id != ID_POPUP_GRID_USER )

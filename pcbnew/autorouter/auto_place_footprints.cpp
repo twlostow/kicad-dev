@@ -48,7 +48,6 @@
 #include <class_module.h>
 #include <class_track.h>
 #include <class_drawsegment.h>
-#include <convert_to_biu.h>
 #include <base_units.h>
 #include <protos.h>
 
@@ -183,8 +182,8 @@ void PCB_EDIT_FRAME::AutoPlaceModule( MODULE* Module, int place_mode, wxDC* DC )
     RoutingMatrix.m_GridRouting = (int) GetScreen()->GetGridSize().x;
 
     // Ensure Board.m_GridRouting has a reasonable value:
-    if( RoutingMatrix.m_GridRouting < Millimeter2iu( 0.25 ) )
-        RoutingMatrix.m_GridRouting = Millimeter2iu( 0.25 );
+    if( RoutingMatrix.m_GridRouting < g_PcbUnits.MmToIu( 0.25 ) )
+        RoutingMatrix.m_GridRouting = g_PcbUnits.MmToIu( 0.25 );
 
     // Compute module parameters used in auto place
     if( genPlacementRoutingMatrix( GetBoard(), m_messagePanel ) == 0 )
@@ -736,8 +735,8 @@ int getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame, MODULE* aModule, wxDC* aD
                     wxString msg;
                     msg.Printf( wxT( "Score %g, pos %s, %s" ),
                                 min_cost,
-                                GetChars( ::CoordinateToString( LastPosOK.x ) ),
-                                GetChars( ::CoordinateToString( LastPosOK.y ) ) );
+                                GetChars( g_PcbUnits.CoordinateToString( LastPosOK.x ) ),
+                                GetChars( g_PcbUnits.CoordinateToString( LastPosOK.y ) ) );
                     aFrame->SetStatusText( msg );
                 }
             }

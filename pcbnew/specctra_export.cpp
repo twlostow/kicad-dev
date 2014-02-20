@@ -202,14 +202,14 @@ const KICAD_T SPECCTRA_DB::scanPADs[] = { PCB_PAD_T, EOT };
 static inline double scale( int kicadDist )
 {
     // nanometers to um
-    return kicadDist / ( IU_PER_MM / 1000.0 );
+    return kicadDist / ( g_PcbUnits.IuPerMm() / 1000.0 );
 }
 
 
 // / Convert integer internal units to float um
 static inline double IU2um( int kicadDist )
 {
-    return kicadDist * (1000.0 / IU_PER_MM);
+    return kicadDist * (1000.0 / g_PcbUnits.IuPerMm());
 }
 
 
@@ -1008,7 +1008,7 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
 
         // Set maximum proximity threshold for point to point nearness metric for
         // board perimeter only, not interior keepouts yet.
-        prox = Millimeter2iu( 0.002 );  // should be enough to fix rounding issues
+        prox = g_PcbUnits.MmToIu( 0.002 );  // should be enough to fix rounding issues
                                         // is arc start and end point calculations
 
         // Output the Edge.Cuts perimeter as circle or polygon.
@@ -1109,8 +1109,8 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
                     wxString error = wxString::Format(
                         _( "Unable to find the next segment with an endpoint of (%s mm, %s mm).\n"
                            "Edit Edge.Cuts perimeter graphics, making them contiguous polygons each." ),
-                        GetChars( FROM_UTF8( BOARD_ITEM::FormatInternalUnits( prevPt.x ).c_str() ) ),
-                        GetChars( FROM_UTF8( BOARD_ITEM::FormatInternalUnits( prevPt.y ).c_str() ) )
+                        GetChars( FROM_UTF8( g_PcbUnits.FormatIU( prevPt.x ).c_str() ) ),
+                        GetChars( FROM_UTF8( g_PcbUnits.FormatIU( prevPt.y ).c_str() ) )
                         );
                     ThrowIOError( error );
                 }
@@ -1119,7 +1119,7 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
 
         // Output the interior Edge.Cuts graphics as keepouts, using nearness metric
         // for sloppy graphical items.
-        prox = Millimeter2iu( 0.25 );
+        prox = g_PcbUnits.MmToIu( 0.25 );
 
         while( items.GetCount() )
         {
@@ -1228,8 +1228,8 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
                         wxString error = wxString::Format(
                             _( "Unable to find the next segment with an endpoint of (%s mm, %s mm).\n"
                                "Edit Edge.Cuts interior graphics, making them contiguous polygons each." ),
-                            GetChars( FROM_UTF8( BOARD_ITEM::FormatInternalUnits( prevPt.x ).c_str() ) ),
-                            GetChars( FROM_UTF8( BOARD_ITEM::FormatInternalUnits( prevPt.y ).c_str() ) )
+                            GetChars( FROM_UTF8( g_PcbUnits.FormatIU( prevPt.x ).c_str() ) ),
+                            GetChars( FROM_UTF8( g_PcbUnits.FormatIU( prevPt.y ).c_str() ) )
                             );
 
                         ThrowIOError( error );
@@ -1270,7 +1270,7 @@ bool SPECCTRA_DB::GetBoardPolygonOutlines( BOARD* aBoard,
                                            wxString* aErrorText )
 {
     bool success = true;
-    double specctra2UIfactor = IU_PER_MM / 1000.0;  // Specctra unite = micron
+    double specctra2UIfactor = g_PcbUnits.IuPerMm() / 1000.0;  // Specctra unite = micron
 
     if( ! pcb )
     {

@@ -59,6 +59,12 @@
 #include <dialog_general_options.h>
 #include <wildcards_and_files_ext.h>
 
+#define OPTKEY_DEFAULT_LINEWIDTH_VALUE  wxT( "PlotLineWidth_mm" )
+#define PCB_SHOW_FULL_RATSNET_OPT       wxT( "PcbFullRatsnest" )
+#define PCB_MAGNETIC_PADS_OPT           wxT( "PcbMagPadOpt" )
+#define PCB_MAGNETIC_TRACKS_OPT         wxT( "PcbMagTrackOpt" )
+#define SHOW_MICROWAVE_TOOLS            wxT( "ShowMicrowaveTools" )
+#define SHOW_LAYER_MANAGER_TOOLS        wxT( "ShowLayerManagerTools" )
 
 void PCB_EDIT_FRAME::Process_Config( wxCommandEvent& event )
 {
@@ -327,6 +333,7 @@ PARAM_CFG_ARRAY PCB_EDIT_FRAME::GetProjectFileParameters()
     return pca;
 }
 
+static EDA_UNITS_T hackConfigUserUnit;
 
 PARAM_CFG_ARRAY& PCB_EDIT_FRAME::GetConfigurationSettings()
 {
@@ -335,7 +342,7 @@ PARAM_CFG_ARRAY& PCB_EDIT_FRAME::GetConfigurationSettings()
 
     // Units used in dialogs and toolbars
     m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "Units" ),
-                                                   (int*)&g_UserUnit, MILLIMETRES ) );
+                                                   (int*)&hackConfigUserUnit, MILLIMETRES ) );
 
     m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "DisplayPolarCoords" ),
                                                     &DisplayOpt.DisplayPolarCood, false ) );
@@ -477,6 +484,72 @@ PARAM_CFG_ARRAY& PCB_EDIT_FRAME::GetConfigurationSettings()
                                                     , &g_Segments_45_Only, true ) );
     return m_configSettings;
 }
+
+
+
+void PCB_EDIT_FRAME::LoadSettings()
+{
+    wxConfig* config = wxGetApp().GetSettings();
+
+    if( config == NULL )
+        return;
+
+    // The configuration setting that used to be mixed in with the project file settings.
+    wxGetApp().ReadCurrentSetupValues( GetConfigurationSettings() );
+
+    g_PcbUnits.SetUserUnit( hackConfigUserUnit );
+
+    PCB_BASE_FRAME::LoadSettings();
+
+
+    double dtmp;
+    config->Read( OPTKEY_DEFAULT_LINEWIDTH_VALUE, &dtmp, 0.1 ); // stored in mm
+    if( dtmp < 0.01 )
+        dtmp = 0.01;
+    if( dtmp > 5.0 )
+        dtmp = 5.0;
+    g_DrawDefaultLineThickness = g_PcbUnits.MmToIu( dtmp );
+    long tmp;
+    config->Read( PCB_SHOW_FULL_RATSNET_OPT, &tmp );
+    GetBoard()->SetElementVisibility(RATSNEST_VISIBLE, tmp);
+
+    config->Read( PCB_MAGNETIC_PADS_OPT, &g_MagneticPadOption );
+    config->Read( PCB_MAGNETIC_TRACKS_OPT, &g_MagneticTrackOption );
+    config->Read( SHOW_MICROWAVE_TOOLS, &m_show_microwave_tools );
+    config->Read( SHOW_LAYER_MANAGER_TOOLS, &m_show_layer_manager_tools );
+
+    // WxWidgets 2.9.1 seems call setlocale( LC_NUMERIC, "" )
+    // when reading doubles in config,
+    // but forget to back to current locale. So we call SetLocaleTo_Default
+    SetLocaleTo_Default( );
+}
+
+
+void PCB_EDIT_FRAME::SaveSettings()
+{
+    wxConfig* config = wxGetApp().GetSettings();
+
+    if( config == NULL )
+        return;
+
+    hackConfigUserUnit = g_PcbUnits.GetUserUnit();
+    
+    // The configuration setting that used to be mixed in with the project file settings.
+    wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
+
+    PCB_BASE_FRAME::SaveSettings();
+
+    // This value is stored in mm )
+    config->Write( OPTKEY_DEFAULT_LINEWIDTH_VALUE,
+                   g_PcbUnits.MmPerIu() * g_DrawDefaultLineThickness );
+    long tmp = GetBoard()->IsElementVisible(RATSNEST_VISIBLE);
+    config->Write( PCB_SHOW_FULL_RATSNET_OPT, tmp );
+    config->Write( PCB_MAGNETIC_PADS_OPT, (long) g_MagneticPadOption );
+    config->Write( PCB_MAGNETIC_TRACKS_OPT, (long) g_MagneticTrackOption );
+    config->Write( SHOW_MICROWAVE_TOOLS, (long) m_show_microwave_tools );
+    config->Write( SHOW_LAYER_MANAGER_TOOLS, (long)m_show_layer_manager_tools );
+}
+
 
 
 void PCB_EDIT_FRAME::SaveMacros()

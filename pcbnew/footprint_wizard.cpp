@@ -223,10 +223,10 @@ void FOOTPRINT_WIZARD_FRAME::ParametersUpdated( wxGridEvent& event )
             value.ToDouble( &dValue );
 
             // convert from mils to inches where it's needed
-            if( g_UserUnit==INCHES )
+            if( g_PcbUnits.GetUserUnit() ==INCHES )
                 dValue = dValue / 1000.0;
 
-            dValue = From_User_Unit( g_UserUnit, dValue );
+            dValue = g_PcbUnits.FromUser ( dValue );
             value.Printf( wxT( "%f" ), dValue );
         }
 

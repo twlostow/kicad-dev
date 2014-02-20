@@ -193,7 +193,7 @@ void PCB_POLYGON::AddToBoard()
         zone->SetPriority( m_priority );
 
         zone->Outline()->SetHatch( outline_hatch,
-                                   Mils2iu( zone->Outline()->GetDefaultHatchPitchMils() ),
+                                   g_PcbUnits.MilsToIu( zone->Outline()->GetDefaultHatchPitchMils() ),
                                    true );
 
         if ( m_objType == wxT( 'K' ) )

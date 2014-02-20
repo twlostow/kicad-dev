@@ -122,7 +122,7 @@ void DIALOG_GRAPHIC_ITEM_PROPERTIES::initDlg( )
         if( texts_unit[ii] == NULL )
             break;
 
-        texts_unit[ii]->SetLabel( GetAbbreviatedUnitsLabel() );
+        texts_unit[ii]->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
     }
 
     wxString msg;
@@ -158,15 +158,15 @@ void DIALOG_GRAPHIC_ITEM_PROPERTIES::initDlg( )
         break;
     }
 
-    PutValueInLocalUnits( *m_Center_StartXCtrl, m_Item->GetStart().x );
+    m_Center_StartXCtrl->SetValue( g_PcbUnits.StringFromValue( m_Item->GetStart().x ) ); 
 
-    PutValueInLocalUnits( *m_Center_StartYCtrl, m_Item->GetStart().y );
+    m_Center_StartYCtrl->SetValue( g_PcbUnits.StringFromValue(  m_Item->GetStart().y ) );
 
-    PutValueInLocalUnits( *m_EndX_Radius_Ctrl, m_Item->GetEnd().x );
+    m_EndX_Radius_Ctrl->SetValue( g_PcbUnits.StringFromValue(  m_Item->GetEnd().x ) );
 
-    PutValueInLocalUnits( *m_EndY_Ctrl, m_Item->GetEnd().y );
+    m_EndY_Ctrl->SetValue( g_PcbUnits.StringFromValue(  m_Item->GetEnd().y ) );
 
-    PutValueInLocalUnits( *m_ThicknessCtrl, m_Item->GetWidth() );
+    m_ThicknessCtrl->SetValue( g_PcbUnits.StringFromValue(  m_Item->GetWidth() ) );
 
     int thickness;
 
@@ -175,7 +175,7 @@ void DIALOG_GRAPHIC_ITEM_PROPERTIES::initDlg( )
     else
         thickness =  m_brdSettings.m_DrawSegmentWidth;
 
-    PutValueInLocalUnits( *m_DefaultThicknessCtrl, thickness );
+    m_DefaultThicknessCtrl->SetValue( g_PcbUnits.StringFromValue( thickness ) );
 
     // Configure the layers list selector
     m_LayerSelectionCtrl->SetLayersHotkeys( false );
@@ -201,7 +201,7 @@ void DIALOG_GRAPHIC_ITEM_PROPERTIES::OnLayerChoice( wxCommandEvent& event )
     else
         thickness =  m_brdSettings.m_DrawSegmentWidth;
 
-    PutValueInLocalUnits( *m_DefaultThicknessCtrl, thickness );
+    m_DefaultThicknessCtrl->SetValue( g_PcbUnits.StringFromValue( thickness ) );
 }
 
 
@@ -215,22 +215,22 @@ void DIALOG_GRAPHIC_ITEM_PROPERTIES::OnOkClick( wxCommandEvent& event )
         m_Item->Draw( m_parent->GetCanvas(), m_DC, GR_XOR );
 
     msg = m_Center_StartXCtrl->GetValue();
-    m_Item->SetStartX( ReturnValueFromString( g_UserUnit, msg ) );
+    m_Item->SetStartX( g_PcbUnits.ValueFromString(msg ) );
 
     msg = m_Center_StartYCtrl->GetValue();
-    m_Item->SetStartY( ReturnValueFromString( g_UserUnit, msg ) );
+    m_Item->SetStartY( g_PcbUnits.ValueFromString(msg ) );
 
     msg = m_EndX_Radius_Ctrl->GetValue();
-    m_Item->SetEndX( ReturnValueFromString( g_UserUnit, msg ) );
+    m_Item->SetEndX( g_PcbUnits.ValueFromString(msg ) );
 
     msg = m_EndY_Ctrl->GetValue();
-    m_Item->SetEndY( ReturnValueFromString( g_UserUnit, msg ) );
+    m_Item->SetEndY( g_PcbUnits.ValueFromString(msg ) );
 
     msg = m_ThicknessCtrl->GetValue();
-    m_Item->SetWidth( ReturnValueFromString( g_UserUnit, msg ) );
+    m_Item->SetWidth( g_PcbUnits.ValueFromString(msg ) );
 
     msg = m_DefaultThicknessCtrl->GetValue();
-    int thickness = ReturnValueFromString( g_UserUnit, msg );
+    int thickness = g_PcbUnits.ValueFromString(msg );
 
     m_Item->SetLayer( m_LayerSelectionCtrl->GetLayerSelection() );
 

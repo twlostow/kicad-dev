@@ -12,7 +12,7 @@
 #include <wxPcbStruct.h>
 #include <base_units.h>
 
-#include <printout_controler.h>
+#include <board_printout_controller.h>
 #include <pcbnew.h>
 #include <pcbplot.h>
 
@@ -21,8 +21,8 @@
 #include <dialog_print_using_printer_base.h>
 
 
-#define PEN_WIDTH_MAX_VALUE ( KiROUND( 5 * IU_PER_MM ) )
-#define PEN_WIDTH_MIN_VALUE ( KiROUND( 0.005 * IU_PER_MM ) )
+#define PEN_WIDTH_MAX_VALUE_MILS ( 5 * PCB_UNITS().IuPerMils() )
+#define PEN_WIDTH_MIN_VALUE_MILS ( 0.005 * PCB_UNITS().IuPerMils() )
 
 
 extern int g_DrawDefaultLineThickness;
@@ -256,10 +256,10 @@ void DIALOG_PRINT_USING_PRINTER::InitValues( )
         m_ModeColorOption->SetSelection( 0 );
 
     m_PagesOption->SetSelection(s_Parameters.m_OptionPrintPage);
-    s_Parameters.m_PenDefaultSize = g_DrawDefaultLineThickness;
-    AddUnitSymbol( *m_TextPenWidth, g_UserUnit );
+    s_Parameters.m_PenDefaultSizeMils = g_PcbUnits.IuToMils ( g_DrawDefaultLineThickness );
+    AddUnitSymbol( *m_TextPenWidth, g_PcbUnits.GetUserUnit() );
     m_DialogPenWidth->SetValue(
-        ReturnStringFromValue( g_UserUnit, s_Parameters.m_PenDefaultSize ) );
+        g_PcbUnits.StringFromValue ( g_PcbUnits.MilsToIu ( s_Parameters.m_PenDefaultSizeMils ) ) );
 
     // Create scale adjust option
     msg.Printf( wxT( "%f" ), s_Parameters.m_XScaleAdjust );
@@ -385,22 +385,24 @@ void DIALOG_PRINT_USING_PRINTER::SetPenWidth()
     // Get the new pen width value, and verify min et max value
     // NOTE: s_Parameters.m_PenDefaultSize is in internal units
 
-    s_Parameters.m_PenDefaultSize = ReturnValueFromTextCtrl( *m_DialogPenWidth );
+    s_Parameters.m_PenDefaultSizeMils = g_PcbUnits.IuToMils ( 
+        g_PcbUnits.ValueFromString( m_DialogPenWidth->GetValue() )
+        );
 
-    if( s_Parameters.m_PenDefaultSize > PEN_WIDTH_MAX_VALUE )
+    if( s_Parameters.m_PenDefaultSizeMils > PEN_WIDTH_MAX_VALUE_MILS )
     {
-        s_Parameters.m_PenDefaultSize = PEN_WIDTH_MAX_VALUE;
+        s_Parameters.m_PenDefaultSizeMils = PEN_WIDTH_MAX_VALUE_MILS;
     }
 
-    if( s_Parameters.m_PenDefaultSize < PEN_WIDTH_MIN_VALUE )
+    if( s_Parameters.m_PenDefaultSizeMils < PEN_WIDTH_MIN_VALUE_MILS )
     {
-        s_Parameters.m_PenDefaultSize = PEN_WIDTH_MIN_VALUE;
+        s_Parameters.m_PenDefaultSizeMils = PEN_WIDTH_MIN_VALUE_MILS;
     }
 
-    g_DrawDefaultLineThickness = s_Parameters.m_PenDefaultSize;
+    g_DrawDefaultLineThickness = g_PcbUnits.MilsToIu ( s_Parameters.m_PenDefaultSizeMils );
 
     m_DialogPenWidth->SetValue(
-        ReturnStringFromValue( g_UserUnit, s_Parameters.m_PenDefaultSize ) );
+        g_PcbUnits.StringFromValue ( g_DrawDefaultLineThickness ) );
 }
 
 void DIALOG_PRINT_USING_PRINTER::OnScaleSelectionClick( wxCommandEvent& event )

@@ -30,7 +30,6 @@
 #include <errno.h>
 #include <common.h>
 #include <macros.h>
-#include <convert_from_iu.h>
 #include <trigo.h>
 #include <3d_struct.h>
 #include <class_title_block.h>
@@ -2397,7 +2396,7 @@ ZONE_CONTAINER* PCB_PARSER::parseZONE_CONTAINER() throw( IO_ERROR, PARSE_ERROR )
                  wxT( " as ZONE_CONTAINER." ) );
 
     CPolyLine::HATCH_STYLE hatchStyle = CPolyLine::NO_HATCH;
-    int     hatchPitch = Mils2iu( CPolyLine::GetDefaultHatchPitchMils() );
+    int     hatchPitch = g_PcbUnits.MilsToIu( CPolyLine::GetDefaultHatchPitchMils() );
     wxPoint pt;
     T       token;
 

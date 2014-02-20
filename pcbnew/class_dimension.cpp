@@ -50,7 +50,7 @@ DIMENSION::DIMENSION( BOARD_ITEM* aParent ) :
     m_Text( this )
 {
     m_Layer = DRAW_N;
-    m_Width = Millimeter2iu( 0.2 );
+    m_Width = g_PcbUnits.MmToIu( 0.2 );
     m_Value = 0;
     m_Shape = 0;
     m_Unit  = INCHES;
@@ -219,7 +219,7 @@ void DIMENSION::Mirror( const wxPoint& axis_pos )
 
 void DIMENSION::AdjustDimensionDetails( bool aDoNotChangeText )
 {
-    const int   arrowz = DMils2iu( 500 );           // size of arrows
+    const int   arrowz = g_PcbUnits.DMilsToIu( 500 );           // size of arrows
     int         ii;
     int         measure, deltax, deltay;            // value of the measure on X and Y axes
     int         arrow_up_X  = 0, arrow_up_Y = 0;    // coordinates of arrow line /
@@ -319,7 +319,7 @@ void DIMENSION::AdjustDimensionDetails( bool aDoNotChangeText )
     if( !aDoNotChangeText )
     {
         m_Value = measure;
-        msg     = ::CoordinateToString( m_Value );
+        msg     = g_PcbUnits.CoordinateToString( m_Value );
         SetText( msg );
     }
 }

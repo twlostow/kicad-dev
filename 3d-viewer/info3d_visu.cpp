@@ -39,9 +39,8 @@
 
 // Thickness of copper
 // TODO: define the actual copper thickness by user
-#define COPPER_THICKNESS KiROUND( 0.035 * IU_PER_MM )   // for 35 um
-#define TECH_LAYER_THICKNESS KiROUND( 0.04 * IU_PER_MM )
-#define EPOXY_THICKNESS KiROUND( 1.6 * IU_PER_MM )   // for 1.6 mm
+#define COPPER_THICKNESS_MM 0.035
+#define TECH_LAYER_THICKNESS_MM 0.04
 
 
 /* INFO3D_VISU in an helper class to store parameters like scaling factors,
@@ -88,8 +87,8 @@ void INFO3D_VISU::InitSettings( BOARD* aBoard )
 
     if( bbbox.GetWidth() == 0 && bbbox.GetHeight() == 0 )
     {
-        bbbox.SetWidth( 100 * IU_PER_MM );
-        bbbox.SetHeight( 100 * IU_PER_MM );
+        bbbox.SetWidth( 100 * g_PcbUnits.IuPerMm() );
+        bbbox.SetHeight( 100 * g_PcbUnits.IuPerMm() );
     }
 
     m_BoardSettings = &aBoard->GetDesignSettings();
@@ -110,8 +109,8 @@ void INFO3D_VISU::InitSettings( BOARD* aBoard )
     m_EpoxyThickness = aBoard->GetDesignSettings().GetBoardThickness() * m_BiuTo3Dunits;
 
     // TODO use value defined by user (currently use default values by ctor
-    m_CopperThickness   = COPPER_THICKNESS * m_BiuTo3Dunits;
-    m_NonCopperLayerThickness = TECH_LAYER_THICKNESS * m_BiuTo3Dunits;
+    m_CopperThickness   =  KiROUND ( g_PcbUnits.MmToIu(COPPER_THICKNESS_MM) * m_BiuTo3Dunits);
+    m_NonCopperLayerThickness = KiROUND ( g_PcbUnits.MmToIu(TECH_LAYER_THICKNESS_MM) * m_BiuTo3Dunits);
 
     // Init  Z position of each layer
     // calculate z position for each copper layer

@@ -55,12 +55,12 @@ void DRC::ShowDialog()
 
         // copy data retained in this DRC object into the m_ui DrcPanel:
 
-        PutValueInLocalUnits( *m_ui->m_SetTrackMinWidthCtrl,
-                              m_pcb->GetDesignSettings().m_TrackMinWidth );
-        PutValueInLocalUnits( *m_ui->m_SetViaMinSizeCtrl,
-                              m_pcb->GetDesignSettings().m_ViasMinSize );
-        PutValueInLocalUnits( *m_ui->m_SetMicroViakMinSizeCtrl,
-                              m_pcb->GetDesignSettings().m_MicroViasMinSize );
+        m_ui->m_SetTrackMinWidthCtrl->SetValue( 
+                                        g_PcbUnits.StringFromValue ( m_pcb->GetDesignSettings().m_TrackMinWidth ) );
+        m_ui->m_SetViaMinSizeCtrl->SetValue ( 
+                                        g_PcbUnits.StringFromValue ( m_pcb->GetDesignSettings().m_ViasMinSize ) );
+        m_ui->m_SetMicroViakMinSizeCtrl->SetValue (
+                                        g_PcbUnits.StringFromValue ( m_pcb->GetDesignSettings().m_MicroViasMinSize ) );
 
         m_ui->m_CreateRptCtrl->SetValue( m_doCreateRptFile );
         m_ui->m_RptFilenameCtrl->SetValue( m_rptFilename );
@@ -299,7 +299,7 @@ bool DRC::doNetClass( NETCLASS* nc, wxString& msg )
 
     const BOARD_DESIGN_SETTINGS& g = m_pcb->GetDesignSettings();
 
-#define FmtVal( x ) GetChars( ReturnStringFromValue( g_UserUnit, x ) )
+#define FmtVal( x ) GetChars( g_PcbUnits.StringFromValue( x ) )
 
 #if 0   // set to 1 when (if...) BOARD_DESIGN_SETTINGS has a m_MinClearance value
     if( nc->GetClearance() < g.m_MinClearance )

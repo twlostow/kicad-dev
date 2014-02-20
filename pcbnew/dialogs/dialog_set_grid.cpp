@@ -141,8 +141,8 @@ wxPoint DIALOG_SET_GRID::getGridOrigin()
     wxPoint grid;
 
     // @todo Some error checking here would be a good thing.
-    grid.x = ReturnValueFromTextCtrl( *m_GridOriginXCtrl );
-    grid.y = ReturnValueFromTextCtrl( *m_GridOriginYCtrl );
+    grid.x = g_PcbUnits.ValueFromString( m_GridOriginXCtrl->GetValue() );
+    grid.y = g_PcbUnits.ValueFromString( m_GridOriginYCtrl->GetValue() );
 
     return grid;
 }
@@ -150,8 +150,8 @@ wxPoint DIALOG_SET_GRID::getGridOrigin()
 
 void DIALOG_SET_GRID::setGridOrigin( const wxPoint& grid )
 {
-    PutValueInLocalUnits( *m_GridOriginXCtrl, grid.x );
-    PutValueInLocalUnits( *m_GridOriginYCtrl, grid.y );
+    m_GridOriginXCtrl->SetValue( g_PcbUnits.StringFromValue( grid.x ) );
+    m_GridOriginYCtrl->SetValue( g_PcbUnits.StringFromValue( grid.y ) );
 }
 
 
@@ -203,7 +203,7 @@ bool PCB_BASE_FRAME::InvokeDialogGrid()
 {
     wxPoint grid_origin = GetGridOrigin();
 
-    DIALOG_SET_GRID dlg( this, &m_UserGridUnit, g_UserUnit, &m_UserGridSize,
+    DIALOG_SET_GRID dlg( this, &m_UserGridUnit, g_PcbUnits.GetUserUnit(), &m_UserGridSize,
         &grid_origin, &m_FastGrid1, &m_FastGrid2,
         m_gridSelectBox->GetStrings() );
 

@@ -79,7 +79,6 @@
 #include <class_zone.h>
 #include <class_edge_mod.h>
 #include <class_pcb_text.h>
-#include <convert_from_iu.h>
 
 #include "../3d-viewer/modelparsers.h"
 
@@ -454,7 +453,7 @@ static void compute_layer_Zs( MODEL_VRML& aModel, BOARD* pcb )
 
     /* To avoid rounding interference, we apply an epsilon to each
      * successive layer */
-    double epsilon_z = Millimeter2iu( 0.02 ) * aModel.scale;
+    double epsilon_z = g_PcbUnits.MmToIu( 0.02 ) * aModel.scale;
     aModel.SetLayerZ( SOLDERPASTE_N_BACK, -half_thickness - epsilon_z * 4 );
     aModel.SetLayerZ( ADHESIVE_N_BACK, -half_thickness - epsilon_z * 3 );
     aModel.SetLayerZ( SILKSCREEN_N_BACK, -half_thickness - epsilon_z * 2 );
@@ -1249,9 +1248,9 @@ static void export_vrml_module( MODEL_VRML& aModel, BOARD* aPcb, MODULE* aModule
 
         // adjust 3D shape local offset position
         // they are given in inch, so they are converted in board IU.
-        double offsetx = vrmlm->m_MatPosition.x * IU_PER_MILS * 1000.0;
-        double offsety = vrmlm->m_MatPosition.y * IU_PER_MILS * 1000.0;
-        double offsetz = vrmlm->m_MatPosition.z * IU_PER_MILS * 1000.0;
+        double offsetx = vrmlm->m_MatPosition.x * g_PcbUnits.IuPerMils() * 1000.0;
+        double offsety = vrmlm->m_MatPosition.y * g_PcbUnits.IuPerMils() * 1000.0;
+        double offsetz = vrmlm->m_MatPosition.z * g_PcbUnits.IuPerMils() * 1000.0;
 
         if( isFlipped )
             NEGATE( offsetz );
@@ -1326,7 +1325,7 @@ bool PCB_EDIT_FRAME::ExportVRML_File( const wxString& aFullFileName,
                           "}\n", TO_UTF8( name ) );
 
     // Global VRML scale to export to a different scale.
-    model3d.scale = aMMtoWRMLunit / MM_PER_IU;
+    model3d.scale = aMMtoWRMLunit / g_PcbUnits.MmPerIu();
 
     // Set the mechanical deviation limit (in this case 0.02mm)
     // XXX - NOTE: the value should be set via the GUI

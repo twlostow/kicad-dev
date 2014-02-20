@@ -2416,16 +2416,16 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
         if( bbbox.GetWidth() || bbbox.GetHeight() )
         {
             bestPosition.x = bbbox.Centre().x;
-            bestPosition.y = bbbox.GetBottom() + Millimeter2iu( 10 );
+            bestPosition.y = bbbox.GetBottom() + Units()->MmToIu( 10 );
         }
     }
     else
     {
         // Position new components in the center of the page when the board is empty.
-        wxSize pageSize = m_paper.GetSizeIU();
+        wxSize pageSize = m_paper.GetSizeMils();
 
-        bestPosition.x = pageSize.GetWidth() / 2;
-        bestPosition.y = pageSize.GetHeight() / 2;
+        bestPosition.x = Units()->MilsToIu ( pageSize.GetWidth() ) / 2;
+        bestPosition.y = Units()->MilsToIu ( pageSize.GetHeight() ) / 2;
     }
 
     m_Status_Pcb = 0;
@@ -2775,8 +2775,7 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
                 continue;
 
             // Net name not valid, report error
-            wxString coord;
-            coord << zone->GetPosition();
+            wxString coord ( g_PcbUnits.PointToString ( zone->GetPosition() ) );
             msg.Printf( _( "*** Error: Zone '%s' layer '%s'"
                            " has non-existent net name '%s' ***\n" ),
                         GetChars( coord ),

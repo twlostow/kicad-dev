@@ -30,7 +30,7 @@
 #include <appl_wxstruct.h>
 #include <dxf2brd_items.h>
 #include <wxPcbStruct.h>
-#include <convert_from_iu.h>
+#include <base_units.h>
 #include <dialog_dxf_import_base.h>
 #include <class_pcb_layer_box_selector.h>
 
@@ -159,16 +159,16 @@ void DIALOG_DXF_IMPORT::OnOKClick( wxCommandEvent& event )
             break;
 
         case 1:
-            offsetY = m_parent->GetPageSizeIU().y * MM_PER_IU / 2;
+            offsetY = m_parent->GetPageSizeIU().y * g_PcbUnits.MmPerIu() / 2;
             break;
 
         case 2:
-            offsetX = m_parent->GetPageSizeIU().x * MM_PER_IU / 2;
-            offsetY = m_parent->GetPageSizeIU().y * MM_PER_IU / 2;
+            offsetX = m_parent->GetPageSizeIU().x * g_PcbUnits.MmPerIu() / 2;
+            offsetY = m_parent->GetPageSizeIU().y * g_PcbUnits.MmPerIu() / 2;
             break;
 
         case 3:
-            offsetY = m_parent->GetPageSizeIU().y * MM_PER_IU;
+            offsetY = m_parent->GetPageSizeIU().y * g_PcbUnits.MmPerIu();
             break;
     }
 

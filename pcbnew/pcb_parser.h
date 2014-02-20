@@ -195,7 +195,7 @@ class PCB_PARSER : public PCB_LEXER
         // to confirm or experiment.  Use a similar strategy in both places, here
         // and in the test program. Make that program with:
         // $ make test-nm-biu-to-ascii-mm-round-tripping
-        return KiROUND( parseDouble() * IU_PER_MM );
+        return KiROUND( parseDouble() * g_PcbUnits.IuPerMm() );
     }
 
     inline int parseBoardUnits( const char* aExpected ) throw( PARSE_ERROR )
@@ -203,7 +203,7 @@ class PCB_PARSER : public PCB_LEXER
         // Use here KiROUND, not KIROUND (see comments about them)
         // when having a function as argument, because it will be called twice
         // with KIROUND
-        return KiROUND( parseDouble( aExpected ) * IU_PER_MM );
+        return KiROUND( parseDouble( aExpected ) * g_PcbUnits.IuPerMm() );
     }
 
     inline int parseBoardUnits( T aToken ) throw( PARSE_ERROR )

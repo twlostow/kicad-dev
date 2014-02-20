@@ -376,11 +376,11 @@ bool GPCB_FPL_CACHE::IsModified( const wxString& aLibPath, const wxString& aFoot
 
 MODULE* GPCB_FPL_CACHE::parseMODULE( LINE_READER* aLineReader ) throw( IO_ERROR, PARSE_ERROR )
 {
-    #define TEXT_DEFAULT_SIZE  ( 40*IU_PER_MILS )
-    #define OLD_GPCB_UNIT_CONV IU_PER_MILS
+    #define TEXT_DEFAULT_SIZE  ( 40 * g_PcbUnits.IuPerMils() )
+    #define OLD_GPCB_UNIT_CONV g_PcbUnits.IuPerMils()
 
     // Old version unit = 1 mil, so conv_unit is 10 or 0.1
-    #define NEW_GPCB_UNIT_CONV ( 0.01*IU_PER_MILS )
+    #define NEW_GPCB_UNIT_CONV ( 0.01 * g_PcbUnits.IuPerMils() )
 
     int                   paramCnt;
     double                conv_unit = NEW_GPCB_UNIT_CONV; // GPCB unit = 0.01 mils and Pcbnew 0.1
@@ -463,7 +463,7 @@ MODULE* GPCB_FPL_CACHE::parseMODULE( LINE_READER* aLineReader ) throw( IO_ERROR,
     int tsize = ( parseInt( parameters[paramCnt-3] ) * TEXT_DEFAULT_SIZE ) / 100;
     int thickness = module->Reference().GetSize().x / 6;
 
-    tsize = std::max( KiROUND(5 * IU_PER_MILS), tsize ); // Ensure a minimal size = 5 mils
+    tsize = std::max( KiROUND(5 * g_PcbUnits.IuPerMils() ), tsize ); // Ensure a minimal size = 5 mils
     module->Reference().SetSize( wxSize( tsize, tsize ) );
     module->Reference().SetThickness( thickness );
     module->Value().SetOrientation( module->Reference().GetOrientation() );

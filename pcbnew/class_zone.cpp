@@ -484,7 +484,7 @@ bool ZONE_CONTAINER::HitTest( const wxPoint& aPosition )
 
 bool ZONE_CONTAINER::HitTestForCorner( const wxPoint& refPos )
 {
-    int distmax = Millimeter2iu( MAX_DIST_IN_MM );
+    int distmax = g_PcbUnits.MmToIu ( MAX_DIST_IN_MM );
     m_CornerSelection = m_Poly->HitTestForCorner( refPos, distmax );
 
     return m_CornerSelection >= 0;
@@ -493,7 +493,7 @@ bool ZONE_CONTAINER::HitTestForCorner( const wxPoint& refPos )
 
 bool ZONE_CONTAINER::HitTestForEdge( const wxPoint& refPos )
 {
-    int distmax = Millimeter2iu( MAX_DIST_IN_MM );
+    int distmax = g_PcbUnits.MmToIu( MAX_DIST_IN_MM );
     m_CornerSelection = m_Poly->HitTestForEdge( refPos, distmax );
 
     return m_CornerSelection >= 0;

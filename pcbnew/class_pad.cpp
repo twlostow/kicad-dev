@@ -46,18 +46,15 @@
 #include <class_board.h>
 #include <class_module.h>
 #include <polygon_test_point_inside.h>
-#include <convert_from_iu.h>
-
 
 int D_PAD::m_PadSketchModePenSize = 0;      // Pen size used to draw pads in sketch mode
-
 
 D_PAD::D_PAD( MODULE* parent ) :
     BOARD_CONNECTED_ITEM( parent, PCB_PAD_T )
 {
     m_NumPadName          = 0;
-    m_Size.x = m_Size.y   = DMils2iu( 600 ); // Default pad size 60 mils.
-    m_Drill.x = m_Drill.y = DMils2iu( 300 ); // Default drill size 30 mils.
+    m_Size.x = m_Size.y   = g_PcbUnits.DMilsToIu( 600 ); // Default pad size 60 mils.
+    m_Drill.x = m_Drill.y = g_PcbUnits.DMilsToIu( 300 ); // Default drill size 30 mils.
     m_Orient              = 0;               // Pad rotation in 1/10 degrees.
     m_LengthPadToDie      = 0;
 
@@ -244,27 +241,27 @@ void D_PAD::AppendConfigs( PARAM_CFG_ARRAY* aResult )
     // So not all parameters are stored, just few.
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadDrill" ),
                             &m_Drill.x,
-                            Millimeter2iu( 0.6 ),
-                            Millimeter2iu( 0.1 ), Millimeter2iu( 10.0 ),
-                            NULL, MM_PER_IU ) );
+                            g_PcbUnits.MmToIu( 0.6 ),
+                            g_PcbUnits.MmToIu( 0.1 ), g_PcbUnits.MmToIu( 10.0 ),
+                            NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadDrillOvalY" ),
                             &m_Drill.y,
-                            Millimeter2iu( 0.6 ),
-                            Millimeter2iu( 0.1 ), Millimeter2iu( 10.0 ),
-                            NULL, MM_PER_IU ) );
+                            g_PcbUnits.MmToIu( 0.6 ),
+                            g_PcbUnits.MmToIu( 0.1 ), g_PcbUnits.MmToIu( 10.0 ),
+                            NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadSizeH" ),
                             &m_Size.x,
-                            Millimeter2iu( 1.4 ),
-                            Millimeter2iu( 0.1 ), Millimeter2iu( 20.0 ),
-                            NULL, MM_PER_IU ) );
+                            g_PcbUnits.MmToIu( 1.4 ),
+                            g_PcbUnits.MmToIu( 0.1 ), g_PcbUnits.MmToIu( 20.0 ),
+                            NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadSizeV" ),
                             &m_Size.y,
-                            Millimeter2iu( 1.4 ),
-                            Millimeter2iu( 0.1 ), Millimeter2iu( 20.0 ),
-                            NULL, MM_PER_IU ) );
+                            g_PcbUnits.MmToIu( 1.4 ),
+                            g_PcbUnits.MmToIu( 0.1 ), g_PcbUnits.MmToIu( 20.0 ),
+                            NULL, g_PcbUnits.MmPerIu() ) );
 }
 
 
@@ -593,13 +590,13 @@ void D_PAD::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM>& aList )
 
     aList.push_back( MSG_PANEL_ITEM( ShowPadShape(), ShowPadAttr(), DARKGREEN ) );
 
-    Line = ::CoordinateToString( m_Size.x );
+    Line = g_PcbUnits.CoordinateToString( m_Size.x );
     aList.push_back( MSG_PANEL_ITEM( _( "H Size" ), Line, RED ) );
 
-    Line = ::CoordinateToString( m_Size.y );
+    Line = g_PcbUnits.CoordinateToString( m_Size.y );
     aList.push_back( MSG_PANEL_ITEM( _( "V Size" ), Line, RED ) );
 
-    Line = ::CoordinateToString( (unsigned) m_Drill.x );
+    Line = g_PcbUnits.CoordinateToString( (unsigned) m_Drill.x );
 
     if( GetDrillShape() == PAD_DRILL_CIRCLE )
     {
@@ -607,9 +604,9 @@ void D_PAD::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM>& aList )
     }
     else
     {
-        Line = ::CoordinateToString( (unsigned) m_Drill.x );
+        Line = g_PcbUnits.CoordinateToString( (unsigned) m_Drill.x );
         wxString msg;
-        msg = ::CoordinateToString( (unsigned) m_Drill.y );
+        msg = g_PcbUnits.CoordinateToString( (unsigned) m_Drill.y );
         Line += wxT( "/" ) + msg;
         aList.push_back( MSG_PANEL_ITEM( _( "Drill X / Y" ), Line, RED ) );
     }
@@ -625,15 +622,15 @@ void D_PAD::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM>& aList )
 
     aList.push_back( MSG_PANEL_ITEM( _( "Orient" ), Line, LIGHTBLUE ) );
 
-    Line = ::CoordinateToString( m_Pos.x );
+    Line = g_PcbUnits.CoordinateToString( m_Pos.x );
     aList.push_back( MSG_PANEL_ITEM( _( "X Pos" ), Line, LIGHTBLUE ) );
 
-    Line = ::CoordinateToString( m_Pos.y );
+    Line = g_PcbUnits.CoordinateToString( m_Pos.y );
     aList.push_back( MSG_PANEL_ITEM( _( "Y pos" ), Line, LIGHTBLUE ) );
 
     if( GetPadToDieLength() )
     {
-        Line = ::CoordinateToString( GetPadToDieLength() );
+        Line = g_PcbUnits.CoordinateToString( GetPadToDieLength() );
         aList.push_back( MSG_PANEL_ITEM( _( "Length in package" ), Line, CYAN ) );
     }
 }

@@ -52,7 +52,9 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <memory.h>
 
-#define FMTIU        BOARD_ITEM::FormatInternalUnits
+#define FMT_IU           g_PcbUnits.FormatIU
+#define FMT_ANGLE        g_PcbUnits.FormatAngle
+#define FMTIU            g_PcbUnits.FormatIU
 
 /**
  * Definition for enabling and disabling footprint library trace output.  See the
@@ -1285,7 +1287,7 @@ void PCB_IO::format( TEXTE_PCB* aText, int aNestLevel ) const
 
     m_out->Print( 0, "\n" );
 
-    aText->EDA_TEXT::Format( m_out, aNestLevel, m_ctl );
+    aText->EDA_TEXT::Format( m_out, &g_PcbUnits, aNestLevel, m_ctl );
 
     m_out->Print( aNestLevel, ")\n" );
 }
@@ -1326,7 +1328,7 @@ void PCB_IO::format( TEXTE_MODULE* aText, int aNestLevel ) const
 
     m_out->Print( 0, "\n" );
 
-    aText->EDA_TEXT::Format( m_out, aNestLevel, m_ctl );
+    aText->EDA_TEXT::Format( m_out, &g_PcbUnits, aNestLevel, m_ctl );
 
     m_out->Print( aNestLevel, ")\n" );
 }

@@ -617,7 +617,7 @@ void PCB_EDIT_FRAME::updateTraceWidthSelectBox()
 
     for( unsigned ii = 0; ii < GetBoard()->m_TrackWidthList.size(); ii++ )
     {
-        msg = _( "Track " ) + CoordinateToString( GetBoard()->m_TrackWidthList[ii], true );
+        msg = _( "Track " ) + g_PcbUnits.CoordinateToString( GetBoard()->m_TrackWidthList[ii], true );
 
         if( ii == 0 )
             msg << _( " *" );
@@ -644,11 +644,11 @@ void PCB_EDIT_FRAME::updateViaSizeSelectBox()
     for( unsigned ii = 0; ii < GetBoard()->m_ViasDimensionsList.size(); ii++ )
     {
         msg = _( "Via " );
-        msg << CoordinateToString( GetBoard()->m_ViasDimensionsList[ii].m_Diameter, true );
+        msg << g_PcbUnits.CoordinateToString( GetBoard()->m_ViasDimensionsList[ii].m_Diameter, true );
 
         if( GetBoard()->m_ViasDimensionsList[ii].m_Drill )
             msg  << wxT("/ ")
-                 << CoordinateToString( GetBoard()->m_ViasDimensionsList[ii].m_Drill, true );
+                 << g_PcbUnits.CoordinateToString( GetBoard()->m_ViasDimensionsList[ii].m_Drill, true );
 
         if( ii == 0 )
             msg << _( " *" );

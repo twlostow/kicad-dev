@@ -82,7 +82,6 @@
 #include <3d_struct.h>
 #include <pcb_plot_params.h>
 #include <drawtxt.h>
-#include <convert_to_biu.h>
 #include <trigo.h>
 #include <build_version.h>
 
@@ -422,7 +421,7 @@ void LEGACY_PLUGIN::loadGENERAL()
 
             if( !strcmp( data, "mm" ) )
             {
-                diskToBiu = IU_PER_MM;
+                diskToBiu = g_PcbUnits.IuPerMm();
             }
         }
 
@@ -2442,7 +2441,7 @@ void LEGACY_PLUGIN::loadZONE_CONTAINER()
                 // Hatch here, after outlines corners are read
                 // Set hatch here, after outlines corners are read
                 zc->Outline()->SetHatch( outline_hatch,
-                                         Mils2iu( CPolyLine::GetDefaultHatchPitchMils() ),
+                                         g_PcbUnits.MilsToIu( CPolyLine::GetDefaultHatchPitchMils() ),
                                          true );
 
                 m_board->Add( zc.release() );
@@ -2841,7 +2840,7 @@ void LEGACY_PLUGIN::init( const PROPERTIES* aProperties )
     m_props = aProperties;
 
     // conversion factor for saving RAM BIUs to KICAD legacy file format.
-    biuToDisk = 1.0/IU_PER_MM;      // BIUs are nanometers & file is mm
+    biuToDisk = 1.0 / g_PcbUnits.IuPerMm();      // BIUs are nanometers & file is mm
 
     // Conversion factor for loading KICAD legacy file format into BIUs in RAM
     // Start by assuming the *.brd file is in deci-mils.
@@ -2850,7 +2849,7 @@ void LEGACY_PLUGIN::init( const PROPERTIES* aProperties )
     // mm to nanometers.  The deci-mil legacy files have no such "Units" marker
     // so we must assume the file is in deci-mils until told otherwise.
 
-    diskToBiu = IU_PER_DECIMILS;    // BIUs are nanometers
+    diskToBiu = g_PcbUnits.IuPerDMils();    // BIUs are nanometers
 }
 
 
@@ -3992,7 +3991,7 @@ void LP_CACHE::ReadAndVerifyHeader( LINE_READER* aReader )
 
             if( !strcmp( units, "mm" ) )
             {
-                m_owner->diskToBiu = IU_PER_MM;
+                m_owner->diskToBiu = g_PcbUnits.IuPerMm();
             }
 
         }

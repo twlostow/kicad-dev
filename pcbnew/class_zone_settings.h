@@ -6,6 +6,8 @@
 #ifndef ZONE_SETTINGS_H_
 #define ZONE_SETTINGS_H_
 
+#include <base_units.h>
+
 #include "zones.h"
 
 
@@ -98,8 +100,8 @@ public:
 
     void SetCornerRadius( int aRadius )
     {
-        if( aRadius > Mils2iu( MAX_ZONE_CORNER_RADIUS_MILS ) )
-            m_cornerRadius = Mils2iu( MAX_ZONE_CORNER_RADIUS_MILS );
+        if( aRadius > PCB_UNITS().MilsToIu( MAX_ZONE_CORNER_RADIUS_MILS ) )
+            m_cornerRadius = PCB_UNITS().MilsToIu( MAX_ZONE_CORNER_RADIUS_MILS );
         else if( aRadius < 0 )
             m_cornerRadius = 0;
         else

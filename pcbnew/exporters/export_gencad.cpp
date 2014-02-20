@@ -98,7 +98,7 @@ static int GencadOffsetX, GencadOffsetY;
 
 /* GerbTool chokes on units different than INCH so this is the conversion
  *  factor */
-const static double SCALE_FACTOR = 10000.0 * IU_PER_DECIMILS;
+const static double SCALE_FACTOR = 10000.0 * PCB_UNITS().IuPerDMils();
 
 
 /* Two helper functions to calculate coordinates of modules in gencad values

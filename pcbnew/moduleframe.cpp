@@ -181,7 +181,10 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( PCB_EDIT_FRAME* aParent, FP_LIB_TABL
     SetBoard( s_Pcb );
 
     if( !s_screenModule )
-        s_screenModule = new PCB_SCREEN( GetPageSettings().GetSizeIU() );
+    {
+        wxSize pageSizeMils = GetPageSettings().GetSizeMils();
+        s_screenModule = new PCB_SCREEN( g_PcbUnits.MilsToIu ( pageSizeMils ) );
+    }
 
     SetScreen( s_screenModule );
 

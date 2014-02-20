@@ -37,7 +37,6 @@
 #include <algorithm>
 
 #include <fctsys.h>
-#include <convert_to_biu.h>
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <pcbnew.h>
@@ -59,7 +58,7 @@ struct TSubRect : public CRectPlacement::TRect
 typedef std::vector<TSubRect> CSubRectArray;
 
 // Use 0.01 mm units to calculate placement, to avoid long calculation time
-const int scale = (int)(0.01 * IU_PER_MM);
+const int scale = (int)(0.01 * PCB_UNITS().IuPerMm());
 
 // Populates a list of rectangles, from a list of modules
 void fillRectList( CSubRectArray& vecSubRects, std::vector <MODULE*>& aModuleList )
@@ -97,7 +96,7 @@ void spreadRectangles( CRectPlacement& aPlacementArea,
     areaSizeX/= scale;
     areaSizeY/= scale;
 
-    // Sort the subRects based on dimensions, larger dimension goes first.
+    // Sort the subRects based on dimensions, larar dimension goes first.
     std::sort( vecSubRects.begin(), vecSubRects.end(), CRectPlacement::TRect::Greater );
 
     // gives the initial size to the area
@@ -298,7 +297,7 @@ void PCB_EDIT_FRAME::SpreadFootprints( bool aFootprintsOutsideBoardOnly )
                     sub_area.SetWidth( placementArea.GetW()*scale );
                     sub_area.SetHeight( placementArea.GetH()*scale );
                     // Add a margin around the sheet placement area:
-                    sub_area.Inflate( Millimeter2iu( 1.5 ) );
+                    sub_area.Inflate( g_PcbUnits.MmToIu (1.5 ) );
 
                     placementSheetAreas.push_back( sub_area );
 

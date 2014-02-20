@@ -53,9 +53,9 @@ class NETCLASS
 {
 private:
     // Default values used to init a NETCLASS
-    static int DEFAULT_CLEARANCE;
-    static int DEFAULT_VIA_DRILL;
-    static int DEFAULT_UVIA_DRILL;
+    static int DEFAULT_CLEARANCE_DMILS;
+    static int DEFAULT_VIA_DRILL_DMILS;
+    static int DEFAULT_UVIA_DRILL_DMILS;
 
 protected:
 

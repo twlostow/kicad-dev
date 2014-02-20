@@ -66,7 +66,7 @@ void DIALOG_GENERALOPTIONS::init()
 
     /* Set display options */
     m_PolarDisplay->SetSelection( DisplayOpt.DisplayPolarCood ? 1 : 0 );
-    m_UnitsSelection->SetSelection( g_UserUnit ? 1 : 0 );
+    m_UnitsSelection->SetSelection( g_PcbUnits.GetUserUnit() ? 1 : 0 );
     m_CursorShape->SetSelection( GetParent()->GetCursorShape() ? 1 : 0 );
 
 
@@ -108,10 +108,10 @@ void DIALOG_GENERALOPTIONS::OnOkClick( wxCommandEvent& event )
     EDA_UNITS_T ii;
 
     DisplayOpt.DisplayPolarCood = ( m_PolarDisplay->GetSelection() == 0 ) ? false : true;
-    ii = g_UserUnit;
-    g_UserUnit = ( m_UnitsSelection->GetSelection() == 0 )  ? INCHES : MILLIMETRES;
+    ii = g_PcbUnits.GetUserUnit();
+    g_PcbUnits.SetUserUnit( ( m_UnitsSelection->GetSelection() == 0 )  ? INCHES : MILLIMETRES );
 
-    if( ii != g_UserUnit )
+    if( ii != g_PcbUnits.GetUserUnit() )
         GetParent()->ReCreateAuxiliaryToolbar();
 
     GetParent()->SetCursorShape( m_CursorShape->GetSelection() );

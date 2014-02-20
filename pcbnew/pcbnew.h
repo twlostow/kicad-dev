@@ -8,7 +8,6 @@
 
 #include <fctsys.h>         // wxWidgets include.
 #include <base_struct.h>    // IS_DRAGGED and IN_EDIT definitions.
-#include <convert_to_biu.h> // to define DMils2iu() conversion function
 #include <layers_id_colors_and_visibility.h>
 
 // Arcs are approximated by segments: define the number of segments per 360 deg (KiCad uses 0.1
@@ -32,9 +31,9 @@
 #define DIM_ANCRE_MODULE 3       // Anchor size (footprint center)
 
 
-#define TEXTS_MIN_SIZE  DMils2iu( 50 )      ///< Minimum text size in Pcbnew units value (50 * 0.0001 mils)
-#define TEXTS_MAX_SIZE  DMils2iu( 10000 )   ///< Maximum text size in Pcbnew units value (1 inch) )
-#define TEXTS_MAX_WIDTH DMils2iu( 5000 )    ///< Maximum text width in Pcbnew units value (0.5 inches)
+#define TEXTS_MIN_SIZE_DMILS  50      ///< Minimum text size in Pcbnew units value (50 * 0.0001 mils)
+#define TEXTS_MAX_SIZE_DMILS  10000   ///< Maximum text size in Pcbnew units value (1 inch) )
+#define TEXTS_MAX_WIDTH_DMILS 5000    ///< Maximum text width in Pcbnew units value (0.5 inches)
 
 
 /* Flag to force the SKETCH mode to display items (.m_Flags member) */

@@ -876,4 +876,4 @@ void PCB_PAINTER::draw( const PCB_TARGET* aTarget )
 }
 
 
-const double PCB_RENDER_SETTINGS::MAX_FONT_SIZE = Millimeter2iu( 10.0 );
+const double PCB_RENDER_SETTINGS::MAX_FONT_SIZE = 10.0 * PCB_UNITS().IuPerMm();

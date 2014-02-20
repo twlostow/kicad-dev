@@ -627,7 +627,8 @@ static void initializePlotter( PLOTTER *aPlotter, BOARD * aBoard,
     const PAGE_INFO* sheet_info;
     double paperscale; // Page-to-paper ratio
     wxSize paperSizeIU;
-    wxSize pageSizeIU( pageInfo.GetSizeIU() );
+    wxSize pageSizeMils ( pageInfo.GetSizeMils() );
+    wxSize pageSizeIU ( g_PcbUnits.MilsToIu ( pageSizeMils) );
     bool autocenter = false;
 
     /* Special options: to fit the sheet to an A4 sheet replace
@@ -640,7 +641,7 @@ static void initializePlotter( PLOTTER *aPlotter, BOARD * aBoard,
     if( aPlotOpts->GetA4Output() )      // Fit paper to A4
     {
         sheet_info  = &pageA4;
-        paperSizeIU = pageA4.GetSizeIU();
+        paperSizeIU = g_PcbUnits.MilsToIu ( pageA4.GetSizeMils() );
         paperscale  = (double) paperSizeIU.x / pageSizeIU.x;
         autocenter  = true;
     }
@@ -693,7 +694,7 @@ static void initializePlotter( PLOTTER *aPlotter, BOARD * aBoard,
        most of that taken from the options */
     aPlotter->SetPageSettings( *sheet_info );
 
-    aPlotter->SetViewport( offset, IU_PER_DECIMILS, compound_scale,
+    aPlotter->SetViewport( offset, g_PcbUnits.IuPerDMils(), compound_scale,
                            aPlotOpts->GetMirror() );
     aPlotter->SetDefaultLineWidth( aPlotOpts->GetLineWidth() );
     aPlotter->SetCreator( wxT( "PCBNEW" ) );
@@ -705,7 +706,7 @@ static void initializePlotter( PLOTTER *aPlotter, BOARD * aBoard,
  *  negative plot */
 static void FillNegativeKnockout( PLOTTER *aPlotter, const EDA_RECT &aBbbox )
 {
-    const int margin = 5 * IU_PER_MM;   // Add a 5 mm margin around the board
+    const int margin = 5 * g_PcbUnits.IuPerMm();   // Add a 5 mm margin around the board
     aPlotter->SetNegative( true );
     aPlotter->SetColor( WHITE );       // Which will be plotted as black
     EDA_RECT area = aBbbox;
@@ -722,7 +723,7 @@ static void ConfigureHPGLPenSizes( HPGL_PLOTTER *aPlotter,
     /* Compute pen_dim (the value is given in mils) in pcb units,
        with plot scale (if Scale is 2, pen diameter value is always m_HPGLPenDiam
        so apparent pen diam is actually pen diam / Scale */
-    int pen_diam = KiROUND( aPlotOpts->GetHPGLPenDiameter() * IU_PER_MILS /
+    int pen_diam = KiROUND( aPlotOpts->GetHPGLPenDiameter() * g_PcbUnits.IuPerMils() /
                             aPlotOpts->GetScale() );
 
     // compute pen_overlay (value comes in mils) in pcb units with plot scale
@@ -732,7 +733,7 @@ static void ConfigureHPGLPenSizes( HPGL_PLOTTER *aPlotter,
     if( aPlotOpts->GetHPGLPenOverlay() >= aPlotOpts->GetHPGLPenDiameter() )
         aPlotOpts->SetHPGLPenOverlay( aPlotOpts->GetHPGLPenDiameter() - 1 );
 
-    int pen_overlay = KiROUND( aPlotOpts->GetHPGLPenOverlay() * IU_PER_MILS /
+    int pen_overlay = KiROUND( aPlotOpts->GetHPGLPenOverlay() * g_PcbUnits.IuPerMils() /
                                aPlotOpts->GetScale() );
 
     // Set HPGL-specific options and start

@@ -135,12 +135,12 @@ double StrToDoublePrecisionUnits( wxString aStr, char aAxe, wxString aActualConv
                 || aActualConversion == wxT( "SCHLIB" ) )
                 i = i * (0.0254 / 0.025);
 #endif
-            i = Millimeter2iu( i );
+            i = g_PcbUnits.MmToIu( i );
         }
         else
         {
             ls.ToDouble( &i );
-            i = Mils2iu( i );
+            i = g_PcbUnits.MilsToIu( i );
         }
     }
     else

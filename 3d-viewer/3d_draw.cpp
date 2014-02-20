@@ -422,7 +422,7 @@ void EDA_3D_CANVAS::BuildBoard3DView()
         int copper_thickness = g_Parm_3D_Visu.GetCopperThicknessBIU();
         // a small offset between substrate and external copper layer to avoid artifacts
         // when drawing copper items on board
-        int epsilon = Millimeter2iu( 0.01 );
+        int epsilon = g_PcbUnits.MmToIu( 0.01 );
         int zpos = g_Parm_3D_Visu.GetLayerZcoordBIU( LAYER_N_BACK );
         int board_thickness = g_Parm_3D_Visu.GetLayerZcoordBIU( LAYER_N_FRONT )
                             - g_Parm_3D_Visu.GetLayerZcoordBIU( LAYER_N_BACK );
@@ -682,16 +682,16 @@ void EDA_3D_CANVAS::DrawGrid( double aGriSizeMM )
     wxPoint brd_center_pos = g_Parm_3D_Visu.m_BoardPos;
     NEGATE( brd_center_pos.y );
 
-    int     xsize   = std::max( brd_size.x, Millimeter2iu( 100 ) );
-    int     ysize   = std::max( brd_size.y, Millimeter2iu( 100 ) );
+    int     xsize   = std::max( brd_size.x, g_PcbUnits.MmToIu( 100 ) );
+    int     ysize   = std::max( brd_size.y, g_PcbUnits.MmToIu( 100 ) );
 
     // Grid limits, in 3D units
     double  xmin    = (brd_center_pos.x - xsize / 2) * scale;
     double  xmax    = (brd_center_pos.x + xsize / 2) * scale;
     double  ymin    = (brd_center_pos.y - ysize / 2) * scale;
     double  ymax    = (brd_center_pos.y + ysize / 2) * scale;
-    double  zmin    = Millimeter2iu( -50 ) * scale;
-    double  zmax    = Millimeter2iu( 100 ) * scale;
+    double  zmin    = g_PcbUnits.MmToIu( -50 ) * scale;
+    double  zmax    = g_PcbUnits.MmToIu( 100 ) * scale;
 
     // Draw horizontal grid centered on 3D origin (center of the board)
     for( int ii = 0; ; ii++ )
@@ -701,7 +701,7 @@ void EDA_3D_CANVAS::DrawGrid( double aGriSizeMM )
         else
             SetGLColor( gridcolor_marker, transparency );
 
-        int delta = KiROUND( ii * aGriSizeMM * IU_PER_MM );
+        int delta = KiROUND( ii * aGriSizeMM * g_PcbUnits.IuPerMm() );
 
         if( delta <= xsize / 2 )    // Draw grid lines parallel to X axis
         {
@@ -750,7 +750,7 @@ void EDA_3D_CANVAS::DrawGrid( double aGriSizeMM )
         else
             SetGLColor( gridcolor_marker, transparency );
 
-        double delta = ii * aGriSizeMM * IU_PER_MM;
+        double delta = ii * aGriSizeMM * g_PcbUnits.IuPerMm();
 
         glBegin( GL_LINES );
         glVertex3f( (brd_center_pos.x + delta) * scale, -brd_center_pos.y * scale, zmin );
@@ -777,7 +777,7 @@ void EDA_3D_CANVAS::DrawGrid( double aGriSizeMM )
         else
             SetGLColor( gridcolor_marker, transparency );
 
-        double delta = ii * aGriSizeMM * IU_PER_MM * scale;
+        double delta = ii * aGriSizeMM * g_PcbUnits.IuPerMm() * scale;
 
         if( delta <= zmax )
         {

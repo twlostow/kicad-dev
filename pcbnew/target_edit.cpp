@@ -50,7 +50,7 @@ static void ShowTargetShapeWhileMovingMouse( EDA_DRAW_PANEL* aPanel,
                                              bool            aErase );
 
 // Local variables :
-static int        MireDefaultSize = Millimeter2iu( 5 );
+static int        MireDefaultSize = PCB_UNITS().MmToIu ( 5 );
 
 static PCB_TARGET s_TargetCopy( NULL ); /* Used to store "old" values of the
                                          * current item parameters before
@@ -98,12 +98,12 @@ TARGET_PROPERTIES_DIALOG_EDITOR::TARGET_PROPERTIES_DIALOG_EDITOR( PCB_EDIT_FRAME
     m_Target = aTarget;
 
     // Size:
-    m_staticTextSizeUnits->SetLabel( GetUnitsLabel( g_UserUnit ) );
-    m_TargetSizeCtrl->SetValue( ReturnStringFromValue( g_UserUnit, m_Target->GetSize() ) );
+    m_staticTextSizeUnits->SetLabel( GetUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_TargetSizeCtrl->SetValue( g_PcbUnits.StringFromValue( m_Target->GetSize() ) );
 
     // Thickness:
-    m_staticTextThicknessUnits->SetLabel( GetUnitsLabel( g_UserUnit ) );
-    m_TargetThicknessCtrl->SetValue( ReturnStringFromValue( g_UserUnit, m_Target->GetWidth() ) );
+    m_staticTextThicknessUnits->SetLabel( GetUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_TargetThicknessCtrl->SetValue( g_PcbUnits.StringFromValue( m_Target->GetWidth() ) );
 
     // Shape
     m_TargetShape->SetSelection( m_Target->GetShape() ? 1 : 0 );
@@ -137,10 +137,10 @@ void TARGET_PROPERTIES_DIALOG_EDITOR::OnOkClick( wxCommandEvent& event )
         m_Target->SetFlags( IN_EDIT );      // set flag in edit to force
                                             // undo/redo/abort proper operation
 
-    int tmp = ReturnValueFromString( g_UserUnit, m_TargetThicknessCtrl->GetValue() );
+    int tmp = g_PcbUnits.ValueFromString( m_TargetThicknessCtrl->GetValue() );
     m_Target->SetWidth( tmp );
 
-    MireDefaultSize = ReturnValueFromString( g_UserUnit, m_TargetSizeCtrl->GetValue() );
+    MireDefaultSize = g_PcbUnits.ValueFromString( m_TargetSizeCtrl->GetValue() );
     m_Target->SetSize( MireDefaultSize );
 
     m_Target->SetShape( m_TargetShape->GetSelection() ? 1 : 0 );

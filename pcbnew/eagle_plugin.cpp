@@ -963,9 +963,9 @@ static double parseEagle( const string& aDistance )
 {
     double ret = strtod( aDistance.c_str(), NULL );
     if( aDistance.npos != aDistance.find( "mil" ) )
-        ret = IU_PER_MILS * ret;
+        ret = g_PcbUnits.IuPerMils() * ret;
     else
-        ret = IU_PER_MM * ret;
+        ret = g_PcbUnits.IuPerMm() * ret;
 
     return ret;
 }
@@ -995,12 +995,12 @@ struct ERULES
         psElongationLong    ( 100 ),
         rvPadTop            ( 0.25 ),
         // rvPadBottom      ( 0.25 ),
-        rlMinPadTop         ( Mils2iu( 10 ) ),
-        rlMaxPadTop         ( Mils2iu( 20 ) ),
+        rlMinPadTop         ( g_PcbUnits.MilsToIu( 10 ) ),
+        rlMaxPadTop         ( g_PcbUnits.MilsToIu( 20 ) ),
 
         rvViaOuter          ( 0.25 ),
-        rlMinViaOuter       ( Mils2iu( 10 ) ),
-        rlMaxViaOuter       ( Mils2iu( 20 ) ),
+        rlMinViaOuter       ( g_PcbUnits.MilsToIu( 10 ) ),
+        rlMaxViaOuter       ( g_PcbUnits.MilsToIu( 20 ) ),
         mdWireWire          ( 0 )
     {}
 
@@ -1197,8 +1197,8 @@ void EAGLE_PLUGIN::init( const PROPERTIES* aProperties )
     m_board = NULL;
     m_props = aProperties;
 
-    mm_per_biu = 1/IU_PER_MM;
-    biu_per_mm = IU_PER_MM;
+    mm_per_biu = 1.0 / g_PcbUnits.IuPerMm();
+    biu_per_mm = g_PcbUnits.IuPerMm();
 
     delete m_rules;
     m_rules = new ERULES();
@@ -1505,7 +1505,7 @@ void EAGLE_PLUGIN::loadPlain( CPTREE& aGraphics )
 
                 // this is not my fault:
                 zone->Outline()->SetHatch(
-                        outline_hatch, Mils2iu( zone->Outline()->GetDefaultHatchPitchMils() ), true );
+                        outline_hatch, g_PcbUnits.MilsToIu( zone->Outline()->GetDefaultHatchPitchMils() ), true );
             }
 
             m_xpath->pop();
@@ -2523,7 +2523,7 @@ void EAGLE_PLUGIN::loadSignals( CPTREE& aSignals )
                     zone->Outline()->CloseLastContour();
 
                     zone->Outline()->SetHatch( outline_hatch,
-                                               Mils2iu( zone->Outline()->GetDefaultHatchPitchMils() ),
+                                               g_PcbUnits.MilsToIu( zone->Outline()->GetDefaultHatchPitchMils() ),
                                                true );
 
                     // clearances, etc.

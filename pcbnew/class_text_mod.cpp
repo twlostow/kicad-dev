@@ -60,7 +60,7 @@ TEXTE_MODULE::TEXTE_MODULE( MODULE* parent, TEXT_TYPE text_type ) :
     m_NoShow = false;
 
     // Set text tickness to a default value
-    m_Thickness = Millimeter2iu( 0.15 );
+    m_Thickness = g_PcbUnits.MmToIu( 0.15 );
 
     SetLayer( SILKSCREEN_N_FRONT );
 
@@ -372,13 +372,13 @@ void TEXTE_MODULE::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     msg.Printf( wxT( "%.1f" ), m_Orient / 10.0 );
     aList.push_back( MSG_PANEL_ITEM( _( "Orient" ), msg, DARKGREEN ) );
 
-    msg = ::CoordinateToString( m_Thickness );
+    msg = g_PcbUnits.CoordinateToString( m_Thickness );
     aList.push_back( MSG_PANEL_ITEM( _( "Thickness" ), msg, DARKGREEN ) );
 
-    msg = ::CoordinateToString( m_Size.x );
+    msg = g_PcbUnits.CoordinateToString( m_Size.x );
     aList.push_back( MSG_PANEL_ITEM( _( "H Size" ), msg, RED ) );
 
-    msg = ::CoordinateToString( m_Size.y );
+    msg = g_PcbUnits.CoordinateToString( m_Size.y );
     aList.push_back( MSG_PANEL_ITEM( _( "V Size" ), msg, RED ) );
 }
 

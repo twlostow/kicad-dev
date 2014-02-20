@@ -154,15 +154,15 @@ void NETINFO_ITEM::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     aList.push_back( MSG_PANEL_ITEM( _( "Vias" ), txt, BLUE ) );
 
     // Displays the full net length (tracks on pcb + internal ICs connections ):
-    txt = ::CoordinateToString( lengthnet + lengthPadToDie );
+    txt = g_PcbUnits.CoordinateToString( lengthnet + lengthPadToDie );
     aList.push_back( MSG_PANEL_ITEM( _( "Net Length:" ), txt, RED ) );
 
     // Displays the net length of tracks only:
-    txt = ::CoordinateToString( lengthnet );
+    txt = g_PcbUnits.CoordinateToString( lengthnet );
     aList.push_back( MSG_PANEL_ITEM( _( "On Board" ), txt, RED ) );
 
     // Displays the net length of internal ICs connections (wires inside ICs):
-    txt = ::CoordinateToString( lengthPadToDie );
+    txt = g_PcbUnits.CoordinateToString( lengthPadToDie );
     aList.push_back( MSG_PANEL_ITEM( _( "In Package" ), txt, RED ) );
 }
 

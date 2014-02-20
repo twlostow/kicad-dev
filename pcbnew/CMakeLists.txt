@@ -1,7 +1,6 @@
 
 set( MAKE_LINK_MAPS false )
 
-add_definitions( -DPCBNEW )
 add_subdirectory(router)
 
 if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
@@ -193,7 +192,6 @@ set( PCBNEW_CLASS_SRCS
     hotkeys_board_editor.cpp
     hotkeys_module_editor.cpp
     initpcb.cpp
-    layer_widget.cpp
     librairi.cpp
     loadcmp.cpp
     magnetic_tracks_functions.cpp
@@ -220,7 +218,7 @@ set( PCBNEW_CLASS_SRCS
     plot_board_layers.cpp
     plot_brditems_plotter.cpp
     print_board_functions.cpp
-    printout_controler.cpp
+    board_printout_controller.cpp
     ratsnest.cpp
     ratsnest_data.cpp
     ratsnest_viewitem.cpp
@@ -258,14 +256,6 @@ set( PCBNEW_CLASS_SRCS
     )
 
 set( PCBNEW_SRCS ${PCBNEW_AUTOROUTER_SRCS} ${PCBNEW_CLASS_SRCS} ${PCBNEW_DIALOGS} )
-
-###
-# We need some extra sources from common
-###
-set( PCBNEW_COMMON_SRCS
-    ../common/dialogs/dialog_page_settings.cpp
-    ../common/base_units.cpp
-    )
 
 ##
 # Scripting sources
@@ -371,7 +361,7 @@ if( KICAD_SCRIPTING_MODULES )
 
     set( CMAKE_SWIG_FLAGS ${SWIG_FLAGS} )
     set_source_files_properties( scripting/pcbnew.i PROPERTIES CPLUSPLUS ON )
-    swig_add_module( pcbnew python scripting/pcbnew.i ${PCBNEW_SCRIPTING_PYTHON_HELPERS} ${PCBNEW_SRCS} ${PCBNEW_COMMON_SRCS} )
+    swig_add_module( pcbnew python scripting/pcbnew.i ${PCBNEW_SCRIPTING_PYTHON_HELPERS} ${PCBNEW_SRCS} )
     swig_link_libraries( pcbnew
         3d-viewer
         pcbcommon

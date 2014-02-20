@@ -105,7 +105,7 @@ void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::initDlg()
     {
         if( texts_unit[ii] == NULL )
             break;
-        texts_unit[ii]->SetLabel( GetAbbreviatedUnitsLabel() );
+        texts_unit[ii]->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
     }
 
     wxString msg;
@@ -142,17 +142,17 @@ void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::initDlg()
         break;
     }
 
-    PutValueInLocalUnits( *m_Center_StartXCtrl, m_item->GetStart().x );
+    m_Center_StartXCtrl->SetValue( g_PcbUnits.StringFromValue( m_item->GetStart().x ) );
 
-    PutValueInLocalUnits( *m_Center_StartYCtrl, m_item->GetStart().y );
+    m_Center_StartYCtrl->SetValue( g_PcbUnits.StringFromValue( m_item->GetStart().y ) );
 
-    PutValueInLocalUnits( *m_EndX_Radius_Ctrl, m_item->GetEnd().x );
+    m_EndX_Radius_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_item->GetEnd().x ) );
 
-    PutValueInLocalUnits( *m_EndY_Ctrl, m_item->GetEnd().y );
+    m_EndY_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_item->GetEnd().y ) );
 
-    PutValueInLocalUnits( *m_ThicknessCtrl, m_item->GetWidth() );
+    m_ThicknessCtrl->SetValue( g_PcbUnits.StringFromValue( m_item->GetWidth() ) );
 
-    PutValueInLocalUnits( *m_DefaultThicknessCtrl, m_brdSettings.m_ModuleSegmentWidth );
+    m_DefaultThicknessCtrl->SetValue( g_PcbUnits.StringFromValue( m_brdSettings.m_ModuleSegmentWidth ) );
 
     // Configure the layers list selector
     m_LayerSelectionCtrl->SetLayersHotkeys( false );
@@ -199,24 +199,24 @@ void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::OnOkClick( wxCommandEvent& event )
     wxPoint coord;
 
     msg = m_Center_StartXCtrl->GetValue();
-    coord.x = ReturnValueFromString( g_UserUnit, msg );
+    coord.x = g_PcbUnits.ValueFromString(msg );
     msg = m_Center_StartYCtrl->GetValue();
-    coord.y = ReturnValueFromString( g_UserUnit, msg );
+    coord.y = g_PcbUnits.ValueFromString(msg );
     m_item->SetStart( coord );
     m_item->SetStart0( coord );
 
     msg = m_EndX_Radius_Ctrl->GetValue();
-    coord.x = ReturnValueFromString( g_UserUnit, msg );
+    coord.x = g_PcbUnits.ValueFromString(msg );
     msg = m_EndY_Ctrl->GetValue();
-    coord.y = ReturnValueFromString( g_UserUnit, msg );
+    coord.y = g_PcbUnits.ValueFromString(msg );
     m_item->SetEnd( coord );
     m_item->SetEnd0( coord );
 
     msg = m_ThicknessCtrl->GetValue();
-    m_item->SetWidth( ReturnValueFromString( g_UserUnit, msg ) );
+    m_item->SetWidth( g_PcbUnits.ValueFromString(msg ) );
 
     msg = m_DefaultThicknessCtrl->GetValue();
-    int thickness = ReturnValueFromString( g_UserUnit, msg );
+    int thickness = g_PcbUnits.ValueFromString(msg );
     m_brdSettings.m_ModuleSegmentWidth = thickness;
     m_parent->SetDesignSettings( m_brdSettings );
 

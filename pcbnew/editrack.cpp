@@ -810,13 +810,13 @@ void ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPo
     for( TRACK* track = g_FirstTrackSegment; track; track = track->Next() )
         trackLen += track->GetLength();
 
-    msg = frame->LengthDoubleToString( trackLen );
+    msg = g_PcbUnits.LengthToString( trackLen );
     frame->AppendMsgPanel( _( "Track Len" ), msg, DARKCYAN );
 
     if( lenPadToDie != 0 )      // display the track len on board and the actual track len
     {
         frame->AppendMsgPanel( _( "Full Len" ), msg, DARKCYAN );
-        msg = frame->LengthDoubleToString( trackLen+lenPadToDie );
+        msg = g_PcbUnits.LengthToString( trackLen+lenPadToDie );
         frame->AppendMsgPanel( _( "Pad to die" ), msg, DARKCYAN );
     }
 

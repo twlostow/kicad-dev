@@ -381,9 +381,9 @@ void X3D_MODEL_PARSER::readIndexedFaceSet( wxXmlNode* aFaceNode,
         DBG( printf("rotation read error") );
     }
 
-    double vrmlunits_to_3Dunits = g_Parm_3D_Visu.m_BiuTo3Dunits *
-                                  UNITS3D_TO_UNITSPCB;
-
+    
+    double vrmlunits_to_3Dunits = g_Parm_3D_Visu.m_BiuTo3Dunits * g_PcbUnits.IuPerMils() * PCB_3D_UNITS_SCALEFACTOR_MILS;
+    
     /* Step 2: Read all coordinate points
      * ---------------------------- */
     std::vector< double > points;

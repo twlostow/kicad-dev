@@ -93,15 +93,15 @@ void DIALOG_GLOBAL_MODULES_FIELDS_EDITION::initDialog()
     m_ValueOpt->SetValue(m_valueSelection),
     m_OtherFields->SetValue(m_othersSelection);
     m_ModuleFilter->SetValue(m_filterString);
-    m_SizeXunit->SetLabel( GetAbbreviatedUnitsLabel() );
-    m_SizeYunit->SetLabel( GetAbbreviatedUnitsLabel() );
-    m_Ticknessunit->SetLabel( GetAbbreviatedUnitsLabel() );
+    m_SizeXunit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SizeYunit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_Ticknessunit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
     m_SizeX_Value->SetValue(
-        ReturnStringFromValue( g_UserUnit, m_brdSettings->m_ModuleTextSize.x ) );
+        g_PcbUnits.StringFromValue ( m_brdSettings->m_ModuleTextSize.x ) );
     m_SizeY_Value->SetValue(
-        ReturnStringFromValue( g_UserUnit, m_brdSettings->m_ModuleTextSize.y ) );
+        g_PcbUnits.StringFromValue ( m_brdSettings->m_ModuleTextSize.y ) );
     m_TicknessValue->SetValue(
-        ReturnStringFromValue( g_UserUnit, m_brdSettings->m_ModuleTextWidth) );
+        g_PcbUnits.StringFromValue ( m_brdSettings->m_ModuleTextWidth) );
 
     Layout();
     GetSizer()->SetSizeHints( this );
@@ -116,9 +116,9 @@ void DIALOG_GLOBAL_MODULES_FIELDS_EDITION::OnOKClick( wxCommandEvent& event )
     m_othersSelection = m_OtherFields->GetValue();
     m_filterString = m_ModuleFilter->GetValue();
 
-    m_brdSettings->m_ModuleTextSize.x = ReturnValueFromTextCtrl( *m_SizeX_Value );
-    m_brdSettings->m_ModuleTextSize.y = ReturnValueFromTextCtrl( *m_SizeY_Value );
-    m_brdSettings->m_ModuleTextWidth = ReturnValueFromTextCtrl( *m_TicknessValue );
+    m_brdSettings->m_ModuleTextSize.x = g_PcbUnits.ValueFromString( m_SizeX_Value->GetValue() );
+    m_brdSettings->m_ModuleTextSize.y = g_PcbUnits.ValueFromString( m_SizeY_Value->GetValue() );
+    m_brdSettings->m_ModuleTextWidth = g_PcbUnits.ValueFromString( m_TicknessValue->GetValue() );
 
     // clip m_ModuleTextWidth to the 1/4 of min size, to keep it always readable
     int minsize = std::min( m_brdSettings->m_ModuleTextSize.x,

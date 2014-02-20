@@ -248,9 +248,9 @@ public:
     {
         if( m_list )
         {
-            const DRC_ITEM*   item = m_list->GetItem( (int) n );
-            if( item )
-                return item->ShowHtml();
+            const DRC_ITEM *item = m_list->GetItem ( (int) n );
+            if(item)
+                return MARKER_PCB::showHtml(*item);
         }
         return wxString();
     }

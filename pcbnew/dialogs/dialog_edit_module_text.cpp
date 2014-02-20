@@ -150,20 +150,20 @@ void DialogEditModuleText::initDlg( )
 
     m_Style->SetSelection( m_currentText->IsItalic() ? 1 : 0 );
 
-    AddUnitSymbol( *m_SizeXTitle );
-    PutValueInLocalUnits( *m_TxtSizeCtrlX, m_currentText->GetSize().x );
+    AddUnitSymbol( *m_SizeXTitle, g_PcbUnits.GetUserUnit() );
+    m_TxtSizeCtrlX->SetValue( g_PcbUnits.StringFromValue(m_currentText->GetSize().x ) );
 
-    AddUnitSymbol( *m_SizeYTitle );
-    PutValueInLocalUnits( *m_TxtSizeCtrlY, m_currentText->GetSize().y );
+    AddUnitSymbol( *m_SizeYTitle, g_PcbUnits.GetUserUnit() );
+    m_TxtSizeCtrlY->SetValue( g_PcbUnits.StringFromValue(m_currentText->GetSize().y ) );
 
-    AddUnitSymbol( *m_PosXTitle );
-    PutValueInLocalUnits( *m_TxtPosCtrlX, m_currentText->GetPos0().x );
+    AddUnitSymbol( *m_PosXTitle, g_PcbUnits.GetUserUnit() );
+    m_TxtPosCtrlX->SetValue( g_PcbUnits.StringFromValue(m_currentText->GetPos0().x ) );
 
-    AddUnitSymbol( *m_PosYTitle );
-    PutValueInLocalUnits( *m_TxtPosCtrlY, m_currentText->GetPos0().y );
+    AddUnitSymbol( *m_PosYTitle, g_PcbUnits.GetUserUnit() );
+    m_TxtPosCtrlY->SetValue( g_PcbUnits.StringFromValue(m_currentText->GetPos0().y ) );
 
-    AddUnitSymbol( *m_WidthTitle );
-    PutValueInLocalUnits( *m_TxtWidthCtlr, m_currentText->GetThickness() );
+    AddUnitSymbol( *m_WidthTitle, g_PcbUnits.GetUserUnit() );
+    m_TxtWidthCtlr->SetValue( g_PcbUnits.StringFromValue( m_currentText->GetThickness() ) );
 
     double text_orient = m_currentText->GetOrientation();
     NORMALIZE_ANGLE_90( text_orient );
@@ -197,26 +197,27 @@ void DialogEditModuleText::OnOkClick( wxCommandEvent& event )
     wxPoint tmp;
 
     msg = m_TxtPosCtrlX->GetValue();
-    tmp.x = ReturnValueFromString( g_UserUnit, msg );
+    tmp.x = g_PcbUnits.ValueFromString(msg );
 
     msg = m_TxtPosCtrlY->GetValue();
-    tmp.y = ReturnValueFromString( g_UserUnit, msg );
+    tmp.y = g_PcbUnits.ValueFromString(msg );
 
     m_currentText->SetPos0( tmp );
 
-    wxSize textSize( wxSize( ReturnValueFromString( g_UserUnit, m_TxtSizeCtrlX->GetValue() ),
-                             ReturnValueFromString( g_UserUnit, m_TxtSizeCtrlY->GetValue() ) ) );
+    wxSize textSize( wxSize( g_PcbUnits.ValueFromString(m_TxtSizeCtrlX->GetValue() ),
+                             g_PcbUnits.ValueFromString(m_TxtSizeCtrlY->GetValue() ) ) );
 
+    int minSize = g_PcbUnits.DMilsToIu ( TEXTS_MIN_SIZE_DMILS );
     // Test for a reasonnable size:
-    if( textSize.x < TEXTS_MIN_SIZE )
-        textSize.x = TEXTS_MIN_SIZE;
-    if( textSize.y < TEXTS_MIN_SIZE )
-        textSize.y = TEXTS_MIN_SIZE;
+    if( textSize.x < minSize )
+        textSize.x = minSize;
+    if( textSize.y < minSize )
+        textSize.y = minSize;
 
     m_currentText->SetSize( textSize ),
 
     msg = m_TxtWidthCtlr->GetValue();
-    int width = ReturnValueFromString( g_UserUnit, msg );
+    int width = g_PcbUnits.ValueFromString(msg );
 
     // Test for a reasonnable width:
     if( width <= 1 )

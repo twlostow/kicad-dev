@@ -111,20 +111,20 @@ void PCB_EDIT_FRAME::InstallTextPCBOptionsFrame( TEXTE_PCB* TextPCB, wxDC* DC )
 void DIALOG_PCB_TEXT_PROPERTIES::MyInit()
 {
     // Put units symbols to text labels where appropriate
-    AddUnitSymbol( *m_SizeXLabel );
-    AddUnitSymbol( *m_SizeYLabel );
-    AddUnitSymbol( *m_ThicknessLabel );
-    AddUnitSymbol( *m_PositionXLabel );
-    AddUnitSymbol( *m_PositionYLabel );
+    AddUnitSymbol( *m_SizeXLabel, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_SizeYLabel, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_ThicknessLabel, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_PositionXLabel, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_PositionYLabel, g_PcbUnits.GetUserUnit() );
 
     // Fill fields with current values
     *m_TextContentCtrl << m_SelectedPCBText->GetText();
 
-    PutValueInLocalUnits( *m_SizeXCtrl, m_SelectedPCBText->GetSize().x );
-    PutValueInLocalUnits( *m_SizeYCtrl, m_SelectedPCBText->GetSize().y );
-    PutValueInLocalUnits( *m_ThicknessCtrl, m_SelectedPCBText->GetThickness() );
-    PutValueInLocalUnits( *m_PositionXCtrl, m_SelectedPCBText->GetTextPosition().x );
-    PutValueInLocalUnits( *m_PositionYCtrl, m_SelectedPCBText->GetTextPosition().y );
+    m_SizeXCtrl->SetValue( g_PcbUnits.StringFromValue( m_SelectedPCBText->GetSize().x ) );
+    m_SizeYCtrl->SetValue( g_PcbUnits.StringFromValue( m_SelectedPCBText->GetSize().y ) );
+    m_ThicknessCtrl->SetValue( g_PcbUnits.StringFromValue( m_SelectedPCBText->GetThickness() ) );
+    m_PositionXCtrl->SetValue( g_PcbUnits.StringFromValue( m_SelectedPCBText->GetTextPosition().x ) );
+    m_PositionYCtrl->SetValue( g_PcbUnits.StringFromValue( m_SelectedPCBText->GetTextPosition().y ) );
 
     // Configure the layers list selector
     m_LayerSelectionCtrl->SetLayersHotkeys( false );
@@ -211,31 +211,33 @@ void DIALOG_PCB_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& event )
     }
 
     // Set PCB Text position
-    newPosition.x = ReturnValueFromString( g_UserUnit, m_PositionXCtrl->GetValue() );
-    newPosition.y = ReturnValueFromString( g_UserUnit, m_PositionYCtrl->GetValue() );
+    newPosition.x = g_PcbUnits.ValueFromString(m_PositionXCtrl->GetValue() );
+    newPosition.y = g_PcbUnits.ValueFromString(m_PositionYCtrl->GetValue() );
     m_SelectedPCBText->SetTextPosition( newPosition );
 
     // Check constraints and set PCB Text size
-    newSize.x = ReturnValueFromString( g_UserUnit, m_SizeXCtrl->GetValue() );
-    newSize.y = ReturnValueFromString( g_UserUnit, m_SizeYCtrl->GetValue() );
+    newSize.x = g_PcbUnits.ValueFromString(m_SizeXCtrl->GetValue() );
+    newSize.y = g_PcbUnits.ValueFromString(m_SizeYCtrl->GetValue() );
 
-    if( newSize.x < TEXTS_MIN_SIZE )
-        newSize.x = TEXTS_MIN_SIZE;
+    int minSize = g_PcbUnits.DMilsToIu (TEXTS_MIN_SIZE_DMILS);
+    int maxWidth = g_PcbUnits.DMilsToIu (TEXTS_MAX_WIDTH_DMILS);
+    
+    if( newSize.x < minSize )
+        newSize.x = minSize;
 
-    if( newSize.y < TEXTS_MIN_SIZE )
-        newSize.y = TEXTS_MIN_SIZE;
+    if( newSize.y < minSize )
+        newSize.y = minSize;
 
-    if( newSize.x > TEXTS_MAX_WIDTH )
-        newSize.x = TEXTS_MAX_WIDTH;
+    if( newSize.x > maxWidth )
+        newSize.x = maxWidth;
 
-    if( newSize.y > TEXTS_MAX_WIDTH )
-        newSize.y = TEXTS_MAX_WIDTH;
+    if( newSize.y > maxWidth )
+        newSize.y = maxWidth;
 
     m_SelectedPCBText->SetSize( newSize );
 
     // Set the new thickness
-    m_SelectedPCBText->SetThickness( ReturnValueFromString( g_UserUnit,
-                                                            m_ThicknessCtrl->GetValue() ) );
+    m_SelectedPCBText->SetThickness( g_PcbUnits.ValueFromString( m_ThicknessCtrl->GetValue() ) );
 
     // Test for acceptable values for thickness and size and clamp if fails
     int maxthickness = Clamp_Text_PenSize( m_SelectedPCBText->GetThickness(),

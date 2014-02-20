@@ -420,7 +420,7 @@ EDA_RECT MODULE::GetFootprintRect() const
 
     area.SetOrigin( m_Pos );
     area.SetEnd( m_Pos );
-    area.Inflate( Millimeter2iu( 0.25 ) );   // Give a min size to the area
+    area.Inflate( g_PcbUnits.MmToIu( 0.25 ) );   // Give a min size to the area
 
     for( EDGE_MODULE* edge = (EDGE_MODULE*) m_Drawings.GetFirst(); edge; edge = edge->Next() )
         if( edge->Type() == PCB_MODULE_EDGE_T )

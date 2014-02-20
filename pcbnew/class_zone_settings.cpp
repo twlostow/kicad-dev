@@ -40,9 +40,9 @@ ZONE_SETTINGS::ZONE_SETTINGS()
     m_ZonePriority = 0;
     m_FillMode = 0;                                            // Mode for filling zone : 1 use segments, 0 use polygons
     // Clearance value
-    m_ZoneClearance      = Mils2iu( ZONE_CLEARANCE_MIL );
+    m_ZoneClearance      = g_PcbUnits.MilsToIu( ZONE_CLEARANCE_MIL );
     // Min thickness value in filled areas (this is the minimum width of copper to fill solid areas) :
-    m_ZoneMinThickness   = Mils2iu( ZONE_THICKNESS_MIL );
+    m_ZoneMinThickness   = g_PcbUnits.MilsToIu( ZONE_THICKNESS_MIL );
     m_NetcodeSelection   = 0;                                  // Net code selection for the current zone
     m_CurrentZone_Layer  = FIRST_LAYER;                        // Layer used to create the current zone
     m_Zone_HatchingStyle = CPolyLine::DIAGONAL_EDGE;           // Option to show the zone area (outlines only, short hatches or full hatches
@@ -52,9 +52,9 @@ ZONE_SETTINGS::ZONE_SETTINGS()
                                                                // or ARC_APPROX_SEGMENTS_COUNT_HIGHT_DEF segments
 
     // thickness of the gap in thermal reliefs:
-    m_ThermalReliefGap = Mils2iu( ZONE_THERMAL_RELIEF_GAP_MIL );
+    m_ThermalReliefGap = g_PcbUnits.MmToIu( ZONE_THERMAL_RELIEF_GAP_MIL );
     // thickness of the copper bridge in thermal reliefs:
-    m_ThermalReliefCopperBridge = Mils2iu( ZONE_THERMAL_RELIEF_COPPER_WIDTH_MIL );
+    m_ThermalReliefCopperBridge = g_PcbUnits.MmToIu( ZONE_THERMAL_RELIEF_COPPER_WIDTH_MIL );
 
     m_PadConnection = THERMAL_PAD;                             // How pads are covered by copper in zone
 
@@ -120,5 +120,5 @@ void ZONE_SETTINGS::ExportSetting( ZONE_CONTAINER& aTarget, bool aFullExport ) c
 
     // call SetHatch last, because hatch lines will be rebuilt,
     // using new parameters values
-    aTarget.Outline()->SetHatch( m_Zone_HatchingStyle, Mils2iu( 20 ), true );
+    aTarget.Outline()->SetHatch( m_Zone_HatchingStyle, g_PcbUnits.MmToIu( 20 ), true );
 }

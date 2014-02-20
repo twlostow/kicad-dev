@@ -77,9 +77,21 @@ public:
 
     BITMAP_DEF GetMenuImage() const { return  drc_xpm; }
 
+
+    wxString ShowHtml() const;
+    wxString ShowReport() const;
+
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); } // override
 #endif
+
+    static wxString showHtml ( const DRC_ITEM& item);
+    static wxString showReport ( const DRC_ITEM& item);
+
+private:
+
+    static wxString getErrorText(int aErrorCode);
+    wxString getErrorText() const;
 };
 
 #endif      //  CLASS_MARKER_PCB_H

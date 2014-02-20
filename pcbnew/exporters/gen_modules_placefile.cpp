@@ -290,10 +290,10 @@ bool DIALOG_GEN_MODULE_POSITION::CreateFiles()
 }
 
 // Defined values to write coordinates using inches or mm:
-static const double conv_unit_inch = 0.001 / IU_PER_MILS ;      // units = INCHES
+static const double conv_unit_inch = 0.001 / PCB_UNITS().IuPerMils() ;      // units = INCHES
 static const char unit_text_inch[] = "## Unit = inches, Angle = deg.\n";
 
-static const double conv_unit_mm = 1.0 / IU_PER_MM;    // units = mm
+static const double conv_unit_mm = 1.0 / PCB_UNITS().IuPerMm();    // units = mm
 static const char unit_text_mm[] = "## Unit = mm, Angle = deg.\n";
 
 static wxPoint File_Place_Offset;  // Offset coordinates for generated file.

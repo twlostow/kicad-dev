@@ -166,16 +166,16 @@ void DIALOG_MODULE_MODULE_EDITOR::initModeditProperties()
     m_3D_Rotation = new VERTEX_VALUE_CTRL( m_Panel3D, m_bSizerShapeRotation );
 
     // Initialize dialog relative to masks clearances
-    m_NetClearanceUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_SolderMaskMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_SolderPasteMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    m_NetClearanceUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderMaskMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderPasteMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
     wxString  msg;
-    PutValueInLocalUnits( *m_NetClearanceValueCtrl, m_currentModule->GetLocalClearance() );
-    PutValueInLocalUnits( *m_SolderMaskMarginCtrl, m_currentModule->GetLocalSolderMaskMargin() );
+    m_NetClearanceValueCtrl->SetValue( g_PcbUnits.StringFromValue( m_currentModule->GetLocalClearance() ) );
+    m_SolderMaskMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_currentModule->GetLocalSolderMaskMargin() ) );
 
     // These 2 parameters are usually < 0, so prepare entering a negative value, if current is 0
-    PutValueInLocalUnits( *m_SolderPasteMarginCtrl, m_currentModule->GetLocalSolderPasteMargin() );
+    m_SolderPasteMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_currentModule->GetLocalSolderPasteMargin() ) );
 
     if( m_currentModule->GetLocalSolderPasteMargin() == 0 )
         m_SolderPasteMarginCtrl->SetValue( wxT( "-" ) + m_SolderPasteMarginCtrl->GetValue() );
@@ -431,9 +431,9 @@ void DIALOG_MODULE_MODULE_EDITOR::OnOkClick( wxCommandEvent& event )
     m_currentModule->Value().Copy( m_valueCopy );
 
     // Initialize masks clearances
-    m_currentModule->SetLocalClearance( ReturnValueFromTextCtrl( *m_NetClearanceValueCtrl ) );
-    m_currentModule->SetLocalSolderMaskMargin( ReturnValueFromTextCtrl( *m_SolderMaskMarginCtrl ) );
-    m_currentModule->SetLocalSolderPasteMargin( ReturnValueFromTextCtrl( *m_SolderPasteMarginCtrl ) );
+    m_currentModule->SetLocalClearance( g_PcbUnits.ValueFromString( m_NetClearanceValueCtrl->GetValue() ) );
+    m_currentModule->SetLocalSolderMaskMargin( g_PcbUnits.ValueFromString( m_SolderMaskMarginCtrl->GetValue() ) );
+    m_currentModule->SetLocalSolderPasteMargin( g_PcbUnits.ValueFromString( m_SolderPasteMarginCtrl->GetValue() ) );
     double   dtmp;
     wxString msg = m_SolderPasteMarginRatioCtrl->GetValue();
     msg.ToDouble( &dtmp );

@@ -303,57 +303,57 @@ void DIALOG_PAD_PROPERTIES::initValues()
     m_PadNetNameCtrl->SetValue( m_dummyPad->GetNetname() );
 
     // Display current unit name in dialog:
-    m_PadPosX_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadPosY_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadDrill_X_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadDrill_Y_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadShapeSizeX_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadShapeSizeY_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadShapeOffsetX_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadShapeOffsetY_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadShapeDelta_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_PadLengthDie_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    m_PadPosX_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadPosY_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadDrill_X_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadDrill_Y_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadShapeSizeX_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadShapeSizeY_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadShapeOffsetX_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadShapeOffsetY_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadShapeDelta_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_PadLengthDie_Unit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
     // Display current pad masks clearances units
-    m_NetClearanceUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_SolderMaskMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_SolderPasteMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_ThermalWidthUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_ThermalGapUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    m_NetClearanceUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderMaskMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderPasteMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_ThermalWidthUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_ThermalGapUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
     // Display current pad parameters units:
-    PutValueInLocalUnits( *m_PadPosition_X_Ctrl, m_dummyPad->GetPosition().x );
-    PutValueInLocalUnits( *m_PadPosition_Y_Ctrl, m_dummyPad->GetPosition().y );
+    m_PadPosition_X_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetPosition().x ) );
+    m_PadPosition_Y_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetPosition().y ) );
 
-    PutValueInLocalUnits( *m_PadDrill_X_Ctrl, m_dummyPad->GetDrillSize().x );
-    PutValueInLocalUnits( *m_PadDrill_Y_Ctrl, m_dummyPad->GetDrillSize().y );
+    m_PadDrill_X_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetDrillSize().x ) );
+    m_PadDrill_Y_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetDrillSize().y ) );
 
-    PutValueInLocalUnits( *m_ShapeSize_X_Ctrl, m_dummyPad->GetSize().x );
-    PutValueInLocalUnits( *m_ShapeSize_Y_Ctrl, m_dummyPad->GetSize().y );
+    m_ShapeSize_X_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetSize().x ) );
+    m_ShapeSize_Y_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetSize().y ) );
 
-    PutValueInLocalUnits( *m_ShapeOffset_X_Ctrl, m_dummyPad->GetOffset().x );
-    PutValueInLocalUnits( *m_ShapeOffset_Y_Ctrl, m_dummyPad->GetOffset().y );
+    m_ShapeOffset_X_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetOffset().x ) );
+    m_ShapeOffset_Y_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetOffset().y ) );
 
     if( m_dummyPad->GetDelta().x )
     {
-        PutValueInLocalUnits( *m_ShapeDelta_Ctrl, m_dummyPad->GetDelta().x );
+        m_ShapeDelta_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetDelta().x ) );
         m_trapDeltaDirChoice->SetSelection( 0 );
     }
     else
     {
-        PutValueInLocalUnits( *m_ShapeDelta_Ctrl, m_dummyPad->GetDelta().y );
+        m_ShapeDelta_Ctrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetDelta().y ) );
         m_trapDeltaDirChoice->SetSelection( 1 );
     }
 
-    PutValueInLocalUnits( *m_LengthPadToDieCtrl, m_dummyPad->GetPadToDieLength() );
+    m_LengthPadToDieCtrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetPadToDieLength() ) );
 
-    PutValueInLocalUnits( *m_NetClearanceValueCtrl, m_dummyPad->GetLocalClearance() );
-    PutValueInLocalUnits( *m_SolderMaskMarginCtrl, m_dummyPad->GetLocalSolderMaskMargin() );
-    PutValueInLocalUnits( *m_ThermalWidthCtrl, m_dummyPad->GetThermalWidth() );
-    PutValueInLocalUnits( *m_ThermalGapCtrl, m_dummyPad->GetThermalGap() );
+    m_NetClearanceValueCtrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetLocalClearance() ) );
+    m_SolderMaskMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetLocalSolderMaskMargin() ) );
+    m_ThermalWidthCtrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetThermalWidth() ) );
+    m_ThermalGapCtrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetThermalGap() ) );
 
     // These 2 parameters are usually < 0, so prepare entering a negative value, if current is 0
-    PutValueInLocalUnits( *m_SolderPasteMarginCtrl, m_dummyPad->GetLocalSolderPasteMargin() );
+    m_SolderPasteMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_dummyPad->GetLocalSolderPasteMargin() ) );
 
     if( m_dummyPad->GetLocalSolderPasteMargin() == 0 )
         m_SolderPasteMarginCtrl->SetValue( wxT( "-" ) + m_SolderPasteMarginCtrl->GetValue() );
@@ -863,11 +863,11 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( D_PAD* aPad )
     aPad->SetShape( CodeShape[m_PadShape->GetSelection()] );
 
     // Read pad clearances values:
-    aPad->SetLocalClearance( ReturnValueFromTextCtrl( *m_NetClearanceValueCtrl ) );
-    aPad->SetLocalSolderMaskMargin( ReturnValueFromTextCtrl( *m_SolderMaskMarginCtrl ) );
-    aPad->SetLocalSolderPasteMargin( ReturnValueFromTextCtrl( *m_SolderPasteMarginCtrl ) );
-    aPad->SetThermalWidth( ReturnValueFromTextCtrl( *m_ThermalWidthCtrl ) );
-    aPad->SetThermalGap( ReturnValueFromTextCtrl( *m_ThermalGapCtrl ) );
+    aPad->SetLocalClearance( g_PcbUnits.ValueFromString( m_NetClearanceValueCtrl->GetValue() ) );
+    aPad->SetLocalSolderMaskMargin( g_PcbUnits.ValueFromString( m_SolderMaskMarginCtrl->GetValue() ) );
+    aPad->SetLocalSolderPasteMargin( g_PcbUnits.ValueFromString( m_SolderPasteMarginCtrl->GetValue() ) );
+    aPad->SetThermalWidth( g_PcbUnits.ValueFromString( m_ThermalWidthCtrl->GetValue() ) );
+    aPad->SetThermalGap( g_PcbUnits.ValueFromString( m_ThermalGapCtrl->GetValue() ) );
     double dtmp = 0.0;
     msg = m_SolderPasteMarginRatioCtrl->GetValue();
     msg.ToDouble( &dtmp );
@@ -903,15 +903,15 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( D_PAD* aPad )
     }
 
     // Read pad position:
-    x = ReturnValueFromTextCtrl( *m_PadPosition_X_Ctrl );
-    y = ReturnValueFromTextCtrl( *m_PadPosition_Y_Ctrl );
+    x = g_PcbUnits.ValueFromString( m_PadPosition_X_Ctrl->GetValue() );
+    y = g_PcbUnits.ValueFromString( m_PadPosition_Y_Ctrl->GetValue() );
 
     aPad->SetPosition( wxPoint( x, y ) );
     aPad->SetPos0( wxPoint( x, y ) );
 
     // Read pad drill:
-    x = ReturnValueFromTextCtrl( *m_PadDrill_X_Ctrl );
-    y = ReturnValueFromTextCtrl( *m_PadDrill_Y_Ctrl );
+    x = g_PcbUnits.ValueFromString( m_PadDrill_X_Ctrl->GetValue() );
+    y = g_PcbUnits.ValueFromString( m_PadDrill_Y_Ctrl->GetValue() );
 
     if( m_DrillShapeCtrl->GetSelection() == 0 )
     {
@@ -924,24 +924,24 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( D_PAD* aPad )
     aPad->SetDrillSize( wxSize( x, y ) );
 
     // Read pad shape size:
-    x = ReturnValueFromTextCtrl( *m_ShapeSize_X_Ctrl );
-    y = ReturnValueFromTextCtrl( *m_ShapeSize_Y_Ctrl );
+    x = g_PcbUnits.ValueFromString( m_ShapeSize_X_Ctrl->GetValue() );
+    y = g_PcbUnits.ValueFromString( m_ShapeSize_Y_Ctrl->GetValue() );
     if( aPad->GetShape() == PAD_CIRCLE )
         y = x;
 
     aPad->SetSize( wxSize( x, y ) );
 
     // Read pad length die
-    aPad->SetPadToDieLength( ReturnValueFromTextCtrl( *m_LengthPadToDieCtrl ) );
+    aPad->SetPadToDieLength( g_PcbUnits.ValueFromString( m_LengthPadToDieCtrl->GetValue() ) );
 
     // Read pad shape delta size:
     // m_DeltaSize.x or m_DeltaSize.y must be NULL. for a trapezoid.
     wxSize delta;
 
     if( m_trapDeltaDirChoice->GetSelection() == 0 )
-        delta.x = ReturnValueFromTextCtrl( *m_ShapeDelta_Ctrl );
+        delta.x = g_PcbUnits.ValueFromString( m_ShapeDelta_Ctrl->GetValue() );
     else
-        delta.y = ReturnValueFromTextCtrl( *m_ShapeDelta_Ctrl );
+        delta.y = g_PcbUnits.ValueFromString( m_ShapeDelta_Ctrl->GetValue() );
 
     // Test bad values (be sure delta values are not too large)
     // remember DeltaSize.x is the Y size variation
@@ -974,8 +974,8 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( D_PAD* aPad )
     aPad->SetDelta( delta );
 
     // Read pad shape offset:
-    x = ReturnValueFromTextCtrl( *m_ShapeOffset_X_Ctrl );
-    y = ReturnValueFromTextCtrl( *m_ShapeOffset_Y_Ctrl );
+    x = g_PcbUnits.ValueFromString( m_ShapeOffset_X_Ctrl->GetValue() );
+    y = g_PcbUnits.ValueFromString( m_ShapeOffset_Y_Ctrl->GetValue() );
     aPad->SetOffset( wxPoint( x, y ) );
 
     double orient_value = 0;

@@ -45,7 +45,7 @@
 #include <class_board.h>
 #include <class_drawsegment.h>
 #include <class_pcb_text.h>
-#include <convert_from_iu.h>
+#include <base_units.h>
 
 DXF2BRD_CONVERTER::DXF2BRD_CONVERTER() : DRW_Interface()
 {
@@ -67,19 +67,19 @@ DXF2BRD_CONVERTER::~DXF2BRD_CONVERTER()
 // coordinate conversions from dxf to internal units
 int DXF2BRD_CONVERTER::mapX( double aDxfCoordX )
 {
-    return Millimeter2iu( m_xOffset + (aDxfCoordX * m_Dfx2mm) );
+    return g_PcbUnits.MmToIu( m_xOffset + (aDxfCoordX * m_Dfx2mm) );
 }
 
 
 int DXF2BRD_CONVERTER::mapY( double aDxfCoordY )
 {
-    return Millimeter2iu( m_yOffset - (aDxfCoordY * m_Dfx2mm) );
+    return g_PcbUnits.MmToIu( m_yOffset - (aDxfCoordY * m_Dfx2mm) );
 }
 
 
 int DXF2BRD_CONVERTER::mapDim( double aDxfValue )
 {
-    return Millimeter2iu( aDxfValue * m_Dfx2mm );
+    return g_PcbUnits.MmToIu( aDxfValue * m_Dfx2mm );
 }
 
 

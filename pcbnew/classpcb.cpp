@@ -45,12 +45,6 @@
 #include <pcbnew_id.h>
 
 
-#define ZOOM_FACTOR( x )       ( x * IU_PER_DECIMILS )
-#define DMIL_GRID( x )         wxRealPoint( x * IU_PER_DECIMILS,\
-                                            x * IU_PER_DECIMILS )
-#define MM_GRID( x )           wxRealPoint( x * IU_PER_MM,\
-                                            x * IU_PER_MM )
-
 
 /**
     Default Pcbnew zoom values.
@@ -62,27 +56,27 @@
     Zoom 5 and 10 can create artefacts when drawing (integer overflow in low level graphic
     functions )
 */
-static const double pcbZoomList[] =
+static const double pcbZoomListDecimils[] =
 {
-    ZOOM_FACTOR( 0.1 ),
-    ZOOM_FACTOR( 0.2 ),
-    ZOOM_FACTOR( 0.3 ),
-    ZOOM_FACTOR( 0.5 ),
-    ZOOM_FACTOR( 1.0 ),
-    ZOOM_FACTOR( 1.5 ),
-    ZOOM_FACTOR( 2.0 ),
-    ZOOM_FACTOR( 3.0 ),
-    ZOOM_FACTOR( 4.5 ),
-    ZOOM_FACTOR( 7.0 ),
-    ZOOM_FACTOR( 10.0 ),
-    ZOOM_FACTOR( 15.0 ),
-    ZOOM_FACTOR( 22.0 ),
-    ZOOM_FACTOR( 35.0 ),
-    ZOOM_FACTOR( 50.0 ),
-    ZOOM_FACTOR( 80.0 ),
-    ZOOM_FACTOR( 120.0 ),
-    ZOOM_FACTOR( 200.0 ),
-    ZOOM_FACTOR( 300.0 ),
+     0.1 ,
+     0.2 ,
+     0.3 ,
+     0.5 ,
+     1.0 ,
+     1.5 ,
+     2.0 ,
+     3.0 ,
+     4.5 ,
+     7.0 ,
+     10.0 ,
+     15.0 ,
+     22.0 ,
+     35.0 ,
+     50.0 ,
+     80.0 ,
+     120.0 ,
+     200.0 ,
+     300.0 ,
 
 /*
     The largest distance that wx can support is INT_MAX, since it represents
@@ -128,35 +122,39 @@ static const double pcbZoomList[] =
 */
 };
 
+#define GRID_SIZE(x)     wxRealPoint(x, x)
 
 // Default grid sizes for PCB editor screens.
-static GRID_TYPE pcbGridList[] =
+static const GRID_TYPE pcbImperialGridList[] =
 {
     // predefined grid list in 0.0001 inches
-    { ID_POPUP_GRID_LEVEL_1000,     DMIL_GRID( 1000 )  },
-    { ID_POPUP_GRID_LEVEL_500,      DMIL_GRID( 500 )   },
-    { ID_POPUP_GRID_LEVEL_250,      DMIL_GRID( 250 )   },
-    { ID_POPUP_GRID_LEVEL_200,      DMIL_GRID( 200 )   },
-    { ID_POPUP_GRID_LEVEL_100,      DMIL_GRID( 100 )   },
-    { ID_POPUP_GRID_LEVEL_50,       DMIL_GRID( 50 )    },
-    { ID_POPUP_GRID_LEVEL_25,       DMIL_GRID( 25 )    },
-    { ID_POPUP_GRID_LEVEL_20,       DMIL_GRID( 20 )    },
-    { ID_POPUP_GRID_LEVEL_10,       DMIL_GRID( 10 )    },
-    { ID_POPUP_GRID_LEVEL_5,        DMIL_GRID( 5 )     },
-    { ID_POPUP_GRID_LEVEL_2,        DMIL_GRID( 2 )     },
-    { ID_POPUP_GRID_LEVEL_1,        DMIL_GRID( 1 )     },
+    { ID_POPUP_GRID_LEVEL_1000,     GRID_SIZE( 1000 )  },
+    { ID_POPUP_GRID_LEVEL_500,      GRID_SIZE( 500 )   },
+    { ID_POPUP_GRID_LEVEL_250,      GRID_SIZE( 250 )   },
+    { ID_POPUP_GRID_LEVEL_200,      GRID_SIZE( 200 )   },
+    { ID_POPUP_GRID_LEVEL_100,      GRID_SIZE( 100 )   },
+    { ID_POPUP_GRID_LEVEL_50,       GRID_SIZE( 50 )    },
+    { ID_POPUP_GRID_LEVEL_25,       GRID_SIZE( 25 )    },
+    { ID_POPUP_GRID_LEVEL_20,       GRID_SIZE( 20 )    },
+    { ID_POPUP_GRID_LEVEL_10,       GRID_SIZE( 10 )    },
+    { ID_POPUP_GRID_LEVEL_5,        GRID_SIZE( 5 )     },
+    { ID_POPUP_GRID_LEVEL_2,        GRID_SIZE( 2 )     },
+    { ID_POPUP_GRID_LEVEL_1,        GRID_SIZE( 1 )     }
+};
 
+static const GRID_TYPE pcbMetricGridList[] =
+{
     // predefined grid list in mm
-    { ID_POPUP_GRID_LEVEL_5MM,      MM_GRID( 5.0 )     },
-    { ID_POPUP_GRID_LEVEL_2_5MM,    MM_GRID( 2.5 )     },
-    { ID_POPUP_GRID_LEVEL_1MM,      MM_GRID( 1.0 )     },
-    { ID_POPUP_GRID_LEVEL_0_5MM,    MM_GRID( 0.5 )     },
-    { ID_POPUP_GRID_LEVEL_0_25MM,   MM_GRID( 0.25 )    },
-    { ID_POPUP_GRID_LEVEL_0_2MM,    MM_GRID( 0.2 )     },
-    { ID_POPUP_GRID_LEVEL_0_1MM,    MM_GRID( 0.1 )     },
-    { ID_POPUP_GRID_LEVEL_0_0_5MM,  MM_GRID( 0.05 )    },
-    { ID_POPUP_GRID_LEVEL_0_0_25MM, MM_GRID( 0.025 )   },
-    { ID_POPUP_GRID_LEVEL_0_0_1MM,  MM_GRID( 0.01 )    }
+    { ID_POPUP_GRID_LEVEL_5MM,      GRID_SIZE( 5.0 )     },
+    { ID_POPUP_GRID_LEVEL_2_5MM,    GRID_SIZE( 2.5 )     },
+    { ID_POPUP_GRID_LEVEL_1MM,      GRID_SIZE( 1.0 )     },
+    { ID_POPUP_GRID_LEVEL_0_5MM,    GRID_SIZE( 0.5 )     },
+    { ID_POPUP_GRID_LEVEL_0_25MM,   GRID_SIZE( 0.25 )    },
+    { ID_POPUP_GRID_LEVEL_0_2MM,    GRID_SIZE( 0.2 )     },
+    { ID_POPUP_GRID_LEVEL_0_1MM,    GRID_SIZE( 0.1 )     },
+    { ID_POPUP_GRID_LEVEL_0_0_5MM,  GRID_SIZE( 0.05 )    },
+    { ID_POPUP_GRID_LEVEL_0_0_25MM, GRID_SIZE( 0.025 )   },
+    { ID_POPUP_GRID_LEVEL_0_0_1MM,  GRID_SIZE( 0.01 )    }
 };
 
 
@@ -166,20 +164,21 @@ PCB_SCREEN::PCB_SCREEN( const wxSize& aPageSizeIU ) :
     // D(wxSize displayz = wxGetDisplaySize();)
     // D(printf( "displayz x:%d y:%d lastZoomFactor: %.16g\n", displayz.x, displayz.y, pcbZoomList[DIM(pcbZoomList)-1] );)
 
-    for( unsigned i = 0; i < DIM( pcbZoomList );  ++i )
-        m_ZoomList.push_back( pcbZoomList[i] );
+    
+    SetUnits( &g_PcbUnits );
 
-    for( unsigned i = 0; i < DIM( pcbGridList );  ++i )
-        AddGrid( pcbGridList[i] );
+    SetDefaultZoomFactors( pcbZoomListDecimils, DIM (pcbZoomListDecimils) );
+    SetDefaultGrids ( pcbMetricGridList, DIM (pcbMetricGridList), true );
+    SetDefaultGrids ( pcbImperialGridList, DIM (pcbImperialGridList), false );
 
     // Set the working grid size to a reasonable value (in 1/10000 inch)
-    SetGrid( DMIL_GRID( 500 ) );
+    SetGrid( ID_POPUP_GRID_LEVEL_100 );
 
     m_Active_Layer       = LAYER_N_BACK;      // default active layer = bottom layer
     m_Route_Layer_TOP    = LAYER_N_FRONT;     // default layers pair for vias (bottom to top)
     m_Route_Layer_BOTTOM = LAYER_N_BACK;
 
-    SetZoom( ZOOM_FACTOR( 120 ) );             // a default value for zoom
+    SetZoom( Units() -> DMilsToIu( 120 ) );             // a default value for zoom
 
     InitDataPoints( aPageSizeIU );
 }
@@ -193,7 +192,7 @@ PCB_SCREEN::~PCB_SCREEN()
 
 int PCB_SCREEN::MilsToIuScalar()
 {
-    return (int)IU_PER_MILS;
+    return (int)Units()->IuPerMils();
 }
 
 

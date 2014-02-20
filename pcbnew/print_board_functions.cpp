@@ -53,7 +53,7 @@ void FOOTPRINT_EDIT_FRAME::PrintPage( wxDC* aDC,
                                       void * aData)
 {
     GR_DRAWMODE drawmode = GR_COPY;
-    int     defaultPenSize = Millimeter2iu( 0.2 );
+    int     defaultPenSize = g_PcbUnits.MmToIu( 0.2 );
 
     DISPLAY_OPTIONS save_opt;
 
@@ -61,7 +61,7 @@ void FOOTPRINT_EDIT_FRAME::PrintPage( wxDC* aDC,
     PRINT_PARAMETERS::DrillShapeOptT drillShapeOpt = PRINT_PARAMETERS::FULL_DRILL_SHAPE;
 
     if( printParameters )
-         defaultPenSize = printParameters->m_PenDefaultSize;
+         defaultPenSize = g_PcbUnits.MilsToIu ( printParameters->m_PenDefaultSizeMils );
 
     save_opt = DisplayOpt;
 
@@ -138,7 +138,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
     GR_DRAWMODE     drawmode = GR_COPY;
     DISPLAY_OPTIONS save_opt;
     BOARD*          Pcb   = GetBoard();
-    int             defaultPenSize = Millimeter2iu( 0.2 );
+    int             defaultPenSize = g_PcbUnits.MmToIu( 0.2 );
     bool            onePagePerLayer = false;
 
     PRINT_PARAMETERS * printParameters = (PRINT_PARAMETERS*) aData; // can be null
@@ -151,7 +151,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
     if( printParameters )
     {
         drillShapeOpt = printParameters->m_DrillShapeOpt;
-        defaultPenSize = printParameters->m_PenDefaultSize;
+        defaultPenSize = g_PcbUnits.MilsToIu ( printParameters->m_PenDefaultSizeMils );
     }
 
     save_opt = DisplayOpt;

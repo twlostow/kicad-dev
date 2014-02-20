@@ -364,7 +364,7 @@ int VRML_MODEL_PARSER::readGeometry( FILE* file, int* LineNum )
     int     err    = 1;
     std::vector< double > points;
     std::vector< double > list;
-    double vrmlunits_to_3Dunits = g_Parm_3D_Visu.m_BiuTo3Dunits * UNITS3D_TO_UNITSPCB;
+    double vrmlunits_to_3Dunits = g_Parm_3D_Visu.m_BiuTo3Dunits * g_PcbUnits.IuPerMils() * PCB_3D_UNITS_SCALEFACTOR_MILS;
 
     while( GetLine( file, line, LineNum, 512 ) )
     {

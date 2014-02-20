@@ -65,7 +65,7 @@ void DIALOG_PLOT::Init_Dialog()
     // m_PSWidthAdjust is stored in mm in user config
     double dtmp;
     m_config->Read( CONFIG_PS_FINEWIDTH_ADJ, &dtmp, 0 );
-    m_PSWidthAdjust = KiROUND( dtmp * IU_PER_MM );
+    m_PSWidthAdjust = KiROUND( dtmp * g_PcbUnits.IuPerMm() );
 
     // The reasonable width correction value must be in a range of
     // [-(MinTrackWidth-1), +(MinClearanceValue-1)] decimils.
@@ -100,29 +100,29 @@ void DIALOG_PLOT::Init_Dialog()
         break;
     }
 
-    msg = ReturnStringFromValue( g_UserUnit, m_brdSettings.m_SolderMaskMargin, true );
+    msg = g_PcbUnits.StringFromValue ( m_brdSettings.m_SolderMaskMargin, true );
     m_SolderMaskMarginCurrValue->SetLabel( msg );
-    msg = ReturnStringFromValue( g_UserUnit, m_brdSettings.m_SolderMaskMinWidth, true );
+    msg = g_PcbUnits.StringFromValue ( m_brdSettings.m_SolderMaskMinWidth, true );
     m_SolderMaskMinWidthCurrValue->SetLabel( msg );
 
     // Set units and value for HPGL pen size (this param in in mils).
-    AddUnitSymbol( *m_textPenSize, g_UserUnit );
-    msg = ReturnStringFromValue( g_UserUnit,
-                                 m_plotOpts.GetHPGLPenDiameter() * IU_PER_MILS );
+    AddUnitSymbol( *m_textPenSize, g_PcbUnits.GetUserUnit() );
+    msg = g_PcbUnits.StringFromValue (
+                                 m_plotOpts.GetHPGLPenDiameter() * g_PcbUnits.IuPerMils() );
     m_HPGLPenSizeOpt->AppendText( msg );
 
     // Set units and value for HPGL pen overlay (this param in in mils).
-    AddUnitSymbol( *m_textPenOvr, g_UserUnit );
-    msg = ReturnStringFromValue( g_UserUnit,
-                                 m_plotOpts.GetHPGLPenOverlay() * IU_PER_MILS );
+    AddUnitSymbol( *m_textPenOvr, g_PcbUnits.GetUserUnit() );
+    msg = g_PcbUnits.StringFromValue (
+                                 m_plotOpts.GetHPGLPenOverlay() * g_PcbUnits.IuPerMils() );
     m_HPGLPenOverlayOpt->AppendText( msg );
 
-    AddUnitSymbol( *m_textDefaultPenSize, g_UserUnit );
-    msg = ReturnStringFromValue( g_UserUnit, m_plotOpts.GetLineWidth() );
+    AddUnitSymbol( *m_textDefaultPenSize, g_PcbUnits.GetUserUnit() );
+    msg = g_PcbUnits.StringFromValue ( m_plotOpts.GetLineWidth() );
     m_linesWidth->AppendText( msg );
 
     // Set units for PS global width correction.
-    AddUnitSymbol( *m_textPSFineAdjustWidth, g_UserUnit );
+    AddUnitSymbol( *m_textPSFineAdjustWidth, g_PcbUnits.GetUserUnit() );
 
     m_useAuxOriginCheckBox->SetValue( m_plotOpts.GetUseAuxOrigin() );
 
@@ -141,7 +141,7 @@ void DIALOG_PLOT::Init_Dialog()
     if( m_PSWidthAdjust < m_widthAdjustMinValue || m_PSWidthAdjust > m_widthAdjustMaxValue )
         m_PSWidthAdjust = 0.;
 
-    msg.Printf( wxT( "%f" ), To_User_Unit( g_UserUnit, m_PSWidthAdjust ) );
+    msg.Printf( wxT( "%f" ), g_PcbUnits.ToUser(  m_PSWidthAdjust ) );
     m_PSFineAdjustWidthOpt->AppendText( msg );
 
     m_plotPSNegativeOpt->SetValue( m_plotOpts.GetNegative() );
@@ -583,11 +583,11 @@ void DIALOG_PLOT::applyPlotSettings()
 
     // read HPLG pen size (this param is stored in mils)
     wxString    msg = m_HPGLPenSizeOpt->GetValue();
-    int         tmp = ReturnValueFromString( g_UserUnit, msg ) / IU_PER_MILS;
+    int         tmp = g_PcbUnits.ValueFromString(msg ) / g_PcbUnits.IuPerMils();
 
     if( !tempOptions.SetHPGLPenDiameter( tmp ) )
     {
-        msg = ReturnStringFromValue( g_UserUnit, tempOptions.GetHPGLPenDiameter() * IU_PER_MILS );
+        msg = g_PcbUnits.StringFromValue ( tempOptions.GetHPGLPenDiameter() * g_PcbUnits.IuPerMils() );
         m_HPGLPenSizeOpt->SetValue( msg );
         msg.Printf( _( "HPGL pen size constrained!\n" ) );
         m_messagesBox->AppendText( msg );
@@ -595,12 +595,12 @@ void DIALOG_PLOT::applyPlotSettings()
 
     // Read HPGL pen overlay (this param is stored in mils)
     msg = m_HPGLPenOverlayOpt->GetValue();
-    tmp = ReturnValueFromString( g_UserUnit, msg ) / IU_PER_MILS;
+    tmp = g_PcbUnits.ValueFromString(msg ) / g_PcbUnits.IuPerMils();
 
     if( !tempOptions.SetHPGLPenOverlay( tmp ) )
     {
-        msg = ReturnStringFromValue( g_UserUnit,
-                                     tempOptions.GetHPGLPenOverlay() * IU_PER_MILS );
+        msg = g_PcbUnits.StringFromValue (
+                                     tempOptions.GetHPGLPenOverlay() * g_PcbUnits.IuPerMils() );
         m_HPGLPenOverlayOpt->SetValue( msg );
         msg.Printf( _( "HPGL pen overlay constrained!\n" ) );
         m_messagesBox->AppendText( msg );
@@ -608,11 +608,11 @@ void DIALOG_PLOT::applyPlotSettings()
 
     // Default linewidth
     msg = m_linesWidth->GetValue();
-    tmp = ReturnValueFromString( g_UserUnit, msg );
+    tmp = g_PcbUnits.ValueFromString(msg );
 
     if( !tempOptions.SetLineWidth( tmp ) )
     {
-        msg = ReturnStringFromValue( g_UserUnit, tempOptions.GetLineWidth() );
+        msg = g_PcbUnits.StringFromValue ( tempOptions.GetLineWidth() );
         m_linesWidth->SetValue( msg );
         msg.Printf( _( "Default line width constrained!\n" ) );
         m_messagesBox->AppendText( msg );
@@ -649,24 +649,24 @@ void DIALOG_PLOT::applyPlotSettings()
 
     // PS Width correction
     msg = m_PSFineAdjustWidthOpt->GetValue();
-    int itmp = ReturnValueFromString( g_UserUnit, msg );
+    int itmp = g_PcbUnits.ValueFromString(msg );
 
     if( !setInt( &m_PSWidthAdjust, itmp, m_widthAdjustMinValue, m_widthAdjustMaxValue ) )
     {
-        msg = ReturnStringFromValue( g_UserUnit, m_PSWidthAdjust );
+        msg = g_PcbUnits.StringFromValue ( m_PSWidthAdjust );
         m_PSFineAdjustWidthOpt->SetValue( msg );
         msg.Printf( _( "Width correction constrained!\n"
                        "The reasonable width correction value must be in a range of\n"
                        " [%+f; %+f] (%s) for current design rules!\n" ),
-                    To_User_Unit( g_UserUnit, m_widthAdjustMinValue ),
-                    To_User_Unit( g_UserUnit, m_widthAdjustMaxValue ),
-                    ( g_UserUnit == INCHES ) ? wxT( "\"" ) : wxT( "mm" ) );
+                    g_PcbUnits.ToUser(  m_widthAdjustMinValue ),
+                    g_PcbUnits.ToUser(  m_widthAdjustMaxValue ),
+                    ( g_PcbUnits.GetUserUnit() == INCHES ) ? wxT( "\"" ) : wxT( "mm" ) );
         m_messagesBox->AppendText( msg );
     }
 
     // Store m_PSWidthAdjust in mm in user config
     ConfigBaseWriteDouble( m_config, CONFIG_PS_FINEWIDTH_ADJ,
-                           (double)m_PSWidthAdjust / IU_PER_MM );
+                           (double)m_PSWidthAdjust / g_PcbUnits.IuPerMm() );
 
     tempOptions.SetUseGerberExtensions( m_useGerberExtensions->GetValue() );
 

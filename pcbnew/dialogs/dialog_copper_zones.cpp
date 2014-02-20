@@ -172,12 +172,12 @@ void DIALOG_COPPER_ZONE::initDialog()
 
     m_FillModeCtrl->SetSelection( m_settings.m_FillMode ? 1 : 0 );
 
-    AddUnitSymbol( *m_ClearanceValueTitle, g_UserUnit );
-    msg = ReturnStringFromValue( g_UserUnit, m_settings.m_ZoneClearance );
+    AddUnitSymbol( *m_ClearanceValueTitle, g_PcbUnits.GetUserUnit() );
+    msg = g_PcbUnits.StringFromValue ( m_settings.m_ZoneClearance );
     m_ZoneClearanceCtrl->SetValue( msg );
 
-    AddUnitSymbol( *m_MinThicknessValueTitle, g_UserUnit );
-    msg = ReturnStringFromValue( g_UserUnit, m_settings.m_ZoneMinThickness );
+    AddUnitSymbol( *m_MinThicknessValueTitle, g_PcbUnits.GetUserUnit() );
+    msg = g_PcbUnits.StringFromValue ( m_settings.m_ZoneMinThickness );
     m_ZoneMinThicknessCtrl->SetValue( msg );
 
     switch( m_settings.GetPadConnection() )
@@ -215,14 +215,14 @@ void DIALOG_COPPER_ZONE::initDialog()
 
     m_PriorityLevelCtrl->SetValue( m_settings.m_ZonePriority );
 
-    AddUnitSymbol( *m_AntipadSizeText, g_UserUnit );
-    AddUnitSymbol( *m_CopperBridgeWidthText, g_UserUnit );
-    PutValueInLocalUnits( *m_AntipadSizeValue, m_settings.m_ThermalReliefGap );
-    PutValueInLocalUnits( *m_CopperWidthValue, m_settings.m_ThermalReliefCopperBridge );
+    AddUnitSymbol( *m_AntipadSizeText, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_CopperBridgeWidthText, g_PcbUnits.GetUserUnit() );
+    m_AntipadSizeValue->SetValue ( g_PcbUnits.StringFromValue(m_settings.m_ThermalReliefGap ) );
+    m_CopperWidthValue->SetValue ( g_PcbUnits.StringFromValue(m_settings.m_ThermalReliefCopperBridge ) );
 
     m_cornerSmoothingChoice->SetSelection( m_settings.GetCornerSmoothingType() );
 
-    PutValueInLocalUnits( *m_cornerSmoothingCtrl, m_settings.GetCornerRadius() );
+    m_cornerSmoothingCtrl->SetValue( g_PcbUnits.StringFromValue( m_settings.GetCornerRadius() ) );
 
     switch( m_settings.m_Zone_HatchingStyle )
     {
@@ -388,11 +388,11 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aPromptForErrors, bool aUseExportab
     m_settings.m_FillMode = (m_FillModeCtrl->GetSelection() == 0) ? 0 : 1;
 
     wxString txtvalue = m_ZoneClearanceCtrl->GetValue();
-    m_settings.m_ZoneClearance = ReturnValueFromString( g_UserUnit, txtvalue );
+    m_settings.m_ZoneClearance = g_PcbUnits.ValueFromString( txtvalue );
 
     // Test if this is a reasonable value for this parameter
     // A too large value can hang Pcbnew
-    #define CLEARANCE_MAX_VALUE ZONE_CLEARANCE_MAX_VALUE_MIL*IU_PER_MILS
+    #define CLEARANCE_MAX_VALUE ZONE_CLEARANCE_MAX_VALUE_MIL * g_PcbUnits.IuPerMils()
     if( m_settings.m_ZoneClearance > CLEARANCE_MAX_VALUE )
     {
         wxString msg;
@@ -403,9 +403,9 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aPromptForErrors, bool aUseExportab
     }
 
     txtvalue = m_ZoneMinThicknessCtrl->GetValue();
-    m_settings.m_ZoneMinThickness = ReturnValueFromString( g_UserUnit, txtvalue );
+    m_settings.m_ZoneMinThickness = g_PcbUnits.ValueFromString( txtvalue );
 
-    if( m_settings.m_ZoneMinThickness < (ZONE_THICKNESS_MIN_VALUE_MIL*IU_PER_MILS) )
+    if( m_settings.m_ZoneMinThickness < (ZONE_THICKNESS_MIN_VALUE_MIL*g_PcbUnits.IuPerMils()) )
     {
         wxString msg;
         msg.Printf( _( "Minimum width must be larger than %f\" / %f mm." ),
@@ -416,7 +416,7 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aPromptForErrors, bool aUseExportab
 
     m_settings.SetCornerSmoothingType( m_cornerSmoothingChoice->GetSelection() );
     txtvalue = m_cornerSmoothingCtrl->GetValue();
-    m_settings.SetCornerRadius( ReturnValueFromString( g_UserUnit, txtvalue ) );
+    m_settings.SetCornerRadius( g_PcbUnits.ValueFromString( txtvalue ) );
 
     m_settings.m_ZonePriority = m_PriorityLevelCtrl->GetValue();
 
@@ -425,22 +425,22 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aPromptForErrors, bool aUseExportab
     else
         m_settings.m_Zone_45_Only = true;
 
-    m_settings.m_ThermalReliefGap = ReturnValueFromTextCtrl( *m_AntipadSizeValue );
-    m_settings.m_ThermalReliefCopperBridge = ReturnValueFromTextCtrl( *m_CopperWidthValue );
+    m_settings.m_ThermalReliefGap = g_PcbUnits.ValueFromString ( m_AntipadSizeValue->GetValue() );
+    m_settings.m_ThermalReliefCopperBridge = g_PcbUnits.ValueFromString ( m_CopperWidthValue->GetValue() );
 
     if( m_Config )
     {
         ConfigBaseWriteDouble( m_Config, ZONE_CLEARANCE_WIDTH_STRING_KEY,
-                               (double) m_settings.m_ZoneClearance / IU_PER_MILS );
+                               (double) m_settings.m_ZoneClearance / g_PcbUnits.IuPerMils() );
 
         ConfigBaseWriteDouble( m_Config, ZONE_MIN_THICKNESS_WIDTH_STRING_KEY,
-            (double) m_settings.m_ZoneMinThickness / IU_PER_MILS );
+            (double) m_settings.m_ZoneMinThickness / g_PcbUnits.IuPerMils() );
 
         ConfigBaseWriteDouble( m_Config, ZONE_THERMAL_RELIEF_GAP_STRING_KEY,
-            (double) m_settings.m_ThermalReliefGap / IU_PER_MILS );
+            (double) m_settings.m_ThermalReliefGap / g_PcbUnits.IuPerMils() );
 
         ConfigBaseWriteDouble( m_Config, ZONE_THERMAL_RELIEF_COPPER_WIDTH_STRING_KEY,
-            (double) m_settings.m_ThermalReliefCopperBridge / IU_PER_MILS );
+            (double) m_settings.m_ThermalReliefCopperBridge / g_PcbUnits.IuPerMils() );
     }
 
     if( m_settings.m_ThermalReliefCopperBridge <= m_settings.m_ZoneMinThickness )
@@ -511,13 +511,13 @@ void DIALOG_COPPER_ZONE::OnCornerSmoothingModeChoice( wxCommandEvent& event )
         m_cornerSmoothingTitle->Enable( true );
         m_cornerSmoothingCtrl->Enable( true );
         m_cornerSmoothingTitle->SetLabel( _( "Chamfer distance" ) );
-        AddUnitSymbol( *m_cornerSmoothingTitle, g_UserUnit );
+        AddUnitSymbol( *m_cornerSmoothingTitle, g_PcbUnits.GetUserUnit() );
         break;
     case ZONE_SETTINGS::SMOOTHING_FILLET:
         m_cornerSmoothingTitle->Enable( true );
         m_cornerSmoothingCtrl->Enable( true );
         m_cornerSmoothingTitle->SetLabel( _( "Fillet radius" ) );
-        AddUnitSymbol( *m_cornerSmoothingTitle, g_UserUnit );
+        AddUnitSymbol( *m_cornerSmoothingTitle, g_PcbUnits.GetUserUnit() );
         break;
     }
 }

@@ -39,9 +39,9 @@
 const wxString NETCLASS::Default = wxT("Default");
 
 // Initial values for netclass initialization
-int NETCLASS::DEFAULT_CLEARANCE  = DMils2iu( 100 );  // track to track and track to pads clearance
-int NETCLASS::DEFAULT_VIA_DRILL  = DMils2iu( 250 );  // default via drill
-int NETCLASS::DEFAULT_UVIA_DRILL = DMils2iu( 50 );    // micro via drill
+int NETCLASS::DEFAULT_CLEARANCE_DMILS  = 100;  // track to track and track to pads clearance
+int NETCLASS::DEFAULT_VIA_DRILL_DMILS  = 250;  // default via drill
+int NETCLASS::DEFAULT_UVIA_DRILL_DMILS = 50;    // micro via drill
 
 
 NETCLASS::NETCLASS( BOARD* aParent, const wxString& aName, const NETCLASS* initialParameters ) :
@@ -88,9 +88,9 @@ void NETCLASS::SetParams( const NETCLASS* defaults )
         SetuViaDiameter( g.m_MicroViasMinSize );
 
         // Use default values for next parameters:
-        SetClearance( DEFAULT_CLEARANCE );
-        SetViaDrill( DEFAULT_VIA_DRILL );
-        SetuViaDrill( DEFAULT_UVIA_DRILL );
+        SetClearance( g_PcbUnits.DMilsToIu( DEFAULT_CLEARANCE_DMILS ) );
+        SetViaDrill( g_PcbUnits.DMilsToIu( DEFAULT_VIA_DRILL_DMILS ) );
+        SetuViaDrill( g_PcbUnits.DMilsToIu( DEFAULT_UVIA_DRILL_DMILS ) );
     }
 }
 
@@ -328,6 +328,8 @@ void NETCLASS::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
                        aFormatter->Quotew( GetName() ).c_str(),
                        aFormatter->Quotew( GetDescription() ).c_str() );
 
+    #define FMT_IU g_PcbUnits.FormatIU
+
     aFormatter->Print( aNestLevel+1, "(clearance %s)\n", FMT_IU( GetClearance() ).c_str() );
     aFormatter->Print( aNestLevel+1, "(trace_width %s)\n", FMT_IU( GetTrackWidth() ).c_str() );
 
@@ -341,4 +343,5 @@ void NETCLASS::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
         aFormatter->Print( aNestLevel+1, "(add_net %s)\n", aFormatter->Quotew( *it ).c_str() );
 
     aFormatter->Print( aNestLevel, ")\n\n" );
+    #undef FMT_IU
 }

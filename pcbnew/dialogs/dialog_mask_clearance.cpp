@@ -57,16 +57,16 @@ void DIALOG_PADS_MASK_CLEARANCE::myInit()
 {
     SetFocus();
 
-    m_SolderMaskMarginUnits->SetLabel( GetUnitsLabel( g_UserUnit ) );
-    m_solderMaskMinWidthUnit->SetLabel( GetUnitsLabel( g_UserUnit ) );
-    m_SolderPasteMarginUnits->SetLabel( GetUnitsLabel( g_UserUnit ) );
+    m_SolderMaskMarginUnits->SetLabel( GetUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_solderMaskMinWidthUnit->SetLabel( GetUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderPasteMarginUnits->SetLabel( GetUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
-    PutValueInLocalUnits( *m_SolderMaskMarginCtrl, m_brdSettings.m_SolderMaskMargin );
-    PutValueInLocalUnits( *m_SolderMaskMinWidthCtrl, m_brdSettings.m_SolderMaskMinWidth );
+    m_SolderMaskMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_brdSettings.m_SolderMaskMargin ) );
+    m_SolderMaskMinWidthCtrl->SetValue( g_PcbUnits.StringFromValue( m_brdSettings.m_SolderMaskMinWidth ) );
 
     // These 2 parameters are usually < 0, so prepare entering a negative
     // value, if current is 0
-    PutValueInLocalUnits( *m_SolderPasteMarginCtrl, m_brdSettings.m_SolderPasteMargin );
+    m_SolderPasteMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_brdSettings.m_SolderPasteMargin ) );
 
     if(  m_brdSettings.m_SolderPasteMargin == 0 )
         m_SolderPasteMarginCtrl->SetValue( wxT( "-" ) +
@@ -85,10 +85,10 @@ void DIALOG_PADS_MASK_CLEARANCE::myInit()
 
 void DIALOG_PADS_MASK_CLEARANCE::OnButtonOkClick( wxCommandEvent& event )
 {
-    m_brdSettings.m_SolderMaskMargin = ReturnValueFromTextCtrl( *m_SolderMaskMarginCtrl );
-    m_brdSettings.m_SolderMaskMinWidth = ReturnValueFromTextCtrl( *m_SolderMaskMinWidthCtrl );
+    m_brdSettings.m_SolderMaskMargin = g_PcbUnits.ValueFromString( m_SolderMaskMarginCtrl->GetValue() );
+    m_brdSettings.m_SolderMaskMinWidth = g_PcbUnits.ValueFromString( m_SolderMaskMinWidthCtrl->GetValue() );
 
-    m_brdSettings.m_SolderPasteMargin = ReturnValueFromTextCtrl( *m_SolderPasteMarginCtrl );
+    m_brdSettings.m_SolderPasteMargin = g_PcbUnits.ValueFromString( m_SolderPasteMarginCtrl->GetValue() );
 
     double      dtmp    = 0;
     wxString    msg     = m_SolderPasteMarginRatioCtrl->GetValue();

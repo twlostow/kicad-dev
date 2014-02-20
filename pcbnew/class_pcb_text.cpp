@@ -146,13 +146,13 @@ void TEXTE_PCB::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     msg.Printf( wxT( "%.1f" ), m_Orient / 10.0 );
     aList.push_back( MSG_PANEL_ITEM( _( "Orientation" ), msg, DARKGREEN ) );
 
-    msg = ::CoordinateToString( m_Thickness );
+    msg = g_PcbUnits.CoordinateToString( m_Thickness );
     aList.push_back( MSG_PANEL_ITEM( _( "Thickness" ), msg, MAGENTA ) );
 
-    msg = ::CoordinateToString( m_Size.x );
+    msg = g_PcbUnits.CoordinateToString( m_Size.x );
     aList.push_back( MSG_PANEL_ITEM( _( "Size X" ), msg, RED ) );
 
-    msg = ::CoordinateToString( m_Size.y );
+    msg = g_PcbUnits.CoordinateToString( m_Size.y );
     aList.push_back( MSG_PANEL_ITEM( _( "Size Y" ), msg, RED ) );
 }
 

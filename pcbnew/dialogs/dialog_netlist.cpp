@@ -251,8 +251,8 @@ void DIALOG_NETLIST::OnTestFootprintsClick( wxCommandEvent& event )
 
             list << wxT("  (<i>") << module->GetValue() << wxT("</i>)");
             list << wxT(" @ ");
-            list << CoordinateToString( module->GetPosition().x ),
-            list << wxT(", ") << CoordinateToString( module->GetPosition().y ),
+            list << g_PcbUnits.CoordinateToString( module->GetPosition().x ),
+            list << wxT(", ") << g_PcbUnits.CoordinateToString( module->GetPosition().y ),
             err_cnt++;
 
             if( ERR_CNT_MAX < err_cnt )
@@ -297,8 +297,8 @@ void DIALOG_NETLIST::OnTestFootprintsClick( wxCommandEvent& event )
 
             list << wxT( " (<i>" ) << module->GetValue() << wxT( "</i>)" );
             list << wxT( " @ " );
-            list << CoordinateToString( module->GetPosition().x ),
-            list << wxT( ", " ) << CoordinateToString( module->GetPosition().y ),
+            list << g_PcbUnits.CoordinateToString( module->GetPosition().x ),
+            list << wxT( ", " ) << g_PcbUnits.CoordinateToString( module->GetPosition().y ),
             err_cnt++;
 
             if( ERR_CNT_MAX < err_cnt )

@@ -124,7 +124,7 @@ TRACK* GetTrace( TRACK* aStartTrace, TRACK* aEndTrace, const wxPoint& aPosition,
 TRACK::TRACK( BOARD_ITEM* aParent, KICAD_T idtype ) :
     BOARD_CONNECTED_ITEM( aParent, idtype )
 {
-    m_Width = Millimeter2iu( 0.2 );
+    m_Width = g_PcbUnits.MmToIu( 0.2 );
     m_Shape = S_SEGMENT;
     start   = end = NULL;
     SetDrillDefault();
@@ -140,7 +140,7 @@ EDA_ITEM* TRACK::Clone() const
 
 wxString TRACK::ShowWidth() const
 {
-    wxString msg = ::CoordinateToString( m_Width );
+    wxString msg = g_PcbUnits.CoordinateToString( m_Width );
     return msg;
 }
 
@@ -187,7 +187,7 @@ SEGVIA::SEGVIA( BOARD_ITEM* aParent ) :
     TRACK( aParent, PCB_VIA_T )
 {
     SetShape( VIA_THROUGH );
-    m_Width = Millimeter2iu( 0.5 );
+    m_Width = g_PcbUnits.MmToIu( 0.5 );
 }
 
 
@@ -1011,15 +1011,15 @@ void TRACK::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
         double trackLen = 0;
         double lenPadToDie = 0;
         board->MarkTrace( this, NULL, &trackLen, &lenPadToDie, false );
-        msg = ::CoordinateToString( trackLen );
+        msg = g_PcbUnits.CoordinateToString( trackLen );
         aList.push_back( MSG_PANEL_ITEM( _( "Track Len" ), msg, DARKCYAN ) );
 
         if( lenPadToDie != 0 )
         {
-            msg = ::LengthDoubleToString( trackLen + lenPadToDie );
+            msg = g_PcbUnits.LengthToString( trackLen + lenPadToDie );
             aList.push_back( MSG_PANEL_ITEM( _( "Full Len" ), msg, DARKCYAN ) );
 
-            msg = ::LengthDoubleToString( lenPadToDie );
+            msg = g_PcbUnits.LengthToString( lenPadToDie );
             aList.push_back( MSG_PANEL_ITEM( _( "In Package" ), msg, DARKCYAN ) );
         }
     }
@@ -1030,16 +1030,16 @@ void TRACK::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     {
         aList.push_back( MSG_PANEL_ITEM( _( "NC Name" ), netclass->GetName(), DARKMAGENTA ) );
         aList.push_back( MSG_PANEL_ITEM( _( "NC Clearance" ),
-                                         ::CoordinateToString( netclass->GetClearance(), true ),
+                                         g_PcbUnits.CoordinateToString( netclass->GetClearance(), true ),
                                          DARKMAGENTA ) );
         aList.push_back( MSG_PANEL_ITEM( _( "NC Width" ),
-                                         ::CoordinateToString( netclass->GetTrackWidth(), true ),
+                                         g_PcbUnits.CoordinateToString( netclass->GetTrackWidth(), true ),
                                          DARKMAGENTA ) );
         aList.push_back( MSG_PANEL_ITEM( _( "NC Via Size" ),
-                                         ::CoordinateToString( netclass->GetViaDiameter(), true ),
+                                         g_PcbUnits.CoordinateToString( netclass->GetViaDiameter(), true ),
                                          DARKMAGENTA ) );
         aList.push_back( MSG_PANEL_ITEM( _( "NC Via Drill"),
-                                         ::CoordinateToString( netclass->GetViaDrill(), true ),
+                                         g_PcbUnits.CoordinateToString( netclass->GetViaDrill(), true ),
                                          DARKMAGENTA ) );
     }
 }
@@ -1171,7 +1171,7 @@ void TRACK::GetMsgPanelInfoBase( std::vector< MSG_PANEL_ITEM >& aList )
     aList.push_back( MSG_PANEL_ITEM( _( "Layer" ), msg, BROWN ) );
 
     // Display width
-    msg = ::CoordinateToString( (unsigned) m_Width );
+    msg = g_PcbUnits.CoordinateToString( (unsigned) m_Width );
 
     if( Type() == PCB_VIA_T )      // Display Diam and Drill values
     {
@@ -1181,7 +1181,7 @@ void TRACK::GetMsgPanelInfoBase( std::vector< MSG_PANEL_ITEM >& aList )
         // Display drill value
         int drill_value = GetDrillValue();
 
-        msg = ::CoordinateToString( drill_value );
+        msg = g_PcbUnits.CoordinateToString( drill_value );
 
         wxString title = _( "Drill" );
         title += wxT( " " );
@@ -1201,7 +1201,7 @@ void TRACK::GetMsgPanelInfoBase( std::vector< MSG_PANEL_ITEM >& aList )
     // Display segment length
     if( Type() != PCB_VIA_T )      // Display Diam and Drill values
     {
-        msg = ::LengthDoubleToString( GetLength() );
+        msg = g_PcbUnits.LengthToString( GetLength() );
         aList.push_back( MSG_PANEL_ITEM( _( "Segment Length" ), msg, DARKCYAN ) );
     }
 }
@@ -1592,7 +1592,7 @@ wxString TRACK::GetSelectMenuText() const
     text.Printf( _("Track %s, net [%s] (%d) on layer %s, length: %s" ),
                  GetChars( ShowWidth() ), GetChars( netname ),
                  GetNet(), GetChars( GetLayerName() ),
-                 GetChars( ::LengthDoubleToString( GetLength() ) ) );
+                 GetChars( g_PcbUnits.LengthToString( GetLength() ) ) );
 
     return text;
 }

@@ -554,22 +554,22 @@ int PCB_EDIT_FRAME::Begin_Zone( wxDC* DC )
                 }
                 double tmp = ZONE_THERMAL_RELIEF_GAP_MIL;
                 wxGetApp().GetSettings()->Read( ZONE_THERMAL_RELIEF_GAP_STRING_KEY, &tmp );
-                zoneInfo.m_ThermalReliefGap = KiROUND( tmp * IU_PER_MILS);
+                zoneInfo.m_ThermalReliefGap = KiROUND( tmp * g_PcbUnits.IuPerMils());
 
                 tmp = ZONE_THERMAL_RELIEF_COPPER_WIDTH_MIL;
                 wxGetApp().GetSettings()->Read( ZONE_THERMAL_RELIEF_COPPER_WIDTH_STRING_KEY,
                                                 &tmp );
-                zoneInfo.m_ThermalReliefCopperBridge = KiROUND( tmp * IU_PER_MILS );
+                zoneInfo.m_ThermalReliefCopperBridge = KiROUND( tmp * g_PcbUnits.IuPerMils() );
 
                 tmp = ZONE_CLEARANCE_MIL;
                 wxGetApp().GetSettings()->Read( ZONE_CLEARANCE_WIDTH_STRING_KEY,
                                                 &tmp );
-                zoneInfo.m_ZoneClearance = KiROUND( tmp * IU_PER_MILS );
+                zoneInfo.m_ZoneClearance = KiROUND( tmp * g_PcbUnits.IuPerMils() );
 
                 tmp = ZONE_THICKNESS_MIL;
                 wxGetApp().GetSettings()->Read( ZONE_MIN_THICKNESS_WIDTH_STRING_KEY,
                                                 &tmp );
-                zoneInfo.m_ZoneMinThickness = KiROUND( tmp * IU_PER_MILS );
+                zoneInfo.m_ZoneMinThickness = KiROUND( tmp * g_PcbUnits.IuPerMils() );
 
                 zoneInfo.m_CurrentZone_Layer = zone->GetLayer();
 

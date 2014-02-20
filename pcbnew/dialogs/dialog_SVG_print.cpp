@@ -34,7 +34,6 @@
 #include <wxBasePcbFrame.h>
 #include <class_pcb_screen.h>
 #include <base_units.h>
-#include <convert_from_iu.h>
 #include <wildcards_and_files_ext.h>
 #include <macros.h>
 #include <reporter.h>
@@ -52,8 +51,8 @@
 #define PLOTSVGPLOT_BRD_EDGE_KEY    wxT( "PlotSVGBrdEdge" )
 
 // reasonable values for default pen width
-#define WIDTH_MAX_VALUE (2 * IU_PER_MM)
-#define WIDTH_MIN_VALUE (0.05 * IU_PER_MM)
+#define WIDTH_MAX_VALUE (2 * PCB_UNITS().IuPerMm())
+#define WIDTH_MIN_VALUE (0.05 * PCB_UNITS().IuPerMm())
 
 // Local variables:
 static long s_SelectedLayers = LAYER_BACK | LAYER_FRONT |
@@ -101,9 +100,9 @@ void DIALOG_SVG_PRINT::initDialog()
     m_rbFileOpt->SetSelection( m_oneFileOnly ? 1 : 0 );
 
 
-    AddUnitSymbol( *m_TextPenWidth, g_UserUnit );
+    AddUnitSymbol( *m_TextPenWidth, g_PcbUnits.GetUserUnit() );
     m_DialogDefaultPenSize->SetValue(
-        ReturnStringFromValue( g_UserUnit, g_DrawDefaultLineThickness ) );
+        g_PcbUnits.StringFromValue ( g_DrawDefaultLineThickness ) );
 
     // Create layers list
     LAYER_NUM layer;
@@ -206,7 +205,7 @@ void DIALOG_SVG_PRINT::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
 
 void DIALOG_SVG_PRINT::SetPenWidth()
 {
-    int pensize = ReturnValueFromTextCtrl( *m_DialogDefaultPenSize );
+    int pensize = g_PcbUnits.ValueFromString( m_DialogDefaultPenSize->GetValue() );
 
     if( pensize > WIDTH_MAX_VALUE )
     {
@@ -219,7 +218,7 @@ void DIALOG_SVG_PRINT::SetPenWidth()
     }
 
     g_DrawDefaultLineThickness = pensize;
-    m_DialogDefaultPenSize->SetValue( ReturnStringFromValue( g_UserUnit, pensize ) );
+    m_DialogDefaultPenSize->SetValue( g_PcbUnits.StringFromValue ( pensize ) );
 }
 
 
@@ -323,8 +322,8 @@ bool DIALOG_SVG_PRINT::CreateSVGFile( const wxString& aFullFileName )
     {
         EDA_RECT bbox = m_board->ComputeBoundingBox();
         PAGE_INFO currpageInfo = m_board->GetPageSettings();
-        currpageInfo.SetWidthMils(  bbox.GetWidth() / IU_PER_MILS );
-        currpageInfo.SetHeightMils( bbox.GetHeight() / IU_PER_MILS );
+        currpageInfo.SetWidthMils(  bbox.GetWidth() / g_PcbUnits.IuPerMils() );
+        currpageInfo.SetHeightMils( bbox.GetHeight() / g_PcbUnits.IuPerMils() );
         m_board->SetPageSettings( currpageInfo );
         m_plotOpts.SetUseAuxOrigin( true );
         wxPoint origin = bbox.GetOrigin();

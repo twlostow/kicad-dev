@@ -43,7 +43,6 @@
 #include <class_board.h>
 #include <class_module.h>
 #include <class_track.h>
-#include <convert_to_biu.h>
 
 #include <autorout.h>
 
@@ -160,8 +159,8 @@ void PCB_EDIT_FRAME::Autoroute( wxDC* DC, int mode )
     /* Calculation of no fixed routing to 5 mils and more. */
     RoutingMatrix.m_GridRouting = (int)GetScreen()->GetGridSize().x;
 
-    if( RoutingMatrix.m_GridRouting < (5*IU_PER_MILS) )
-        RoutingMatrix.m_GridRouting = 5*IU_PER_MILS;
+    if( RoutingMatrix.m_GridRouting < (5 * g_PcbUnits.IuPerMils() ) )
+        RoutingMatrix.m_GridRouting = 5 * g_PcbUnits.IuPerMils();
 
 
     /* Calculated ncol and nrow, matrix size for routing. */

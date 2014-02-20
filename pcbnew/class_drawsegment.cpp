@@ -56,7 +56,7 @@ DRAWSEGMENT::DRAWSEGMENT( BOARD_ITEM* aParent, KICAD_T idtype ) :
     m_Angle = 0;
     m_Flags = 0;
     m_Shape = S_SEGMENT;
-    m_Width = Millimeter2iu( 0.15 );    // Gives a decent width
+    m_Width = g_PcbUnits.MmToIu( 0.15 );    // Gives a decent width
 }
 
 
@@ -344,15 +344,12 @@ void DRAWSEGMENT::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
         aList.push_back( MSG_PANEL_ITEM( shape, _( "Segment" ), RED ) );
     }
 
-    wxString start;
-    start << GetStart();
-
-    wxString end;
-    end << GetEnd();
-
+    wxString start  ( g_PcbUnits.PointToString ( GetStart () ) );
+    wxString end    ( g_PcbUnits.PointToString ( GetEnd () ) );
+    
     aList.push_back( MSG_PANEL_ITEM( start, end, DARKGREEN ) );
     aList.push_back( MSG_PANEL_ITEM( _( "Layer" ), GetLayerName(), DARKBROWN ) );
-    msg = ::CoordinateToString( m_Width );
+    msg = g_PcbUnits.CoordinateToString( m_Width );
     aList.push_back( MSG_PANEL_ITEM( _( "Width" ), msg, DARKCYAN ) );
 }
 
@@ -544,7 +541,7 @@ bool DRAWSEGMENT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy
 wxString DRAWSEGMENT::GetSelectMenuText() const
 {
     wxString text;
-    wxString temp = ::LengthDoubleToString( GetLength() );
+    wxString temp = g_PcbUnits.LengthToString( GetLength() );
 
     text.Printf( _( "Pcb Graphic: %s, length %s on %s" ),
                  GetChars( ShowShape( (STROKE_T) m_Shape ) ),

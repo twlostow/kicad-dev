@@ -88,11 +88,11 @@ DIALOG_MODULE_BOARD_EDITOR::~DIALOG_MODULE_BOARD_EDITOR()
 // Creation of the panel properties of the module editor.
 void DIALOG_MODULE_BOARD_EDITOR::InitBoardProperties()
 {
-    PutValueInLocalUnits( *m_ModPositionX, m_CurrentModule->GetPosition().x );
-    m_XPosUnit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    m_ModPositionX->SetValue( g_PcbUnits.StringFromValue (m_CurrentModule->GetPosition().x ) );
+    m_XPosUnit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
-    PutValueInLocalUnits( *m_ModPositionY, m_CurrentModule->GetPosition().y );
-    m_YPosUnit->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    m_ModPositionY->SetValue( g_PcbUnits.StringFromValue (m_CurrentModule->GetPosition().y ) );
+    m_YPosUnit->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
     m_LayerCtrl->SetSelection(
          (m_CurrentModule->GetLayer() == LAYER_N_BACK) ? 1 : 0 );
@@ -131,16 +131,16 @@ void DIALOG_MODULE_BOARD_EDITOR::InitBoardProperties()
     m_OrientValue->Enable( select );
 
     // Initialize dialog relative to masks clearances
-    m_NetClearanceUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_SolderMaskMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
-    m_SolderPasteMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_UserUnit ) );
+    m_NetClearanceUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderMaskMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
+    m_SolderPasteMarginUnits->SetLabel( GetAbbreviatedUnitsLabel( g_PcbUnits.GetUserUnit() ) );
 
-    PutValueInLocalUnits( *m_NetClearanceValueCtrl, m_CurrentModule->GetLocalClearance() );
-    PutValueInLocalUnits( *m_SolderMaskMarginCtrl, m_CurrentModule->GetLocalSolderMaskMargin() );
+    m_NetClearanceValueCtrl->SetValue( g_PcbUnits.StringFromValue( m_CurrentModule->GetLocalClearance() ) );
+    m_SolderMaskMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_CurrentModule->GetLocalSolderMaskMargin() ) );
 
     // These 2 parameters are usually < 0, so prepare entering a negative
     // value, if current is 0
-    PutValueInLocalUnits( *m_SolderPasteMarginCtrl, m_CurrentModule->GetLocalSolderPasteMargin() );
+    m_SolderPasteMarginCtrl->SetValue( g_PcbUnits.StringFromValue( m_CurrentModule->GetLocalSolderPasteMargin() ) );
 
     if( m_CurrentModule->GetLocalSolderPasteMargin() == 0 )
         m_SolderPasteMarginCtrl->SetValue( wxT( "-" ) +
@@ -526,9 +526,9 @@ void DIALOG_MODULE_BOARD_EDITOR::OnOkClick( wxCommandEvent& event )
     m_CurrentModule->Value().Copy( m_ValueCopy );
 
     // Initialize masks clearances
-    m_CurrentModule->SetLocalClearance( ReturnValueFromTextCtrl( *m_NetClearanceValueCtrl ) );
-    m_CurrentModule->SetLocalSolderMaskMargin( ReturnValueFromTextCtrl( *m_SolderMaskMarginCtrl ) );
-    m_CurrentModule->SetLocalSolderPasteMargin( ReturnValueFromTextCtrl( *m_SolderPasteMarginCtrl ) );
+    m_CurrentModule->SetLocalClearance( g_PcbUnits.ValueFromString( m_NetClearanceValueCtrl->GetValue() ) );
+    m_CurrentModule->SetLocalSolderMaskMargin( g_PcbUnits.ValueFromString( m_SolderMaskMarginCtrl->GetValue() ) );
+    m_CurrentModule->SetLocalSolderPasteMargin( g_PcbUnits.ValueFromString( m_SolderPasteMarginCtrl->GetValue() ) );
 
     double dtmp = 0.0;
     msg = m_SolderPasteMarginRatioCtrl->GetValue();
@@ -565,8 +565,8 @@ void DIALOG_MODULE_BOARD_EDITOR::OnOkClick( wxCommandEvent& event )
     }
 
     // Set Module Position
-    modpos.x = ReturnValueFromTextCtrl( *m_ModPositionX );
-    modpos.y = ReturnValueFromTextCtrl( *m_ModPositionY );
+    modpos.x = g_PcbUnits.ValueFromString( m_ModPositionX->GetValue() );
+    modpos.y = g_PcbUnits.ValueFromString( m_ModPositionY->GetValue() );
     m_CurrentModule->SetPosition( modpos );
     m_CurrentModule->SetLocked( m_AutoPlaceCtrl->GetSelection() == 1 );
 

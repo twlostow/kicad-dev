@@ -76,8 +76,8 @@ void DIALOG_NON_COPPER_ZONES_EDITOR::Init()
 {
     SetReturnCode( ZONE_ABORT );  // Will be changed on button click
 
-    AddUnitSymbol( *m_MinThicknessValueTitle, g_UserUnit );
-    wxString msg = ReturnStringFromValue( g_UserUnit, m_settings.m_ZoneMinThickness );
+    AddUnitSymbol( *m_MinThicknessValueTitle, g_PcbUnits.GetUserUnit() );
+    wxString msg = g_PcbUnits.StringFromValue( m_settings.m_ZoneMinThickness );
     m_ZoneMinThicknessCtrl->SetValue( msg );
 
     if( m_settings.m_Zone_45_Only )
@@ -127,7 +127,7 @@ void DIALOG_NON_COPPER_ZONES_EDITOR::OnOkClick( wxCommandEvent& event )
 {
    wxString txtvalue = m_ZoneMinThicknessCtrl->GetValue();
 
-    m_settings.m_ZoneMinThickness = ReturnValueFromString( g_UserUnit, txtvalue );
+    m_settings.m_ZoneMinThickness = g_PcbUnits.ValueFromString( txtvalue );
 
     if( m_settings.m_ZoneMinThickness < 10 )
     {

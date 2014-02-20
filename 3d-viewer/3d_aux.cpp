@@ -33,6 +33,8 @@
 #include <trigo.h>
 #include <wxBasePcbFrame.h>
 
+#include <base_units.h>
+
 #include <class_board_design_settings.h>
 #include <class_zone.h>
 #include <class_text_mod.h>
@@ -71,7 +73,9 @@ void S3D_MASTER::Set_Object_Coords( std::vector< S3D_VERTEX >& aVertices )
             RotatePoint( &aVertices[ii].x, &aVertices[ii].y, m_MatRotation.z * 10 );
 
         /* adjust offset position (offset is given in UNIT 3D (0.1 inch) */
-#define SCALE_3D_CONV ((IU_PER_MILS * 1000) / UNITS3D_TO_UNITSPCB)
+
+#define SCALE_3D_CONV ( 1000.0 / PCB_3D_UNITS_SCALEFACTOR_MILS )
+        
         aVertices[ii].x += m_MatPosition.x * SCALE_3D_CONV;
         aVertices[ii].y += m_MatPosition.y * SCALE_3D_CONV;
         aVertices[ii].z += m_MatPosition.z * SCALE_3D_CONV;

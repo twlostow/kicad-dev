@@ -37,7 +37,7 @@
 /* 3D modeling units -> PCB units conversion scale:
  * 1 "3D model unit" wings3d = 1 unit = 2.54 mm = 0.1 inch = 100 mils
  */
-#define UNITS3D_TO_UNITSPCB (IU_PER_MILS * 100)
+#define PCB_3D_UNITS_SCALEFACTOR_MILS 100.0
 
 
 class S3D_MASTER;

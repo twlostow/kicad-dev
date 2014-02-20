@@ -562,8 +562,8 @@ public:
     void SetCornerRadius( unsigned int aRadius )
     {
         m_cornerRadius = aRadius;
-        if( m_cornerRadius > (unsigned int) Mils2iu( MAX_ZONE_CORNER_RADIUS_MILS ) )
-            m_cornerRadius = Mils2iu( MAX_ZONE_CORNER_RADIUS_MILS );
+        if( m_cornerRadius > (unsigned int) g_PcbUnits.MilsToIu( MAX_ZONE_CORNER_RADIUS_MILS ) )
+            m_cornerRadius = g_PcbUnits.MilsToIu( MAX_ZONE_CORNER_RADIUS_MILS );
     };
 
     unsigned int GetCornerRadius() const { return m_cornerRadius; };

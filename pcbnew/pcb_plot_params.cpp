@@ -27,12 +27,11 @@
 #include <layers_id_colors_and_visibility.h>
 #include <plot_common.h>
 #include <macros.h>
-#include <convert_to_biu.h>
 
 
-#define PLOT_LINEWIDTH_MIN        (0.02*IU_PER_MM)  // min value for default line thickness
-#define PLOT_LINEWIDTH_MAX        (2*IU_PER_MM)     // max value for default line thickness
-#define PLOT_LINEWIDTH_DEFAULT    (0.15*IU_PER_MM)  // def. value for default line thickness
+#define PLOT_LINEWIDTH_MIN        (0.02 * PCB_UNITS().IuPerMm())  // min value for default line thickness
+#define PLOT_LINEWIDTH_MAX        (2 * PCB_UNITS().IuPerMm())     // max value for default line thickness
+#define PLOT_LINEWIDTH_DEFAULT    (0.15 * PCB_UNITS().IuPerMm())  // def. value for default line thickness
 #define HPGL_PEN_DIAMETER_MIN     0
 #define HPGL_PEN_DIAMETER_MAX     100       // Unit = mil
 #define HPGL_PEN_SPEED_MIN        1         // this param is always in cm/s
@@ -47,6 +46,8 @@
  * Default line thickness in internal units used to draw or plot items using a
  * default thickness line value (Frame references)
  */
+
+// @todo: clean this mess
 int g_DrawDefaultLineThickness = PLOT_LINEWIDTH_DEFAULT;
 
 
@@ -133,7 +134,7 @@ void PCB_PLOT_PARAMS::Format( OUTPUTFORMATTER* aFormatter,
     aFormatter->Print( aNestLevel+1, "(%s %s)\n", getTokenName( T_excludeedgelayer ),
                        m_excludeEdgeLayer ? trueStr : falseStr );
     aFormatter->Print( aNestLevel+1, "(%s %f)\n", getTokenName( T_linewidth ),
-                       m_lineWidth / IU_PER_MM );
+                       m_lineWidth / g_PcbUnits.IuPerMm() );
     aFormatter->Print( aNestLevel+1, "(%s %s)\n", getTokenName( T_plotframeref ),
                        m_plotFrameRef ? trueStr : falseStr );
     aFormatter->Print( aNestLevel+1, "(%s %s)\n", getTokenName( T_viasonmask ),
@@ -346,7 +347,7 @@ void PCB_PLOT_PARAMS_PARSER::Parse( PCB_PLOT_PARAMS* aPcbPlotParams )
             // and now is saved in mm
             // If the read value is outside bounds, force a default value
             double tmp = parseDouble();
-            if( !aPcbPlotParams->SetLineWidth( KiROUND( tmp * IU_PER_MM ) ) )
+            if( !aPcbPlotParams->SetLineWidth( KiROUND( tmp * g_PcbUnits.IuPerMm() ) ) )
                 aPcbPlotParams->SetLineWidth( PLOT_LINEWIDTH_DEFAULT );
         }
             break;

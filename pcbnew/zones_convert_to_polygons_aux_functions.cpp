@@ -201,7 +201,7 @@ void BuildUnconnectedThermalStubsPolygonList( CPOLYGONS_LIST& aCornerBuffer,
                 copperThickness = 0;
 
             // Leave a small extra size to the copper area inside to pad
-            copperThickness += KiROUND( IU_PER_MM * 0.04 );
+            copperThickness += KiROUND( g_PcbUnits.IuPerMm() * 0.04 );
 
             startpoint.x = std::min( pad->GetSize().x, copperThickness );
             startpoint.y = std::min( pad->GetSize().y, copperThickness );

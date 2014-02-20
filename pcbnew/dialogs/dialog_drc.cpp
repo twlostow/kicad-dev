@@ -71,9 +71,9 @@ void DIALOG_DRC_CONTROL::InitValues()
                                    wxMouseEventHandler(
                                        DIALOG_DRC_CONTROL::OnRightUpUnconnected ), NULL, this );
 
-    AddUnitSymbol( *m_TrackMinWidthTitle );
-    AddUnitSymbol( *m_ViaMinTitle );
-    AddUnitSymbol( *m_MicroViaMinTitle );
+    AddUnitSymbol( *m_TrackMinWidthTitle, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_ViaMinTitle, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_MicroViaMinTitle, g_PcbUnits.GetUserUnit() );
 
     m_DeleteCurrentMarkerButton->Enable( false );
 
@@ -99,9 +99,9 @@ void DIALOG_DRC_CONTROL::InitValues()
 */
 void DIALOG_DRC_CONTROL::SetDrcParmeters( )
 {
-     m_BrdSettings.m_TrackMinWidth = ReturnValueFromTextCtrl( *m_SetTrackMinWidthCtrl );
-     m_BrdSettings.m_ViasMinSize = ReturnValueFromTextCtrl( *m_SetViaMinSizeCtrl );
-     m_BrdSettings.m_MicroViasMinSize = ReturnValueFromTextCtrl( *m_SetMicroViakMinSizeCtrl );
+     m_BrdSettings.m_TrackMinWidth = g_PcbUnits.ValueFromString(m_SetTrackMinWidthCtrl->GetValue () );
+     m_BrdSettings.m_ViasMinSize = g_PcbUnits.ValueFromString(m_SetViaMinSizeCtrl->GetValue () );
+     m_BrdSettings.m_MicroViasMinSize = g_PcbUnits.ValueFromString(m_SetMicroViakMinSizeCtrl->GetValue () );
 
      m_Parent->GetBoard()->SetDesignSettings( m_BrdSettings );
 }
@@ -565,7 +565,7 @@ void DIALOG_DRC_CONTROL::writeReport( FILE* fp )
 {
     int count;
 
-    fprintf( fp, "** Drc report for %s **\n",
+    fprintf( fp, "** DRC report for %s **\n",
              TO_UTF8( m_Parent->GetBoard()->GetFileName() ) );
 
     wxDateTime now = wxDateTime::Now();
@@ -577,14 +577,14 @@ void DIALOG_DRC_CONTROL::writeReport( FILE* fp )
     fprintf( fp, "\n** Found %d DRC errors **\n", count );
 
     for( int i = 0;  i<count;  ++i )
-        fprintf( fp, "%s", TO_UTF8( m_ClearanceListBox->GetItem( i )->ShowReport()) );
+        fprintf( fp, "%s", TO_UTF8( MARKER_PCB::showReport ( *m_ClearanceListBox->GetItem( i ) ) ) );
 
     count = m_UnconnectedListBox->GetItemCount();
 
     fprintf( fp, "\n** Found %d unconnected pads **\n", count );
 
     for( int i = 0;  i<count;  ++i )
-        fprintf( fp, "%s", TO_UTF8( m_UnconnectedListBox->GetItem( i )->ShowReport() ) );
+        fprintf( fp, "%s", TO_UTF8( MARKER_PCB::showReport ( *m_UnconnectedListBox->GetItem( i ) ) ) );
 
     fprintf( fp, "\n** End of Report **\n" );
 }

@@ -190,15 +190,15 @@ void DIALOG_DESIGN_RULES::PrintCurrentSettings()
     m_MessagesList->AppendToPage( _( "<b>Current general settings:</b><br>" ) );
 
     // Display min values:
-    value = ReturnStringFromValue( g_UserUnit, m_BrdSettings.m_TrackMinWidth, true );
+    value = g_PcbUnits.StringFromValue ( m_BrdSettings.m_TrackMinWidth, true );
     msg.Printf( _( "Minimum value for tracks width: <b>%s</b><br>\n" ), GetChars( value ) );
     m_MessagesList->AppendToPage( msg );
 
-    value = ReturnStringFromValue( g_UserUnit, m_BrdSettings.m_ViasMinSize, true );
+    value = g_PcbUnits.StringFromValue ( m_BrdSettings.m_ViasMinSize, true );
     msg.Printf( _( "Minimum value for vias diameter: <b>%s</b><br>\n" ), GetChars( value ) );
     m_MessagesList->AppendToPage( msg );
 
-    value = ReturnStringFromValue( g_UserUnit, m_BrdSettings.m_MicroViasMinSize, true );
+    value = g_PcbUnits.StringFromValue ( m_BrdSettings.m_MicroViasMinSize, true );
     msg.Printf( _( "Minimum value for microvias diameter: <b>%s</b><br>\n" ), GetChars( value ) );
     m_MessagesList->AppendToPage( msg );
 }
@@ -256,22 +256,23 @@ void DIALOG_DESIGN_RULES::InitDialogRules()
 void DIALOG_DESIGN_RULES::InitGlobalRules()
 /*******************************************/
 {
-    AddUnitSymbol( *m_ViaMinTitle );
-    AddUnitSymbol( *m_ViaMinDrillTitle );
-    AddUnitSymbol( *m_MicroViaMinSizeTitle );
-    AddUnitSymbol( *m_MicroViaMinDrillTitle );
-    AddUnitSymbol( *m_TrackMinWidthTitle );
+    AddUnitSymbol( *m_ViaMinTitle, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_ViaMinDrillTitle, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_MicroViaMinSizeTitle, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_MicroViaMinDrillTitle, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_TrackMinWidthTitle, g_PcbUnits.GetUserUnit() );
 
-    PutValueInLocalUnits( *m_SetViasMinSizeCtrl, m_BrdSettings.m_ViasMinSize );
-    PutValueInLocalUnits( *m_SetViasMinDrillCtrl, m_BrdSettings.m_ViasMinDrill );
+    m_SetViasMinSizeCtrl->SetValue (g_PcbUnits.StringFromValue ( m_BrdSettings.m_ViasMinSize ) );
+    m_SetViasMinDrillCtrl->SetValue (g_PcbUnits.StringFromValue ( m_BrdSettings.m_ViasMinDrill ) );
 
     if(  m_BrdSettings.m_BlindBuriedViaAllowed )
         m_OptViaType->SetSelection( 1 );
 
     m_AllowMicroViaCtrl->SetSelection(  m_BrdSettings.m_MicroViasAllowed ? 1 : 0 );
-    PutValueInLocalUnits( *m_SetMicroViasMinSizeCtrl, m_BrdSettings.m_MicroViasMinSize );
-    PutValueInLocalUnits( *m_SetMicroViasMinDrillCtrl, m_BrdSettings.m_MicroViasMinDrill );
-    PutValueInLocalUnits( *m_SetTrackMinWidthCtrl, m_BrdSettings.m_TrackMinWidth );
+    
+    m_SetMicroViasMinSizeCtrl ->SetValue (g_PcbUnits.StringFromValue ( m_BrdSettings.m_MicroViasMinSize ) );
+    m_SetMicroViasMinDrillCtrl ->SetValue (g_PcbUnits.StringFromValue ( m_BrdSettings.m_MicroViasMinDrill ) );
+    m_SetTrackMinWidthCtrl ->SetValue (g_PcbUnits.StringFromValue ( m_BrdSettings.m_TrackMinWidth ) );
 
     // Initialize Vias and Tracks sizes lists.
     // note we display only extra values, never the current netclass value.
@@ -312,17 +313,17 @@ void DIALOG_DESIGN_RULES::InitDimensionsLists()
 
     for( unsigned ii = 0; ii < m_TracksWidthList.size(); ii++ )
     {
-        msg = ReturnStringFromValue( g_UserUnit, m_TracksWidthList[ii], false );
+        msg = g_PcbUnits.StringFromValue ( m_TracksWidthList[ii], false );
         m_gridTrackWidthList->SetCellValue( ii, 0, msg  );
     }
 
     for( unsigned ii = 0; ii < m_ViasDimensionsList.size(); ii++ )
     {
-        msg = ReturnStringFromValue( g_UserUnit, m_ViasDimensionsList[ii].m_Diameter, false );
+        msg = g_PcbUnits.StringFromValue ( m_ViasDimensionsList[ii].m_Diameter, false );
         m_gridViaSizeList->SetCellValue( ii, 0, msg );
         if( m_ViasDimensionsList[ii].m_Drill > 0 )
         {
-            msg = ReturnStringFromValue( g_UserUnit, m_ViasDimensionsList[ii].m_Drill, false );
+            msg = g_PcbUnits.StringFromValue ( m_ViasDimensionsList[ii].m_Drill, false );
             m_gridViaSizeList->SetCellValue( ii, 1, msg );
         }
     }
@@ -458,22 +459,22 @@ static void class2gridRow( wxGrid* grid, int row, NETCLASS* nc )
     // label is netclass name
     grid->SetRowLabelValue( row, nc->GetName() );
 
-    msg = ReturnStringFromValue( g_UserUnit, nc->GetClearance() );
+    msg = g_PcbUnits.StringFromValue ( nc->GetClearance() );
     grid->SetCellValue( row, GRID_CLEARANCE, msg );
 
-    msg = ReturnStringFromValue( g_UserUnit, nc->GetTrackWidth() );
+    msg = g_PcbUnits.StringFromValue ( nc->GetTrackWidth() );
     grid->SetCellValue( row, GRID_TRACKSIZE, msg );
 
-    msg = ReturnStringFromValue( g_UserUnit, nc->GetViaDiameter() );
+    msg = g_PcbUnits.StringFromValue ( nc->GetViaDiameter() );
     grid->SetCellValue( row, GRID_VIASIZE, msg );
 
-    msg = ReturnStringFromValue( g_UserUnit, nc->GetViaDrill() );
+    msg = g_PcbUnits.StringFromValue ( nc->GetViaDrill() );
     grid->SetCellValue( row, GRID_VIADRILL, msg );
 
-    msg = ReturnStringFromValue( g_UserUnit, nc->GetuViaDiameter() );
+    msg = g_PcbUnits.StringFromValue ( nc->GetuViaDiameter() );
     grid->SetCellValue( row, GRID_uVIASIZE, msg );
 
-    msg = ReturnStringFromValue( g_UserUnit, nc->GetuViaDrill() );
+    msg = g_PcbUnits.StringFromValue ( nc->GetuViaDrill() );
     grid->SetCellValue( row, GRID_uVIADRILL, msg );
 }
 
@@ -509,7 +510,7 @@ void DIALOG_DESIGN_RULES::InitRulesList()
 static void gridRow2class( wxGrid* grid, int row, NETCLASS* nc )
 {
 #define MYCELL( col )   \
-    ReturnValueFromString( g_UserUnit, grid->GetCellValue( row, col ) )
+    g_PcbUnits.ValueFromString(grid->GetCellValue( row, col ) )
 
     nc->SetClearance( MYCELL( GRID_CLEARANCE ) );
     nc->SetTrackWidth( MYCELL( GRID_TRACKSIZE ) );
@@ -571,17 +572,17 @@ void DIALOG_DESIGN_RULES::CopyGlobalRulesToBoard()
     m_BrdSettings.m_BlindBuriedViaAllowed = m_OptViaType->GetSelection() > 0;
 
     // Update vias minimum values for DRC
-    m_BrdSettings.m_ViasMinSize = ReturnValueFromTextCtrl( *m_SetViasMinSizeCtrl );
-    m_BrdSettings.m_ViasMinDrill = ReturnValueFromTextCtrl( *m_SetViasMinDrillCtrl );
+    m_BrdSettings.m_ViasMinSize = g_PcbUnits.ValueFromString( m_SetViasMinSizeCtrl->GetValue() );
+    m_BrdSettings.m_ViasMinDrill = g_PcbUnits.ValueFromString( m_SetViasMinDrillCtrl->GetValue() );
 
     m_BrdSettings.m_MicroViasAllowed = m_AllowMicroViaCtrl->GetSelection() == 1;
 
     // Update microvias minimum values for DRC
-    m_BrdSettings.m_MicroViasMinSize = ReturnValueFromTextCtrl( *m_SetMicroViasMinSizeCtrl );
-    m_BrdSettings.m_MicroViasMinDrill = ReturnValueFromTextCtrl( *m_SetMicroViasMinDrillCtrl );
+    m_BrdSettings.m_MicroViasMinSize = g_PcbUnits.ValueFromString( m_SetMicroViasMinSizeCtrl->GetValue() );
+    m_BrdSettings.m_MicroViasMinDrill = g_PcbUnits.ValueFromString( m_SetMicroViasMinDrillCtrl->GetValue() );
 
     // Update tracks minimum values for DRC
-    m_BrdSettings.m_TrackMinWidth = ReturnValueFromTextCtrl( *m_SetTrackMinWidthCtrl );
+    m_BrdSettings.m_TrackMinWidth = g_PcbUnits.ValueFromString( m_SetTrackMinWidthCtrl->GetValue());
 }
 
 
@@ -600,7 +601,7 @@ void DIALOG_DESIGN_RULES::CopyDimensionsListsToBoard()
         if( msg.IsEmpty() )
             continue;
 
-        int value = ReturnValueFromString( g_UserUnit, msg );
+        int value = g_PcbUnits.ValueFromString(msg );
         m_TracksWidthList.push_back( value );
     }
 
@@ -617,14 +618,14 @@ void DIALOG_DESIGN_RULES::CopyDimensionsListsToBoard()
         if( msg.IsEmpty() )
             continue;
 
-        int           value = ReturnValueFromString( g_UserUnit, msg );
+        int           value = g_PcbUnits.ValueFromString(msg );
         VIA_DIMENSION via_dim;
         via_dim.m_Diameter = value;
         msg = m_gridViaSizeList->GetCellValue( row, 1 );
 
         if( !msg.IsEmpty() )
         {
-            value = ReturnValueFromString( g_UserUnit, msg );
+            value = g_PcbUnits.ValueFromString(msg );
             via_dim.m_Drill = value;
         }
 
@@ -949,19 +950,18 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
 
     wxString msg;
 
-    int      minViaDia = ReturnValueFromTextCtrl( *m_SetViasMinSizeCtrl );
-    int      minViaDrill = ReturnValueFromTextCtrl( *m_SetViasMinDrillCtrl );
-    int      minUViaDia = ReturnValueFromTextCtrl( *m_SetMicroViasMinSizeCtrl );
-    int      minUViaDrill = ReturnValueFromTextCtrl( *m_SetMicroViasMinDrillCtrl );
-    int      minTrackWidth = ReturnValueFromTextCtrl( *m_SetTrackMinWidthCtrl );
-    int      maxval = 1000 * IU_PER_MILS;   // a max value for tracks and vias sizes (1 inch)
+    int      minViaDia = g_PcbUnits.ValueFromString( m_SetViasMinSizeCtrl->GetValue() );
+    int      minViaDrill = g_PcbUnits.ValueFromString( m_SetViasMinDrillCtrl->GetValue() );
+    int      minUViaDia = g_PcbUnits.ValueFromString( m_SetMicroViasMinSizeCtrl->GetValue() );
+    int      minUViaDrill = g_PcbUnits.ValueFromString( m_SetMicroViasMinDrillCtrl->GetValue() );
+    int      minTrackWidth = g_PcbUnits.ValueFromString( m_SetTrackMinWidthCtrl->GetValue() );
+    int      maxval = 1000 * g_PcbUnits.IuPerMils();   // a max value for tracks and vias sizes (1 inch)
 
 
 
     for( int row = 0; row < m_grid->GetNumberRows(); row++ )
     {
-        int tracksize = ReturnValueFromString( g_UserUnit,
-                                               m_grid->GetCellValue( row, GRID_TRACKSIZE ) );
+        int tracksize = g_PcbUnits.ValueFromString( m_grid->GetCellValue( row, GRID_TRACKSIZE ) );
         if( tracksize < minTrackWidth )
         {
             result = false;
@@ -972,8 +972,7 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
         }
 
         // Test vias
-        int viadia = ReturnValueFromString( g_UserUnit,
-                                            m_grid->GetCellValue( row, GRID_VIASIZE ) );
+        int viadia = g_PcbUnits.ValueFromString( m_grid->GetCellValue( row, GRID_VIASIZE ) );
 
         if( viadia < minViaDia )
         {
@@ -984,8 +983,7 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
             m_MessagesList->AppendToPage( msg );
         }
 
-        int viadrill = ReturnValueFromString( g_UserUnit,
-                                              m_grid->GetCellValue( row, GRID_VIADRILL ) );
+        int viadrill = g_PcbUnits.ValueFromString( m_grid->GetCellValue( row, GRID_VIADRILL ) );
         if( viadrill >= viadia )
         {
             result = false;
@@ -1005,8 +1003,7 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
         }
 
         // Test Micro vias
-        int muviadia = ReturnValueFromString( g_UserUnit,
-                                              m_grid->GetCellValue( row, GRID_uVIASIZE ) );
+        int muviadia = g_PcbUnits.ValueFromString( m_grid->GetCellValue( row, GRID_uVIASIZE ) );
 
         if( muviadia < minUViaDia )
         {
@@ -1017,8 +1014,7 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
             m_MessagesList->AppendToPage( msg );
         }
 
-        int muviadrill = ReturnValueFromString( g_UserUnit,
-                                                m_grid->GetCellValue( row, GRID_uVIADRILL ) );
+        int muviadrill = g_PcbUnits.ValueFromString( m_grid->GetCellValue( row, GRID_uVIADRILL ) );
         if( muviadrill >= muviadia )
         {
             result = false;
@@ -1046,7 +1042,7 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
         if( tvalue.IsEmpty() )
             continue;
 
-        int tracksize = ReturnValueFromString( g_UserUnit, tvalue );
+        int tracksize = g_PcbUnits.ValueFromString(tvalue );
 
         if( tracksize < minTrackWidth )
         {
@@ -1073,12 +1069,12 @@ bool DIALOG_DESIGN_RULES::TestDataValidity()
         if( tvalue.IsEmpty() )
             continue;
 
-        int viadia = ReturnValueFromString( g_UserUnit, tvalue );
+        int viadia = g_PcbUnits.ValueFromString(tvalue );
         int viadrill = 0;
         wxString drlvalue = m_gridViaSizeList->GetCellValue( row, 1 );
 
         if( !drlvalue.IsEmpty() )
-            viadrill = ReturnValueFromString( g_UserUnit, drlvalue );
+            viadrill = g_PcbUnits.ValueFromString(drlvalue );
 
         if( viadia < minViaDia )
         {

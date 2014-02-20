@@ -45,13 +45,13 @@
 /* Conversion utilities - these will be used often in there... */
 inline double diameter_in_inches( double ius )
 {
-    return ius * 0.001 / IU_PER_MILS;
+    return ius * 0.001 / g_PcbUnits.IuPerMils();
 }
 
 
 inline double diameter_in_mm( double ius )
 {
-    return ius / IU_PER_MM;
+    return ius / g_PcbUnits.IuPerMm();
 }
 
 
@@ -83,7 +83,7 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
     case PLOT_FORMAT_GERBER:
         offset  = GetOffset();
         plotter = new GERBER_PLOTTER();
-        plotter->SetViewport( offset, IU_PER_DECIMILS, scale, false );
+        plotter->SetViewport( offset, g_PcbUnits.IuPerDMils(), scale, false );
         break;
 
     case PLOT_FORMAT_HPGL:    // Scale for HPGL format.
@@ -94,7 +94,7 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
             hpgl_plotter->SetPenSpeed( plot_opts.GetHPGLPenSpeed() );
             hpgl_plotter->SetPenOverlap( 0 );
             plotter->SetPageSettings( aSheet );
-            plotter->SetViewport( offset, IU_PER_DECIMILS, scale, false );
+            plotter->SetViewport( offset, g_PcbUnits.IuPerDMils(), scale, false );
         }
         break;
 
@@ -106,10 +106,11 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
     case PLOT_FORMAT_POST:
         {
             PAGE_INFO   pageA4( wxT( "A4" ) );
-            wxSize      pageSizeIU = pageA4.GetSizeIU();
+            wxSize      pageSizeMils = pageA4.GetSizeMils();
+            wxSize      pageSizeIU = g_PcbUnits.MilsToIu ( pageSizeMils );
 
             // Reserve a margin around the page.
-            int         margin = KiROUND( 20 * IU_PER_MM );
+            int         margin = KiROUND( 20 * g_PcbUnits.IuPerMm() );
 
             // Calculate a scaling factor to print the board on the sheet
             double      Xscale = double( pageSizeIU.x - ( 2 * margin ) ) / bbbox.GetWidth();
@@ -137,7 +138,7 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
                 plotter = new PS_PLOTTER;
 
             plotter->SetPageSettings( pageA4 );
-            plotter->SetViewport( offset, IU_PER_DECIMILS, scale, false );
+            plotter->SetViewport( offset, g_PcbUnits.IuPerDMils(), scale, false );
         }
         break;
 
@@ -146,7 +147,7 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
             DXF_PLOTTER* dxf_plotter = new DXF_PLOTTER;
             plotter = dxf_plotter;
             plotter->SetPageSettings( aSheet );
-            plotter->SetViewport( offset, IU_PER_DECIMILS, scale, false );
+            plotter->SetViewport( offset, g_PcbUnits.IuPerDMils(), scale, false );
         }
         break;
 
@@ -155,13 +156,13 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
             SVG_PLOTTER* svg_plotter = new SVG_PLOTTER;
             plotter = svg_plotter;
             plotter->SetPageSettings( aSheet );
-            plotter->SetViewport( offset, IU_PER_DECIMILS, scale, false );
+            plotter->SetViewport( offset, g_PcbUnits.IuPerDMils(), scale, false );
         }
         break;
     }
 
     plotter->SetCreator( wxT( "PCBNEW" ) );
-    plotter->SetDefaultLineWidth( 5 * IU_PER_MILS );
+    plotter->SetDefaultLineWidth( 5 * g_PcbUnits.IuPerMils() );
     plotter->SetColorMode( false );
 
     if( ! plotter->OpenFile( aFullFileName ) )
@@ -201,17 +202,17 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
     int         intervalle = 0;
     char        line[1024];
     wxString    msg;
-    int         textmarginaftersymbol = KiROUND( 2 * IU_PER_MM );
+    int         textmarginaftersymbol = KiROUND( 2 * g_PcbUnits.IuPerMm() );
 
     // Set Drill Symbols width
-    plotter->SetDefaultLineWidth( 0.2 * IU_PER_MM / scale );
+    plotter->SetDefaultLineWidth( 0.2 * g_PcbUnits.IuPerMm() / scale );
     plotter->SetCurrentLineWidth( -1 );
 
     // Plot board outlines and drill map
     PlotDrillMarks( plotter );
 
     // Print a list of symbols used.
-    int     charSize    = 3 * IU_PER_MM;                    // text size in IUs
+    int     charSize    = 3 * g_PcbUnits.IuPerMm();                    // text size in IUs
     double  charScale   = 1.0 / scale;                      // real scale will be 1/scale,
                                                             // because the global plot scale is scale
     TextWidth   = KiROUND( (charSize * charScale) / 10.0 );    // Set text width (thickness)
@@ -276,8 +277,8 @@ bool EXCELLON_WRITER::GenDrillMapFile( const wxString& aFullFileName,
 
         intervalle  = KiROUND( (( charSize * charScale ) + TextWidth) * 1.2);
 
-        if( intervalle < (plot_diam + (1 * IU_PER_MM / scale) + TextWidth) )
-            intervalle = plot_diam + (1 * IU_PER_MM / scale) + TextWidth;
+        if( intervalle < (plot_diam + (1 * g_PcbUnits.IuPerMm() / scale) + TextWidth) )
+            intervalle = plot_diam + (1 * g_PcbUnits.IuPerMm() / scale) + TextWidth;
     }
 
     plotter->EndPlot();

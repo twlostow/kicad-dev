@@ -383,14 +383,14 @@ void FOOTPRINT_WIZARD_FRAME::ReCreateParameterList()
 
             value.ToDouble( &dValue );
 
-            dValue = To_User_Unit( g_UserUnit, dValue );
+            dValue = g_PcbUnits.ToUser( dValue );
 
-            if( g_UserUnit==INCHES )    // we convert inches into mils for more detail
+            if( g_PcbUnits.GetUserUnit()==INCHES )    // we convert inches into mils for more detail
             {
                 dValue  = dValue * 1000.0;
                 units   = wxT( "mils" );
             }
-            else if( g_UserUnit==MILLIMETRES )
+            else if( g_PcbUnits.GetUserUnit()==MILLIMETRES )
             {
                 units = wxT( "mm" );
             }

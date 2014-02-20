@@ -86,6 +86,8 @@ wxString BOARD_ITEM::GetLayerName() const
 }
 
 
+#if 0
+
 std::string BOARD_ITEM::FormatInternalUnits( int aValue )
 {
 #if 1
@@ -188,6 +190,7 @@ std::string BOARD_ITEM::FormatInternalUnits( const wxSize& aSize )
     return FormatInternalUnits( aSize.GetWidth() ) + " " + FormatInternalUnits( aSize.GetHeight() );
 }
 
+#endif
 
 void BOARD_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
 {

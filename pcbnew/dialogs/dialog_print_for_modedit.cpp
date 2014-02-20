@@ -11,7 +11,7 @@
 #include <pcbplot.h>
 
 #include <dialog_print_for_modedit_base.h>
-#include <printout_controler.h>
+#include <board_printout_controller.h>
 
 static double s_scaleList[] =
 { 0, 0.5, 0.7, 1.0, 1.4, 2.0, 3.0, 4.0, 8.0, 16.0 };
@@ -105,7 +105,7 @@ void DIALOG_PRINT_FOR_MODEDIT::InitValues( )
         m_config->Read( OPTKEY_PRINT_MONOCHROME_MODE, &s_Parameters.m_Print_Black_and_White, 1);
     }
 
-    s_Parameters.m_PenDefaultSize = g_DrawDefaultLineThickness;
+    s_Parameters.m_PenDefaultSizeMils = (double) g_DrawDefaultLineThickness * g_PcbUnits.MilsPerIu();
     m_ScaleOption->SetSelection( scale_Select );
 
     if( s_Parameters.m_Print_Black_and_White )

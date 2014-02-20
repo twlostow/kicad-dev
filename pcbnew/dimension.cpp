@@ -118,20 +118,21 @@ DIALOG_DIMENSION_EDITOR::DIALOG_DIMENSION_EDITOR( PCB_EDIT_FRAME* aParent,
     m_Name->SetValue( aDimension->Text().GetText() );
 
     // Enter size value in dialog
-    PutValueInLocalUnits( *m_TxtSizeXCtrl, aDimension->Text().GetSize().x );
-    AddUnitSymbol( *m_staticTextSizeX );
-    PutValueInLocalUnits( *m_TxtSizeYCtrl, aDimension->Text().GetSize().y );
-    AddUnitSymbol( *m_staticTextSizeY );
+    m_TxtSizeXCtrl -> SetValue ( g_PcbUnits.StringFromValue ( aDimension->Text().GetSize().x ) );
+    m_TxtSizeYCtrl -> SetValue ( g_PcbUnits.StringFromValue ( aDimension->Text().GetSize().y ) );
+
+    AddUnitSymbol( *m_staticTextSizeX, g_PcbUnits.GetUserUnit() );
+    AddUnitSymbol( *m_staticTextSizeY, g_PcbUnits.GetUserUnit() );
 
     // Enter lines thickness value in dialog
-    PutValueInLocalUnits( *m_TxtWidthCtrl, aDimension->GetWidth() );
-    AddUnitSymbol( *m_staticTextWidth );
+    m_TxtWidthCtrl -> SetValue ( g_PcbUnits.StringFromValue ( aDimension->GetWidth() ) );
+    AddUnitSymbol( *m_staticTextWidth, g_PcbUnits.GetUserUnit() );
 
     // Enter position value in dialog
-    PutValueInLocalUnits( *m_textCtrlPosX, aDimension->Text().GetTextPosition().x );
-    AddUnitSymbol( *m_staticTextPosX );
-    PutValueInLocalUnits( *m_textCtrlPosY, aDimension->Text().GetTextPosition().y );
-    AddUnitSymbol( *m_staticTextPosY );
+    m_textCtrlPosX -> SetValue ( g_PcbUnits.StringFromValue ( aDimension->Text().GetTextPosition().x ) );
+    AddUnitSymbol( *m_staticTextPosX, g_PcbUnits.GetUserUnit() );
+    m_textCtrlPosY -> SetValue ( g_PcbUnits.StringFromValue ( aDimension->Text().GetTextPosition().y ) );
+    AddUnitSymbol( *m_staticTextPosY, g_PcbUnits.GetUserUnit() );
 
     // Configure the layers list selector
     m_SelLayerBox->SetLayersHotkeys( false );
@@ -176,22 +177,22 @@ void DIALOG_DIMENSION_EDITOR::OnOKClick( wxCommandEvent& event )
 
     // Get new size value:
     msg = m_TxtSizeXCtrl->GetValue();
-    CurrentDimension->Text().SetWidth( ReturnValueFromString( g_UserUnit, msg ) );
+    CurrentDimension->Text().SetWidth( g_PcbUnits.ValueFromString ( msg ) );
     msg = m_TxtSizeYCtrl->GetValue();
-    CurrentDimension->Text().SetHeight( ReturnValueFromString( g_UserUnit, msg ) );
+    CurrentDimension->Text().SetHeight( g_PcbUnits.ValueFromString ( msg ) );
 
     // Get new position value:
     // It will be copied later in dimension, because
     msg = m_textCtrlPosX->GetValue();
     wxPoint pos;
-    pos.x = ReturnValueFromString( g_UserUnit, msg );
+    pos.x = g_PcbUnits.ValueFromString ( msg );
     msg = m_textCtrlPosY->GetValue();
-    pos.y = ReturnValueFromString( g_UserUnit, msg );
+    pos.y = g_PcbUnits.ValueFromString ( msg );
     CurrentDimension->Text().SetTextPosition( pos );
 
     // Get new line thickness value:
     msg = m_TxtWidthCtrl->GetValue();
-    int width = ReturnValueFromString( g_UserUnit, msg );
+    int width = g_PcbUnits.ValueFromString ( msg );
     int maxthickness = Clamp_Text_PenSize( width, CurrentDimension->Text().GetSize() );
 
     if( width > maxthickness )

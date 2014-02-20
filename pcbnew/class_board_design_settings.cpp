@@ -34,21 +34,20 @@
 #include <class_board_design_settings.h>
 
 #include <class_track.h>
-#include <convert_from_iu.h>
 
 // Board thickness, mainly for 3D view:
-#define DEFAULT_BOARD_THICKNESS_MM   1.6
+#define DEFAULT_BOARD_THICKNESS_MM      1.6
 
 // Default values for some board items
-#define DEFAULT_TEXT_PCB_SIZE  Millimeter2iu( 1.5 )
-#define DEFAULT_TEXT_PCB_THICKNESS  Millimeter2iu( 0.3 )
-#define DEFAULT_PCB_EDGE_THICKNESS  Millimeter2iu( 0.15 )
-#define DEFAULT_GRAPHIC_THICKNESS   Millimeter2iu( 0.2 )
-#define DEFAULT_TEXT_MODULE_SIZE    Millimeter2iu( 1.5 )
-#define DEFAULT_GR_MODULE_THICKNESS Millimeter2iu( 0.15 )
+#define DEFAULT_TEXT_PCB_SIZE_MM        1.5 
+#define DEFAULT_TEXT_PCB_THICKNESS_MM   0.3
+#define DEFAULT_PCB_EDGE_THICKNESS_MM   0.15
+#define DEFAULT_GRAPHIC_THICKNESS_MM    0.2
+#define DEFAULT_TEXT_MODULE_SIZE_MM     1.5
+#define DEFAULT_GR_MODULE_THICKNESS_MM  0.15
 
-#define DEFAULT_SOLDERMASK_CLEARANCE Millimeter2iu( 0.2 )
-#define DEFAULT_SOLDERMASK_MIN_WIDTH Millimeter2iu( 0.0 )
+#define DEFAULT_SOLDERMASK_CLEARANCE_MM 0.2
+#define DEFAULT_SOLDERMASK_MIN_WIDTH_MM 0.0
 
 
 BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS() :
@@ -73,35 +72,35 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS() :
     m_BlindBuriedViaAllowed = false;            // true to allow blind/buried vias
     m_MicroViasAllowed = false;                 // true to allow micro vias
 
-    m_DrawSegmentWidth = DEFAULT_GRAPHIC_THICKNESS;     // current graphic line width (not EDGE layer)
+    m_DrawSegmentWidth = g_PcbUnits.MmToIu ( DEFAULT_GRAPHIC_THICKNESS_MM );     // current graphic line width (not EDGE layer)
 
-    m_EdgeSegmentWidth = DEFAULT_PCB_EDGE_THICKNESS;    // current graphic line width (EDGE layer only)
-    m_PcbTextWidth     = DEFAULT_TEXT_PCB_THICKNESS;    // current Pcb (not module) Text width
+    m_EdgeSegmentWidth = g_PcbUnits.MmToIu ( DEFAULT_PCB_EDGE_THICKNESS_MM );    // current graphic line width (EDGE layer only)
+    m_PcbTextWidth     = g_PcbUnits.MmToIu ( DEFAULT_TEXT_PCB_THICKNESS_MM );    // current Pcb (not module) Text width
 
-    m_PcbTextSize       = wxSize( DEFAULT_TEXT_PCB_SIZE,
-                                  DEFAULT_TEXT_PCB_SIZE );  // current Pcb (not module) Text size
+    m_PcbTextSize       = wxSize( g_PcbUnits.MmToIu ( DEFAULT_TEXT_PCB_SIZE_MM ),
+                                  g_PcbUnits.MmToIu ( DEFAULT_TEXT_PCB_SIZE_MM ) );  // current Pcb (not module) Text size
 
-    m_TrackMinWidth     = DMils2iu( 100 );      // track min value for width ((min copper size value
-    m_ViasMinSize       = DMils2iu( 350 );      // vias (not micro vias) min diameter
-    m_ViasMinDrill      = DMils2iu( 200 );      // vias (not micro vias) min drill diameter
-    m_MicroViasMinSize  = DMils2iu( 200 );      // micro vias (not vias) min diameter
-    m_MicroViasMinDrill = DMils2iu( 50 );       // micro vias (not vias) min drill diameter
+    m_TrackMinWidth     = g_PcbUnits.DMilsToIu( 100 );      // track min value for width ((min copper size value
+    m_ViasMinSize       = g_PcbUnits.DMilsToIu( 350 );      // vias (not micro vias) min diameter
+    m_ViasMinDrill      = g_PcbUnits.DMilsToIu( 200 );      // vias (not micro vias) min drill diameter
+    m_MicroViasMinSize  = g_PcbUnits.DMilsToIu( 200 );      // micro vias (not vias) min diameter
+    m_MicroViasMinDrill = g_PcbUnits.DMilsToIu( 50 );       // micro vias (not vias) min drill diameter
 
     // Global mask margins:
-    m_SolderMaskMargin  = DEFAULT_SOLDERMASK_CLEARANCE; // Solder mask margin
-    m_SolderMaskMinWidth = DEFAULT_SOLDERMASK_MIN_WIDTH;   // Solder mask min width
+    m_SolderMaskMargin  = g_PcbUnits.MmToIu ( DEFAULT_SOLDERMASK_CLEARANCE_MM ); // Solder mask margin
+    m_SolderMaskMinWidth = g_PcbUnits.MmToIu ( DEFAULT_SOLDERMASK_MIN_WIDTH_MM );   // Solder mask min width
     m_SolderPasteMargin = 0;                    // Solder paste margin absolute value
     m_SolderPasteMarginRatio = 0.0;             // Solder pask margin ratio value of pad size
                                                 // The final margin is the sum of these 2 values
                                                 // Usually < 0 because the mask is smaller than pad
 
-    m_ModuleTextSize = wxSize( DEFAULT_TEXT_MODULE_SIZE,
-                               DEFAULT_TEXT_MODULE_SIZE );
-    m_ModuleTextWidth = DEFAULT_GR_MODULE_THICKNESS;
-    m_ModuleSegmentWidth = DEFAULT_GR_MODULE_THICKNESS;
+    m_ModuleTextSize = wxSize( g_PcbUnits.MmToIu ( DEFAULT_TEXT_MODULE_SIZE_MM ),
+                               g_PcbUnits.MmToIu ( DEFAULT_TEXT_MODULE_SIZE_MM ) );
+    m_ModuleTextWidth = g_PcbUnits.MmToIu ( DEFAULT_GR_MODULE_THICKNESS_MM );
+    m_ModuleSegmentWidth = g_PcbUnits.MmToIu ( DEFAULT_GR_MODULE_THICKNESS_MM );
 
     // Layer thickness for 3D viewer
-    m_boardThickness = Millimeter2iu( DEFAULT_BOARD_THICKNESS_MM );
+    m_boardThickness = g_PcbUnits.MmToIu ( DEFAULT_BOARD_THICKNESS_MM );
 }
 
 // Add parameters to save in project config.
@@ -112,62 +111,75 @@ void BOARD_DESIGN_SETTINGS::AppendConfigs( PARAM_CFG_ARRAY* aResult )
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PcbTextSizeV" ),
                     &m_PcbTextSize.y,
-                    DEFAULT_TEXT_PCB_SIZE, TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_TEXT_PCB_SIZE_MM ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MIN_SIZE_DMILS ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MAX_SIZE_DMILS ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PcbTextSizeH" ),
                     &m_PcbTextSize.x,
-                    DEFAULT_TEXT_PCB_SIZE, TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_TEXT_PCB_SIZE_MM ),  
+                    g_PcbUnits.DMilsToIu ( TEXTS_MIN_SIZE_DMILS ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MAX_SIZE_DMILS ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PcbTextThickness" ),
                     &m_PcbTextWidth,
-                    DEFAULT_TEXT_PCB_THICKNESS,
-                    Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-                    NULL, MM_PER_IU ) );
+                    DEFAULT_TEXT_PCB_THICKNESS_MM,
+                    g_PcbUnits.MmToIu( 0.01 ), 
+                    g_PcbUnits.MmToIu( 5.0 ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "ModuleTextSizeV" ),
                     &m_ModuleTextSize.y,
-                    DEFAULT_TEXT_MODULE_SIZE, TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_TEXT_MODULE_SIZE_MM ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MIN_SIZE_DMILS ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MAX_SIZE_DMILS ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "ModuleTextSizeH" ),
                     &m_ModuleTextSize.x,
-                    DEFAULT_TEXT_MODULE_SIZE, TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_TEXT_MODULE_SIZE_MM ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MIN_SIZE_DMILS ), 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MAX_SIZE_DMILS ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "ModuleTextSizeThickness" ),
                     &m_ModuleTextWidth,
-                    DEFAULT_GR_MODULE_THICKNESS, 1, TEXTS_MAX_WIDTH,
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_GR_MODULE_THICKNESS_MM ), 
+                    1, 
+                    g_PcbUnits.DMilsToIu ( TEXTS_MAX_WIDTH_DMILS ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SolderMaskClearance" ),
                     &m_SolderMaskMargin,
-                    DEFAULT_SOLDERMASK_CLEARANCE, 0, Millimeter2iu( 1.0 ),
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_SOLDERMASK_CLEARANCE_MM ),
+                     0, g_PcbUnits.MmToIu( 1.0 ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SolderMaskMinWidth" ),
                     &m_SolderMaskMinWidth,
-                    DEFAULT_SOLDERMASK_MIN_WIDTH, 0, Millimeter2iu( 0.5 ),
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_SOLDERMASK_MIN_WIDTH_MM ),
+                    0, g_PcbUnits.MmToIu( 0.5 ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "DrawSegmentWidth" ),
                     &m_DrawSegmentWidth,
-                    DEFAULT_GRAPHIC_THICKNESS,
-                    Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_GRAPHIC_THICKNESS_MM ),
+                    g_PcbUnits.MmToIu( 0.01 ), g_PcbUnits.MmToIu( 5.0 ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "BoardOutlineThickness" ),
                     &m_EdgeSegmentWidth,
-                    DEFAULT_PCB_EDGE_THICKNESS,
-                    Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_PCB_EDGE_THICKNESS_MM ),
+                    g_PcbUnits.MmToIu( 0.01 ), g_PcbUnits.MmToIu( 5.0 ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 
     aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "ModuleOutlineThickness" ),
                     &m_ModuleSegmentWidth,
-                    DEFAULT_GR_MODULE_THICKNESS,
-                    Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-                    NULL, MM_PER_IU ) );
+                    g_PcbUnits.MmToIu ( DEFAULT_GR_MODULE_THICKNESS_MM ),
+                    g_PcbUnits.MmToIu( 0.01 ), g_PcbUnits.MmToIu( 5.0 ),
+                    NULL, g_PcbUnits.MmPerIu() ) );
 }
 
 

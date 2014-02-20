@@ -1,5 +1,3 @@
-add_definitions(-DPL_EDITOR)
-
 ###
 # Includes
 ###
@@ -41,17 +39,6 @@ set(PL_EDITOR_SRCS
     )
 
 ###
-# We need some extra sources from common
-###
-set(PL_EDITOR_EXTRA_SRCS
-    ../common/base_screen.cpp
-    ../common/base_units.cpp
-    ../common/eda_text.cpp
-    ../common/class_page_info.cpp
-    ../common/dialogs/dialog_page_settings.cpp
-)
-
-###
 # Windows resource file
 ###
 if(WIN32)
@@ -82,7 +69,6 @@ endif(APPLE)
 add_executable(pl_editor WIN32 MACOSX_BUNDLE
                ${PL_EDITOR_SRCS}
                ${DIALOGS_SRCS}
-               ${PL_EDITOR_EXTRA_SRCS}
                ${PL_EDITOR_RESOURCES})
 
 ###

@@ -173,7 +173,9 @@ void PLEDITOR_PRINTOUT::DrawPage( int aPageNum )
 
     // Change scale factor and offset to print the whole page.
 
-    pageSizeIU =  m_parent->GetPageSettings().GetSizeIU();
+    wxSize pageSizeMils = m_parent->GetPageSettings().GetSizeMils(); 
+    pageSizeIU =  g_PLEditorUnits.MilsToIu ( pageSizeMils );
+    
     FitThisSizeToPaper( pageSizeIU );
     fitRect = GetLogicalPaperRect();
 
@@ -190,7 +192,7 @@ void PLEDITOR_PRINTOUT::DrawPage( int aPageNum )
     g_DrawBgColor = WHITE;
 
     screen->m_ScreenNumber = aPageNum;
-    m_parent->DrawWorkSheet( dc, screen, 0, IU_PER_MILS, wxEmptyString );
+    m_parent->DrawWorkSheet( dc, screen, 0, g_PLEditorUnits.IuPerMils(), wxEmptyString );
 
     g_DrawBgColor = bg_color;
     screen->m_IsPrinting = false;

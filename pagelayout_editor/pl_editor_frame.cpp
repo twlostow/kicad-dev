@@ -60,6 +60,8 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( wxWindow* aParent, const wxString& aTitle,
 {
     m_FrameName = PL_EDITOR_FRAME_NAME;
 
+    SetUnits ( &g_PLEditorUnits );
+
     m_showAxis = false;                     // true to show X and Y axis on screen
     m_showGridAxis = true;
     m_showBorderAndTitleBlock   = true;     // true for reference drawings.
@@ -76,7 +78,9 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( wxWindow* aParent, const wxString& aTitle,
     wxIcon icon;
     icon.CopyFromBitmap( KiBitmap( icon_pagelayout_editor_xpm ) );
     SetIcon( icon );
-    wxSize pageSizeIU = GetPageLayout().GetPageSettings().GetSizeIU();
+    wxSize pageSizeMils = GetPageLayout().GetPageSettings().GetSizeMils();
+    wxSize pageSizeIU = g_PLEditorUnits.MilsToIu ( pageSizeMils);
+
     SetScreen( new PL_EDITOR_SCREEN( pageSizeIU ) );
 
     m_config = wxGetApp().GetSettings();
@@ -246,9 +250,10 @@ double PL_EDITOR_FRAME::BestZoom()
     int    dx, dy;
     wxSize size;
 
-    dx = GetPageLayout().GetPageSettings().GetWidthIU();
-    dy = GetPageLayout().GetPageSettings().GetHeightIU();
-
+    wxSize pageSizeMils = GetPageLayout().GetPageSettings().GetSizeMils();
+    dx = g_PLEditorUnits.MilsToIu ( pageSizeMils.x );
+    dy = g_PLEditorUnits.MilsToIu ( pageSizeMils.y );
+    
     size = m_canvas->GetClientSize();
 
     // Reserve no margin because best zoom shows the full page
@@ -264,36 +269,6 @@ double PL_EDITOR_FRAME::BestZoom()
     return bestzoom;
 }
 
-#define DESIGN_TREE_WIDTH_KEY wxT("DesignTreeWidth")
-#define PROPERTIES_FRAME_WIDTH_KEY wxT("PropertiesFrameWidth")
-#define CORNER_ORIGIN_CHOICE_KEY wxT("CornerOriginChoice")
-
-void PL_EDITOR_FRAME::LoadSettings()
-{
-    EDA_DRAW_FRAME::LoadSettings();
-    m_config->Read( DESIGN_TREE_WIDTH_KEY, &m_designTreeWidth, 100);
-    m_config->Read( PROPERTIES_FRAME_WIDTH_KEY, &m_propertiesFrameWidth, 150);
-    m_config->Read( CORNER_ORIGIN_CHOICE_KEY, &m_originSelectChoice );
-}
-
-
-void PL_EDITOR_FRAME::SaveSettings()
-{
-    wxConfig* config = wxGetApp().GetSettings();
-
-    if( config == NULL )
-        return;
-
-    m_designTreeWidth = m_treePagelayout->GetSize().x;
-    m_propertiesFrameWidth = m_propertiesPagelayout->GetSize().x;
-
-    EDA_DRAW_FRAME::SaveSettings();
-    m_config->Write( DESIGN_TREE_WIDTH_KEY, m_designTreeWidth);
-    m_config->Write( PROPERTIES_FRAME_WIDTH_KEY, m_propertiesFrameWidth);
-    m_config->Write( CORNER_ORIGIN_CHOICE_KEY, m_originSelectChoice );
-
-    wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
-}
 
 
 /*
@@ -327,7 +302,11 @@ void PL_EDITOR_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
     m_pageLayout.SetPageSettings( aPageSettings );
 
     if( GetScreen() )
-        GetScreen()->InitDataPoints( aPageSettings.GetSizeIU() );
+    {
+        wxSize pageSizeMils =  aPageSettings.GetSizeMils();
+        wxSize pageSizeIU = g_PLEditorUnits.MilsToIu ( pageSizeMils );
+        GetScreen()->InitDataPoints( pageSizeIU );
+    }    
 }
 
 
@@ -337,13 +316,18 @@ const PAGE_INFO& PL_EDITOR_FRAME::GetPageSettings() const
 }
 
 
-const wxSize PL_EDITOR_FRAME::GetPageSizeIU() const
+const wxSize PL_EDITOR_FRAME::GetPageSizeIU() const 
 {
     // this function is only needed because EDA_DRAW_FRAME is not compiled
     // with either -DPCBNEW or -DEESCHEMA, so the virtual is used to route
     // into an application specific source file.
-    return m_pageLayout.GetPageSettings().GetSizeIU();
+    
+    wxSize pageSizeMils = m_pageLayout.GetPageSettings().GetSizeMils();
+    wxSize pageSizeIU = g_PLEditorUnits.MilsToIu ( pageSizeMils );
+    
+    return pageSizeIU;
 }
+
 
 
 const TITLE_BLOCK& PL_EDITOR_FRAME::GetTitleBlock() const
@@ -412,14 +396,14 @@ void PL_EDITOR_FRAME::UpdateStatusBar()
 
     // Display absolute coordinates:
     wxPoint coord = GetCrossHairPosition() - originCoord;
-    double dXpos = To_User_Unit( g_UserUnit, coord.x*Xsign );
-    double dYpos = To_User_Unit( g_UserUnit, coord.y*Ysign );
+    double dXpos = g_PLEditorUnits.ToUser( coord.x*Xsign );
+    double dYpos = g_PLEditorUnits.ToUser( coord.y*Ysign );
 
     wxString pagesizeformatter = wxT( "Page size: width %.4g height %.4g" );
     wxString absformatter = wxT( "X %.4g  Y %.4g" );
     wxString locformatter = wxT( "dx %.4g  dy %.4g" );
 
-    switch( g_UserUnit )
+    switch( g_PLEditorUnits.GetUserUnit() )
     {
     case INCHES:        // Should not be used in page layout editor
         SetStatusText( _("inches"), 5 );
@@ -450,8 +434,8 @@ void PL_EDITOR_FRAME::UpdateStatusBar()
     // Display relative coordinates:
     int dx = GetCrossHairPosition().x - screen->m_O_Curseur.x;
     int dy = GetCrossHairPosition().y - screen->m_O_Curseur.y;
-    dXpos = To_User_Unit( g_UserUnit, dx * Xsign );
-    dYpos = To_User_Unit( g_UserUnit, dy * Ysign );
+    dXpos = g_PLEditorUnits.ToUser( dx * Xsign );
+    dYpos = g_PLEditorUnits.ToUser( dy * Ysign );
     line.Printf( locformatter, dXpos, dYpos );
     SetStatusText( line, 3 );
 
@@ -471,7 +455,7 @@ void PL_EDITOR_FRAME::PrintPage( wxDC* aDC, LAYER_MSK aPrintMasklayer,
                            bool aPrintMirrorMode, void * aData )
 {
     GetScreen()-> m_ScreenNumber = GetPageNumberOption() ? 1 : 2;
-    DrawWorkSheet( aDC, GetScreen(), 0, IU_PER_MILS, wxEmptyString );
+    DrawWorkSheet( aDC, GetScreen(), 0, g_PLEditorUnits.IuPerMils(), wxEmptyString );
 }
 
 void PL_EDITOR_FRAME::RedrawActiveWindow( wxDC* aDC, bool aEraseBg )
@@ -503,7 +487,7 @@ void PL_EDITOR_FRAME::RedrawActiveWindow( wxDC* aDC, bool aEraseBg )
         item->SetSelected( item == selecteditem );
     }
 
-    DrawWorkSheet( aDC, GetScreen(), 0, IU_PER_MILS, GetCurrFileName() );
+    DrawWorkSheet( aDC, GetScreen(), 0, g_PLEditorUnits.IuPerMils(), GetCurrFileName() );
 
     if( m_canvas->IsMouseCaptured() )
         m_canvas->CallMouseCapture( aDC, wxDefaultPosition, false );
@@ -645,7 +629,7 @@ WORKSHEET_DATAITEM* PL_EDITOR_FRAME::Locate( const wxPoint& aPosition )
 
     WS_DRAW_ITEM_LIST drawList;
     drawList.SetPenSize( 0 );
-    drawList.SetMilsToIUfactor( IU_PER_MILS );
+    drawList.SetMilsToIUfactor( g_PLEditorUnits.IuPerMils() );
     drawList.SetSheetNumber( screen->m_ScreenNumber );
     drawList.SetSheetCount( screen->m_NumberOfScreens );
     drawList.SetFileName( GetCurrFileName() );

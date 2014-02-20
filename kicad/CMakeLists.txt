@@ -1,5 +1,3 @@
-add_definitions(-DKICAD)
-
 include_directories(BEFORE ${INC_BEFORE})
 include_directories(
     ${INC_AFTER}
@@ -43,7 +41,6 @@ endif(APPLE)
 
 add_executable(kicad WIN32 MACOSX_BUNDLE
     ${KICAD_SRCS}
-    ${KICAD_EXTRA_SRCS}
     ${KICAD_RESOURCES}
     )
 

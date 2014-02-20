@@ -6,6 +6,7 @@ include_directories(
     ${GLEW_INCLUDE_DIR}
     ../3d-viewer
     ../pcbnew
+    ../pcbnew/dialogs
     ../polygon
     ${INC_AFTER}
     )
@@ -240,6 +241,11 @@ set( PCB_COMMON_SRCS
     fpid.cpp
     fp_lib_table.cpp
     ../pcbnew/pcb_painter.cpp
+    ../pcbnew/dialogs/dialog_fp_lib_table.cpp
+    ../pcbnew/dialogs/dialog_fp_lib_table_base.cpp
+    ../pcbnew/dialogs/dialog_fp_plugin_options.cpp
+    ../pcbnew/dialogs/dialog_fp_plugin_options_base.cpp
+    ../pcbnew/board_items_to_polygon_shape_transform.cpp
 )
 
 # add -DPCBNEW to compilation of these PCBNEW sources

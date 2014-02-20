@@ -72,7 +72,7 @@ bool EDA_APP::OnInit()
             return false;
     }
 
-    g_UserUnit = MILLIMETRES;
+    g_PLEditorUnits.SetUserUnit ( MILLIMETRES );
     g_DrawBgColor = WHITE;
     g_ShowPageLimits = true;
 

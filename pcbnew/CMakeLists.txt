@@ -61,10 +61,6 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_export_vrml.cpp
     dialogs/dialog_find_base.cpp
     dialogs/dialog_find.cpp
-    dialogs/dialog_fp_lib_table_base.cpp
-    dialogs/dialog_fp_lib_table.cpp
-    dialogs/dialog_fp_plugin_options_base.cpp
-    dialogs/dialog_fp_plugin_options.cpp
     dialogs/dialog_freeroute_exchange.cpp
     dialogs/dialog_freeroute_exchange_base.cpp
     dialogs/dialog_gendrill.cpp
@@ -155,7 +151,6 @@ set( PCBNEW_CLASS_SRCS
     modview_frame.cpp
     pcbframe.cpp
     attribut.cpp
-    board_items_to_polygon_shape_transform.cpp
     board_undo_redo.cpp
     block.cpp
     block_module_editor.cpp

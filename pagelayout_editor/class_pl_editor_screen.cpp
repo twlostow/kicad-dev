@@ -33,9 +33,7 @@
 #include <pl_editor_id.h>
 
 
-#define MM_GRID( x ) wxRealPoint( x * IU_PER_MM, x * IU_PER_MM )
-#define ZOOM_FACTOR( x )  ( x * IU_PER_MM / 1000 )
-
+#define GRID_SIZE(x)     wxRealPoint(x, x)
 
 /**
     Default zoom values.
@@ -43,23 +41,23 @@
 */
 static const double pl_editorZoomList[] =
 {
-    ZOOM_FACTOR( 5 ),
-    ZOOM_FACTOR( 7.0 ),
-    ZOOM_FACTOR( 10.0 ),
-    ZOOM_FACTOR( 15.0 ),
-    ZOOM_FACTOR( 22.0 ),
-    ZOOM_FACTOR( 35.0 ),
-    ZOOM_FACTOR( 50.0 ),
-    ZOOM_FACTOR( 80.0 ),
-    ZOOM_FACTOR( 120.0 ),
-    ZOOM_FACTOR( 200.0 ),
-    ZOOM_FACTOR( 350.0 ),
-    ZOOM_FACTOR( 500.0 ),
-    ZOOM_FACTOR( 750.0 ),
-    ZOOM_FACTOR( 1000.0 ),
-    ZOOM_FACTOR( 1500.0 ),
-    ZOOM_FACTOR( 2000.0 ),
-    ZOOM_FACTOR( 3000.0 ),
+    5,
+    7.0,
+    10.0,
+    15.0,
+    22.0,
+    35.0,
+    50.0,
+    80.0,
+    120.0,
+    200.0,
+    350.0,
+    500.0,
+    750.0,
+    1000.0,
+    1500.0,
+    2000.0,
+    3000.0,
 };
 
 
@@ -67,27 +65,28 @@ static const double pl_editorZoomList[] =
 static GRID_TYPE pl_editorGridList[] =
 {
     // predefined grid list in mm
-    { ID_POPUP_GRID_LEVEL_1MM,      MM_GRID( 1.0 )     },
-    { ID_POPUP_GRID_LEVEL_0_5MM,    MM_GRID( 0.5 )     },
-    { ID_POPUP_GRID_LEVEL_0_25MM,   MM_GRID( 0.25 )    },
-    { ID_POPUP_GRID_LEVEL_0_2MM,    MM_GRID( 0.2 )     },
-    { ID_POPUP_GRID_LEVEL_0_1MM,    MM_GRID( 0.1 )     },
+    { ID_POPUP_GRID_LEVEL_1MM,      GRID_SIZE( 1.0 )     },
+    { ID_POPUP_GRID_LEVEL_0_5MM,    GRID_SIZE( 0.5 )     },
+    { ID_POPUP_GRID_LEVEL_0_25MM,   GRID_SIZE( 0.25 )    },
+    { ID_POPUP_GRID_LEVEL_0_2MM,    GRID_SIZE( 0.2 )     },
+    { ID_POPUP_GRID_LEVEL_0_1MM,    GRID_SIZE( 0.1 )     },
 };
 
 
 PL_EDITOR_SCREEN::PL_EDITOR_SCREEN( const wxSize& aPageSizeIU ) :
     BASE_SCREEN( SCREEN_T )
 {
-    for( unsigned i = 0; i < DIM( pl_editorZoomList );  ++i )
-        m_ZoomList.push_back( pl_editorZoomList[i] );
+    SetUnits( &g_GerbviewUnits );
 
-    for( unsigned i = 0; i < DIM( pl_editorGridList );  ++i )
-        AddGrid( pl_editorGridList[i] );
+    for( unsigned i = 0; i < DIM( pl_editorZoomList );  ++i )
+        m_ZoomList.push_back( g_PLEditorUnits.MmToIu ( pl_editorZoomList[i] ) / 1000.0 );
+
+    SetDefaultGrids ( pl_editorGridList, DIM (pl_editorGridList), true );
 
     // Set the working grid size to a reasonable value
-    SetGrid( MM_GRID( 1.0 ) );
+    SetGrid( ID_POPUP_GRID_LEVEL_0_5MM );
 
-    SetZoom( ZOOM_FACTOR( 350 ) );            // a default value for zoom
+    SetZoom( g_PLEditorUnits.DMilsToIu( 350 ) );            // a default value for zoom
 
     InitDataPoints( aPageSizeIU );
     m_NumberOfScreens = 2;
@@ -103,7 +102,7 @@ PL_EDITOR_SCREEN::~PL_EDITOR_SCREEN()
 // virtual function
 int PL_EDITOR_SCREEN::MilsToIuScalar()
 {
-    return (int)IU_PER_MILS;
+    return (int)g_PLEditorUnits.IuPerMils();
 }
 
 

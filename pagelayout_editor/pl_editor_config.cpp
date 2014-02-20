@@ -32,7 +32,9 @@
 #include <class_drawpanel.h>
 #include <gestfich.h>
 #include <param_config.h>
-
+#include <design_tree_frame.h>
+#include <properties_frame.h>
+ 
 #include <pl_editor_frame.h>
 #include <hotkeys.h>
 #include <dialog_hotkeys_editor.h>
@@ -94,6 +96,8 @@ void PL_EDITOR_FRAME::Process_Config( wxCommandEvent& event )
     }
 }
 
+static EDA_UNITS_T hackConfigUserUnit;
+
 
 PARAM_CFG_ARRAY& PL_EDITOR_FRAME::GetConfigurationSettings()
 {
@@ -101,7 +105,42 @@ PARAM_CFG_ARRAY& PL_EDITOR_FRAME::GetConfigurationSettings()
         return m_configSettings;
 
     m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "Units" ),
-                                                   (int*) &g_UserUnit, 0, 0, 1 ) );
+                                                   (int*) &hackConfigUserUnit, 0, 0, 1 ) );
 
     return m_configSettings;
+}
+
+#define DESIGN_TREE_WIDTH_KEY wxT("DesignTreeWidth")
+#define PROPERTIES_FRAME_WIDTH_KEY wxT("PropertiesFrameWidth")
+#define CORNER_ORIGIN_CHOICE_KEY wxT("CornerOriginChoice")
+
+void PL_EDITOR_FRAME::LoadSettings()
+{
+    EDA_DRAW_FRAME::LoadSettings();
+    m_config->Read( DESIGN_TREE_WIDTH_KEY, &m_designTreeWidth, 100);
+    m_config->Read( PROPERTIES_FRAME_WIDTH_KEY, &m_propertiesFrameWidth, 150);
+    m_config->Read( CORNER_ORIGIN_CHOICE_KEY, &m_originSelectChoice );
+
+    g_PLEditorUnits.SetUserUnit ( hackConfigUserUnit );
+}
+
+
+void PL_EDITOR_FRAME::SaveSettings()
+{
+    wxConfig* config = wxGetApp().GetSettings();
+
+    if( config == NULL )
+        return;
+
+    hackConfigUserUnit = g_PLEditorUnits.GetUserUnit();
+
+    m_designTreeWidth = m_treePagelayout->GetSize().x;
+    m_propertiesFrameWidth = m_propertiesPagelayout->GetSize().x;
+
+    EDA_DRAW_FRAME::SaveSettings();
+    m_config->Write( DESIGN_TREE_WIDTH_KEY, m_designTreeWidth);
+    m_config->Write( PROPERTIES_FRAME_WIDTH_KEY, m_propertiesFrameWidth);
+    m_config->Write( CORNER_ORIGIN_CHOICE_KEY, m_originSelectChoice );
+
+    wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
 }

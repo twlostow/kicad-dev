@@ -1,5 +1,3 @@
-add_definitions( -DCVPCB )
-
 ###
 # Includes
 ###
@@ -23,16 +21,9 @@ set( CVPCB_DIALOGS
     dialogs/dialog_cvpcb_config_fbp.cpp
     dialogs/dialog_display_options.cpp
     dialogs/dialog_display_options_base.cpp
-    ../pcbnew/dialogs/dialog_fp_lib_table.cpp
-    ../pcbnew/dialogs/dialog_fp_lib_table_base.cpp
-    ../pcbnew/dialogs/dialog_fp_plugin_options.cpp
-    ../pcbnew/dialogs/dialog_fp_plugin_options_base.cpp
     )
 
 set( CVPCB_SRCS
-    ../common/base_units.cpp
-    ../pcbnew/board_items_to_polygon_shape_transform.cpp
-    ../pcbnew/class_drc_item.cpp
     autosel.cpp
     cfg.cpp
     class_components_listbox.cpp

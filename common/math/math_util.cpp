@@ -28,6 +28,8 @@
 #include <climits>
 #include <math/math_util.h>
 
+#include <stdint.h>
+
 template <>
 int rescale( int aNumerator, int aValue, int aDenominator )
 {
@@ -38,6 +40,10 @@ int rescale( int aNumerator, int aValue, int aDenominator )
 template <>
 int64_t rescale( int64_t aNumerator, int64_t aValue, int64_t aDenominator )
 {
+#ifdef __x86_64__
+    return ((__int128_t) aNumerator *  (__int128_t) aValue) / aDenominator;
+#else
+
     int64_t r = 0;
     int64_t sign = ( ( aNumerator < 0 ) ? -1 : 1 ) * ( aDenominator < 0 ? -1 : 1 ) *
                                                     ( aValue < 0 ? -1 : 1 );
@@ -84,4 +90,5 @@ int64_t rescale( int64_t aNumerator, int64_t aValue, int64_t aDenominator )
 
         return t1 * sign;
     }
+#endif
 }

@@ -720,9 +720,8 @@ void PNS_NODE::followLine( PNS_SEGMENT* aCurrent, bool aScanDirection, int& aPos
     bool prevReversed = false;
 
     const VECTOR2I guard = aScanDirection ? aCurrent->Seg().B : aCurrent->Seg().A;
-    int count;
 
-    for( count = 0 ; ; count ++ )
+    for( int count = 0 ; ; ++count )
     {
         const VECTOR2I p =
             ( aScanDirection ^ prevReversed ) ? aCurrent->Seg().B : aCurrent->Seg().A;
@@ -732,7 +731,7 @@ void PNS_NODE::followLine( PNS_SEGMENT* aCurrent, bool aScanDirection, int& aPos
 
         aCorners[aPos] = jt->Pos();
 
-        if(count && guard == p)
+        if( count && guard == p )
         {
             aSegments[aPos] = NULL;
             aGuardHit = true;
@@ -773,7 +772,7 @@ PNS_LINE* PNS_NODE::AssembleLine( PNS_SEGMENT* aSeg, int* aOriginSegmentIndex)
 
     followLine( aSeg, false, i_start, MaxVerts, corners, segs, guardHit );
     
-    if(!guardHit)
+    if( !guardHit )
         followLine( aSeg, true, i_end, MaxVerts, corners, segs, guardHit );
     
     int n = 0;

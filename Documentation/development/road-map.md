@@ -49,6 +49,24 @@ developers.
 - Initial planning stages.
 
 
+## Website Improvements ## {#website_improvements}
+**Goal:**
+
+Make the website at www.kicad-pcb.org as the definitive resource for both
+users and developers which will provide a single point of reference instead
+of the many separate websites currently in used.
+
+**Task:**
+- Define the content and design of the website.
+- Implement the new design.
+
+**Dependencies:**
+- None
+
+**Status:**
+- No progress.
+
+
 # General # {#general}
 This section defines the tasks that affect all or most of KiCad or do not
 fit under as specific part of the code such as the board editor or the
@@ -577,6 +595,43 @@ Provide clipboard cut and paste for footprints..
 
 **Status:**
 - No progress.
+
+## Design Rule Check (DRC) Improvements. ## {#drc_improvements}
+**Goal:**
+
+Create additional DRC tests for improved error checking.
+
+**Task:**
+- Replace geometry code with [unified geometry library](#geometry_lib).
+- Remove floating point code from clearance calculations to prevent rounding
+  errors.
+- Add checks for component, silk screen, and mask clearances.
+- Remove DRC related limitations such as no arc or text on copper layers.
+- Add option for saving and loading DRC options.
+
+**Dependencies:**
+- [Unified geometry library.](#geometry_lib)
+
+**Progress:**
+- Planning
+
+## Gerber File Attributes ## {#gerber_attributes}
+**Goal:**
+
+Add file attributes to gerber files for defining layer stacks.  See
+[this](http://www.ucamco.com/files/downloads/file/5/Extending_the_Gerber_Format_with_Attributes.pdf)
+document and [this](http://www.ucamco.com/files/downloads/file/22/Kick_Starting_a_Revolution_IPC-2581_Meets_Gerber.pdf)
+document for more information.
+
+**Task:**
+- Implement gerber file attributes as an optional setting when plotting gerber
+  files.
+
+**Dependencies:**
+- None
+
+**Progress:**
+- Under investigation.
 
 
 # GerbView: Gerber File Viewer # {#gerbview}

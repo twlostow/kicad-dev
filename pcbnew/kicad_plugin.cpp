@@ -1247,7 +1247,7 @@ void PCB_IO::format( D_PAD* aPad, int aNestLevel ) const
     std::string output;
 
     // Unconnected pad is default net so don't save it.
-    if( !(m_ctl & CTL_OMIT_NETS) && aPad->GetNetCode() != 0 )
+    if( !( m_ctl & CTL_OMIT_NETS ) && aPad->GetNetCode() != NETINFO_LIST::UNCONNECTED )
         StrPrintf( &output, " (net %d %s)", m_mapping->Translate( aPad->GetNetCode() ),
                    m_out->Quotew( aPad->GetNetname() ).c_str() );
 

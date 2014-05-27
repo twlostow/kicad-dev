@@ -86,6 +86,8 @@
 #include <trigo.h>
 #include <build_version.h>
 
+#include <boost/make_shared.hpp>
+
 
 typedef LEGACY_PLUGIN::BIU      BIU;
 
@@ -632,7 +634,7 @@ void LEGACY_PLUGIN::loadSHEET()
 
 void LEGACY_PLUGIN::loadSETUP()
 {
-    NETCLASS*               netclass_default = m_board->GetDesignSettings().GetDefault();
+    NETCLASSPTR             netclass_default = m_board->GetDesignSettings().GetDefault();
     // TODO Orson: is it really necessary to first operate on a copy and then apply it?
     // would not it be better to use reference here and apply all the changes instantly?
     BOARD_DESIGN_SETTINGS   bds = m_board->GetDesignSettings();
@@ -2052,24 +2054,21 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
         else
             makeType = aStructType;
 
-        TRACK*  newTrack;   // BOARD insert this new one immediately after instantiation
+        TRACK* newTrack;
 
         switch( makeType )
         {
         default:
         case PCB_TRACE_T:
             newTrack = new TRACK( m_board );
-            m_board->m_Track.Append( newTrack );
             break;
 
         case PCB_VIA_T:
             newTrack = new VIA( m_board );
-            m_board->m_Track.Append( newTrack );
             break;
 
         case PCB_ZONE_T:     // this is now deprecated, but exist in old boards
             newTrack = new SEGZONE( m_board );
-            m_board->m_Zone.Append( (SEGZONE*) newTrack );
             break;
         }
 
@@ -2097,6 +2096,8 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
 
         newTrack->SetNetCode( net_code );
         newTrack->SetState( flags, true );
+
+        m_board->Add( newTrack );
     }
 
     THROW_IO_ERROR( "Missing '$EndTRACK'" );
@@ -2113,7 +2114,7 @@ void LEGACY_PLUGIN::loadNETCLASS()
     // yet since that would bypass duplicate netclass name checking within the BOARD.
     // store it temporarily in an auto_ptr until successfully inserted into the BOARD
     // just before returning.
-    auto_ptr<NETCLASS> nc( new NETCLASS( wxEmptyString ) );
+    NETCLASSPTR nc = boost::make_shared<NETCLASS>( wxEmptyString );
 
     while( ( line = READLINE( m_reader ) ) != NULL )
     {
@@ -2175,11 +2176,7 @@ void LEGACY_PLUGIN::loadNETCLASS()
 
         else if( TESTLINE( "$EndNCLASS" ) )
         {
-            if( m_board->GetDesignSettings().m_NetClasses.Add( nc.get() ) )
-            {
-                nc.release();
-            }
-            else
+            if( !m_board->GetDesignSettings().m_NetClasses.Add( nc ) )
             {
                 // Must have been a name conflict, this is a bad board file.
                 // User may have done a hand edit to the file.
@@ -2985,7 +2982,7 @@ void LEGACY_PLUGIN::saveSHEET( const BOARD* aBoard ) const
 void LEGACY_PLUGIN::saveSETUP( const BOARD* aBoard ) const
 {
     const BOARD_DESIGN_SETTINGS& bds = aBoard->GetDesignSettings();
-    NETCLASS* netclass_default       = bds.GetDefault();
+    NETCLASSPTR netclass_default     = bds.GetDefault();
 
     fprintf( m_fp, "$SETUP\n" );
 
@@ -3170,7 +3167,7 @@ void LEGACY_PLUGIN::saveNETCLASSES( const NETCLASSES* aNetClasses ) const
     // the rest will be alphabetical in the *.brd file.
     for( NETCLASSES::const_iterator it = aNetClasses->begin();  it != aNetClasses->end();  ++it )
     {
-        NETCLASS*   netclass = it->second;
+        NETCLASSPTR   netclass = it->second;
         saveNETCLASS( netclass );
     }
 
@@ -3178,7 +3175,7 @@ void LEGACY_PLUGIN::saveNETCLASSES( const NETCLASSES* aNetClasses ) const
 }
 
 
-void LEGACY_PLUGIN::saveNETCLASS( const NETCLASS* nc ) const
+void LEGACY_PLUGIN::saveNETCLASS( const NETCLASSPTR nc ) const
 {
     fprintf( m_fp, "$NCLASS\n" );
     fprintf( m_fp, "Name %s\n", EscapedUTF8( nc->GetName() ).c_str() );
@@ -3371,7 +3368,8 @@ void LEGACY_PLUGIN::savePAD( const D_PAD* me ) const
 
     fprintf( m_fp, "At %s N %08X\n", texttype, me->GetLayerMask() );
 
-    fprintf( m_fp, "Ne %d %s\n", me->GetNetCode(), EscapedUTF8( me->GetNetname() ).c_str() );
+    fprintf( m_fp, "Ne %d %s\n", m_mapping->Translate( me->GetNetCode() ),
+             EscapedUTF8( me->GetNetname() ).c_str() );
 
     fprintf( m_fp, "Po %s\n", fmtBIUPoint( me->GetPos0() ).c_str() );
 
@@ -3638,7 +3636,7 @@ void LEGACY_PLUGIN::saveTRACK( const TRACK* me ) const
                 "-1" :  fmtBIU( drill ).c_str() );
 
     fprintf(m_fp, "De %d %d %d %lX %X\n",
-            me->GetLayer(), type, me->GetNetCode(),
+            me->GetLayer(), type, m_mapping->Translate( me->GetNetCode() ),
             me->GetTimeStamp(), me->GetStatus() );
 }
 
@@ -3652,7 +3650,7 @@ void LEGACY_PLUGIN::saveZONE_CONTAINER( const ZONE_CONTAINER* me ) const
     // just for ZONE_CONTAINER compatibility
     fprintf( m_fp,  "ZInfo %lX %d %s\n",
                     me->GetTimeStamp(),
-                    me->GetIsKeepout() ? 0 : me->GetNetCode(),
+                    me->GetIsKeepout() ? 0 : m_mapping->Translate( me->GetNetCode() ),
                     EscapedUTF8( me->GetIsKeepout() ? wxT("") : me->GetNetname() ).c_str() );
 
     // Save the outline layer info

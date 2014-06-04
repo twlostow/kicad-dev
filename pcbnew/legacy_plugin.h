@@ -126,8 +126,9 @@ protected:
     int             m_loading_format_version;   ///< which BOARD_FORMAT_VERSION am I Load()ing?
     LP_CACHE*       m_cache;
 
-    NETINFO_MAPPING*    m_mapping;  ///< mapping for net codes, so only not empty net codes
+    NETINFO_MAPPING*    m_mapping;  ///< mapping for net codes, so only not empty nets
                                     ///< are stored with consecutive integers as net codes
+    std::vector<int>    m_netCodes; ///< net codes mapping for boards being loaded
 
     /// initialize PLUGIN like a constructor would, and futz with fresh BOARD if needed.
     void    init( const PROPERTIES* aProperties );
@@ -137,6 +138,16 @@ protected:
 
     double  diskToBiu;              ///< convert from disk engineering units to BIUs
                                     ///< with this scale factor
+
+    ///> Converts net code using the mapping table if available,
+    ///> otherwise returns unchanged net code
+    inline int getNetCode( int aNetCode )
+    {
+        if( aNetCode < (int) m_netCodes.size() )
+            return m_netCodes[aNetCode];
+
+        return aNetCode;
+    }
 
     /**
      * Function biuParse

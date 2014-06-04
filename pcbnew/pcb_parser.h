@@ -64,10 +64,20 @@ class PCB_PARSER : public PCB_LEXER
     typedef boost::unordered_map< std::string, LAYER_NUM > LAYER_NUM_MAP;
     typedef boost::unordered_map< std::string, LAYER_MSK > LAYER_MSK_MAP;
 
-    BOARD*          m_board;
-    LAYER_NUM_MAP   m_layerIndices;     ///< map layer name to it's index
-    LAYER_MSK_MAP   m_layerMasks;       ///< map layer names to their masks
+    BOARD*              m_board;
+    LAYER_NUM_MAP       m_layerIndices;     ///< map layer name to it's index
+    LAYER_MSK_MAP       m_layerMasks;       ///< map layer names to their masks
+    std::vector<int>    m_netCodes;         ///< net codes mapping for boards being loaded
 
+    ///> Converts net code using the mapping table if available,
+    ///> otherwise returns unchanged net code
+    inline int getNetCode( int aNetCode )
+    {
+        if( aNetCode < (int) m_netCodes.size() )
+            return m_netCodes[aNetCode];
+
+        return aNetCode;
+    }
 
     /**
      * Function init

@@ -380,8 +380,7 @@ bool PNS_LINE_PLACER::handleViaPlacement( PNS_LINE& aHead )
         return true;
 
     PNS_LAYERSET allLayers( 0, 15 );
-    PNS_VIA v( aHead.CPoint( -1 ), allLayers, m_viaDiameter, aHead.Net() );
-    v.SetDrill( m_viaDrill );
+    PNS_VIA v( aHead.CPoint( -1 ), allLayers, m_viaDiameter, m_viaDrill, aHead.Net() );
 
     VECTOR2I force;
     VECTOR2I lead = aHead.CPoint( -1 ) - aHead.CPoint( 0 );
@@ -403,7 +402,7 @@ bool PNS_LINE_PLACER::handleViaPlacement( PNS_LINE& aHead )
 }
 
 
-bool PNS_LINE_PLACER::rhWalkOnly ( const VECTOR2I& aP, PNS_LINE& aNewHead )
+bool PNS_LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, PNS_LINE& aNewHead )
 {
     SHAPE_LINE_CHAIN line = m_direction.BuildInitialTrace( m_p_start, aP );
     PNS_LINE initTrack( m_head, line ), walkFull;
@@ -441,7 +440,7 @@ bool PNS_LINE_PLACER::rhWalkOnly ( const VECTOR2I& aP, PNS_LINE& aNewHead )
     else if( m_placingVia && viaOk )
     {
         PNS_LAYERSET allLayers( 0, 15 );
-        PNS_VIA v1( walkFull.CPoint( -1 ), allLayers, m_viaDiameter );
+        PNS_VIA v1( walkFull.CPoint( -1 ), allLayers, m_viaDiameter, m_viaDrill );
         walkFull.AppendVia( v1 );
     }
 
@@ -466,7 +465,7 @@ bool PNS_LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP, PNS_LINE& aNewHead )
     if( m_placingVia )
     {
         PNS_LAYERSET allLayers( 0, 15 );
-        PNS_VIA v1( m_head.CPoint( -1 ), allLayers, m_viaDiameter );
+        PNS_VIA v1( m_head.CPoint( -1 ), allLayers, m_viaDiameter, m_viaDrill );
         m_head.AppendVia( v1 );
     }
 
@@ -509,10 +508,8 @@ bool PNS_LINE_PLACER::rhShoveOnly ( const VECTOR2I& aP, PNS_LINE& aNewHead )
     if( m_placingVia )
     {
         PNS_LAYERSET allLayers( 0, 15 );
-        PNS_VIA v1( l.CPoint( -1 ), allLayers, m_viaDiameter );
-        PNS_VIA v2( l2.CPoint( -1 ), allLayers, m_viaDiameter );
-        v1.SetDrill( m_viaDrill );
-        v2.SetDrill( m_viaDrill );
+        PNS_VIA v1( l.CPoint( -1 ), allLayers, m_viaDiameter, m_viaDrill );
+        PNS_VIA v2( l2.CPoint( -1 ), allLayers, m_viaDiameter, m_viaDrill );
 
         l.AppendVia( v1 );
         l2.AppendVia( v2 );
@@ -767,12 +764,6 @@ void PNS_LINE_PLACER::SetLayer(int aLayer)
 }
 
 
-void PNS_LINE_PLACER::SetWidth(int aWidth)
-{
-    m_currentWidth = aWidth;
-}
-
-
 void PNS_LINE_PLACER::Start( const VECTOR2I& aP, PNS_ITEM* aStartItem )
 {
     VECTOR2I p( aP );
@@ -832,9 +823,9 @@ void PNS_LINE_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     if( !current.PointCount() )
         m_currentEnd = m_p_start;
     else
-        m_currentEnd = current.CLine().CPoint(-1);
+        m_currentEnd = current.CLine().CPoint( -1 );
 
-    PNS_NODE *latestNode = m_currentNode;
+    PNS_NODE* latestNode = m_currentNode;
     m_lastNode = latestNode->Branch();
     
     if( eiDepth >= 0 && aEndItem && latestNode->Depth() > eiDepth &&
@@ -998,6 +989,7 @@ void PNS_LINE_PLACER::UpdateSizes( const PNS_ROUTING_SETTINGS& aSettings )
     m_head.SetWidth( trackWidth );
     m_tail.SetWidth( trackWidth );
 
+    m_currentWidth = trackWidth;
     m_viaDiameter = aSettings.GetViaDiameter();
     m_viaDrill = aSettings.GetViaDrill();
 }

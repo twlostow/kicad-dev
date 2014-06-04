@@ -35,13 +35,15 @@ public:
         PNS_ITEM( VIA )
     {}
 
-    PNS_VIA( const VECTOR2I& aPos, const PNS_LAYERSET& aLayers, int aDiameter, int aNet = -1 ) :
+    PNS_VIA( const VECTOR2I& aPos, const PNS_LAYERSET& aLayers,
+             int aDiameter, int aDrill, int aNet = -1 ) :
         PNS_ITEM( VIA )
     {
         SetNet( aNet );
         SetLayers( aLayers );
         m_pos = aPos;
         m_diameter = aDiameter;
+        m_drill = aDrill;
         m_shape = SHAPE_CIRCLE( aPos, aDiameter / 2 );
     }
 
@@ -103,16 +105,16 @@ public:
         return &m_shape;
     }
 
-    PNS_VIA* Clone ( ) const;
+    PNS_VIA* Clone() const;
 
     const SHAPE_LINE_CHAIN Hull( int aClearance = 0, int aWalkaroundThickness = 0 ) const;
-    
+
     virtual VECTOR2I Anchor( int n ) const
     {
         return m_pos;
     }
 
-    virtual int AnchorCount() const 
+    virtual int AnchorCount() const
     {
         return 1;
     }

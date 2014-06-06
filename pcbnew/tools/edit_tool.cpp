@@ -93,7 +93,7 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
     m_updateFlag = KIGFX::VIEW_ITEM::GEOMETRY;
 
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
-    PCB_EDIT_FRAME* editFrame = static_cast<PCB_EDIT_FRAME*>( m_toolMgr->GetEditFrame() );
+    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
     controls->ShowCursor( true );
     controls->SetSnapping( true );
     controls->SetAutoPan( true );
@@ -143,14 +143,11 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
             if( m_dragging )
             {
                 wxPoint movement = wxPoint( m_cursor.x, m_cursor.y ) -
-                        static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( 0 ) )->GetPosition();
+                                   selection.Item<BOARD_ITEM>( 0 )->GetPosition();
 
                 // Drag items to the current cursor position
                 for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
-                {
-                    BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( i ) );
-                    item->Move( movement + m_offset );
-                }
+                    selection.Item<BOARD_ITEM>( i )->Move( movement );
 
                 updateRatsnest( true );
             }
@@ -160,9 +157,9 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
                 editFrame->OnModify();
                 editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
 
-                // Update dragging offset (distance between cursor and the first dragged item)
-                m_offset = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( 0 ) )->GetPosition() -
-                                                     wxPoint( m_cursor.x, m_cursor.y );
+                // Set the current cursor position to the first dragged item origin, so the
+                // movement vector could be computed later
+                m_cursor = VECTOR2I( selection.Item<BOARD_ITEM>( 0 )->GetPosition() );
                 m_dragging = true;
             }
 
@@ -208,7 +205,7 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
 int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
 {
     const SELECTION_TOOL::SELECTION& selection = m_selectionTool->GetSelection();
-    PCB_EDIT_FRAME* editFrame = static_cast<PCB_EDIT_FRAME*>( m_toolMgr->GetEditFrame() );
+    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
 
     // Shall the selection be cleared at the end?
     bool unselect = selection.Empty();
@@ -224,7 +221,7 @@ int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
     if( selection.Size() == 1 )
     {
         // Display properties dialog
-        BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( 0 ) );
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( 0 );
 
         // Check if user wants to edit pad or module properties
         if( item->Type() == PCB_MODULE_T )
@@ -280,7 +277,7 @@ int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
 int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
 {
     const SELECTION_TOOL::SELECTION& selection = m_selectionTool->GetSelection();
-    PCB_EDIT_FRAME* editFrame = static_cast<PCB_EDIT_FRAME*>( m_toolMgr->GetEditFrame() );
+    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
 
     // Shall the selection be cleared at the end?
     bool unselect = selection.Empty();
@@ -302,7 +299,7 @@ int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
 
     for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
-        BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( i ) );
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
 
         item->Rotate( rotatePoint, editFrame->GetRotationAngle() );
 
@@ -311,10 +308,6 @@ int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
     }
 
     updateRatsnest( m_dragging );
-
-    // Update dragging offset (distance between cursor and the first dragged item)
-    m_offset = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( 0 ) )->GetPosition() -
-                                         rotatePoint;
 
     if( m_dragging )
         selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
@@ -334,7 +327,7 @@ int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
 int EDIT_TOOL::Flip( TOOL_EVENT& aEvent )
 {
     const SELECTION_TOOL::SELECTION& selection = m_selectionTool->GetSelection();
-    PCB_EDIT_FRAME* editFrame = static_cast<PCB_EDIT_FRAME*>( m_toolMgr->GetEditFrame() );
+    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
 
     // Shall the selection be cleared at the end?
     bool unselect = selection.Empty();
@@ -356,7 +349,7 @@ int EDIT_TOOL::Flip( TOOL_EVENT& aEvent )
 
     for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
-        BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( i ) );
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
 
         item->Flip( flipPoint );
 
@@ -365,10 +358,6 @@ int EDIT_TOOL::Flip( TOOL_EVENT& aEvent )
     }
 
     updateRatsnest( m_dragging );
-
-    // Update dragging offset (distance between cursor and the first dragged item)
-    m_offset = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( 0 ) )->GetPosition() -
-                                         flipPoint;
 
     if( m_dragging )
         selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
@@ -398,7 +387,7 @@ int EDIT_TOOL::Remove( TOOL_EVENT& aEvent )
 
     // Get a copy of the selected items set
     PICKED_ITEMS_LIST selectedItems = selection.items;
-    PCB_EDIT_FRAME* editFrame = static_cast<PCB_EDIT_FRAME*>( m_toolMgr->GetEditFrame() );
+    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
 
     // As we are about to remove items, they have to be removed from the selection first
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear );
@@ -412,10 +401,7 @@ int EDIT_TOOL::Remove( TOOL_EVENT& aEvent )
 
     // And now remove
     for( unsigned int i = 0; i < selectedItems.GetCount(); ++i )
-    {
-        BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selectedItems.GetPickedItem( i ) );
-        remove( item );
-    }
+        remove( static_cast<BOARD_ITEM*>( selectedItems.GetPickedItem( i ) ) );
 
     getModel<BOARD>( PCB_T )->GetRatsnest()->Recalculate();
 
@@ -491,7 +477,7 @@ void EDIT_TOOL::updateRatsnest( bool aRedraw )
     ratsnest->ClearSimple();
     for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
-        BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.items.GetPickedItem( i ) );
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
 
         ratsnest->Update( item );
 
@@ -505,7 +491,7 @@ wxPoint EDIT_TOOL::getModificationPoint( const SELECTION_TOOL::SELECTION& aSelec
 {
     if( aSelection.Size() == 1 )
     {
-        return static_cast<BOARD_ITEM*>( aSelection.items.GetPickedItem( 0 ) )->GetPosition() - m_offset;
+        return aSelection.Item<BOARD_ITEM>( 0 )->GetPosition();
     }
     else
     {

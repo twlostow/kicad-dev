@@ -377,7 +377,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter,
     // plot them on solder mask
     for( TRACK* track = aBoard->m_Track; track; track = track->Next() )
     {
-        const VIA* Via = dynamic_cast<const VIA*>( track );
+        const VIA* Via = dyn_cast<const VIA*>( track );
 
         if( !Via )
             continue;
@@ -562,7 +562,7 @@ void PlotLayerOutlines( BOARD *aBoard, PLOTTER* aPlotter,
         // Plot vias holes
         for( TRACK* track = aBoard->m_Track; track; track = track->Next() )
         {
-            const VIA* via = dynamic_cast<const VIA*>( track );
+            const VIA* via = dyn_cast<const VIA*>( track );
 
             if( via && via->IsOnLayer( layer ) )    // via holes can be not through holes
             {
@@ -663,7 +663,7 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter,
         int via_margin = via_clearance + inflate;
         for( TRACK* track = aBoard->m_Track; track; track = track->Next() )
         {
-            const VIA* via = dynamic_cast<const VIA*>( track );
+            const VIA* via = dyn_cast<const VIA*>( track );
 
             if( !via )
                 continue;
@@ -877,6 +877,7 @@ static void ConfigureHPGLPenSizes( HPGL_PLOTTER *aPlotter,
  * (or has a problem)
  */
 PLOTTER* StartPlotBoard( BOARD *aBoard, PCB_PLOT_PARAMS *aPlotOpts,
+                         int aLayer,
                          const wxString& aFullFileName,
                          const wxString& aSheetDesc )
 {
@@ -938,6 +939,10 @@ PLOTTER* StartPlotBoard( BOARD *aBoard, PCB_PLOT_PARAMS *aPlotOpts,
 
     if( plotter->OpenFile( aFullFileName ) )
     {
+        // For the Gerber "file function" attribute, set the layer number
+        if( plotter->GetPlotterType() == PLOT_FORMAT_GERBER && plotOpts.GetUseGerberAttributes() )
+            plotter->SetLayerAttribFunction( GetGerberFileFunction( aBoard, aLayer ) );
+
         plotter->StartPlot();
 
         // Plot the frame reference if requested
@@ -949,7 +954,7 @@ PLOTTER* StartPlotBoard( BOARD *aBoard, PCB_PLOT_PARAMS *aPlotOpts,
                            aSheetDesc, aBoard->GetFileName() );
 
             if( aPlotOpts->GetMirror() )
-            initializePlotter( plotter, aBoard, aPlotOpts );
+                initializePlotter( plotter, aBoard, aPlotOpts );
         }
 
         /* When plotting a negative board: draw a black rectangle

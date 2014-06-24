@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 30 2013)
+// C++ code generated with wxFormBuilder (version Nov  6 2013)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -11,6 +11,9 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
+class DIALOG_SHIM;
+
+#include "dialog_shim.h"
 #include <wx/string.h>
 #include <wx/radiobox.h>
 #include <wx/gdicmn.h>
@@ -21,8 +24,8 @@
 #include <wx/stattext.h>
 #include <wx/slider.h>
 #include <wx/sizer.h>
-#include <wx/button.h>
 #include <wx/statbox.h>
+#include <wx/button.h>
 #include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -31,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// Class DIALOG_PNS_SETTINGS_BASE
 ///////////////////////////////////////////////////////////////////////////////
-class DIALOG_PNS_SETTINGS_BASE : public wxDialog 
+class DIALOG_PNS_SETTINGS_BASE : public DIALOG_SHIM
 {
 	private:
 	
@@ -60,7 +63,7 @@ class DIALOG_PNS_SETTINGS_BASE : public wxDialog
 	
 	public:
 		
-		DIALOG_PNS_SETTINGS_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Interactive Router settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 313,528 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		DIALOG_PNS_SETTINGS_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Interactive Router settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 298,410 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
 		~DIALOG_PNS_SETTINGS_BASE();
 	
 };

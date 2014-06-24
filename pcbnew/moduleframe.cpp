@@ -33,6 +33,7 @@
 #include <pgm_base.h>
 #include <kiway.h>
 #include <project.h>
+#include <kicad_plugin.h>
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <wxPcbStruct.h>
@@ -51,10 +52,6 @@
 #include <module_editor_frame.h>
 #include <wildcards_and_files_ext.h>
 
-
-static PCB_SCREEN* s_screenModule;      // the PCB_SCREEN used by the footprint editor
-
-BOARD* FOOTPRINT_EDIT_FRAME::s_Pcb;
 
 BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_MENU_RANGE( ID_POPUP_PCB_ITEM_SELECTION_START, ID_POPUP_PCB_ITEM_SELECTION_END,
@@ -170,32 +167,25 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     // Show a title (frame title + footprint name):
     updateTitle();
 
-    if( !s_Pcb )
-    {
-        s_Pcb = new BOARD();
+    SetBoard( new BOARD() );
 
-        // Ensure all layers and items are visible:
-        s_Pcb->SetVisibleAlls();
-    }
+    // restore the last footprint from the project, if any
+    restoreLastFootprint();
 
-    SetBoard( s_Pcb );
+    // Ensure all layers and items are visible:
+    GetBoard()->SetVisibleAlls();
 
-    if( !s_screenModule )
-        s_screenModule = new PCB_SCREEN( GetPageSettings().GetSizeIU() );
-
-    SetScreen( s_screenModule );
+    SetScreen( new PCB_SCREEN( GetPageSettings().GetSizeIU() ) );
 
     GetScreen()->SetCurItem( NULL );
     LoadSettings( config() );
 
-    GetBoard()->SetVisibleAlls();
-
     GetScreen()->AddGrid( m_UserGridSize, m_UserGridUnit, ID_POPUP_GRID_USER );
-    GetScreen()->SetGrid( ID_POPUP_GRID_LEVEL_1000 + m_LastGridSizeId  );
+    GetScreen()->SetGrid( ID_POPUP_GRID_LEVEL_1000 + m_LastGridSizeId );
 
     // In modedit, set the default paper size to A4:
     // this should be OK for all footprint to plot/print
-    SetPageSettings( PAGE_INFO::A4 );
+    SetPageSettings( PAGE_INFO( PAGE_INFO::A4 ) );
 
     SetSize( m_FramePos.x, m_FramePos.y, m_FrameSize.x, m_FrameSize.y );
     ReCreateMenuBar();
@@ -244,35 +234,16 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
 FOOTPRINT_EDIT_FRAME::~FOOTPRINT_EDIT_FRAME()
 {
-    // When user reopens the Footprint editor, user would like to find the last edited item.
-    // Do not delete PCB_SCREEN (by the destructor of EDA_DRAW_FRAME)
-    SetScreen( NULL );
-
-    // Do not allow PCB_BASE_FRAME::~PCB_BASE_FRAME()
-    // to delete our precious BOARD, which is also in static FOOTPRINT_EDIT_FRAME::s_Pcb.
-    // That function, PCB_BASE_FRAME::~PCB_BASE_FRAME(), runs immediately next
-    // as we return from here.
-    m_Pcb = 0;
+    // save the footprint in the PROJECT
+    retainLastFootprint();
 }
 
 
-const wxString FOOTPRINT_EDIT_FRAME::getLibNickName() const
-{
-    return Prj().GetModuleLibraryNickname();
-}
-
-
-void FOOTPRINT_EDIT_FRAME::setLibNickName( const wxString& aNickname )
-{
-    Prj().SetModuleLibraryNickname( aNickname );
-}
-
-
-wxString FOOTPRINT_EDIT_FRAME::getLibPath()
+const wxString FOOTPRINT_EDIT_FRAME::getLibPath()
 {
     try
     {
-        const wxString& nickname = getLibNickName();
+        const wxString& nickname = GetCurrentLib();
 
         const FP_LIB_TABLE::ROW* row = Prj().PcbFootprintLibs()->FindRow( nickname );
 
@@ -281,6 +252,69 @@ wxString FOOTPRINT_EDIT_FRAME::getLibPath()
     catch( const IO_ERROR& ioe )
     {
         return wxEmptyString;
+    }
+}
+
+
+const wxString FOOTPRINT_EDIT_FRAME::GetCurrentLib() const
+{
+    return Prj().GetRString( PROJECT::PCB_LIB_NICKNAME );
+};
+
+
+void FOOTPRINT_EDIT_FRAME::retainLastFootprint()
+{
+    PCB_IO  pcb_io;
+    MODULE* module = GetBoard()->m_Modules;
+
+    if( module )
+    {
+        pcb_io.Format( module );
+
+        wxString pretty = FROM_UTF8( pcb_io.GetStringOutput( true ).c_str() );
+
+        // save the footprint in the RSTRING facility.
+        Prj().SetRString( PROJECT::PCB_FOOTPRINT, pretty );
+    }
+}
+
+
+void FOOTPRINT_EDIT_FRAME::restoreLastFootprint()
+{
+    wxString pretty = Prj().GetRString( PROJECT::PCB_FOOTPRINT );
+
+    if( !!pretty )
+    {
+        PCB_IO  pcb_io;
+        MODULE* module = NULL;
+
+        try
+        {
+            module = (MODULE*) pcb_io.Parse( pretty );
+        }
+        catch( const PARSE_ERROR& pe )
+        {
+            // unlikely to be a problem, since we produced the pretty string.
+            wxLogError( wxT( "PARSE_ERROR" ) );
+        }
+        catch( const IO_ERROR& ioe )
+        {
+            // unlikely to be a problem, since we produced the pretty string.
+            wxLogError( wxT( "IO_ERROR" ) );
+        }
+
+        if( module )
+        {
+            // assumes BOARD is empty.
+            wxASSERT( GetBoard()->m_Modules == NULL );
+
+            // no idea, its monkey see monkey do.  I would encapsulate this into
+            // a member function if its actually necessary.
+            module->SetParent( GetBoard() );
+            module->SetLink( 0 );
+
+            GetBoard()->Add( module );
+        }
     }
 }
 
@@ -357,9 +391,9 @@ void FOOTPRINT_EDIT_FRAME::OnCloseWindow( wxCloseEvent& Event )
         case wxID_YES:
             // code from FOOTPRINT_EDIT_FRAME::Process_Special_Functions,
             // at case ID_MODEDIT_SAVE_LIBMODULE
-            if( GetBoard()->m_Modules && getLibNickName().size() )
+            if( GetBoard()->m_Modules && GetCurrentLib().size() )
             {
-                if( Save_Module_In_Library( getLibNickName(), GetBoard()->m_Modules, true, true ) )
+                if( Save_Module_In_Library( GetCurrentLib(), GetBoard()->m_Modules, true, true ) )
                 {
                     // save was correct
                     GetScreen()->ClrModify();
@@ -512,9 +546,12 @@ void FOOTPRINT_EDIT_FRAME::Show3D_Frame( wxCommandEvent& event )
 
 void FOOTPRINT_EDIT_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey )
 {
-    wxRealPoint gridSize;
-    wxPoint     oldpos;
-    wxPoint     pos = aPosition;
+    // Filter out the 'fake' mouse motion after a keyboard movement
+    if( !aHotKey && m_movingCursorWithKeyboard )
+    {
+        m_movingCursorWithKeyboard = false;
+        return;
+    }
 
     // when moving mouse, use the "magnetic" grid, unless the shift+ctrl keys is pressed
     // for next cursor position
@@ -524,69 +561,12 @@ void FOOTPRINT_EDIT_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, 
     if( !aHotKey && wxGetKeyState( WXK_SHIFT ) && wxGetKeyState( WXK_CONTROL ) )
         snapToGrid = false;
 
-    if( snapToGrid )
-        pos = GetNearestGridPosition( pos );
-
-    oldpos = GetCrossHairPosition();
-    gridSize = GetScreen()->GetGridSize();
-
-    switch( aHotKey )
-    {
-    case WXK_NUMPAD8:
-    case WXK_UP:
-        pos.y -= KiROUND( gridSize.y );
-        m_canvas->MoveCursor( pos );
-        break;
-
-    case WXK_NUMPAD2:
-    case WXK_DOWN:
-        pos.y += KiROUND( gridSize.y );
-        m_canvas->MoveCursor( pos );
-        break;
-
-    case WXK_NUMPAD4:
-    case WXK_LEFT:
-        pos.x -= KiROUND( gridSize.x );
-        m_canvas->MoveCursor( pos );
-        break;
-
-    case WXK_NUMPAD6:
-    case WXK_RIGHT:
-        pos.x += KiROUND( gridSize.x );
-        m_canvas->MoveCursor( pos );
-        break;
-
-    default:
-        break;
-    }
+    wxPoint oldpos = GetCrossHairPosition();
+    wxPoint pos = aPosition;
+    GeneralControlKeyMovement( aHotKey, &pos, snapToGrid );
 
     SetCrossHairPosition( pos, snapToGrid );
-
-    if( oldpos != GetCrossHairPosition() )
-    {
-        pos = GetCrossHairPosition();
-        SetCrossHairPosition( oldpos, false );
-        m_canvas->CrossHairOff( aDC );
-        SetCrossHairPosition( pos, snapToGrid );
-        m_canvas->CrossHairOn( aDC );
-
-        if( m_canvas->IsMouseCaptured() )
-        {
-#ifdef USE_WX_OVERLAY
-            wxDCOverlay oDC( m_overlay, (wxWindowDC*)aDC );
-            oDC.Clear();
-            m_canvas->CallMouseCapture( aDC, aPosition, false );
-#else
-            m_canvas->CallMouseCapture( aDC, aPosition, true );
-#endif
-        }
-#ifdef USE_WX_OVERLAY
-        else
-        {
-            m_overlay.Reset();
-        }
-#endif
-    }
+    RefreshCrossHair( oldpos, aPosition, aDC );
 
     if( aHotKey )
     {
@@ -610,7 +590,7 @@ void FOOTPRINT_EDIT_FRAME::updateTitle()
 {
     wxString title   = _( "Module Editor " );
 
-    wxString nickname = getLibNickName();
+    wxString nickname = GetCurrentLib();
 
     if( !nickname )
     {

@@ -28,7 +28,6 @@
  */
 
 #include <fctsys.h>
-//#include <pgm_base.h>
 #include <kiface_i.h>
 #include <confirm.h>
 #include <gestfich.h>
@@ -40,8 +39,6 @@
 
 #include <wx/file.h>
 #include <wx/snglinst.h>
-
-extern EDA_COLOR_T g_DrawBgColor;
 
 
 namespace PGE {
@@ -65,13 +62,6 @@ static struct IFACE : public KIFACE_I
         case FRAME_PL_EDITOR:
             {
                 PL_EDITOR_FRAME* frame = new PL_EDITOR_FRAME( aKiway, aParent );
-
-                /* Is this really needed since at this point there is no open file?
-                frame->Zoom_Automatique( true );        // Zoom fit in frame
-
-                if so, why is the constructor not doing it?
-                */
-
                 return frame;
             }
             break;
@@ -135,8 +125,6 @@ bool IFACE::OnKifaceStart( PGM_BASE* aProgram, int aCtlBits )
     ReadHotkeyConfig( wxT("PlEditorFrame"), s_PlEditor_Hokeys_Descr );
 
     g_UserUnit = MILLIMETRES;
-    g_DrawBgColor = WHITE;
-    g_ShowPageLimits = true;
 
     return true;
 }
@@ -163,8 +151,6 @@ bool MYFACE::OnKifaceStart( PGM_BASE* aProgram )
     }
 
     g_UserUnit = MILLIMETRES;
-    g_DrawBgColor = WHITE;
-    g_ShowPageLimits = true;
 
     // read current setup and reopen last directory if no filename to open in
     // command line

@@ -59,11 +59,13 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 {
     m_FrameName = PL_EDITOR_FRAME_NAME;
 
-    m_showAxis = false;                     // true to show X and Y axis on screen
+    m_showAxis = false;                 // true to show X and Y axis on screen
     m_showGridAxis = true;
-    m_showBorderAndTitleBlock   = true;     // true for reference drawings.
+    m_showBorderAndTitleBlock   = true; // true for reference drawings.
     m_HotkeysZoomAndGridList    = s_PlEditor_Hokeys_Descr;
     m_originSelectChoice = 0;
+    SetDrawBgColor( WHITE );            // default value, user option (WHITE/BLACK)
+    SetShowPageLimits( true );
 
     m_designTreeWidth = 150;
     m_propertiesFrameWidth = 200;
@@ -171,6 +173,16 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                           wxAuiPaneInfo( mesg ).Name( wxT( "MsgPanel" ) ).Bottom().Layer( 10 ) );
 
     m_auimgr.Update();
+
+    // Initialize the current page layout
+    WORKSHEET_LAYOUT& pglayout = WORKSHEET_LAYOUT::GetTheInstance();
+#if 0       //start with empty layout
+    pglayout.AllowVoidList( true );
+    pglayout.ClearList();
+#else       // start with the default Kicad layout
+    pglayout.SetPageLayout();
+#endif
+    OnNewPageLayout();
 }
 
 
@@ -285,17 +297,21 @@ double PL_EDITOR_FRAME::BestZoom()
     return bestzoom;
 }
 
-#define DESIGN_TREE_WIDTH_KEY wxT("DesignTreeWidth")
-#define PROPERTIES_FRAME_WIDTH_KEY wxT("PropertiesFrameWidth")
-#define CORNER_ORIGIN_CHOICE_KEY wxT("CornerOriginChoice")
+static const wxChar designTreeWidthKey[] = wxT("DesignTreeWidth");
+static const wxChar propertiesFrameWidthKey[] = wxT("PropertiesFrameWidth");
+static const wxChar cornerOriginChoiceKey[] = wxT("CornerOriginChoice");
+static const wxChar blackBgColorKey[] = wxT( "BlackBgColor" );
 
 void PL_EDITOR_FRAME::LoadSettings( wxConfigBase* aCfg )
 {
     EDA_DRAW_FRAME::LoadSettings( aCfg );
 
-    aCfg->Read( DESIGN_TREE_WIDTH_KEY, &m_designTreeWidth, 100);
-    aCfg->Read( PROPERTIES_FRAME_WIDTH_KEY, &m_propertiesFrameWidth, 150);
-    aCfg->Read( CORNER_ORIGIN_CHOICE_KEY, &m_originSelectChoice );
+    aCfg->Read( designTreeWidthKey, &m_designTreeWidth, 100);
+    aCfg->Read( propertiesFrameWidthKey, &m_propertiesFrameWidth, 150);
+    aCfg->Read( cornerOriginChoiceKey, &m_originSelectChoice );
+    bool tmp;
+    aCfg->Read( blackBgColorKey, &tmp, false );
+    SetDrawBgColor( tmp ? BLACK : WHITE );
 }
 
 
@@ -306,9 +322,10 @@ void PL_EDITOR_FRAME::SaveSettings( wxConfigBase* aCfg )
     m_designTreeWidth = m_treePagelayout->GetSize().x;
     m_propertiesFrameWidth = m_propertiesPagelayout->GetSize().x;
 
-    aCfg->Write( DESIGN_TREE_WIDTH_KEY, m_designTreeWidth);
-    aCfg->Write( PROPERTIES_FRAME_WIDTH_KEY, m_propertiesFrameWidth);
-    aCfg->Write( CORNER_ORIGIN_CHOICE_KEY, m_originSelectChoice );
+    aCfg->Write( designTreeWidthKey, m_designTreeWidth);
+    aCfg->Write( propertiesFrameWidthKey, m_propertiesFrameWidth);
+    aCfg->Write( cornerOriginChoiceKey, m_originSelectChoice );
+    aCfg->Write( blackBgColorKey, GetDrawBgColor() == BLACK );
 
     // was: wxGetApp().SaveCurrentSetupValues( GetConfigurationSettings() );
     wxConfigSaveSetups( aCfg, GetConfigurationSettings() );
@@ -507,7 +524,7 @@ void PL_EDITOR_FRAME::RedrawActiveWindow( wxDC* aDC, bool aEraseBg )
     WORKSHEET_DATAITEM* selecteditem = GetSelectedItem();
 
     // the color to draw selected items
-    if( g_DrawBgColor == WHITE )
+    if( GetDrawBgColor() == WHITE )
         WORKSHEET_DATAITEM::m_SelectedColor = DARKCYAN;
     else
         WORKSHEET_DATAITEM::m_SelectedColor = YELLOW;
@@ -523,6 +540,15 @@ void PL_EDITOR_FRAME::RedrawActiveWindow( wxDC* aDC, bool aEraseBg )
     }
 
     DrawWorkSheet( aDC, GetScreen(), 0, IU_PER_MILS, GetCurrFileName() );
+
+#ifdef USE_WX_OVERLAY
+    if( IsShown() )
+    {
+        m_overlay.Reset();
+        wxDCOverlay overlaydc( m_overlay, (wxWindowDC*)aDC );
+        overlaydc.Clear();
+    }
+#endif
 
     if( m_canvas->IsMouseCaptured() )
         m_canvas->CallMouseCapture( aDC, wxDefaultPosition, false );
@@ -744,5 +770,6 @@ void PL_EDITOR_FRAME::OnNewPageLayout()
     GetScreen()->ClrModify();
     m_propertiesPagelayout->CopyPrmsFromGeneralToPanel();
     RebuildDesignTree();
+    Zoom_Automatique( true );
     m_canvas->Refresh();
 }

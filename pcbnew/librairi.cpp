@@ -249,7 +249,7 @@ MODULE* FOOTPRINT_EDIT_FRAME::Import_Module()
 
             f.ReadAll( &fcontents );
 
-            module = dynamic_cast<MODULE*>( pcb_io.Parse( fcontents ) );
+            module = dyn_cast<MODULE*>( pcb_io.Parse( fcontents ) );
 
             if( !module )
             {
@@ -467,7 +467,7 @@ wxString FOOTPRINT_EDIT_FRAME::CreateNewLibrary()
 
 bool FOOTPRINT_EDIT_FRAME::DeleteModuleFromCurrentLibrary()
 {
-    wxString    nickname = getLibNickName();
+    wxString    nickname = GetCurrentLib();
 
     if( !Prj().PcbFootprintLibs()->IsFootprintLibWritable( nickname ) )
     {
@@ -522,16 +522,15 @@ void PCB_EDIT_FRAME::ArchiveModulesOnBoard( bool aNewModulesOnly )
     }
 
     PROJECT&        prj = Prj();
-    SEARCH_STACK&   search = Kiface().KifaceSearch();
 
-    wxString last_nickname = prj.RPath(PROJECT::PCB_LIB).LastVisitedPath( search );
+    wxString last_nickname = prj.GetRString( PROJECT::PCB_LIB_NICKNAME );
 
     wxString nickname = SelectLibrary( last_nickname );
 
     if( !nickname )
         return;
 
-    prj.RPath(PROJECT::PCB_LIB).SaveLastVisitedPath( nickname );
+    prj.SetRString( PROJECT::PCB_LIB_NICKNAME, nickname );
 
     if( !aNewModulesOnly )
     {
@@ -545,7 +544,7 @@ void PCB_EDIT_FRAME::ArchiveModulesOnBoard( bool aNewModulesOnly )
 
     try
     {
-        FP_LIB_TABLE* tbl = Prj().PcbFootprintLibs();
+        FP_LIB_TABLE* tbl = prj.PcbFootprintLibs();
 
         // Delete old library if we're replacing it entirely.
         if( !aNewModulesOnly )

@@ -251,11 +251,11 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_MODEDIT_SELECT_CURRENT_LIB:
         {
-            wxString library = SelectLibrary( getLibNickName() );
+            wxString library = SelectLibrary( GetCurrentLib() );
 
             if( library.size() )
             {
-                setLibNickName( library );
+                Prj().SetRString( PROJECT::PCB_LIB_NICKNAME, library );
                 updateTitle();
             }
         }
@@ -364,9 +364,9 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         break;
 
     case ID_MODEDIT_SAVE_LIBMODULE:
-        if( GetBoard()->m_Modules && getLibNickName().size() )
+        if( GetBoard()->m_Modules && GetCurrentLib().size() )
         {
-            Save_Module_In_Library( getLibNickName(), GetBoard()->m_Modules, true, true );
+            Save_Module_In_Library( GetCurrentLib(), GetBoard()->m_Modules, true, true );
             GetScreen()->ClrModify();
         }
         break;
@@ -436,6 +436,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
                 // and connexions are kept)
                 // and the source_module (old module) is deleted
                 PICKED_ITEMS_LIST pickList;
+
                 pcbframe->Exchange_Module( source_module, newmodule, &pickList );
                 newmodule->SetTimeStamp( module_in_edit->GetLink() );
 
@@ -445,6 +446,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             else        // This is an insert command
             {
                 wxPoint cursor_pos = pcbframe->GetCrossHairPosition();
+
                 pcbframe->SetCrossHairPosition( wxPoint( 0, 0 ) );
                 pcbframe->PlaceModule( newmodule, NULL );
                 pcbframe->SetCrossHairPosition( cursor_pos );
@@ -504,7 +506,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
         SetCrossHairPosition( wxPoint( 0, 0 ) );
 
-        LoadModuleFromLibrary( getLibNickName(), Prj().PcbFootprintLibs(), true );
+        LoadModuleFromLibrary( GetCurrentLib(), Prj().PcbFootprintLibs(), true );
         redraw = true;
 
         if( GetBoard()->m_Modules )
@@ -551,7 +553,9 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         if( GetBoard()->m_Modules )
         {
             SetCurItem( GetBoard()->m_Modules );
+
             DIALOG_MODULE_MODULE_EDITOR dialog( this, (MODULE*) GetScreen()-> GetCurItem() );
+
             int ret = dialog.ShowModal();
             GetScreen()->GetCurItem()->ClearFlags();
 

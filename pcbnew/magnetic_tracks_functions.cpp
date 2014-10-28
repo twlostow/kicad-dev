@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2009-2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file magnetic_tracks_functions.cpp
  */
@@ -12,7 +36,6 @@
 #include <pcbnew.h>
 #include <wxPcbStruct.h>
 #include <macros.h>
-#include <pcbcommon.h>
 
 #include <class_board.h>
 #include <class_track.h>
@@ -156,8 +179,8 @@ bool Magnetize( PCB_EDIT_FRAME* frame, int aCurrentTool, wxSize aGridSize,
 
     if( doPad )
     {
-        LAYER_MSK layer_mask = GetLayerMask( screen->m_Active_Layer );
-        D_PAD* pad = m_Pcb->GetPad( pos, layer_mask );
+        LSET    layer_mask( screen->m_Active_Layer );
+        D_PAD*  pad = m_Pcb->GetPad( pos, layer_mask );
 
         if( pad )
         {
@@ -172,11 +195,11 @@ bool Magnetize( PCB_EDIT_FRAME* frame, int aCurrentTool, wxSize aGridSize,
     // after pads, only track & via tests remain, skip them if not desired
     if( doTrack )
     {
-        LAYER_NUM layer = screen->m_Active_Layer;
+        LAYER_ID layer = screen->m_Active_Layer;
 
         for( TRACK* via = m_Pcb->m_Track;
-             via && (via = via->GetVia( *curpos, layer )) != NULL;
-             via = via->Next() )
+                via && (via = via->GetVia( *curpos, layer )) != NULL;
+                via = via->Next() )
         {
             if( via != currTrack )   // a via cannot influence itself
             {
@@ -191,7 +214,7 @@ bool Magnetize( PCB_EDIT_FRAME* frame, int aCurrentTool, wxSize aGridSize,
 
         if( !currTrack )
         {
-            LAYER_MSK layer_mask = GetLayerMask( layer );
+            LSET layer_mask( layer );
 
             TRACK* track = m_Pcb->GetTrack( m_Pcb->m_Track, pos, layer_mask );
 

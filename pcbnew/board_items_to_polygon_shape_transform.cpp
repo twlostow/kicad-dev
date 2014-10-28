@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2009-2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /***
  * @file board_items_to_polygon_shape_transform.cpp
  * @brief function to convert shapes of items ( pads, tracks... ) to polygons
@@ -39,19 +63,8 @@ static void addTextSegmToPoly( int x0, int y0, int xf, int yf )
                                            s_textCircle2SegmentCount, s_textWidth );
 }
 
-/**
- * Function ConvertBrdLayerToPolygonalContours
- * Build a set of polygons which are the outlines of copper items
- * (pads, tracks, texts, zones)
- * the holes in vias or pads are ignored
- * Usefull to export the shape of copper layers to dxf polygons
- * or 3D viewer
- * the polygons are not merged.
- * @param aLayer = A layer, like LAYER_N_BACK, etc.
- * @param aOutlines The CPOLYGONS_LIST to fill in with main outlines.
- * @return true if success, false if a contour is not valid
- */
-void BOARD::ConvertBrdLayerToPolygonalContours( LAYER_NUM aLayer, CPOLYGONS_LIST& aOutlines )
+
+void BOARD::ConvertBrdLayerToPolygonalContours( LAYER_ID aLayer, CPOLYGONS_LIST& aOutlines )
 {
     // Number of segments to convert a circle to a polygon
     const int       segcountforcircle   = 18;
@@ -82,7 +95,7 @@ void BOARD::ConvertBrdLayerToPolygonalContours( LAYER_NUM aLayer, CPOLYGONS_LIST
     for( int ii = 0; ii < GetAreaCount(); ii++ )
     {
         ZONE_CONTAINER* zone = GetArea( ii );
-        LAYER_NUM       zonelayer = zone->GetLayer();
+        LAYER_ID        zonelayer = zone->GetLayer();
 
         if( zonelayer == aLayer )
             zone->TransformSolidAreasShapesToPolygonSet(
@@ -113,18 +126,8 @@ void BOARD::ConvertBrdLayerToPolygonalContours( LAYER_NUM aLayer, CPOLYGONS_LIST
     }
 }
 
-/* generate pads shapes on layer aLayer as polygons,
- * and adds these polygons to aCornerBuffer
- * aCornerBuffer = the buffer to store polygons
- * aInflateValue = an additionnal size to add to pad shapes
- * aCircleToSegmentsCount = number of segments to approximate a circle
- * aCorrectionFactor = the correction to apply to a circle radius
- *  to generate the polygon.
- *  if aCorrectionFactor = 1.0, the polygon is inside the circle
- *  the radius of circle approximated by segments is
- *  initial radius * aCorrectionFactor
- */
-void MODULE::TransformPadsShapesWithClearanceToPolygon( LAYER_NUM aLayer,
+
+void MODULE::TransformPadsShapesWithClearanceToPolygon( LAYER_ID aLayer,
                         CPOLYGONS_LIST& aCornerBuffer,
                         int                    aInflateValue,
                         int                    aCircleToSegmentsCount,
@@ -141,13 +144,13 @@ void MODULE::TransformPadsShapesWithClearanceToPolygon( LAYER_NUM aLayer,
 
         switch( aLayer )
         {
-        case SOLDERMASK_N_FRONT:
-        case SOLDERMASK_N_BACK:
+        case F_Mask:
+        case B_Mask:
             margin.x = margin.y = pad->GetSolderMaskMargin() + aInflateValue;
             break;
 
-        case SOLDERPASTE_N_FRONT:
-        case SOLDERPASTE_N_BACK:
+        case F_Paste:
+        case B_Paste:
             margin = pad->GetSolderPasteMargin();
             margin.x += aInflateValue;
             margin.y += aInflateValue;
@@ -175,7 +178,7 @@ void MODULE::TransformPadsShapesWithClearanceToPolygon( LAYER_NUM aLayer,
  *  initial radius * aCorrectionFactor
  */
 void MODULE::TransformGraphicShapesWithClearanceToPolygonSet(
-                        LAYER_NUM aLayer,
+                        LAYER_ID aLayer,
                         CPOLYGONS_LIST& aCornerBuffer,
                         int                    aInflateValue,
                         int                    aCircleToSegmentsCount,
@@ -189,9 +192,12 @@ void MODULE::TransformGraphicShapesWithClearanceToPolygonSet(
         switch( item->Type() )
         {
         case PCB_MODULE_TEXT_T:
-            if( ((TEXTE_MODULE*)item)->GetLayer() == aLayer )
-                texts.push_back( (TEXTE_MODULE *) item );
-            break;
+            {
+                TEXTE_MODULE* text = static_cast<TEXTE_MODULE*>( item );
+                if( text->GetLayer() == aLayer )
+                    texts.push_back( text );
+                break;
+            }
 
         case PCB_MODULE_EDGE_T:
             outline = (EDGE_MODULE*) item;
@@ -268,7 +274,7 @@ void MODULE::TransformGraphicShapesWithClearanceToPolygonSet(
             NEGATE( size.x );
 
         DrawGraphicText( NULL, NULL, textmod->GetTextPosition(), BLACK,
-                         textmod->GetText(), textmod->GetDrawRotation(), size,
+                         textmod->GetShownText(), textmod->GetDrawRotation(), size,
                          textmod->GetHorizJustify(), textmod->GetVertJustify(),
                          textmod->GetThickness(), textmod->IsItalic(),
                          true, addTextSegmToPoly );
@@ -330,11 +336,11 @@ void ZONE_CONTAINER::TransformSolidAreasShapesToPolygonSet(
 
 /**
  * Function TransformBoundingBoxWithClearanceToPolygon
- * Convert the text bonding box to a rectangular polygon
+ * Convert the text bounding box to a rectangular polygon
  * Used in filling zones calculations
  * Circles and arcs are approximated by segments
  * @param aCornerBuffer = a buffer to store the polygon
- * @param aClearanceValue = the clearance around the pad
+ * @param aClearanceValue = the clearance around the text bounding box
  */
 void TEXTE_PCB::TransformBoundingBoxWithClearanceToPolygon(
                     CPOLYGONS_LIST& aCornerBuffer,
@@ -397,7 +403,7 @@ void TEXTE_PCB::TransformShapeWithClearanceToPolygonSet(
 
     if( IsMultilineAllowed() )
     {
-        wxArrayString* list = wxStringSplit( GetText(), '\n' );
+        wxArrayString* list = wxStringSplit( GetShownText(), '\n' );
         std::vector<wxPoint> positions;
         positions.reserve( list->Count() );
         GetPositionsOfLinesOfMultilineText( positions, list->Count() );
@@ -417,7 +423,7 @@ void TEXTE_PCB::TransformShapeWithClearanceToPolygonSet(
     else
     {
         DrawGraphicText( NULL, NULL, GetTextPosition(), color,
-                         GetText(), GetOrientation(), size,
+                         GetShownText(), GetOrientation(), size,
                          GetHorizJustify(), GetVertJustify(),
                          GetThickness(), IsItalic(),
                          true, addTextSegmToPoly );

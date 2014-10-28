@@ -69,6 +69,8 @@ public:
      */
     void ReCreateLibraryList();
 
+    ///> @copydoc EDA_DRAW_FRAME::UseGalCanvas()
+    virtual void UseGalCanvas( bool aEnable );
 
 private:
 
@@ -102,15 +104,29 @@ private:
     void RedrawActiveWindow( wxDC* DC, bool EraseBg );
 
     void OnCloseWindow( wxCloseEvent& Event );
+    void CloseFootprintViewer( wxCommandEvent& event );
+
     void ReCreateHToolbar();
     void ReCreateVToolbar();
+    void ReCreateMenuBar();
+
     void OnLeftClick( wxDC* DC, const wxPoint& MousePos );
     void ClickOnLibList( wxCommandEvent& event );
     void ClickOnFootprintList( wxCommandEvent& event );
     void DClickOnFootprintList( wxCommandEvent& event );
     void OnSetRelativeOffset( wxCommandEvent& event );
 
-    void GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
+    bool GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
+
+    /**
+     * Function OnHotKey
+     * handle hot key events.
+     * <p?
+     * Some commands are relative to the item under the mouse cursor.  Commands are
+     * case insensitive
+     * </p>
+     */
+    bool OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition, EDA_ITEM* aItem = NULL );
 
     void LoadSettings( wxConfigBase* aCfg );    // override virtual
     void SaveSettings( wxConfigBase* aCfg );    // override virtual
@@ -169,6 +185,8 @@ private:
     void OnLeftDClick( wxDC*, const wxPoint& ) {}
     void SaveCopyInUndoList( BOARD_ITEM*, UNDO_REDO_T, const wxPoint& ) {}
     void SaveCopyInUndoList( const PICKED_ITEMS_LIST&, UNDO_REDO_T, const wxPoint &) {}
+
+    void updateView();
 
     DECLARE_EVENT_TABLE()
 };

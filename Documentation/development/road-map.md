@@ -1,4 +1,4 @@
-# Road Map # {#mainpage}
+# Road Map #
 
 This document is the KiCad Developer's road map document.  It is a living
 document that should be maintained as the project progresses.  The goal of
@@ -614,6 +614,33 @@ Create additional DRC tests for improved error checking.
 
 **Progress:**
 - Planning
+
+## Segment End Point Snapping. ## {#segment_snapping}
+**Goal:**
+
+It is not uncommon for board edge segment end points to inadvertently not
+be closed causing issues for the 3D viewer and exporting to different file
+formats due the board outline not being a fully enclosed polygon.  This
+feature would add segment end snapping support to allow the board outline
+to be fully enclosed.  This feature would only need to be supported by the
+GAL rendering.
+
+**Tasks**
+- Mark board edge segment ends with a drag indicator to make it visible to the
+  user that the segment end does not have an endpoint with any other board edge
+  segment.
+- Allow the user to smap the unconnected segment end to the nearest segment end
+  point.
+- Automatically connect unconnected segments with and additional segment when
+  opening the 3D viewer or exporting the board to another format.  Warn the
+  user that an addition segment has be added and should be verified.
+
+**Dependencies:**
+- None
+
+**Progress:**
+- Initial discussion.
+
 
 ## Gerber File Attributes ## {#gerber_attributes}
 **Goal:**

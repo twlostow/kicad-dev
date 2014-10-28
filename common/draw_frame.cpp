@@ -24,7 +24,7 @@
  */
 
 /**
- * @file drawframe.cpp
+ * @file draw_frame.cpp
  */
 
 #include <fctsys.h>
@@ -47,6 +47,7 @@
 #include <math/box2.h>
 
 #include <wx/fontdlg.h>
+#include <wx/snglinst.h>
 #include <view/view.h>
 #include <view/view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
@@ -69,10 +70,11 @@ BEGIN_EVENT_TABLE( EDA_DRAW_FRAME, KIWAY_PLAYER )
     EVT_MOUSEWHEEL( EDA_DRAW_FRAME::OnMouseEvent )
     EVT_MENU_OPEN( EDA_DRAW_FRAME::OnMenuOpen )
     EVT_ACTIVATE( EDA_DRAW_FRAME::OnActivate )
-    EVT_MENU_RANGE( ID_ZOOM_IN, ID_ZOOM_REDRAW, EDA_DRAW_FRAME::OnZoom )
-    EVT_MENU_RANGE( ID_OFFCENTER_ZOOM_IN, ID_OFFCENTER_ZOOM_OUT, EDA_DRAW_FRAME::OnZoom )
+    EVT_MENU_RANGE( ID_ZOOM_BEGIN, ID_ZOOM_END, EDA_DRAW_FRAME::OnZoom )
+
     EVT_MENU_RANGE( ID_POPUP_ZOOM_START_RANGE, ID_POPUP_ZOOM_END_RANGE,
                     EDA_DRAW_FRAME::OnZoom )
+
     EVT_MENU_RANGE( ID_POPUP_GRID_LEVEL_1000, ID_POPUP_GRID_USER,
                     EDA_DRAW_FRAME::OnSelectGrid )
 
@@ -97,6 +99,8 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent,
                                 long aStyle, const wxString & aFrameName ) :
     KIWAY_PLAYER( aKiway, aParent, aFrameType, aTitle, aPos, aSize, aStyle, aFrameName )
 {
+    m_file_checker        = NULL;
+
     m_drawToolBar         = NULL;
     m_optionsToolBar      = NULL;
     m_gridSelectBox       = NULL;
@@ -113,10 +117,11 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent,
     m_showAxis            = false;      // true to draw axis.
     m_showBorderAndTitleBlock = false;  // true to display reference sheet.
     m_showGridAxis        = false;      // true to draw the grid axis
+    m_showOriginAxis      = false;      // true to draw the grid origin
     m_cursorShape         = 0;
     m_LastGridSizeId      = 0;
-    m_DrawGrid            = true;       // hide/Show grid. default = show
-    m_GridColor           = DARKGRAY;   // Grid color
+    m_drawGrid            = true;       // hide/Show grid. default = show
+    m_gridColor           = DARKGRAY;   // Default grid color
     m_showPageLimits      = false;
     m_drawBgColor         = BLACK;      // the background color of the draw canvas:
                                         // BLACK for Pcbnew, BLACK or WHITE for eeschema
@@ -178,6 +183,25 @@ EDA_DRAW_FRAME::~EDA_DRAW_FRAME()
     m_currentScreen = NULL;
 
     m_auimgr.UnInit();
+
+    ReleaseFile();
+}
+
+
+void EDA_DRAW_FRAME::ReleaseFile()
+{
+    delete m_file_checker;
+    m_file_checker = 0;
+}
+
+
+bool EDA_DRAW_FRAME::LockFile( const wxString& aFileName )
+{
+    delete m_file_checker;
+
+    m_file_checker = ::LockFile( aFileName );
+
+    return bool( m_file_checker );
 }
 
 
@@ -218,24 +242,17 @@ void EDA_DRAW_FRAME::OnMenuOpen( wxMenuEvent& event )
     event.Skip();
 }
 
-/* function SkipNextLeftButtonReleaseEvent
- * after calling this function, if the left mouse button
- * is down, the next left mouse button release event will be ignored.
- * It is is usefull for instance when closing a dialog on a mouse click,
- * to skip the next mouse left button release event
- * by the parent window, because the mouse button
- * clicked on the dialog is often released in the parent frame,
- * and therefore creates a left button released mouse event
- * which can be unwanted in some cases
- */
+
 void EDA_DRAW_FRAME::SkipNextLeftButtonReleaseEvent()
 {
    m_canvas->SetIgnoreLeftButtonReleaseEvent( true );
 }
 
+
 void EDA_DRAW_FRAME::OnToggleGridState( wxCommandEvent& aEvent )
 {
     SetGridVisibility( !IsGridVisible() );
+
     if( IsGalCanvasActive() )
     {
         GetGalCanvas()->GetGAL()->SetGridVisibility( IsGridVisible() );
@@ -321,8 +338,9 @@ void EDA_DRAW_FRAME::ReCreateMenuBar()
 }
 
 
-void EDA_DRAW_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition, EDA_ITEM* aItem )
+bool EDA_DRAW_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition, EDA_ITEM* aItem )
 {
+    return false;
 }
 
 
@@ -331,7 +349,7 @@ void EDA_DRAW_FRAME::ToolOnRightClick( wxCommandEvent& event )
 }
 
 
-void EDA_DRAW_FRAME::PrintPage( wxDC* aDC,LAYER_MSK aPrintMask, bool aPrintMirrorMode, void* aData )
+void EDA_DRAW_FRAME::PrintPage( wxDC* aDC, LSET aPrintMask, bool aPrintMirrorMode, void* aData )
 {
     wxMessageBox( wxT("EDA_DRAW_FRAME::PrintPage() error") );
 }
@@ -658,7 +676,7 @@ void EDA_DRAW_FRAME::AppendMsgPanel( const wxString& textUpper,
 }
 
 
-void EDA_DRAW_FRAME::ClearMsgPanel( void )
+void EDA_DRAW_FRAME::ClearMsgPanel()
 {
     if( m_messagePanel == NULL )
         return;
@@ -717,17 +735,18 @@ bool EDA_DRAW_FRAME::HandleBlockBegin( wxDC* aDC, int aKey, const wxPoint& aPosi
     case BLOCK_IDLE:
         break;
 
-    case BLOCK_MOVE:                /* Move */
-    case BLOCK_DRAG:                /* Drag */
-    case BLOCK_COPY:                /* Copy */
-    case BLOCK_DELETE:              /* Delete */
-    case BLOCK_SAVE:                /* Save */
-    case BLOCK_ROTATE:              /* Rotate 90 deg */
-    case BLOCK_FLIP:                /* Flip */
-    case BLOCK_ZOOM:                /* Window Zoom */
+    case BLOCK_MOVE:                // Move
+    case BLOCK_DRAG:                // Drag (block defined)
+    case BLOCK_DRAG_ITEM:           // Drag from a drag item command
+    case BLOCK_COPY:                // Copy
+    case BLOCK_DELETE:              // Delete
+    case BLOCK_SAVE:                // Save
+    case BLOCK_ROTATE:              // Rotate 90 deg
+    case BLOCK_FLIP:                // Flip
+    case BLOCK_ZOOM:                // Window Zoom
     case BLOCK_MIRROR_X:
-    case BLOCK_MIRROR_Y:            /* mirror */
-    case BLOCK_PRESELECT_MOVE:      /* Move with preselection list*/
+    case BLOCK_MIRROR_Y:            // mirror
+    case BLOCK_PRESELECT_MOVE:      // Move with preselection list
         Block->InitData( m_canvas, aPosition );
         break;
 
@@ -736,7 +755,7 @@ bool EDA_DRAW_FRAME::HandleBlockBegin( wxDC* aDC, int aKey, const wxPoint& aPosi
         Block->SetLastCursorPosition( wxPoint( 0, 0 ) );
         InitBlockPasteInfos();
 
-        if( Block->GetCount() == 0 )      /* No data to paste */
+        if( Block->GetCount() == 0 )      // No data to paste
         {
             DisplayError( this, wxT( "No Block to paste" ), 20 );
             GetScreen()->m_BlockLocate.SetCommand( BLOCK_IDLE );
@@ -771,10 +790,7 @@ bool EDA_DRAW_FRAME::HandleBlockBegin( wxDC* aDC, int aKey, const wxPoint& aPosi
 }
 
 
-// See comment in classpcb.cpp near line 66
-//static const double MAX_AXIS = 1518500251;
-
-// However I am not seeing a problem with this size yet:
+// I am not seeing a problem with this size yet:
 static const double MAX_AXIS = INT_MAX - 100;
 
 #define VIRT_MIN    (-MAX_AXIS/2.0)     ///< min X or Y coordinate in virtual space
@@ -1033,10 +1049,10 @@ void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
     m_auimgr.GetPane( wxT( "DrawFrameGal" ) ).Show( aEnable );
     m_auimgr.Update();
 
-    SetGalCanvasActive( aEnable );
+    // Reset current tool on switch();
+    SetToolID( ID_NO_TOOL_SELECTED, wxCURSOR_DEFAULT, wxEmptyString );
 
-    if( aEnable )
-        GetGalCanvas()->SetFocus();
+    m_galCanvasActive = aEnable;
 }
 
 //-----< BASE_SCREEN API moved here >--------------------------------------------

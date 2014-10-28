@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * Common plot library \n
  * Plot settings, and plotting engines (Postscript, Gerber, HPGL and DXF)
@@ -153,6 +177,10 @@ public:
                        int width = DEFAULT_LINE_WIDTH ) = 0;
     virtual void Circle( const wxPoint& pos, int diametre, FILL_T fill,
                          int width = DEFAULT_LINE_WIDTH ) = 0;
+
+    /**
+     * Generic fallback: arc rendered as a polyline
+     */
     virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle,
                       int rayon, FILL_T fill, int width = DEFAULT_LINE_WIDTH );
 
@@ -260,6 +288,13 @@ public:
      * Draw a marker (used for the drill map)
      */
     static const unsigned MARKER_COUNT = 58;
+
+    /**
+     * Draw a pattern shape number aShapeId, to coord x0, y0.
+     * x0, y0 = coordinates tables
+     * Diameter diameter = (coord table) hole
+     * AShapeId = index (used to generate forms characters)
+     */
     void Marker( const wxPoint& position, int diametre, unsigned aShapeId );
 
     /**
@@ -282,45 +317,97 @@ public:
      */
     virtual void SetTextMode( PlotTextMode mode )
     {
-        // NOP for most plotters
+        // NOP for most plotters.
     }
 
     virtual void SetLayerAttribFunction( const wxString& function )
     {
-        // NOP for most plotters
+        // NOP for most plotters. Only for Gerber plotter
+    }
+
+    virtual void SetGerberCoordinatesFormat( int aResolution, bool aUseInches = false )
+    {
+        // NOP for most plotters. Only for Gerber plotter
     }
 
 protected:
     // These are marker subcomponents
+    /**
+     * Plot a circle centered on the position. Building block for markers
+     */
     void markerCircle( const wxPoint& pos, int radius );
+
+    /**
+     * Plot a - bar centered on the position. Building block for markers
+     */
     void markerHBar( const wxPoint& pos, int radius );
+
+    /**
+     * Plot a / bar centered on the position. Building block for markers
+     */
     void markerSlash( const wxPoint& pos, int radius );
+
+    /**
+     * Plot a \ bar centered on the position. Building block for markers
+     */
     void markerBackSlash( const wxPoint& pos, int radius );
+
+    /**
+     * Plot a | bar centered on the position. Building block for markers
+     */
     void markerVBar( const wxPoint& pos, int radius );
+
+    /**
+     * Plot a square centered on the position. Building block for markers
+     */
     void markerSquare( const wxPoint& position, int radius );
+
+    /**
+     * Plot a lozenge centered on the position. Building block for markers
+     */
     void markerLozenge( const wxPoint& position, int radius );
 
     // Helper function for sketched filler segment
+
+    /**
+     * Cdonvert a thick segment and plot it as an oval
+     */
     void segmentAsOval( const wxPoint& start, const wxPoint& end, int width,
-                          EDA_DRAW_MODE_T tracemode );
-    void sketchOval( const wxPoint& pos, const wxSize& size, double orient,
-                      int width );
+                        EDA_DRAW_MODE_T tracemode );
+
+    void sketchOval( const wxPoint& pos, const wxSize& size, double orient, int width );
 
     // Coordinate and scaling conversion functions
+
+    /**
+     * Modifies coordinates according to the orientation,
+     * scale factor, and offsets trace. Also convert from a wxPoint to DPOINT,
+     * since some output engines needs floating point coordinates.
+     */
     virtual DPOINT userToDeviceCoordinates( const wxPoint& aCoordinate );
+
+    /**
+     * Modifies size according to the plotter scale factors
+     * (wxSize version, returns a DPOINT)
+     */
     virtual DPOINT userToDeviceSize( const wxSize& size );
+
+    /**
+     * Modifies size according to the plotter scale factors
+     * (simple double version)
+     */
     virtual double userToDeviceSize( double size );
 
     /// Plot scale - chosen by the user (even implicitly with 'fit in a4')
     double        plotScale;
 
-    /* Device scale (how many IUs in a decimil - always); it's a double
+    /* Caller scale (how many IUs in a decimil - always); it's a double
      * because in eeschema there are 0.1 IUs in a decimil (eeschema
      * always works in mils internally) while pcbnew can work in decimil
      * or nanometers, so this value would be >= 1 */
     double        m_IUsPerDecimil;
 
-    /// Device scale (from IUs to device units - usually decimils)
+    /// Device scale (from IUs to plotter device units - usually decimils)
     double        iuPerDeviceUnit;
 
     /// Plot offset (in IUs)
@@ -769,13 +856,7 @@ struct APERTURE
 class GERBER_PLOTTER : public PLOTTER
 {
 public:
-    GERBER_PLOTTER()
-    {
-        workFile  = 0;
-        finalFile = 0;
-        currentAperture = apertures.end();
-        attribFunction = wxEmptyString;
-    }
+    GERBER_PLOTTER();
 
     virtual PlotFormat GetPlotterType() const
     {
@@ -784,9 +865,14 @@ public:
 
     static wxString GetDefaultFileExtension()
     {
-        return wxString( wxT( "pho" ) );
+        return wxString( wxT( "gbr" ) );
     }
 
+    /**
+     * Function StartPlot
+     * Write GERBER header to file
+     * initialize global variable g_Plot_PlotOutputFile
+     */
     virtual bool StartPlot();
     virtual bool EndPlot();
     virtual void SetCurrentLineWidth( int width );
@@ -795,6 +881,7 @@ public:
     // RS274X has no dashing, nor colours
     virtual void SetDash( bool dashed ) {};
     virtual void SetColor( EDA_COLOR_T color ) {};
+    // Currently, aScale and aMirror are not used in gerber plotter
     virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
                           double aScale, bool aMirror );
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
@@ -803,29 +890,72 @@ public:
                          int width = DEFAULT_LINE_WIDTH );
     virtual void Arc( const wxPoint& aCenter, double aStAngle, double aEndAngle,
                       int aRadius, FILL_T aFill, int aWidth = DEFAULT_LINE_WIDTH );
+
+    /**
+     * Gerber polygon: they can (and *should*) be filled with the
+     * appropriate G36/G37 sequence
+     */
     virtual void PlotPoly( const std::vector< wxPoint >& aCornerList,
                            FILL_T aFill, int aWidth = DEFAULT_LINE_WIDTH );
 
     virtual void PenTo( const wxPoint& pos, char plume );
+
+    /**
+     * Filled circular flashes are stored as apertures
+     */
     virtual void FlashPadCircle( const wxPoint& pos, int diametre,
                                  EDA_DRAW_MODE_T trace_mode );
+
+    /**
+     * Filled oval flashes are handled as aperture in the 90 degree positions only
+     */
     virtual void FlashPadOval( const wxPoint& pos, const wxSize& size, double orient,
                                EDA_DRAW_MODE_T trace_mode );
+
+    /**
+     * Filled rect flashes are handled as aperture in the 90 degree positions only
+     */
     virtual void FlashPadRect( const wxPoint& pos, const wxSize& size,
                                double orient, EDA_DRAW_MODE_T trace_mode );
 
+    /**
+     * Trapezoidal pad at the moment are *never* handled as aperture, since
+     * they require aperture macros
+     */
     virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
                                  double aPadOrient, EDA_DRAW_MODE_T aTrace_Mode );
 
+    /**
+     * Change the plot polarity and begin a new layer
+     * Used to 'scratch off' silk screen away from solder mask
+     */
     virtual void SetLayerPolarity( bool aPositive );
 
     virtual void SetLayerAttribFunction( const wxString& function )
     {
-        attribFunction = function;
+        m_attribFunction = function;
     }
+
+    /**
+     * Function SetGerberCoordinatesFormat
+     * selection of Gerber units and resolution (number of digits in mantissa)
+     * @param aResolution = number of digits in mantissa of coordinate
+     *                      use 5 or 6 for mm and 6 or 7 for inches
+     *                      do not use value > 6 (mm) or > 7 (in) to avoid overflow
+     * @param aUseInches = true to use inches, false to use mm (default)
+     *
+     * Should be called only after SetViewport() is called
+     */
+    virtual void SetGerberCoordinatesFormat( int aResolution, bool aUseInches = false );
 
 protected:
     void selectAperture( const wxSize& size, APERTURE::APERTURE_TYPE type );
+
+    /**
+     * Emit a D-Code record, using proper conversions
+     * to format a leading zero omitted gerber coordinate
+     * (for n decimal positions, see header generation in start_plot
+     */
     void emitDcode( const DPOINT& pt, int dcode );
 
     std::vector<APERTURE>::iterator
@@ -835,12 +965,19 @@ protected:
     FILE* finalFile;
     wxString m_workFilename;
 
+    /**
+     * Generate the table of D codes
+     */
     void writeApertureList();
 
     std::vector<APERTURE>           apertures;
     std::vector<APERTURE>::iterator currentAperture;
 
-    wxString attribFunction; /* the layer "function", it is linked with the layer id */
+    wxString m_attribFunction;  // the layer "function", in GERBER X2 extention
+                                // it is linked with the layer id
+    bool     m_gerberUnitInch;  // true if the gerber units are inches, false for mm
+    int      m_gerberUnitFmt;   // number of digits in mantissa.
+                                // usually 6 in Inches and 5 or 6  in mm
 };
 
 

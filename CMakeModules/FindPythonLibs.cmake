@@ -37,9 +37,10 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-include(${CMAKE_CURRENT_LIST_DIR}/CMakeFindFrameworks.cmake)
+include(CMakeFindFrameworks)
+
 # Search for the python framework on Apple.
-CMAKE_FIND_FRAMEWORKS(Python)
+cmake_find_frameworks(Python)
 
 set(_PYTHON1_VERSIONS 1.6 1.5)
 set(_PYTHON2_VERSIONS 2.7 2.6 2.5 2.4 2.3 2.2 2.1 2.0)
@@ -86,32 +87,25 @@ unset(_PYTHON3_VERSIONS)
 
 foreach(_CURRENT_VERSION ${_Python_VERSIONS})
   string(REPLACE "." "" _CURRENT_VERSION_NO_DOTS ${_CURRENT_VERSION})
+
   if(WIN32)
     if(MINGW)
       find_library(PYTHON_DEBUG_LIBRARY
         NAMES python{$_CURRENT_VERSION}_d
         PATHS
           "${PYTHON_ROOT_DIR}"
-          "C:/python/${_CURRENT_VERSION}.9"
-          "C:/python/${_CURRENT_VERSION}.8"
-          "C:/python/${_CURRENT_VERSION}.7"
-          "C:/python/${_CURRENT_VERSION}.6"
-          "C:/python/${_CURRENT_VERSION}.5"
-          "C:/python/${_CURRENT_VERSION}.4"
-          "C:/python/${_CURRENT_VERSION}.3"
-          "C:/python/${_CURRENT_VERSION}.2"
-          "C:/python/${_CURRENT_VERSION}.1"
-          "C:/python/${_CURRENT_VERSION}.0"
+          "c:/python${_CURRENT_VERSION}"
+          "c:/python${_CURRENT_VERSION_NO_DOTS}"
         NO_SYSTEM_ENVIRONMENT_PATH
-        )
+      )
     else()
       find_library(PYTHON_DEBUG_LIBRARY
         NAMES python${_CURRENT_VERSION_NO_DOTS}_d python
         PATHS
-        [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs/Debug
-        [HKEY_CURRENT_USER\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs/Debug
-        [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs
-        [HKEY_CURRENT_USER\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs
+          [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs/Debug
+          [HKEY_CURRENT_USER\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs/Debug
+          [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs
+          [HKEY_CURRENT_USER\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs
         )
     endif()
   endif()
@@ -121,26 +115,20 @@ foreach(_CURRENT_VERSION ${_Python_VERSIONS})
       NAMES python${_CURRENT_VERSION}
       PATHS
         "${PYTHON_ROOT_DIR}"
-        "C:/python/${_CURRENT_VERSION}.9"
-        "C:/python/${_CURRENT_VERSION}.8"
-        "C:/python/${_CURRENT_VERSION}.7"
-        "C:/python/${_CURRENT_VERSION}.6"
-        "C:/python/${_CURRENT_VERSION}.5"
-        "C:/python/${_CURRENT_VERSION}.4"
-        "C:/python/${_CURRENT_VERSION}.3"
-        "C:/python/${_CURRENT_VERSION}.2"
-        "C:/python/${_CURRENT_VERSION}.1"
-        "C:/python/${_CURRENT_VERSION}.0"
+        "C:/python"
+      PATH_SUFFIXES
+        ${_CURRENT_VERSION}
+        ${_CURRENT_VERSION_NO_DOTS}
       NO_SYSTEM_ENVIRONMENT_PATH
     )
   else()
     find_library(PYTHON_LIBRARY
       NAMES
-      python${_CURRENT_VERSION_NO_DOTS}
-      python${_CURRENT_VERSION}mu
-      python${_CURRENT_VERSION}m
-      python${_CURRENT_VERSION}u
-      python${_CURRENT_VERSION}
+        python${_CURRENT_VERSION_NO_DOTS}
+        python${_CURRENT_VERSION}mu
+        python${_CURRENT_VERSION}m
+        python${_CURRENT_VERSION}u
+        python${_CURRENT_VERSION}
       PATHS
         [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs
         [HKEY_CURRENT_USER\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]/libs
@@ -158,7 +146,6 @@ foreach(_CURRENT_VERSION ${_Python_VERSIONS})
     PATH_SUFFIXES python${_CURRENT_VERSION}/config
   )
 
-
   # For backward compatibility, honour value of PYTHON_INCLUDE_PATH, if
   # PYTHON_INCLUDE_DIR is not set.
   if(DEFINED PYTHON_INCLUDE_PATH AND NOT DEFINED PYTHON_INCLUDE_DIR)
@@ -167,6 +154,7 @@ foreach(_CURRENT_VERSION ${_Python_VERSIONS})
   endif()
 
   set(PYTHON_FRAMEWORK_INCLUDES)
+
   if(Python_FRAMEWORKS AND NOT PYTHON_INCLUDE_DIR)
     foreach(dir ${Python_FRAMEWORKS})
       set(PYTHON_FRAMEWORK_INCLUDES ${PYTHON_FRAMEWORK_INCLUDES}
@@ -178,17 +166,13 @@ foreach(_CURRENT_VERSION ${_Python_VERSIONS})
     find_path(PYTHON_INCLUDE_DIR
       NAMES Python.h
       PATHS
-      "${PYTHON_ROOT_DIR}/include"
-      "C:/python/${_CURRENT_VERSION}.9/include"
-      "C:/python/${_CURRENT_VERSION}.8/include"
-      "C:/python/${_CURRENT_VERSION}.7/include"
-      "C:/python/${_CURRENT_VERSION}.6/include"
-      "C:/python/${_CURRENT_VERSION}.5/include"
-      "C:/python/${_CURRENT_VERSION}.4/include"
-      "C:/python/${_CURRENT_VERSION}.3/include"
-      "C:/python/${_CURRENT_VERSION}.2/include"
-      "C:/python/${_CURRENT_VERSION}.1/include"
-      "C:/python/${_CURRENT_VERSION}.0/include"
+        "${PYTHON_ROOT_DIR}"
+        "C:/python${_CURRENT_VERSION}"
+        "C:/python${_CURRENT_VERSION_NOT_DOTS}"
+      PATH_SUFFIXES
+        include
+        python${_CURRENT_VERSION}
+        python${_CURRENT_VERSION_NOT_DOTS}
     )
   else()
     find_path(PYTHON_INCLUDE_DIR
@@ -239,14 +223,14 @@ set(PYTHON_DEBUG_LIBRARIES "${PYTHON_DEBUG_LIBRARY}")
 set(PYTHON_LIBRARY_DEBUG "${PYTHON_DEBUG_LIBRARY}")
 set(PYTHON_LIBRARY_RELEASE "${PYTHON_LIBRARY}")
 include(${CMAKE_CURRENT_LIST_DIR}/SelectLibraryConfigurations.cmake)
-SELECT_LIBRARY_CONFIGURATIONS(PYTHON)
+select_library_configurations(PYTHON)
 # SELECT_LIBRARY_CONFIGURATIONS() sets ${PREFIX}_FOUND if it has a library.
 # Unset this, this prefix doesn't match the module prefix, they are different
 # for historical reasons.
 unset(PYTHON_FOUND)
 
-include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(PythonLibs
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PythonLibs
                                   REQUIRED_VARS PYTHON_LIBRARIES PYTHON_INCLUDE_DIRS
                                   VERSION_VAR PYTHONLIBS_VERSION_STRING)
 

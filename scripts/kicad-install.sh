@@ -34,12 +34,11 @@
 # Set where the 3 source trees will go, use a full path
 WORKING_TREES=~/kicad_sources
 
-STABLE=tag:pre-kiway    # currently the best mix of features and stabilty
+STABLE=5054             # a sensible mix of features and stability
 TESTING=last:1          # the most recent
 
-
 # Set this to STABLE or TESTING or other known revision number:
-REVISION=$STABLE
+REVISION=$TESTING
 
 # For info on revision syntax:
 # $ bzr help revisionspec
@@ -90,41 +89,82 @@ install_prerequisites()
     # assume all these Debian, Mint, Ubuntu systems have same prerequisites
     if [ "$(expr match "$PM" '.*\(apt-get\)')" == "apt-get" ]; then
         #echo "debian compatible system"
-        sudo apt-get install \
-            bzr \
-            bzrtools \
-            build-essential \
-            cmake \
-            cmake-curses-gui \
-            debhelper \
-            doxygen \
-            grep \
-            libbz2-dev \
-            libcairo2-dev \
-            libglew-dev \
-            libssl-dev \
-            libwxgtk2.8-dev \
-            python-wxgtk2.8
+        prerequisite_list="
+            bzr
+            bzrtools
+            build-essential
+            cmake
+            cmake-curses-gui
+            debhelper
+            doxygen
+            grep
+            libbz2-dev
+            libcairo2-dev
+            libglew-dev
+            libssl-dev
+            libwxgtk3.0-dev
+       "
+
+        for p in ${prerequisite_list}
+        do
+            sudo apt-get install $p || exit 1
+        done
+
+        # Only install the scripting prerequisites if required.
+        if [ "$(expr match "$OPTS" '.*\(-DKICAD_SCRIPTING=ON\)')" == "-DKICAD_SCRIPTING=ON" ]; then
+        #echo "KICAD_SCRIPTING=ON"
+            scripting_prerequisites="
+                python-dev
+                python-wxgtk3.0-dev
+                swig
+            "
+
+            for sp in ${scripting_prerequisites}
+            do
+                sudo apt-get install $sp || exit 1
+            done
+        fi
 
     # assume all yum systems have same prerequisites
     elif [ "$(expr match "$PM" '.*\(yum\)')" == "yum" ]; then
         #echo "red hat compatible system"
         # Note: if you find this list not to be accurate, please submit a patch:
-        sudo yum groupinstall "Development Tools"
-        sudo yum install \
-            bzr \
-            bzrtools \
-            bzip2-libs \
-            bzip2-devel \
-            cmake \
-            cmake-gui \
-            doxygen \
-            cairo-devel \
-            glew-devel \
-            grep \
-            openssl-devel \
-            wxGTK-devel \
-            wxPython
+        sudo yum groupinstall "Development Tools" || exit 1
+
+        prerequisite_list="
+            install
+            bzr
+            bzrtools
+            bzip2-libs
+            bzip2-devel
+            cmake
+            cmake-gui
+            doxygen
+            cairo-devel
+            glew-devel
+            grep
+            openssl-devel
+            wxGTK-devel
+        "
+
+        for p in ${prerequisite_list}
+        do
+            sudo yum install $p || exit 1
+        done
+
+        # Only install the scripting prerequisites if required.
+        if [ "$(expr match "$OPTS" '.*\(-DKICAD_SCRIPTING=ON\)')" == "-DKICAD_SCRIPTING=ON" ]; then
+        #echo "KICAD_SCRIPTING=ON"
+            scripting_prerequisites="
+                swig
+                wxPython
+            "
+
+            for sp in ${scripting_prerequisites}
+            do
+                sudo yum install $sp || exit 1
+            done
+        fi
     else
         echo
         echo "Incompatible System. Neither 'yum' nor 'apt-get' found. Not possible to continue."
@@ -256,14 +296,14 @@ install_or_update()
     cd kicad.bzr
     if [ ! -d "build" ]; then
         mkdir build && cd build
-        cmake $OPTS ../
+        cmake $OPTS ../ || exit 1
     else
         cd build
         # Although a "make clean" is sometimes needed, more often than not it slows down the update
         # more than it is worth.  Do it manually if you need to in this directory.
         # make clean
     fi
-    make -j4
+    make -j4 || exit 1
     echo " kicad compiled."
 
 

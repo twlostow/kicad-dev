@@ -37,16 +37,10 @@
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <base_units.h>
-#ifdef PCBNEW
-    #include <wxBasePcbFrame.h>
-    #include <class_board.h>
-    #include <pcbnew.h>
-#else
-    #include <wxstruct.h>
-    #include <class_base_screen.h>
-    #include <layers_id_colors_and_visibility.h>
-    #include <gerbview_frame.h>
-#endif
+#include <wxBasePcbFrame.h>
+#include <class_board.h>
+#include <pcbnew.h>
+
 #include <printout_controler.h>
 
 
@@ -65,7 +59,7 @@ PRINT_PARAMETERS::PRINT_PARAMETERS()
     m_XScaleAdjust          = 1.0;
     m_YScaleAdjust          = 1.0;
     m_Print_Sheet_Ref       = false;
-    m_PrintMaskLayer        = FULL_LAYERS;
+    m_PrintMaskLayer.set();
     m_PrintMirror           = false;
     m_Print_Black_and_White = true;
     m_OptionPrintPage       = 1;
@@ -89,46 +83,31 @@ BOARD_PRINTOUT_CONTROLLER::BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aP
 
 bool BOARD_PRINTOUT_CONTROLLER::OnPrintPage( int aPage )
 {
-#ifdef PCBNEW
-    LAYER_NUM layers_count = NB_PCB_LAYERS;
-#else
-    LAYER_NUM layers_count = NB_LAYERS;
-#endif
-
-    LAYER_MSK mask_layer = m_PrintParams.m_PrintMaskLayer;
+    LSET lset = m_PrintParams.m_PrintMaskLayer;
 
     // compute layer mask from page number if we want one page per layer
     if( m_PrintParams.m_OptionPrintPage == 0 )  // One page per layer
     {
-        int jj;
-        LAYER_NUM ii;
+        // This sequence is TBD, call a different
+        // sequencer if needed, such as Seq().  Could not find documentation on
+        // page order.
+        LSEQ seq = lset.UIOrder();
 
-        for( ii = FIRST_LAYER, jj = 0; ii < layers_count; ++ii )
-        {
-            LAYER_MSK mask = GetLayerMask( ii );
-            if( mask_layer & mask )
-                jj++;
-
-            if( jj == aPage )
-            {
-                m_PrintParams.m_PrintMaskLayer = mask;
-                break;
-            }
-        }
+        // aPage starts at 1, not 0
+        if( unsigned( aPage-1 ) < seq.size() )
+            m_PrintParams.m_PrintMaskLayer = LSET( seq[aPage-1] );
     }
 
-    if( m_PrintParams.m_PrintMaskLayer == 0 )
+    if( !m_PrintParams.m_PrintMaskLayer.any() )
         return false;
 
-#ifdef PCBNEW
     // In Pcbnew we can want the layer EDGE always printed
     if( m_PrintParams.m_Flags == 1 )
-        m_PrintParams.m_PrintMaskLayer |= EDGE_LAYER;
-#endif
+        m_PrintParams.m_PrintMaskLayer.set( Edge_Cuts );
 
     DrawPage();
 
-    m_PrintParams.m_PrintMaskLayer = mask_layer;
+    m_PrintParams.m_PrintMaskLayer = lset;
 
     return true;
 }
@@ -163,16 +142,9 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
 
     wxBusyCursor  dummy;
 
-#if defined (PCBNEW)
     BOARD * brd = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
     boardBoundingBox = brd->ComputeBoundingBox();
     wxString titleblockFilename = brd->GetFileName();
-#elif defined (GERBVIEW)
-    boardBoundingBox = ((GERBVIEW_FRAME*) m_Parent)->GetGerberLayoutBoundingBox();
-    wxString titleblockFilename;    // TODO see if we uses the gerber file name
-#else
-    #error BOARD_PRINTOUT_CONTROLLER::DrawPage() works only for PCBNEW or GERBVIEW
-#endif
 
     // Use the page size as the drawing area when the board is shown or the user scale
     // is less than 1.
@@ -371,12 +343,6 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage()
         GRForceBlackPen( true );
 
 
-#if defined (GERBVIEW)
-    // In B&W mode, do not force black pen for Gerbview
-    // because negative objects need a white pen, not a black pen
-    // B&W mode is handled in print page
-    GRForceBlackPen( false );
-#endif
     m_Parent->PrintPage( dc, m_PrintParams.m_PrintMaskLayer, printMirror,
                          &m_PrintParams );
 

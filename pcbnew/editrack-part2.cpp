@@ -34,7 +34,6 @@
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <wxPcbStruct.h>
-#include <pcbcommon.h>
 
 #include <class_board.h>
 #include <class_module.h>
@@ -104,12 +103,12 @@ bool PCB_EDIT_FRAME::Other_Layer_Route( TRACK* aTrack, wxDC* DC )
     via->SetStart( g_CurrentTrackSegment->GetEnd() );
 
     // Usual via is from copper to component.
-    // layer pair is LAYER_N_BACK and LAYER_N_FRONT.
-    via->SetLayerPair( LAYER_N_BACK, LAYER_N_FRONT );
+    // layer pair is B_Cu and F_Cu.
+    via->SetLayerPair( B_Cu, F_Cu );
     via->SetDrill( GetDesignSettings().GetCurrentViaDrill() );
 
-    LAYER_NUM first_layer = GetActiveLayer();
-    LAYER_NUM last_layer;
+    LAYER_ID first_layer = GetActiveLayer();
+    LAYER_ID last_layer;
 
     // prepare switch to new active layer:
     if( first_layer != GetScreen()->m_Route_Layer_TOP )
@@ -118,23 +117,24 @@ bool PCB_EDIT_FRAME::Other_Layer_Route( TRACK* aTrack, wxDC* DC )
         last_layer = GetScreen()->m_Route_Layer_BOTTOM;
 
     // Adjust the actual via layer pair
-    switch ( via->GetViaType() )
+    switch( via->GetViaType() )
     {
-        case VIA_BLIND_BURIED:
-            via->SetLayerPair( first_layer, last_layer );
-            break;
+    case VIA_BLIND_BURIED:
+        via->SetLayerPair( first_layer, last_layer );
+        break;
 
-        case VIA_MICROVIA:  // from external to the near neighbor inner layer
+    case VIA_MICROVIA:  // from external to the near neighbor inner layer
         {
-            LAYER_NUM last_inner_layer = FIRST_LAYER + (GetBoard()->GetCopperLayerCount() - 2);
-            if ( first_layer == LAYER_N_BACK )
-                last_layer = LAYER_N_2;
-            else if ( first_layer == LAYER_N_FRONT )
+            LAYER_ID last_inner_layer = ToLAYER_ID( ( GetBoard()->GetCopperLayerCount() - 2 ) );
+
+            if( first_layer == B_Cu )
                 last_layer = last_inner_layer;
-            else if ( first_layer == LAYER_N_2 )
-                last_layer = LAYER_N_BACK;
-            else if ( first_layer == last_inner_layer )
-                last_layer = LAYER_N_FRONT;
+            else if( first_layer == F_Cu )
+                last_layer = In1_Cu;
+            else if( first_layer == last_inner_layer )
+                last_layer = B_Cu;
+            else if( first_layer == In1_Cu )
+                last_layer = F_Cu;
 
             // else error: will be removed later
             via->SetLayerPair( first_layer, last_layer );
@@ -143,10 +143,10 @@ bool PCB_EDIT_FRAME::Other_Layer_Route( TRACK* aTrack, wxDC* DC )
                 via->SetWidth( net->GetMicroViaSize() );
             }
         }
-            break;
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     if( g_Drc_On && BAD_DRC == m_drc->Drc( via, GetBoard()->m_Track ) )
@@ -263,11 +263,11 @@ void PCB_EDIT_FRAME::Show_1_Ratsnest( EDA_ITEM* item, wxDC* DC )
             if( item->Type() == PCB_MODULE_TEXT_T )
             {
                 if( item->GetParent() && ( item->GetParent()->Type() == PCB_MODULE_T ) )
-                    Module = (MODULE*) item->GetParent();
+                    Module = static_cast<MODULE*>( item->GetParent() );
             }
             else if( item->Type() == PCB_MODULE_T )
             {
-                Module = (MODULE*) item;
+                Module = static_cast<MODULE*>( item );
             }
 
             if( Module )
@@ -310,4 +310,3 @@ void PCB_EDIT_FRAME::Show_1_Ratsnest( EDA_ITEM* item, wxDC* DC )
             GetBoard()->m_FullRatsnest[ii].m_Status &= ~CH_VISIBLE;
     }
 }
-

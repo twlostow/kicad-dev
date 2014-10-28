@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Nov  6 2013)
+// C++ code generated with wxFormBuilder (version Jun  6 2014)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -109,7 +109,7 @@ class DIALOG_MODULE_MODULE_EDITOR_BASE : public DIALOG_SHIM
 		virtual void OnEditReference( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEditValue( wxCommandEvent& event ) { event.Skip(); }
 		virtual void On3DShapeNameSelected( wxCommandEvent& event ) { event.Skip(); }
-		virtual void BrowseAndAdd3DLib( wxCommandEvent& event ) { event.Skip(); }
+		virtual void Add3DShape( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Remove3DShape( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCancelClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOkClick( wxCommandEvent& event ) { event.Skip(); }
@@ -117,7 +117,7 @@ class DIALOG_MODULE_MODULE_EDITOR_BASE : public DIALOG_SHIM
 	
 	public:
 		
-		DIALOG_MODULE_MODULE_EDITOR_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Module Properties"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 486,462 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
+		DIALOG_MODULE_MODULE_EDITOR_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Footprint Properties"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 486,510 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
 		~DIALOG_MODULE_MODULE_EDITOR_BASE();
 	
 };

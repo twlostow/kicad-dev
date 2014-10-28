@@ -45,6 +45,8 @@ void InitTesselatorCallbacks( GLUtesselator* aTesselator );
 
 const int glAttributes[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, 0 };
 
+wxGLContext* OPENGL_GAL::glContext = NULL;
+
 OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
                         wxEvtHandler* aPaintListener, const wxString& aName ) :
     wxGLCanvas( aParent, wxID_ANY, (int*) glAttributes, wxDefaultPosition, wxDefaultSize,
@@ -54,7 +56,9 @@ OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
     overlayManager( false )
 {
     // Create the OpenGL-Context
-    glContext       = new wxGLContext( this );
+    if( glContext == NULL )
+        glContext = new wxGLContext( this );
+
     parentWindow    = aParent;
     mouseListener   = aMouseListener;
     paintListener   = aPaintListener;
@@ -113,8 +117,6 @@ OPENGL_GAL::~OPENGL_GAL()
 
     gluDeleteTess( tesselator );
     ClearCache();
-
-    delete glContext;
 }
 
 
@@ -128,17 +130,16 @@ void OPENGL_GAL::BeginDrawing()
     if( !isGlewInitialized )
         initGlew();
 
+    // Set up the view port
+    glMatrixMode( GL_PROJECTION );
+    glLoadIdentity();
+    glViewport( 0, 0, (GLsizei) screenSize.x, (GLsizei) screenSize.y );
+
+    // Create the screen transformation
+    glOrtho( 0, (GLint) screenSize.x, 0, (GLsizei) screenSize.y, -depthRange.x, -depthRange.y );
+
     if( !isFramebufferInitialized )
     {
-        // Set up the view port
-        glMatrixMode( GL_PROJECTION );
-        glLoadIdentity();
-        glViewport( 0, 0, (GLsizei) screenSize.x, (GLsizei) screenSize.y );
-
-        // Create the screen transformation
-        glOrtho( 0, (GLint) screenSize.x, 0, (GLsizei) screenSize.y,
-                -depthRange.x, -depthRange.y );
-
         // Prepare rendering target buffers
         compositor.Initialize();
         mainBuffer = compositor.CreateBuffer();
@@ -376,17 +377,12 @@ void OPENGL_GAL::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double a
     // Swap the angles, if start angle is greater than end angle
     SWAP( aStartAngle, >, aEndAngle );
 
-    VECTOR2D startPoint( cos( aStartAngle ), sin( aStartAngle ) );
-    VECTOR2D endPoint( cos( aEndAngle ), sin( aEndAngle ) );
-    VECTOR2D startEndPoint = startPoint + endPoint;
-    VECTOR2D middlePoint   = 0.5 * startEndPoint;
-
     Save();
     currentManager->Translate( aCenterPoint.x, aCenterPoint.y, layerDepth );
 
     if( isStrokeEnabled )
     {
-        double alphaIncrement = 2.0 * M_PI / CIRCLE_POINTS;
+        const double alphaIncrement = 2.0 * M_PI / CIRCLE_POINTS;
         currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
 
         VECTOR2D p( cos( aStartAngle ) * aRadius, sin( aStartAngle ) * aRadius );
@@ -410,20 +406,24 @@ void OPENGL_GAL::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double a
 
     if( isFillEnabled )
     {
-        double alphaIncrement = 2 * M_PI / CIRCLE_POINTS;
+        const double alphaIncrement = 2 * M_PI / CIRCLE_POINTS;
         double alpha;
         currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
+        currentManager->Shader( SHADER_NONE );
 
+        // Triangle fan
         for( alpha = aStartAngle; ( alpha + alphaIncrement ) < aEndAngle; )
         {
-            currentManager->Vertex( middlePoint.x, middlePoint.y,  0.0 );
-            currentManager->Vertex( cos( alpha ),  sin( alpha ),   0.0 );
+            currentManager->Vertex( 0.0, 0.0, 0.0 );
+            currentManager->Vertex( cos( alpha ) * aRadius, sin( alpha ) * aRadius, 0.0 );
             alpha += alphaIncrement;
-            currentManager->Vertex( cos( alpha ),  sin( alpha ),   0.0 );
+            currentManager->Vertex( cos( alpha ) * aRadius, sin( alpha ) * aRadius, 0.0 );
         }
 
-        currentManager->Vertex( middlePoint.x, middlePoint.y,  0.0 );
-        currentManager->Vertex( cos( alpha ),  sin( alpha ),   0.0 );
+        // The last missing triangle
+        const VECTOR2D endPoint( cos( aEndAngle ) * aRadius, sin( aEndAngle ) * aRadius );
+        currentManager->Vertex( 0.0, 0.0, 0.0 );
+        currentManager->Vertex( cos( alpha ) * aRadius, sin( alpha ) * aRadius, 0.0 );
         currentManager->Vertex( endPoint.x,    endPoint.y,     0.0 );
     }
 
@@ -967,7 +967,7 @@ void OPENGL_GAL::initGlew()
         exit( 1 );
     }
 
-    // Vertex buffer have to be supported
+    // Vertex buffer has to be supported
     if( !GLEW_ARB_vertex_buffer_object )
     {
         DisplayError( parentWindow, wxT( "Vertex buffer objects are not supported!" ) );

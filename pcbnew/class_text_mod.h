@@ -48,11 +48,13 @@ class MSG_PANEL_ITEM;
 
 class TEXTE_MODULE : public BOARD_ITEM, public EDA_TEXT
 {
-    // @todo eliminate these friends, make them use accessors
-    friend class MODULE;
-    friend class FOOTPRINT_EDIT_FRAME;
-
 public:
+    /** Text module type: there must be only one (and only one) for each
+     * of the reference and value texts in one module; others could be
+     * added for the user (DIVERS is French for 'others'). Reference and
+     * value always live on silkscreen (on the module side); other texts
+     * are planned to go on whatever layer the user wants (except
+     * copper, probably) */
     enum TEXT_TYPE
     {
         TEXT_is_REFERENCE = 0,
@@ -70,7 +72,6 @@ public:
     {
         return aItem && PCB_MODULE_TEXT_T == aItem->Type();
     }
-
 
     virtual const wxPoint& GetPosition() const
     {
@@ -93,14 +94,28 @@ public:
 
     void Flip( const wxPoint& aCentre );
 
+    /// Rotate text during module rotation transform, in footprint editor
+    void RotateTransformWithModule( const wxPoint& aOffset, double aAngle );
+
+    /// Flip entity during module flip
+    void FlipWithModule( int aOffset );
+
+    /// Mirror text during module mirroring transform, in footprint editor
+    /// the text itself is not mirrored, only position.
+    void MirrorTransformWithModule( int aOffset );
+
+    /// move text during module mirroring transform, in footprint editor
+    void MoveTransformWithModule( const wxPoint& aMoveVector );
+
     /// @deprecated it seems (but the type is used to 'protect'
-    //reference and value from deletion, and for identification)
+    //  reference and value from deletion, and for identification)
     void SetType( TEXT_TYPE aType )     { m_Type = aType; }
     TEXT_TYPE GetType() const           { return m_Type; }
 
     void SetVisible( bool isVisible )   { m_NoShow = !isVisible; }
     bool IsVisible() const              { return !m_NoShow; }
 
+    // The Pos0 accessors are for module-relative coordinates
     void SetPos0( const wxPoint& aPos ) { m_Pos0 = aPos; SetDrawCoord(); }
     const wxPoint& GetPos0() const      { return m_Pos0; }
 
@@ -117,9 +132,11 @@ public:
     // Virtual function
     const EDA_RECT GetBoundingBox() const;
 
-    void SetDrawCoord();        // Set absolute coordinates.
+    ///> Set absolute coordinates.
+    void SetDrawCoord();
 
-    void SetLocalCoord();       // Set relative coordinates.
+    ///> Set relative coordinates.
+    void SetLocalCoord();
 
     /* drawing functions */
     void Draw( EDA_DRAW_PANEL* panel,
@@ -155,6 +172,8 @@ public:
     BITMAP_DEF GetMenuImage() const { return  footprint_text_xpm; }
 
     EDA_ITEM* Clone() const;
+
+    virtual wxString GetShownText() const;
 
     /// @copydoc VIEW_ITEM::ViewBBox()
     virtual const BOX2I ViewBBox() const;

@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2009-2007 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file globaleditpad.cpp
  */
@@ -7,7 +31,6 @@
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <wxPcbStruct.h>
-#include <pcbcommon.h>
 #include <module_editor_frame.h>
 
 #include <class_board.h>
@@ -257,7 +280,7 @@ void PCB_BASE_FRAME::GlobalChange_PadSettings( D_PAD* aPad,
                 if( aPadOrientFilter && ( currpad_orient != pad_orient ) )
                     continue;
 
-                if( aPadLayerFilter  &&  pad->GetLayerMask() != aPad->GetLayerMask() )
+                if( aPadLayerFilter  &&  pad->GetLayerSet() != aPad->GetLayerSet() )
                     continue;
 
                 saveMe = true;
@@ -302,7 +325,7 @@ void PCB_BASE_FRAME::GlobalChange_PadSettings( D_PAD* aPad,
 
             if( aPadLayerFilter )
             {
-                if( pad->GetLayerMask() != aPad->GetLayerMask() )
+                if( pad->GetLayerSet() != aPad->GetLayerSet() )
                     continue;
                 else
                     m_Pcb->m_Status_Pcb &= ~( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK);
@@ -312,7 +335,7 @@ void PCB_BASE_FRAME::GlobalChange_PadSettings( D_PAD* aPad,
             pad->SetAttribute( aPad->GetAttribute() );
             pad->SetShape( aPad->GetShape() );
 
-            pad->SetLayerMask( aPad->GetLayerMask() );
+            pad->SetLayerSet( aPad->GetLayerSet() );
 
             pad->SetSize( aPad->GetSize() );
             pad->SetDelta( aPad->GetDelta() );

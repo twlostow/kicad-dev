@@ -60,9 +60,9 @@ class CVPCB_MAINFRAME : public KIWAY_PLAYER
 
 public:
     bool                      m_KeepCvpcbOpen;
-    FOOTPRINTS_LISTBOX*       m_FootprintList;
-    LIBRARY_LISTBOX*          m_LibraryList;
-    COMPONENTS_LISTBOX*       m_ListCmp;
+    FOOTPRINTS_LISTBOX*       m_footprintListBox;
+    LIBRARY_LISTBOX*          m_libListBox;
+    COMPONENTS_LISTBOX*       m_compListBox;
     wxAuiToolBar*             m_mainToolBar;
     wxFileName                m_NetlistFileName;
     wxArrayString             m_ModuleLibNames;
@@ -134,8 +134,6 @@ public:
      * in the file history menu.
      */
     void             LoadNetList( wxCommandEvent& event );
-
-    void             ConfigCvpcb( wxCommandEvent& event );
 
     /**
      * Function OnEditLibraryTable
@@ -219,7 +217,7 @@ public:
      * Function LoadProjectFile
      * reads the configuration parameter from the project (.pro) file \a aFileName
      */
-    void             LoadProjectFile( const wxString& aFileName );
+    void LoadProjectFile();
 
     void LoadSettings( wxConfigBase* aCfg );    // override virtual
 

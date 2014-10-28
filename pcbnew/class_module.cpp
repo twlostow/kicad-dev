@@ -37,7 +37,6 @@
 #include <trigo.h>
 #include <confirm.h>
 #include <kicad_string.h>
-#include <pcbcommon.h>
 #include <pcbnew.h>
 #include <colors_selection.h>
 #include <richio.h>
@@ -57,7 +56,7 @@ MODULE::MODULE( BOARD* parent ) :
     m_initial_comments( 0 )
 {
     m_Attributs    = MOD_DEFAULT;
-    m_Layer        = LAYER_N_FRONT;
+    m_Layer        = F_Cu;
     m_Orient       = 0;
     m_ModuleStatus = 0;
     flag = 0;
@@ -73,8 +72,8 @@ MODULE::MODULE( BOARD* parent ) :
     m_ThermalWidth = 0; // Use zone setting by default
     m_ThermalGap = 0; // Use zone setting by default
 
+    // These are special and mandatory text fields
     m_Reference = new TEXTE_MODULE( this, TEXTE_MODULE::TEXT_is_REFERENCE );
-
     m_Value = new TEXTE_MODULE( this, TEXTE_MODULE::TEXT_is_VALUE );
 
     // Reserve one void 3D entry, to avoid problems with void list
@@ -132,7 +131,7 @@ MODULE::MODULE( const MODULE& aModule ) :
         {
         case PCB_MODULE_TEXT_T:
         case PCB_MODULE_EDGE_T:
-            newItem = (BOARD_ITEM*)item->Clone();
+            newItem = static_cast<BOARD_ITEM*>( item->Clone() );
             newItem->SetParent( this );
             m_Drawings.PushBack( newItem );
             break;
@@ -243,18 +242,21 @@ void MODULE::Copy( MODULE* aModule )
         switch( item->Type() )
         {
         case PCB_MODULE_TEXT_T:
-            TEXTE_MODULE * textm;
-            textm = new TEXTE_MODULE( this );
-            textm->Copy( (TEXTE_MODULE*) item );
-            m_Drawings.PushBack( textm );
-            break;
+            {
+                TEXTE_MODULE* textm = new TEXTE_MODULE( this );
+                textm->Copy( static_cast<TEXTE_MODULE*>( item ) );
+                m_Drawings.PushBack( textm );
+                break;
+            }
 
         case PCB_MODULE_EDGE_T:
-            EDGE_MODULE * edge;
-            edge = new EDGE_MODULE( this );
-            edge->Copy( (EDGE_MODULE*) item );
-            m_Drawings.PushBack( edge );
-            break;
+            {
+                EDGE_MODULE * edge;
+                edge = new EDGE_MODULE( this );
+                edge->Copy( (EDGE_MODULE*) item );
+                m_Drawings.PushBack( edge );
+                break;
+            }
 
         default:
             wxLogMessage( wxT( "MODULE::Copy() Internal Err:  unknown type" ) );
@@ -292,6 +294,74 @@ void MODULE::Copy( MODULE* aModule )
 
     // Ensure auxiliary data is up to date
     CalculateBoundingBox();
+}
+
+
+void MODULE::Add( BOARD_ITEM* aBoardItem, bool doAppend )
+{
+    switch( aBoardItem->Type() )
+    {
+    case PCB_MODULE_TEXT_T:
+        // Only user texts can be added this way. Reference and value are not hold in the DLIST.
+        assert( static_cast<TEXTE_MODULE*>( aBoardItem )->GetType() == TEXTE_MODULE::TEXT_is_DIVERS );
+
+        // no break
+
+    case PCB_MODULE_EDGE_T:
+        if( doAppend )
+            m_Drawings.PushBack( static_cast<BOARD_ITEM*>( aBoardItem ) );
+        else
+            m_Drawings.PushFront( static_cast<BOARD_ITEM*>( aBoardItem ) );
+        break;
+
+    case PCB_PAD_T:
+        if( doAppend )
+            m_Pads.PushBack( static_cast<D_PAD*>( aBoardItem ) );
+        else
+            m_Pads.PushFront( static_cast<D_PAD*>( aBoardItem ) );
+        break;
+
+    default:
+        {
+            wxString msg;
+            msg.Printf( wxT( "MODULE::Add() needs work: BOARD_ITEM type (%d) not handled" ),
+                        aBoardItem->Type() );
+            wxFAIL_MSG( msg );
+
+            return;
+        }
+    }
+
+    aBoardItem->SetParent( this );
+}
+
+
+BOARD_ITEM* MODULE::Remove( BOARD_ITEM* aBoardItem )
+{
+    switch( aBoardItem->Type() )
+    {
+    case PCB_MODULE_TEXT_T:
+        // Only user texts can be removed this way. Reference and value are not hold in the DLIST.
+        assert( static_cast<TEXTE_MODULE*>( aBoardItem )->GetType() == TEXTE_MODULE::TEXT_is_DIVERS );
+
+        // no break
+
+    case PCB_MODULE_EDGE_T:
+        return m_Drawings.Remove( static_cast<BOARD_ITEM*>( aBoardItem ) );
+
+    case PCB_PAD_T:
+        return m_Pads.Remove( static_cast<D_PAD*>( aBoardItem ) );
+
+    default:
+        {
+            wxString msg;
+            msg.Printf( wxT( "MODULE::Remove() needs work: BOARD_ITEM type (%d) not handled" ),
+                        aBoardItem->Type() );
+            wxFAIL_MSG( msg );
+        }
+    }
+
+    return NULL;
 }
 
 
@@ -424,7 +494,7 @@ EDA_RECT MODULE::GetFootprintRect() const
 
     for( const BOARD_ITEM* item = m_Drawings.GetFirst(); item; item = item->Next() )
     {
-		const EDGE_MODULE* edge = dyn_cast<const EDGE_MODULE*>( item );
+        const EDGE_MODULE* edge = dyn_cast<const EDGE_MODULE*>( item );
 
         if( edge )
             area.Merge( edge->GetBoundingBox() );
@@ -448,8 +518,12 @@ const EDA_RECT MODULE::GetBoundingBox() const
     // Add the Clearance shape size: (shape around the pads when the
     // clearance is shown.  Not optimized, but the draw cost is small
     // (perhaps smaller than optimization).
-    int biggest_clearance = GetBoard()->GetDesignSettings().GetBiggestClearanceValue();
-    area.Inflate( biggest_clearance );
+    BOARD* board = GetBoard();
+    if( board )
+    {
+        int biggest_clearance = board->GetDesignSettings().GetBiggestClearanceValue();
+        area.Inflate( biggest_clearance );
+    }
 
     return area;
 }
@@ -464,7 +538,7 @@ void MODULE::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     char     bufcar[512], Line[512];
     wxString msg;
 
-    aList.push_back( MSG_PANEL_ITEM( m_Reference->GetText(), m_Value->GetText(), DARKCYAN ) );
+    aList.push_back( MSG_PANEL_ITEM( m_Reference->GetShownText(), m_Value->GetShownText(), DARKCYAN ) );
 
     // Display last date the component was edited (useful in Module Editor).
     time_t edit_time = m_LastEditTime;
@@ -528,7 +602,7 @@ void MODULE::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     }
 
     aList.push_back( MSG_PANEL_ITEM( _( "Attrib" ), msg, BROWN ) );
-    aList.push_back( MSG_PANEL_ITEM( _( "Module" ), FROM_UTF8( m_fpid.Format().c_str() ), BLUE ) );
+    aList.push_back( MSG_PANEL_ITEM( _( "Footprint" ), FROM_UTF8( m_fpid.Format().c_str() ), BLUE ) );
 
     msg = _( "No 3D shape" );
     // Search the first active 3D shape in list
@@ -590,12 +664,12 @@ D_PAD* MODULE::FindPadByName( const wxString& aPadName ) const
 }
 
 
-D_PAD* MODULE::GetPad( const wxPoint& aPosition, LAYER_MSK aLayerMask )
+D_PAD* MODULE::GetPad( const wxPoint& aPosition, LSET aLayerMask )
 {
     for( D_PAD* pad = m_Pads;  pad;  pad = pad->Next() )
     {
         // ... and on the correct layer.
-        if( ( pad->GetLayerMask() & aLayerMask ) == 0 )
+        if( !( pad->GetLayerSet() & aLayerMask ).any() )
             continue;
 
         if( pad->HitTest( aPosition ) )
@@ -629,13 +703,6 @@ void MODULE::Add3DModel( S3D_MASTER* a3DModel )
 {
     a3DModel->SetParent( this );
     m_3D_Drawings.PushBack( a3DModel );
-}
-
-
-void MODULE::AddPad( D_PAD* aPad )
-{
-    aPad->SetParent( this );
-    m_Pads.PushBack( aPad );
 }
 
 
@@ -734,10 +801,10 @@ EDA_ITEM* MODULE::Clone() const
 
 void MODULE::RunOnChildren( boost::function<void (BOARD_ITEM*)> aFunction )
 {
-    for( D_PAD* pad = m_Pads.GetFirst(); pad; pad = pad->Next() )
+    for( D_PAD* pad = m_Pads; pad; pad = pad->Next() )
         aFunction( static_cast<BOARD_ITEM*>( pad ) );
 
-    for( BOARD_ITEM* drawing = m_Drawings.GetFirst(); drawing; drawing = drawing->Next() )
+    for( BOARD_ITEM* drawing = m_Drawings; drawing; drawing = drawing->Next() )
         aFunction( drawing );
 
     aFunction( static_cast<BOARD_ITEM*>( m_Reference ) );
@@ -764,6 +831,36 @@ void MODULE::ViewUpdate( int aUpdateFlags )
     // Update module's texts
     m_Reference->ViewUpdate( aUpdateFlags );
     m_Value->ViewUpdate( aUpdateFlags );
+}
+
+
+void MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
+{
+    aCount = 2;
+    aLayers[0] = ITEM_GAL_LAYER( ANCHOR_VISIBLE );
+
+    switch( m_Layer )
+    {
+    case F_Cu:
+        aLayers[1] = ITEM_GAL_LAYER( MOD_FR_VISIBLE );
+        break;
+
+    case B_Cu:
+        aLayers[1] = ITEM_GAL_LAYER( MOD_BK_VISIBLE );
+        break;
+
+    default:
+        assert( false );    // do you really have modules placed on inner layers?
+        break;
+    }
+}
+
+
+unsigned int MODULE::ViewGetLOD( int aLayer ) const
+{
+    // Currently there is only one layer, so there is nothing to check
+//    if( aLayer == ITEM_GAL_LAYER( ANCHOR_VISIBLE ) )
+        return 30;
 }
 
 
@@ -820,8 +917,6 @@ void MODULE::Rotate( const wxPoint& aRotCentre, double aAngle )
 
 void MODULE::Flip( const wxPoint& aCentre )
 {
-    TEXTE_MODULE* text;
-
     // Move module to its final position:
     wxPoint finalPos = m_Pos;
 
@@ -841,24 +936,10 @@ void MODULE::Flip( const wxPoint& aCentre )
         pad->Flip( m_Pos );
 
     // Mirror reference.
-    text = m_Reference;
-    text->m_Pos.y -= m_Pos.y;
-    NEGATE( text->m_Pos.y );
-    text->m_Pos.y += m_Pos.y;
-    NEGATE(text->m_Pos0.y);
-    NEGATE_AND_NORMALIZE_ANGLE_POS( text->m_Orient );
-    text->SetLayer( FlipLayer( text->GetLayer() ) );
-    text->m_Mirror = IsBackLayer( GetLayer() );
+    m_Reference->FlipWithModule( m_Pos.y );
 
     // Mirror value.
-    text = m_Value;
-    text->m_Pos.y -= m_Pos.y;
-    NEGATE( text->m_Pos.y );
-    text->m_Pos.y += m_Pos.y;
-    NEGATE( text->m_Pos0.y );
-    NEGATE_AND_NORMALIZE_ANGLE_POS( text->m_Orient );
-    text->SetLayer( FlipLayer( text->GetLayer() ) );
-    text->m_Mirror = IsBackLayer( GetLayer() );
+    m_Value->FlipWithModule( m_Pos.y );
 
     // Reverse mirror module graphics and texts.
     for( EDA_ITEM* item = m_Drawings; item; item = item->Next() )
@@ -866,42 +947,11 @@ void MODULE::Flip( const wxPoint& aCentre )
         switch( item->Type() )
         {
         case PCB_MODULE_EDGE_T:
-            {
-                EDGE_MODULE* em = (EDGE_MODULE*) item;
-
-                wxPoint s = em->GetStart();
-                s.y -= m_Pos.y;
-                s.y  = -s.y;
-                s.y += m_Pos.y;
-                em->SetStart( s );
-
-                wxPoint e = em->GetEnd();
-                e.y -= m_Pos.y;
-                e.y  = -e.y;
-                e.y += m_Pos.y;
-                em->SetEnd( e );
-
-                NEGATE( em->m_Start0.y );
-                NEGATE( em->m_End0.y );
-
-                if( em->GetShape() == S_ARC )
-                {
-                    em->SetAngle( -em->GetAngle() );
-                }
-
-                em->SetLayer( FlipLayer( em->GetLayer() ) );
-            }
+            ( (EDGE_MODULE*) item )->Flip( m_Pos );
             break;
 
         case PCB_MODULE_TEXT_T:
-            text = (TEXTE_MODULE*) item;
-            text->m_Pos.y -= m_Pos.y;
-            NEGATE( text->m_Pos.y );
-            text->m_Pos.y += m_Pos.y;
-            NEGATE( text->m_Pos0.y );
-            NEGATE_AND_NORMALIZE_ANGLE_POS( text->m_Orient );
-            text->SetLayer( FlipLayer( text->GetLayer() ) );
-            text->m_Mirror = IsBackLayer( GetLayer() );
+            static_cast<TEXTE_MODULE*>( item )->FlipWithModule( m_Pos.y );
             break;
 
         default:
@@ -940,8 +990,8 @@ void MODULE::SetPosition( const wxPoint& newpos )
 
         case PCB_MODULE_TEXT_T:
         {
-            TEXTE_MODULE* text = (TEXTE_MODULE*) item;
-            text->m_Pos += delta;
+            TEXTE_MODULE* text = static_cast<TEXTE_MODULE*>( item );
+            text->SetTextPosition( text->GetTextPosition() + delta );
             break;
         }
 
@@ -991,19 +1041,21 @@ void MODULE::MoveAnchorPosition( const wxPoint& aMoveVector )
         switch( item->Type() )
         {
         case PCB_MODULE_EDGE_T:
-            #undef STRUCT
-            #define STRUCT ( (EDGE_MODULE*) item )
-            STRUCT->m_Start0 += moveVector;
-            STRUCT->m_End0   += moveVector;
-            STRUCT->SetDrawCoord();
-            break;
+            {
+                EDGE_MODULE* edge = static_cast<EDGE_MODULE*>( item );
+                edge->m_Start0 += moveVector;
+                edge->m_End0   += moveVector;
+                edge->SetDrawCoord();
+                break;
+            }
 
         case PCB_MODULE_TEXT_T:
-            #undef STRUCT
-            #define STRUCT ( (TEXTE_MODULE*) item )
-            STRUCT->SetPos0( STRUCT->GetPos0() + moveVector );
-            STRUCT->SetDrawCoord();
-            break;
+            {
+                TEXTE_MODULE* text = static_cast<TEXTE_MODULE*>( item );
+                text->SetPos0( text->GetPos0() + moveVector );
+                text->SetDrawCoord();
+                break;
+            }
 
         default:
             break;
@@ -1043,14 +1095,12 @@ void MODULE::SetOrientation( double newangle )
     {
         if( item->Type() == PCB_MODULE_EDGE_T )
         {
-            EDGE_MODULE* edge = (EDGE_MODULE*) item;
-            edge->SetDrawCoord();
+            static_cast<EDGE_MODULE*>( item )->SetDrawCoord();
         }
 
         else if( item->Type() == PCB_MODULE_TEXT_T )
         {
-            TEXTE_MODULE* text = (TEXTE_MODULE*) item;
-            text->SetDrawCoord();
+            static_cast<TEXTE_MODULE*>( item )->SetDrawCoord();
         }
     }
 

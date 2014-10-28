@@ -38,6 +38,7 @@
 #include <pgm_base.h>
 #include <build_version.h>
 #include <macros.h>
+#include <reporter.h>
 
 #include <class_board.h>
 #include <class_module.h>
@@ -45,6 +46,7 @@
 #include <legacy_plugin.h>
 
 #include <pcbnew.h>
+#include <pcbplot.h>
 #include <pcb_plot_params.h>
 #include <wildcards_and_files_ext.h>
 
@@ -57,7 +59,7 @@ public:
     MODULE*       m_Module;         // Link to the actual footprint
     wxString      m_Reference;      // Its schematic reference
     wxString      m_Value;          // Its schematic value
-    LAYER_NUM     m_Layer;          // its side (LAYER_N_BACK, or LAYER_N_FRONT)
+    LAYER_NUM     m_Layer;          // its side (B_Cu, or F_Cu)
 };
 
 
@@ -140,13 +142,8 @@ void DIALOG_GEN_MODULE_POSITION::OnOutputDirectoryBrowseClicked( wxCommandEvent&
 {
     // Build the absolute path of current output plot directory
     // to preselect it when opening the dialog.
-    wxFileName fn( m_outputDirectoryName->GetValue() );
-    wxString path;
-
-    if( fn.IsRelative() )
-        path = wxGetCwd() + fn.GetPathSeparator() + m_outputDirectoryName->GetValue();
-    else
-        path = m_outputDirectoryName->GetValue();
+    wxFileName  fn( m_outputDirectoryName->GetValue() );
+    wxString    path = Prj().AbsolutePath( m_outputDirectoryName->GetValue() );
 
     wxDirDialog dirDialog( this, _( "Select Output Directory" ), path );
 
@@ -209,10 +206,24 @@ bool DIALOG_GEN_MODULE_POSITION::CreateFiles()
         return false;
     }
 
+    // Create output directory if it does not exist (also transform it in
+    // absolute form). Bail if it fails
+    wxFileName  outputDir = wxFileName::DirName( m_plotOpts.GetOutputDirectory() );
+    wxString    boardFilename = m_parent->GetBoard()->GetFileName();
+    WX_TEXT_CTRL_REPORTER reporter( m_messagesBox );
+
+    if( !EnsureFileDirectoryExists( &outputDir, boardFilename, &reporter ) )
+    {
+        msg.Printf( _( "Could not write plot files to folder \"%s\"." ),
+                    GetChars( outputDir.GetPath() ) );
+        DisplayError( this, msg );
+        return false;
+    }
+
     fn = m_parent->GetBoard()->GetFileName();
-    fn.SetPath( GetOutputDirectory() );
-    frontLayerName = brd->GetLayerName( LAYER_N_FRONT );
-    backLayerName = brd->GetLayerName( LAYER_N_BACK );
+    fn.SetPath( outputDir.GetPath() );
+    frontLayerName = brd->GetLayerName( F_Cu );
+    backLayerName = brd->GetLayerName( B_Cu );
 
     // Create the the Front or Top side placement file,
     // or the single file
@@ -232,16 +243,16 @@ bool DIALOG_GEN_MODULE_POSITION::CreateFiles()
                                                      ForceAllSmd(), side );
     if( fpcount < 0 )
     {
-        msg.Printf( _( "Unable to create <%s>" ), GetChars( fn.GetFullPath() ) );
-        AddMessage( msg + wxT("\n") );
+        msg.Printf( _( "Unable to create '%s'" ), GetChars( fn.GetFullPath() ) );
         wxMessageBox( msg );
+        AddMessage( msg + wxT("\n") );
         return false;
     }
 
     if( singleFile  )
-        msg.Printf( _( "Place file: <%s>\n" ), GetChars( fn.GetFullPath() ) );
+        msg.Printf( _( "Place file: '%s'\n" ), GetChars( fn.GetFullPath() ) );
     else
-        msg.Printf( _( "Front side (top side) place file: <%s>\n" ),
+        msg.Printf( _( "Front side (top side) place file: '%s'\n" ),
                     GetChars( fn.GetFullPath() ) );
 
     AddMessage( msg );
@@ -255,7 +266,7 @@ bool DIALOG_GEN_MODULE_POSITION::CreateFiles()
     fullcount = fpcount;
     side = 0;
     fn = brd->GetFileName();
-    fn.SetPath( GetOutputDirectory() );
+    fn.SetPath( outputDir.GetPath() );
     fn.SetName( fn.GetName() + wxT( "-" ) + backLayerName );
     fn.SetExt( wxT( "pos" ) );
 
@@ -264,7 +275,7 @@ bool DIALOG_GEN_MODULE_POSITION::CreateFiles()
 
     if( fpcount < 0 )
     {
-        msg.Printf( _( "Unable to create <%s>" ), GetChars( fn.GetFullPath() ) );
+        msg.Printf( _( "Unable to create '%s'" ), GetChars( fn.GetFullPath() ) );
         AddMessage( msg + wxT("\n") );
         wxMessageBox( msg );
         return false;
@@ -273,7 +284,7 @@ bool DIALOG_GEN_MODULE_POSITION::CreateFiles()
     // Display results
     if( !singleFile )
     {
-        msg.Printf( _( "Back side (bottom side) place file: <%s>\n" ), GetChars( fn.GetFullPath() ) );
+        msg.Printf( _( "Back side (bottom side) place file: '%s'\n" ), GetChars( fn.GetFullPath() ) );
         AddMessage( msg );
         msg.Printf( _( "Footprint count %d\n" ), fpcount );
         AddMessage( msg );
@@ -374,9 +385,9 @@ int PCB_EDIT_FRAME::DoGenFootprintsPositionFile( const wxString& aFullFileName,
     {
         if( aSide < 2 )
         {
-            if( module->GetLayer() == LAYER_N_BACK && aSide == 1)
+            if( module->GetLayer() == B_Cu && aSide == 1)
                 continue;
-            if( module->GetLayer() == LAYER_N_FRONT && aSide == 0)
+            if( module->GetLayer() == F_Cu && aSide == 0)
                 continue;
         }
 
@@ -429,9 +440,9 @@ int PCB_EDIT_FRAME::DoGenFootprintsPositionFile( const wxString& aFullFileName,
     {
         if( aSide < 2 )
         {
-            if( module->GetLayer() == LAYER_N_BACK && aSide == 1)
+            if( module->GetLayer() == B_Cu && aSide == 1)
                 continue;
-            if( module->GetLayer() == LAYER_N_FRONT && aSide == 0)
+            if( module->GetLayer() == F_Cu && aSide == 0)
                 continue;
         }
 
@@ -452,8 +463,8 @@ int PCB_EDIT_FRAME::DoGenFootprintsPositionFile( const wxString& aFullFileName,
     if( list.size() > 1 )
         sort( list.begin(), list.end(), sortFPlist );
 
-    wxString frontLayerName = GetBoard()->GetLayerName( LAYER_N_FRONT );
-    wxString backLayerName = GetBoard()->GetLayerName( LAYER_N_BACK );
+    wxString frontLayerName = GetBoard()->GetLayerName( F_Cu );
+    wxString backLayerName = GetBoard()->GetLayerName( B_Cu );
 
     // Switch the locale to standard C (needed to print floating point numbers)
     LOCALE_IO   toggle;
@@ -500,15 +511,15 @@ int PCB_EDIT_FRAME::DoGenFootprintsPositionFile( const wxString& aFullFileName,
 
         LAYER_NUM layer = list[ii].m_Module->GetLayer();
 
-        wxASSERT( layer==LAYER_N_FRONT || layer==LAYER_N_BACK );
+        wxASSERT( layer==F_Cu || layer==B_Cu );
 
-        if( layer == LAYER_N_FRONT )
+        if( layer == F_Cu )
         {
             strcat( line, TO_UTF8( frontLayerName ) );
             strcat( line, "\n" );
             fputs( line, file );
         }
-        else if( layer == LAYER_N_BACK )
+        else if( layer == B_Cu )
         {
             strcat( line, TO_UTF8( backLayerName ) );
             strcat( line, "\n" );
@@ -543,14 +554,14 @@ void PCB_EDIT_FRAME::GenFootprintsReport( wxCommandEvent& event )
     wxString msg;
     if( success )
     {
-        msg.Printf( _( "Module report file created:\n<%s>" ),
+        msg.Printf( _( "Module report file created:\n'%s'" ),
                     GetChars( fn.GetFullPath() ) );
         wxMessageBox( msg, _( "Module Report" ), wxICON_INFORMATION );
     }
 
     else
     {
-        msg.Printf( _( "Unable to create <%s>" ), GetChars( fn.GetFullPath() ) );
+        msg.Printf( _( "Unable to create '%s'" ), GetChars( fn.GetFullPath() ) );
         DisplayError( this, msg );
     }
 }
@@ -654,9 +665,9 @@ bool PCB_EDIT_FRAME::DoGenFootprintsReport( const wxString& aFullFilename, bool 
 
             sprintf( line, "orientation  %.2f\n", Module->GetOrientation() / 10.0 );
 
-            if( Module->GetLayer() == LAYER_N_FRONT )
+            if( Module->GetLayer() == F_Cu )
                 strcat( line, "layer component\n" );
-            else if( Module->GetLayer() == LAYER_N_BACK )
+            else if( Module->GetLayer() == B_Cu )
                 strcat( line, "layer copper\n" );
             else
                 strcat( line, "layer other\n" );
@@ -697,10 +708,10 @@ bool PCB_EDIT_FRAME::DoGenFootprintsReport( const wxString& aFullFilename, bool 
 
                 int layer = 0;
 
-                if( pad->GetLayerMask() & LAYER_BACK )
+                if( pad->GetLayerSet()[B_Cu] )
                     layer = 1;
 
-                if( pad->GetLayerMask() & LAYER_FRONT )
+                if( pad->GetLayerSet()[F_Cu] )
                     layer |= 2;
 
                 static const char* layer_name[4] = { "none", "back", "front", "both" };
@@ -726,7 +737,7 @@ bool PCB_EDIT_FRAME::DoGenFootprintsReport( const wxString& aFullFilename, bool 
         if( PtStruct->Type() != PCB_LINE_T )
             continue;
 
-        if( ( (DRAWSEGMENT*) PtStruct )->GetLayer() != EDGE_N )
+        if( ( (DRAWSEGMENT*) PtStruct )->GetLayer() != Edge_Cuts )
             continue;
 
         WriteDrawSegmentPcb( (DRAWSEGMENT*) PtStruct, rptfile, conv_unit );

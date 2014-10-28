@@ -89,7 +89,6 @@ typedef int wxPenStyle;
 
 extern GR_DRAWMODE g_XorMode;
 
-
 typedef enum {
     /* Line styles for Get/SetLineStyle. */
     GR_SOLID_LINE  = 0,

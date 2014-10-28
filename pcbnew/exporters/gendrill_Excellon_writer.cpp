@@ -453,12 +453,11 @@ void EXCELLON_WRITER::BuildHolesList( int aFirstLayer,
     // build hole list for vias
     if( ! aGenerateNPTH_list )  // vias are always plated !
     {
-        for( VIA* via = GetFirstVia( m_pcb->m_Track ); via;
-                via = GetFirstVia( via->Next() ) )
+        for( VIA* via = GetFirstVia( m_pcb->m_Track ); via; via = GetFirstVia( via->Next() ) )
         {
             hole_value = via->GetDrillValue();
 
-            if( hole_value == 0 )
+            if( hole_value == 0 )   // Should not occur.
                 continue;
 
             new_hole.m_Tool_Reference = -1;         // Flag value for Not initialized
@@ -468,17 +467,20 @@ void EXCELLON_WRITER::BuildHolesList( int aFirstLayer,
 
             new_hole.m_Hole_Shape = 0;              // hole shape: round
             new_hole.m_Hole_Pos = via->GetStart();
+
             via->LayerPair( &new_hole.m_Hole_Top_Layer, &new_hole.m_Hole_Bottom_Layer );
 
-            // LayerPair return params with m_Hole_Bottom_Layer < m_Hole_Top_Layer
-            if( (new_hole.m_Hole_Bottom_Layer > aFirstLayer) && (aFirstLayer >= 0) )
-                continue;
+            // LayerPair return params with m_Hole_Bottom_Layer > m_Hole_Top_Layer
+            // Remember: top layer = 0 and bottom layer = 31 for through hole vias
+            // the via should be at least from aFirstLayer to aLastLayer
+            if( (new_hole.m_Hole_Top_Layer > aFirstLayer) && (aFirstLayer >= 0) )
+                continue;   // via above the first layer
 
-            if( (new_hole.m_Hole_Top_Layer < aLastLayer) && (aLastLayer >= 0) )
-                continue;
+            if( (new_hole.m_Hole_Bottom_Layer < aLastLayer) && (aLastLayer >= 0) )
+                continue;   // via below the last layer
 
-            if( aExcludeThroughHoles  && (new_hole.m_Hole_Bottom_Layer == LAYER_N_BACK)
-               && (new_hole.m_Hole_Top_Layer == LAYER_N_FRONT) )
+            if( aExcludeThroughHoles && (new_hole.m_Hole_Bottom_Layer == B_Cu)
+               && (new_hole.m_Hole_Top_Layer == F_Cu) )
                 continue;
 
             m_holeListBuffer.push_back( new_hole );
@@ -493,7 +495,9 @@ void EXCELLON_WRITER::BuildHolesList( int aFirstLayer,
             // Read and analyse pads
             for( D_PAD* pad = module->Pads();  pad;  pad = pad->Next() )
             {
-                if( ! aGenerateNPTH_list && pad->GetAttribute() == PAD_HOLE_NOT_PLATED && ! aMergePTHNPTH )
+                if( ! aGenerateNPTH_list &&
+                    pad->GetAttribute() == PAD_HOLE_NOT_PLATED &&
+                    ! aMergePTHNPTH )
                     continue;
 
                 if( aGenerateNPTH_list && pad->GetAttribute() != PAD_HOLE_NOT_PLATED )
@@ -514,8 +518,8 @@ void EXCELLON_WRITER::BuildHolesList( int aFirstLayer,
 
                 new_hole.m_Hole_Size         = pad->GetDrillSize();
                 new_hole.m_Hole_Pos          = pad->GetPosition();               // hole position
-                new_hole.m_Hole_Bottom_Layer = LAYER_N_BACK;
-                new_hole.m_Hole_Top_Layer    = LAYER_N_FRONT;// pad holes are through holes
+                new_hole.m_Hole_Bottom_Layer = B_Cu;
+                new_hole.m_Hole_Top_Layer    = F_Cu;// pad holes are through holes
                 m_holeListBuffer.push_back( new_hole );
             }
         }

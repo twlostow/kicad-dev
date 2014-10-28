@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 30 2013)
+// C++ code generated with wxFormBuilder (version Jun  6 2014)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -471,7 +471,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	m_staticText40->Wrap( -1 );
 	fgSizer41->Add( m_staticText40, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxTOP, 5 );
 	
-	wxString m_ZoneConnectionChoiceChoices[] = { _("From parent module"), _("Solid"), _("Thermal relief"), _("None") };
+	wxString m_ZoneConnectionChoiceChoices[] = { _("From parent footprint"), _("Solid"), _("Thermal relief"), _("None") };
 	int m_ZoneConnectionChoiceNChoices = sizeof( m_ZoneConnectionChoiceChoices ) / sizeof( wxString );
 	m_ZoneConnectionChoice = new wxChoice( m_localSettingsPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_ZoneConnectionChoiceNChoices, m_ZoneConnectionChoiceChoices, 0 );
 	m_ZoneConnectionChoice->SetSelection( 0 );
@@ -535,6 +535,9 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	m_panelShowPad->SetBackgroundColour( wxColour( 0, 0, 0 ) );
 	
 	bSizerDisplayPad->Add( m_panelShowPad, 4, wxRIGHT|wxTOP|wxEXPAND, 5 );
+	
+	m_panelShowPadGal = new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0, 0 ), wxDefaultSize, EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
+	bSizerDisplayPad->Add( m_panelShowPadGal, 4, wxEXPAND|wxRIGHT|wxTOP, 5 );
 	
 	
 	bSizerUpper->Add( bSizerDisplayPad, 1, wxEXPAND|wxTOP|wxBOTTOM, 5 );

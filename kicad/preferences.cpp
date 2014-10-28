@@ -1,9 +1,9 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2004 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 2008-2011 Wayne Stambaugh <stambaughw@verizon.net>
- * Copyright (C) 1992-2011 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 2008-2014 Wayne Stambaugh <stambaughw@verizon.net>
+ * Copyright (C) 1992-2014 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -58,33 +58,39 @@ void KICAD_MANAGER_FRAME::OnUpdatePreferredPdfBrowser( wxUpdateUIEvent& event )
 
 void KICAD_MANAGER_FRAME::OnSelectPreferredPdfBrowser( wxCommandEvent& event )
 {
-    bool select = event.GetId() == ID_SELECT_PREFERED_PDF_BROWSER_NAME;
+    bool setPdfBrowserName = event.GetId() == ID_SELECT_PREFERED_PDF_BROWSER_NAME;
 
-    if( !Pgm().GetPdfBrowserName() && !select )
+    if( !Pgm().GetPdfBrowserName() && !setPdfBrowserName )
     {
         DisplayError( this,
                       _( "You must choose a PDF viewer before using this option." ) );
+        setPdfBrowserName = true;
     }
 
-    wxString mask( wxT( "*" ) );
+    if( setPdfBrowserName )
+    {
+        wxString mask( wxT( "*" ) );
 
-#ifdef __WINDOWS__
-    mask += wxT( ".exe" );
-#endif
+    #ifdef __WINDOWS__
+        mask += wxT( ".exe" );
+    #endif
 
-    wxString wildcard = _( "Executable files (" ) + mask + wxT( ")|" ) + mask;
+        wxString wildcard = _( "Executable files (" ) + mask + wxT( ")|" ) + mask;
 
-    Pgm().ReadPdfBrowserInfos();
-    wxFileName fn = Pgm().GetPdfBrowserName();
+        Pgm().ReadPdfBrowserInfos();
+        wxFileName fn = Pgm().GetPdfBrowserName();
 
-    wxFileDialog dlg( this, _( "Select Preferred Pdf Browser" ), fn.GetPath(),
-                      fn.GetFullPath(), wildcard,
-                      wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+        wxFileDialog dlg( this, _( "Select Preferred Pdf Browser" ), fn.GetPath(),
+                          fn.GetFullPath(), wildcard,
+                          wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
-    if( dlg.ShowModal() == wxID_CANCEL )
-        return;
+        if( dlg.ShowModal() == wxID_CANCEL )
+            return;
 
-    Pgm().SetPdfBrowserName( dlg.GetPath() );
+        Pgm().SetPdfBrowserName( dlg.GetPath() );
+    }
+
+    Pgm().ForceSystemPdfBrowser( false );
     Pgm().WritePdfBrowserInfos();
 }
 

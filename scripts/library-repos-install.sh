@@ -15,7 +15,7 @@
 #
 # 2) You want to run with local pretty footprint libraries and not those remotely located
 #    on https://github.com using Github plugin.  After running this script you should be able to
-#      a)  $ cp ~/kicad_sources/library-repos/kicad-library/template/fp-lib-table.for-pretty ~/fp-lib-table
+#      a)  $ cp ~/kicad_sources/library-repos/kicad-library/template/fp-lib-table.for-pretty ~/.config/kicad/fp-lib-table
 #    and then
 #      b) set your environment variable KISYSMOD to "~/kicad_sources/library-repos".
 #         Edit /etc/profile.d/kicad.sh, then reboot.
@@ -114,6 +114,10 @@ detect_pretty_repos()
         | sed -r  's:.+ "KiCad/(.+)",:\1:'`
 
     #echo "PRETTY_REPOS:$PRETTY_REPOS"
+
+    PRETTY_REPOS=`echo $PRETTY_REPOS | tr " " "\n" | sort`
+
+    #echo "PRETTY_REPOS sorted:$PRETTY_REPOS"
 }
 
 
@@ -226,9 +230,13 @@ if [ $# -eq 1 -a "$1" == "--list-libraries" ]; then
     detect_pretty_repos
 
     # add the "schematic parts & 3D model" kicad-library to total
-    for repo in kicad-library $PRETTY_REPOS; do
+    for repo in $PRETTY_REPOS; do
         echo "$repo"
     done
+
+    echo
+    echo "and the special 'kicad-library' which holds 3D stuff and schematic parts"
+
     exit
 fi
 

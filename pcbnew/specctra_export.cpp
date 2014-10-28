@@ -55,7 +55,6 @@
 
 #include <specctra.h>
 
-
 using namespace DSN;
 
 
@@ -135,6 +134,7 @@ void PCB_EDIT_FRAME::ExportToSpecctra( wxCommandEvent& event )
     ExportSpecctraFile( fullFileName );
 }
 
+
 bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
 {
     SPECCTRA_DB     db;
@@ -195,6 +195,7 @@ bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
 
 
 namespace DSN {
+
 const KICAD_T SPECCTRA_DB::scanPADs[] = { PCB_PAD_T, EOT };
 
 // "specctra reported units" are what we tell the external router that our
@@ -235,8 +236,8 @@ static inline double mapY( int y )
 /**
  * Function mapPt
  * converts a KiCad point into a DSN file point.  Kicad's BOARD coordinates
- * are in deci-mils  (i.e. 1/10,000th of an inch) and we are exporting in units
- * of mils, so we have to divide by 10.
+ * are in nanometers (called Internal Units or IU)and we are exporting in units
+ * of mils, so we have to scale them.
  */
 static POINT mapPt( const wxPoint& pt )
 {
@@ -259,7 +260,7 @@ static POINT mapPt( const wxPoint& pt )
  * @return DRAWSEGMENT* - The first DRAWSEGMENT that has a start or end point matching
  *   aPoint, otherwise NULL if none.
  */
-static DRAWSEGMENT* findPoint( const wxPoint& aPoint, TYPE_COLLECTOR* items, unsigned aLimit )
+static DRAWSEGMENT* findPoint( const wxPoint& aPoint, ::PCB_TYPE_COLLECTOR* items, unsigned aLimit )
 {
     unsigned min_d = INT_MAX;
     int      ndx_min = 0;
@@ -359,7 +360,7 @@ static bool isRoundKeepout( D_PAD* aPad )
         if( aPad->GetDrillSize().x >= aPad->GetSize().x )
             return true;
 
-        if( (aPad->GetLayerMask() & ALL_CU_LAYERS) == 0 )
+        if( !( aPad->GetLayerSet() & LSET::AllCuMask() ).any() )
             return true;
     }
 
@@ -393,11 +394,13 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, D_PAD* aPad )
     PADSTACK*   padstack = new PADSTACK();
 
     int         reportedLayers = 0;         // how many in reported padstack
-    const char* layerName[NB_COPPER_LAYERS];
+    const char* layerName[MAX_CU_LAYERS];
 
     uniqifier = '[';
 
-    bool onAllCopperLayers = ( (aPad->GetLayerMask() & ALL_CU_LAYERS) == ALL_CU_LAYERS );
+    static const LSET all_cu = LSET::AllCuMask();
+
+    bool onAllCopperLayers = ( (aPad->GetLayerSet() & all_cu) == all_cu );
 
     if( onAllCopperLayers )
         uniqifier += 'A'; // A for all layers
@@ -405,7 +408,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, D_PAD* aPad )
     const int copperCount = aBoard->GetCopperLayerCount();
     for( int layer=0; layer<copperCount; ++layer )
     {
-        LAYER_NUM kilayer = pcbLayer2kicad[layer];
+        LAYER_ID kilayer = pcbLayer2kicad[layer];
 
         if( onAllCopperLayers || aPad->IsOnLayer( kilayer ) )
         {
@@ -623,9 +626,10 @@ typedef std::map<wxString, int> PINMAP;
 
 IMAGE* SPECCTRA_DB::makeIMAGE( BOARD* aBoard, MODULE* aModule )
 {
-    PINMAP          pinmap;
-    TYPE_COLLECTOR  moduleItems;
-    wxString        padName;
+    PINMAP      pinmap;
+    wxString    padName;
+
+    PCB_TYPE_COLLECTOR  moduleItems;
 
     // get all the MODULE's pads.
     moduleItems.Collect( aModule, scanPADs );
@@ -836,8 +840,8 @@ PADSTACK* SPECCTRA_DB::makeVia( int aCopperDiameter, int aDrillDiameter,
 
 PADSTACK* SPECCTRA_DB::makeVia( const ::VIA* aVia )
 {
-    LAYER_NUM topLayerNum;
-    LAYER_NUM botLayerNum;
+    LAYER_ID    topLayerNum;
+    LAYER_ID    botLayerNum;
 
     aVia->LayerPair( &topLayerNum, &botLayerNum );
 
@@ -860,12 +864,14 @@ static void makeCircle( PATH* aPath, DRAWSEGMENT* aGraphic )
     // do a circle segmentation
     const int   STEPS = 2 * 36;
 
-    wxPoint     start;
-    wxPoint     center  = aGraphic->GetCenter();
     int         radius  = aGraphic->GetRadius();
-    double      angle   = 3600.0;
 
-    start   = center;
+    if( radius <= 0 )   // Should not occur, but ...
+        return;
+
+    wxPoint     center  = aGraphic->GetCenter();
+    double      angle   = 3600.0;
+    wxPoint     start = center;
     start.x += radius;
 
     wxPoint nextPt;
@@ -885,12 +891,13 @@ static void makeCircle( PATH* aPath, DRAWSEGMENT* aGraphic )
 
 void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ERROR )
 {
-    TYPE_COLLECTOR  items;
-    unsigned        prox;       // a proximity BIU metric, not an accurate distance
+    PCB_TYPE_COLLECTOR  items;
+
+    unsigned    prox;           // a proximity BIU metric, not an accurate distance
     const int   STEPS = 36;     // for a segmentation of an arc of 360 degrees
 
     // Get all the DRAWSEGMENTS and module graphics into 'items',
-    // then keep only those on layer == EDGE_N.
+    // then keep only those on layer == Edge_Cuts.
 
     static const KICAD_T  scan_graphics[] = { PCB_LINE_T, PCB_MODULE_EDGE_T, EOT };
 
@@ -898,11 +905,11 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
 
     for( int i = 0; i<items.GetCount(); )
     {
-        if( items[i]->GetLayer() != EDGE_N )
+        if( items[i]->GetLayer() != Edge_Cuts )
         {
             items.Remove( i );
         }
-        else    // remove graphics not on EDGE_N layer
+        else    // remove graphics not on Edge_Cuts layer
         {
             DBG( items[i]->Show( 0, std::cout );)
             ++i;
@@ -985,7 +992,8 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
                     // pt has minimum x point
                     pt.x -= graphic->GetRadius();
 
-                    if( pt.x < xmin.x )
+                    // when the radius <= 0, this is a mal-formed circle. Skip it
+                    if( graphic->GetRadius() > 0 && pt.x < xmin.x )
                     {
                         xmin  = pt;
                         xmini = i;
@@ -1015,7 +1023,7 @@ void SPECCTRA_DB::fillBOUNDARY( BOARD* aBoard, BOUNDARY* boundary ) throw( IO_ER
 
         // Set maximum proximity threshold for point to point nearness metric for
         // board perimeter only, not interior keepouts yet.
-        prox = Millimeter2iu( 0.002 );  // should be enough to fix rounding issues
+        prox = Millimeter2iu( 0.01 );   // should be enough to fix rounding issues
                                         // is arc start and end point calculations
 
         // Output the Edge.Cuts perimeter as circle or polygon.
@@ -1363,7 +1371,7 @@ typedef std::pair<STRINGSET::iterator, bool>    STRINGSET_PAIR;
 
 void SPECCTRA_DB::FromBOARD( BOARD* aBoard ) throw( IO_ERROR )
 {
-    TYPE_COLLECTOR          items;
+    PCB_TYPE_COLLECTOR     items;
 
     static const KICAD_T    scanMODULEs[] = { PCB_MODULE_T, EOT };
 
@@ -1371,7 +1379,7 @@ void SPECCTRA_DB::FromBOARD( BOARD* aBoard ) throw( IO_ERROR )
     // Unless they are unique, we cannot import the session file which comes
     // back to us later from the router.
     {
-        TYPE_COLLECTOR  padItems;
+        PCB_TYPE_COLLECTOR  padItems;
 
         items.Collect( aBoard, scanMODULEs );
 
@@ -2137,7 +2145,7 @@ void SPECCTRA_DB::FlipMODULEs( BOARD* aBoard )
     for( MODULE* module = aBoard->m_Modules;  module;  module = module->Next() )
     {
         module->SetFlag( 0 );
-        if( module->GetLayer() == LAYER_N_BACK )
+        if( module->GetLayer() == B_Cu )
         {
             module->Flip( module->GetPosition() );
             module->SetFlag( 1 );
@@ -2166,4 +2174,6 @@ void SPECCTRA_DB::RevertMODULEs( BOARD* aBoard )
 
     modulesAreFlipped = false;
 }
+
 }       // namespace DSN
+

@@ -60,11 +60,13 @@ int FOOTPRINTS_LISTBOX::GetCount()
 
 void FOOTPRINTS_LISTBOX::SetString( unsigned linecount, const wxString& text )
 {
-    if( linecount >= m_footprintList.Count() )
-        linecount = m_footprintList.Count() - 1;
-
-    if( linecount >= 0 )
+    unsigned count = m_footprintList.Count();
+    if( count > 0 )
+    {
+        if( linecount >= count )
+            linecount = count - 1;
         m_footprintList[linecount] = text;
+    }
 }
 
 
@@ -284,4 +286,6 @@ void FOOTPRINTS_LISTBOX::OnChar( wxKeyEvent& event )
             break;
         }
     }
+
+    event.Skip();
 }

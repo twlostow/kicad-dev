@@ -1,6 +1,26 @@
-/********************************************/
-/*  library editor: undo and redo functions */
-/********************************************/
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2007 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 
 #include <fctsys.h>
 #include <class_drawpanel.h>
@@ -13,10 +33,10 @@
 
 void LIB_EDIT_FRAME::SaveCopyInUndoList( EDA_ITEM* ItemToCopy, int unused_flag )
 {
-    LIB_COMPONENT*     CopyItem;
+    LIB_PART*          CopyItem;
     PICKED_ITEMS_LIST* lastcmd;
 
-    CopyItem = new LIB_COMPONENT( *( (LIB_COMPONENT*) ItemToCopy ) );
+    CopyItem = new LIB_PART( * (LIB_PART*) ItemToCopy );
 
     // Clear current flags (which can be temporary set by a current edit command).
     CopyItem->ClearStatus();
@@ -31,35 +51,42 @@ void LIB_EDIT_FRAME::SaveCopyInUndoList( EDA_ITEM* ItemToCopy, int unused_flag )
 }
 
 
-/* Redo the last edition:
- * - Place the current edited library component in undo list
- * - Get old version of the current edited library component
- */
 void LIB_EDIT_FRAME::GetComponentFromRedoList( wxCommandEvent& event )
 {
-    if ( GetScreen()->GetRedoCommandCount() <= 0 )
+    if( GetScreen()->GetRedoCommandCount() <= 0 )
         return;
 
     PICKED_ITEMS_LIST* lastcmd = new PICKED_ITEMS_LIST();
-    ITEM_PICKER wrapper( m_component, UR_LIBEDIT );
+
+    LIB_PART* part = GetCurPart();
+
+    ITEM_PICKER wrapper( part, UR_LIBEDIT );
+
     lastcmd->PushItem( wrapper );
     GetScreen()->PushCommandToUndoList( lastcmd );
 
     lastcmd = GetScreen()->PopCommandFromRedoList();
 
     wrapper = lastcmd->PopItem();
-    m_component = (LIB_COMPONENT*) wrapper.GetItem();
 
-    if( m_component == NULL )
+    part = (LIB_PART*) wrapper.GetItem();
+
+    // Do not delete the previous part by calling SetCurPart( part )
+    // which calls delete <previous part>.
+    // <previous part> is now put in undo list and is owned by this list
+    // Just set the current part to the part which come from the redo list
+    m_my_part = part;
+
+    if( !part )
         return;
 
-    if( !m_aliasName.IsEmpty() && !m_component->HasAlias( m_aliasName ) )
-        m_aliasName = m_component->GetName();
+    if( !m_aliasName.IsEmpty() && !part->HasAlias( m_aliasName ) )
+        m_aliasName = part->GetName();
 
     m_drawItem = NULL;
     UpdateAliasSelectList();
     UpdatePartSelectList();
-    SetShowDeMorgan( m_component->HasConversion() );
+    SetShowDeMorgan( part->HasConversion() );
     DisplayLibInfos();
     DisplayCmpDoc();
     OnModify();
@@ -67,35 +94,42 @@ void LIB_EDIT_FRAME::GetComponentFromRedoList( wxCommandEvent& event )
 }
 
 
-/** Undo the last edition:
- * - Place the current edited library component in Redo list
- * - Get old version of the current edited library component
- */
 void LIB_EDIT_FRAME::GetComponentFromUndoList( wxCommandEvent& event )
 {
-    if ( GetScreen()->GetUndoCommandCount() <= 0 )
+    if( GetScreen()->GetUndoCommandCount() <= 0 )
         return;
 
     PICKED_ITEMS_LIST* lastcmd = new PICKED_ITEMS_LIST();
-    ITEM_PICKER wrapper( m_component, UR_LIBEDIT );
+
+    LIB_PART*      part = GetCurPart();
+
+    ITEM_PICKER wrapper( part, UR_LIBEDIT );
+
     lastcmd->PushItem( wrapper );
     GetScreen()->PushCommandToRedoList( lastcmd );
 
     lastcmd = GetScreen()->PopCommandFromUndoList();
 
     wrapper = lastcmd->PopItem();
-    m_component = (LIB_COMPONENT*) wrapper.GetItem();
 
-    if( m_component == NULL )
+    part = (LIB_PART*     ) wrapper.GetItem();
+
+    // Do not delete the previous part by calling SetCurPart( part ),
+    // which calls delete <previous part>.
+    // <previous part> is now put in redo list and is owned by this list.
+    // Just set the current part to the part which come from the undo list
+    m_my_part = part;
+
+    if( !part )
         return;
 
-    if( !m_aliasName.IsEmpty() && !m_component->HasAlias( m_aliasName ) )
-        m_aliasName = m_component->GetName();
+    if( !m_aliasName.IsEmpty() && !part->HasAlias( m_aliasName ) )
+        m_aliasName = part->GetName();
 
     m_drawItem = NULL;
     UpdateAliasSelectList();
     UpdatePartSelectList();
-    SetShowDeMorgan( m_component->HasConversion() );
+    SetShowDeMorgan( part->HasConversion() );
     DisplayLibInfos();
     DisplayCmpDoc();
     OnModify();

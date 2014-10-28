@@ -23,10 +23,6 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules )
 # reports.
 #
 
-#option( USE_KIWAY_DLLS "Build the major modules as KIFACE DLLs or DSOs, will soon be the norm." ON )
-set( USE_KIWAY_DLLS true )  # this is now mandatory, the code is the same anyways, the old code is gone.
-
-
 # The desire is to migrate designs *away from* case independence, and to create designs which use
 # literally (case specific) interpreted component names.  But for backwards compatibility,
 # you may turn OFF this option if you really must.  (Remember that with KiCad using text
@@ -36,36 +32,39 @@ set( USE_KIWAY_DLLS true )  # this is now mandatory, the code is the same anyway
 # have this option turned OFF, the xml export's referential integrity is broken
 # on library part name.  Hence the default is ON now, as of 29-Jan-2014.
 option( KICAD_KEEPCASE
-    "ON= case specific string matching on component names, OFF= match names as if they were spelt using uppercase."
+    "Use case sensitive string matching for component names (default ON)."
     ON
     )
 
 option( USE_WX_GRAPHICS_CONTEXT
-    "Use wxGraphicsContext for rendering ( default OFF). Warning, this is experimental" )
+    "Use wxGraphicsContext for rendering (default OFF).  Warning, this is experimental" )
 
 option( USE_WX_OVERLAY
-    "Use wxOverlay: Always ON for MAC ( default OFF). Warning, this is experimental" )
+    "Use wxOverlay: Always ON for MAC (default OFF).  Warning, this is experimental" )
 
 option( KICAD_SCRIPTING
-    "set this option ON to build the scripting support inside kicad binaries"
+    "Build the Python scripting support inside KiCad binaries (default OFF)."
     )
 
 option( KICAD_SCRIPTING_MODULES
-    "set this option ON to build kicad modules that can be used from scripting languages"
+    "Build KiCad Python modules that can be used from scripting languages (default OFF)."
     )
 
 option( KICAD_SCRIPTING_WXPYTHON
-    "set this option ON to build wxpython implementation for wx interface building in python and py.shell"
+    "Build wxPython implementation for wx interface building in Python and py.shell (default OFF)."
     )
 
 option( KICAD_BUILD_STATIC
-    "Builds Kicad and all libraries static"
+    "Build dependencies as static libraries.  OSX only. (default OFF)."
     )
 
 option( KICAD_BUILD_DYNAMIC
-    "Builds Kicad and all libraries dynamic (required for wxPython)"
+    "Build dependencies as shared libraries.  Required for wxPython support.  OXS only. (default OFF)."
     )
 
+option( USE_OSX_DEPS_BUILDER
+    "Build dependencies from source instead of dependencies installed on system. OSX only. (default OFF)."
+    )
 
 # WARNING: KiCad developers strongly advise you to build Boost with supplied patches,
 # as it is known to work with KiCad.  Other versions may contain bugs that may result
@@ -270,7 +269,6 @@ if( USE_WX_GRAPHICS_CONTEXT )
 endif()
 
 
-
 # Allow user to override the default settings for adding images to menu items.  By default
 # images in menu items are enabled on all platforms except OSX.  This can be over ridden by
 # defining -DUSE_IMAGES_IN_MENUS=ON/OFF to force the preferred behavior.
@@ -311,7 +309,7 @@ set( KICAD_BIN bin
 set( KICAD_FP_LIB_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}"
      CACHE PATH "Default path where footprint libraries are installed." )
 
-if( UNIX )
+if( UNIX AND NOT APPLE )
     # Everything without leading / is relative to CMAKE_INSTALL_PREFIX.
     set( KICAD_PLUGINS lib/kicad/plugins
         CACHE PATH "Location of KiCad plugins." )
@@ -338,6 +336,65 @@ set( KICAD_DEMOS ${KICAD_DATA}/demos
 set( KICAD_TEMPLATE ${KICAD_DATA}/template
     CACHE PATH "Location of KiCad template files." )
 
+if( APPLE )
+    # everything without leading / is relative to CMAKE_INSTALL_PREFIX.
+    # CMAKE_INSTALL_PREFIX is root of .dmg image
+    set( KICAD_BIN ${CMAKE_INSTALL_PREFIX}
+        CACHE PATH "Location of KiCad binaries." FORCE )
+
+    # some paths to single app bundle
+    set( OSX_BUNDLE_MAIN "kicad.app" )
+    set( OSX_BUNDLE_BIN_DIR "Contents/MacOS" )
+    set( OSX_BUNDLE_LIB_DIR "Contents/Frameworks" )
+    set( OSX_BUNDLE_KIFACE_DIR "Contents/PlugIns" )
+    set( OSX_BUNDLE_SUP_DIR "Contents/SharedSupport" )
+    set( OSX_BUNDLE_APP_DIR "Contents/Applications" )
+    set( OSX_BUNDLE_BUILD_DIR "${CMAKE_BINARY_DIR}/kicad/${OSX_BUNDLE_MAIN}" )
+    set( OSX_BUNDLE_BUILD_BIN_DIR "${OSX_BUNDLE_BUILD_DIR}/${OSX_BUNDLE_BIN_DIR}" )
+    set( OSX_BUNDLE_BUILD_LIB_DIR "${OSX_BUNDLE_BUILD_DIR}/${OSX_BUNDLE_LIB_DIR}" )
+    set( OSX_BUNDLE_BUILD_KIFACE_DIR "${OSX_BUNDLE_BUILD_DIR}/${OSX_BUNDLE_KIFACE_DIR}" )
+    set( OSX_BUNDLE_INSTALL_DIR "${KICAD_BIN}/${OSX_BUNDLE_MAIN}" )
+    set( OSX_BUNDLE_INSTALL_BIN_DIR "${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_BIN_DIR}" )
+    set( OSX_BUNDLE_INSTALL_LIB_DIR "${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_LIB_DIR}" )
+    set( OSX_BUNDLE_INSTALL_KIFACE_DIR "${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_KIFACE_DIR}" )
+
+    # everything provided with the application bundle goes into
+    # kicad.app/Contents/SharedSupport => accessible via GetDataDir()
+    # everything else to the .dmg image
+    set( KICAD_DATA ${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_SUP_DIR}
+        CACHE PATH "Location of KiCad data files." FORCE )
+    set( KICAD_TEMPLATE ${KICAD_DATA}/template
+        CACHE PATH "Location of KiCad template files." FORCE )
+    set( KICAD_PLUGINS ${KICAD_DATA}/plugins
+        CACHE PATH "Location of KiCad plugins." FORCE )
+    set( KICAD_DOCS doc
+        CACHE PATH "Location of KiCad documentation files." FORCE )
+    set( KICAD_DEMOS demos
+        CACHE PATH "Location of KiCad demo files." FORCE )
+
+    # used to set DEFAULT_FP_LIB_PATH in config.h.cmake, but then never used
+    # set it to correct value just in case (see common.cpp)
+    set( KICAD_FP_LIB_INSTALL_PATH "~/Library/Preferences/kicad" )
+
+    # Override default paths for fixup_bundle
+    set( OSX_BUNDLE_OVERRIDE_PATHS "
+        function( gp_item_default_embedded_path_override item default_embedded_path_var )
+            # by default, embed things right next to the main bundle executable:
+            set( path \"@executable_path/../../Contents/MacOS\" )
+            set( overridden 0 )
+
+            # embed .dylibs right next to the main bundle executable:
+            if( item MATCHES \"\\\\.dylib$\" )
+                set( path \"@executable_path/../Frameworks\" )
+                set( overridden 1 )
+            endif()
+
+            set( \${default_embedded_path_var} \"\${path}\" PARENT_SCOPE )
+        endfunction(gp_item_default_embedded_path_override)
+        "
+        )
+endif()
+
 mark_as_advanced( KICAD_BIN
     KICAD_PLUGINS
     KICAD_DATA
@@ -354,8 +411,23 @@ include( ExternalProject )
 #================================================
 include( CheckFindPackageResult )
 
+##########################
+# Find wxWidgets library #
+##########################
+# Here you can define what libraries of wxWidgets you need for your
+# application. You can figure out what libraries you need here;
+# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
+
 # Turn on wxWidgets compatibility mode for some classes
 add_definitions( -DWX_COMPATIBILITY )
+
+# See line 41 of CMakeModules/FindwxWidgets.cmake
+set( wxWidgets_CONFIG_OPTIONS --static=no )
+
+find_package( wxWidgets 3.0.0 COMPONENTS gl aui adv html core net base xml REQUIRED )
+
+# Include wxWidgets macros.
+include( ${wxWidgets_USE_FILE} )
 
 #######################
 # Find OpenGL library #
@@ -373,9 +445,12 @@ check_find_package_result( OPENGL_FOUND "OpenGL" )
 # Always defined, empty if no libraries are to be built
 add_custom_target( lib-dependencies )
 
-if( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC )
+# Only download and build all dependencies from source on OSX if the user specifically requests
+# it.  Otherwise, respect the developers wishes to use the dependencies already installed on
+# their system
+if( APPLE AND USE_OSX_DEPS_BUILDER )
 
-    # This should be built in all cases, if swig exec is not avaiable
+    # This should be built in all cases, if swig exec is not available
     # will be impossible also enable SCRIPTING being for PCBNEW required immediately
 
     include( download_pcre )
@@ -418,31 +493,24 @@ if( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC )
 
         set( PYTHON_DEST ${LIBWXPYTHON_ROOT}/wxPython/lib/python2.6/site-packages )
 
-        set(wxWidgets_BIN_DIR           ${LIBWXPYTHON_ROOT}/bin/wxrc )
-        set(wxWidgets_CONFIG_EXECUTABLE ${LIBWXPYTHON_ROOT}/bin/wx-config )
-        set(wxWidgets_INCLUDE_DIRS      ${LIBWXPYTHON_ROOT}/include/wx-3.0 )
-        set(wxWidgets_LIBRARY_DIRS      ${LIBWXPYTHON_ROOT}/lib )
-
         add_dependencies( lib-dependencies libwxpython )
         add_dependencies( lib-dependencies swig )
-
     else()
         include( download_wxwidgets )
         add_dependencies( lib-dependencies libwx )
     endif()
 
     include( download_libpng )
-
     include( download_pkgconfig )
-        set( PKG_CONFIG_EXECUTABLE "${PKGCONFIG_ROOT}/bin/pkg-config" )
+    set( PKG_CONFIG_EXECUTABLE "${PKGCONFIG_ROOT}/bin/pkg-config" )
     include( download_glew )
-        set( GLEW_GLEW_LIBRARY "${GLEW_ROOT}/lib/libGLEW.a" )
-        set( GLEW_INCLUDE_DIR  "${GLEW_ROOT}/include" )
+    set( GLEW_GLEW_LIBRARY "${GLEW_ROOT}/lib/libGLEW.a" )
+    set( GLEW_INCLUDE_DIR  "${GLEW_ROOT}/include" )
     include( download_pixman )
-        set( PIXMAN_LIBRARY     "${PIXMAN_ROOT}/lib/libpixman-1.a" )
+    set( PIXMAN_LIBRARY     "${PIXMAN_ROOT}/lib/libpixman-1.a" )
     include( download_cairo )
-        set( CAIRO_INCLUDE_DIR  "${CAIRO_ROOT}/include/cairo" )
-        set( CAIRO_LIBRARY      "${CAIRO_ROOT}/lib/libcairo.a" )
+    set( CAIRO_INCLUDE_DIR  "${CAIRO_ROOT}/include/cairo" )
+    set( CAIRO_LIBRARY      "${CAIRO_ROOT}/lib/libcairo.a" )
 
     add_dependencies( lib-dependencies boost )
     add_dependencies( lib-dependencies cairo )
@@ -451,11 +519,13 @@ if( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC )
     add_dependencies( lib-dependencies pkgconfig )
 
     if( KICAD_BUILD_DYNAMIC AND APPLE )
-        add_custom_target( osx_fix_bundles ALL DEPENDS cvpcb eeschema gerbview kicad pcbnew bitmap2component pcb_calculator pl_editor)
-        add_custom_command(TARGET osx_fix_bundles POST_BUILD COMMAND ${PROJECT_SOURCE_DIR}/scripts/osx_fixbundle.sh ${PROJECT_SOURCE_DIR} COMMENT "Migrating dylibs to bundles")
+        add_custom_target( osx_fix_bundles ALL DEPENDS
+            cvpcb eeschema gerbview kicad pcbnew bitmap2component pcb_calculator pl_editor)
+        add_custom_command(TARGET osx_fix_bundles
+            POST_BUILD COMMAND ${PROJECT_SOURCE_DIR}/scripts/osx_fixbundle.sh ${PROJECT_SOURCE_DIR}
+            COMMENT "Migrating dylibs to bundles")
     endif()
-
-endif( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC)
+endif()
 
 #####################
 # Find GLEW library #
@@ -490,33 +560,9 @@ WARNING: You decided to skip building boost library.
 KiCad developers strongly advise you to build the bundled boost library, as it is known to work with KiCad.
 Other versions may contain bugs that may result in KiCad errors." )
 else()
+    add_dependencies( lib-dependencies boost )
     include( download_boost )
 endif()
-
-##########################
-# Find wxWidgets library #
-##########################
-# Here you can define what libraries of wxWidgets you need for your
-# application. You can figure out what libraries you need here;
-# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-
-# See line 41 of CMakeModules/FindwxWidgets.cmake
-set( wxWidgets_CONFIG_OPTIONS --static=no )
-
-# On Apple only wxwidgets 2.9 or higher doesn't need to find aui part of base
-# Seems no more needed on wx-3
-if( APPLE AND ( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES OR KICAD_SCRIPTING_WXPYTHON) )
-    find_package( wxWidgets COMPONENTS gl adv html core net base xml QUIET )
-else()
-    find_package( wxWidgets COMPONENTS gl aui adv html core net base xml QUIET )
-endif()
-
-if( NOT (KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC) )
-    check_find_package_result( wxWidgets_FOUND "wxWidgets" )
-endif()
-
-# Include wxWidgets macros.
-include( ${wxWidgets_USE_FILE} )
 
 # Include MinGW resource compiler.
 include( MinGWResourceCompiler )
@@ -554,16 +600,8 @@ set( INC_AFTER
 
 # Find Python and other scripting resources
 if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
-
-    if( APPLE )
-        set( PYTHON_LIBRARY /System/Library/Frameworks/Python.framework/Versions/2.6/Python  )
-        set( PYTHON_INCLUDE_DIR /System/Library/Frameworks/Python.framework/Versions//2.6/include/python2.6 )
-        set( PythonInterp_FIND_VERSION 2.6 )
-        set( PythonLibs_FIND_VERSION 2.6 )
-    endif()
-
     # force a python version < 3.0
-    set( PythonInterp_FIND_VERSION 2.6)
+    set( PythonInterp_FIND_VERSION 2.6 )
     set( PythonLibs_FIND_VERSION 2.6 )
 
     find_package( PythonInterp )
@@ -573,20 +611,33 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
     if( NOT PYTHON_VERSION_MAJOR EQUAL 2 )
         message( FATAL_ERROR "Python 2.x is required." )
     endif()
+
     # Get the correct Python site package install path from the Python interpreter found by
     # FindPythonInterp unless the user specifically defined a custom path.
     if( NOT PYTHON_SITE_PACKAGE_PATH )
-        execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig;print\"%s\"%distutils.sysconfig.get_python_lib()"
+        execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig;print\"%s\"%distutils.sysconfig.get_python_lib(plat_specific=0, standard_lib=0, prefix='')"
+#        execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig;print\"%s\"%distutils.sysconfig.get_python_lib()"
             OUTPUT_VARIABLE PYTHON_SITE_PACKAGE_PATH
             OUTPUT_STRIP_TRAILING_WHITESPACE
             )
 
         if( NOT PYTHON_SITE_PACKAGE_PATH )
-            message( FATAL_ERROR "Error occurred while attemping to find the Python site library path." )
+            message( FATAL_ERROR "Error occurred while attempting to find the Python site library path." )
         endif()
     endif()
 
-    set( PYTHON_DEST "${PYTHON_SITE_PACKAGE_PATH}" CACHE PATH "Python module install path." )
+    if( NOT APPLE )
+        set( PYTHON_DEST "${PYTHON_SITE_PACKAGE_PATH}"
+            CACHE PATH "Python module install path."
+            )
+    else()
+        # relative path for python in bundle
+        set( PYTHON_LIB_DIR "python/site-packages" )
+        # install into bundle Frameworks folder
+        set( PYTHON_DEST "${OSX_BUNDLE_BUILD_LIB_DIR}/${PYTHON_LIB_DIR}"
+            CACHE PATH "Python module install path."
+            )
+    endif()
     mark_as_advanced( PYTHON_DEST )
     message( STATUS "Python module install path: ${PYTHON_DEST}" )
 
@@ -621,6 +672,25 @@ endif()
 # Let CMake look in these directories for nested
 # 'CMakeLists.txt' files to process
 #================================================
+
+if( APPLE )
+    # Remove app bundles in ${KICAD_BIN} before installing anything new.
+    # Must be defined before all includes so that it is executed first.
+    install( CODE "
+            message( STATUS \"Removing existing application bundles...\" )
+            # Remove links to standalone apps
+            file( REMOVE ${KICAD_BIN}/bitmap2component.app )
+            file( REMOVE ${KICAD_BIN}/eeschema.app )
+            file( REMOVE ${KICAD_BIN}/cvpcb.app )
+            file( REMOVE ${KICAD_BIN}/gerbview.app )
+            file( REMOVE ${KICAD_BIN}/pcb_calculator.app )
+            file( REMOVE ${KICAD_BIN}/pcbnew.app )
+            file( REMOVE ${KICAD_BIN}/pl_editor.app )
+            # Remove main bundle
+            file( REMOVE_RECURSE ${KICAD_BIN}/${OSX_BUNDLE_MAIN} )
+        " COMPONENT Runtime
+        )
+endif()
 
 ############################
 # Binaries ( CMake targets ) #
@@ -662,7 +732,7 @@ add_dependencies( pl_editor boost )
 add_dependencies( pnsrouter boost )
 
 
-if ( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC )
+if( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC )
     add_dependencies( pcbnew lib-dependencies )
     add_dependencies( eeschema lib-dependencies )
     add_dependencies( cvpcb lib-dependencies )
@@ -675,7 +745,7 @@ if ( KICAD_BUILD_STATIC OR KICAD_BUILD_DYNAMIC )
     add_dependencies( pnsrouter lib-dependencies )
 endif()
 
-if ( KICAD_BUILD_DYNAMIC )
+if( KICAD_BUILD_DYNAMIC )
 endif()
 
 #############
@@ -745,7 +815,7 @@ endif()
 ###
 # FreeDesktop .desktop and MIME resources
 ###
-if( UNIX )
+if( UNIX AND NOT APPLE )
 
     # Set paths
     set( UNIX_MIME_DIR resources/linux/mime )

@@ -38,6 +38,7 @@
 
 #include <pcbnew_id.h>
 #include <hotkeys.h>
+#include <help_common_strings.h>
 
 
 void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
@@ -69,7 +70,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
 
     // New module
     AddMenuItem( fileMenu, ID_MODEDIT_NEW_MODULE,
-                 _( "&New Module" ), _( "Create new module" ),
+                 _( "&New Footprint" ), _( "Create new footprint" ),
                  KiBitmap( new_footprint_xpm ) );
 
     // Open submenu
@@ -77,26 +78,26 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
 
     // from File
     AddMenuItem( openSubmenu, ID_MODEDIT_IMPORT_PART,
-                 _( "&Import Module From File" ),
+                 _( "&Import Footprint From File" ),
                  _( "Import footprint from an existing file" ),
                  KiBitmap( import_module_xpm ) );
 
     // from Library
     AddMenuItem( openSubmenu, ID_MODEDIT_LOAD_MODULE,
-                 _( "Load Module From Current Li&brary" ),
-                 _( "Open a footprint module from library" ),
+                 _( "Load Footprint From Current Li&brary" ),
+                 _( "Open a footprint from library" ),
                  KiBitmap( module_xpm ) );
 
     // from current Board
     AddMenuItem( openSubmenu, ID_MODEDIT_LOAD_MODULE_FROM_BOARD,
-                 _( "Load Module From &Current Board" ),
-                 _( "Load a footprint module from the current board" ),
+                 _( "Load Footprint From &Current Board" ),
+                 _( "Load a footprint from the current board" ),
                  KiBitmap( load_module_board_xpm ) );
 
     /* Append openSubmenu to fileMenu */
     AddMenuItem( fileMenu, openSubmenu, -1,
-                 _( "&Load Module" ),
-                 _( "Load footprint module" ),
+                 _( "&Load Footprint" ),
+                 _( "Load footprint" ),
                  KiBitmap( open_document_xpm ) );
     fileMenu->AppendSeparator();
 
@@ -107,30 +108,37 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
                  KiBitmap( copy_library_xpm ) );
 
     // Save module
-    text = AddHotkeyName( _( "&Save Module in Active Library" ),
+    text = AddHotkeyName( _( "&Save Footprint in Active Library" ),
                           g_Module_Editor_Hokeys_Descr, HK_SAVE_MODULE );
 
     AddMenuItem( fileMenu, ID_MODEDIT_SAVE_LIBMODULE, text,
-                 _( "Save module in active library" ),
+                 _( "Save footprint in active library" ),
                  KiBitmap( save_library_xpm ) );
 
     // Save module in new lib
     AddMenuItem( fileMenu, ID_MODEDIT_CREATE_NEW_LIB_AND_SAVE_CURRENT_PART,
-                 _( "S&ave Module in New Library" ),
+                 _( "S&ave Footprint in New Library" ),
                  _( "Create a new library and save current module into it" ),
                  KiBitmap( new_library_xpm ) );
 
     // Export module
     AddMenuItem( fileMenu, ID_MODEDIT_EXPORT_PART,
-                 _( "&Export Module" ),
-                 _( "Save current loaded module into file" ),
+                 _( "&Export Footprint" ),
+                 _( "Save currently loaded footprint into file" ),
                  KiBitmap( export_module_xpm ) );
+
+    // Import DXF File
+    AddMenuItem( fileMenu, ID_GEN_IMPORT_DXF_FILE,
+                 _( "&Import DXF File" ),
+                 _( "Import a 2D Drawing DXF file to Pcbnew on the Drawings layer" ),
+                 KiBitmap( import_xpm ) );
+
     fileMenu->AppendSeparator();
 
     // Print
     AddMenuItem( fileMenu, wxID_PRINT,
                  _( "&Print" ),
-                 _( "Print current module" ),
+                 _( "Print current footprint" ),
                  KiBitmap( plot_xpm ) );
 
     // Separator
@@ -168,7 +176,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     // Properties
     AddMenuItem( editMenu, ID_MODEDIT_EDIT_MODULE_PROPERTIES,
                  _( "Edit &Properties" ),
-                 _( "Edit module properties" ),
+                 _( "Edit footprint properties" ),
                  KiBitmap( module_options_xpm ) );
 
     // Dimensions submenu
@@ -193,28 +201,35 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     // View menu
     wxMenu* viewMenu = new wxMenu;
 
-    // Zoom In
-    AddMenuItem( viewMenu, ID_ZOOM_IN,
-                 _( "Zoom &In" ), _( "Zoom in" ),
-                 KiBitmap( zoom_in_xpm ) );
+    /* Important Note for ZOOM IN and ZOOM OUT commands from menubar:
+     * we cannot add hotkey info here, because the hotkey HK_ZOOM_IN and HK_ZOOM_OUT
+     * events(default = WXK_F1 and WXK_F2) are *NOT* equivalent to this menu command:
+     * zoom in and out from hotkeys are equivalent to the pop up menu zoom
+     * From here, zooming is made around the screen center
+     * From hotkeys, zooming is made around the mouse cursor position
+     * (obviously not possible from the toolbar or menubar command)
+     *
+     * in other words HK_ZOOM_IN and HK_ZOOM_OUT *are NOT* accelerators
+     * for Zoom in and Zoom out sub menus
+     */
+    text = AddHotkeyName( _( "Zoom &In" ), g_Module_Editor_Hokeys_Descr,
+                          HK_ZOOM_IN, IS_ACCELERATOR );
+    AddMenuItem( viewMenu, ID_ZOOM_IN, text, HELP_ZOOM_IN, KiBitmap( zoom_in_xpm ) );
 
-    // Zoom Out
-    AddMenuItem( viewMenu, ID_ZOOM_OUT,
-                 _( "Zoom &Out" ), _( "Zoom out" ),
-                 KiBitmap( zoom_out_xpm ) );
+    text = AddHotkeyName( _( "Zoom &Out" ), g_Module_Editor_Hokeys_Descr,
+                          HK_ZOOM_OUT, IS_ACCELERATOR );
+    AddMenuItem( viewMenu, ID_ZOOM_OUT, text, HELP_ZOOM_OUT, KiBitmap( zoom_out_xpm ) );
 
-    // Fit on Screen
-    AddMenuItem( viewMenu, ID_ZOOM_PAGE,
-                 _( "&Fit on Screen" ),
-                 _( "Zoom to fit the module in the window" ),
+    text = AddHotkeyName( _( "&Fit on Screen" ), g_Module_Editor_Hokeys_Descr,
+                          HK_ZOOM_AUTO  );
+    AddMenuItem( viewMenu, ID_ZOOM_PAGE, text, HELP_ZOOM_FIT,
                  KiBitmap( zoom_fit_in_page_xpm ) );
 
-    viewMenu->AppendSeparator();
+    text = AddHotkeyName( _( "&Redraw" ), g_Module_Editor_Hokeys_Descr, HK_ZOOM_REDRAW );
+    AddMenuItem( viewMenu, ID_ZOOM_REDRAW, text,
+                 HELP_ZOOM_REDRAW, KiBitmap( zoom_redraw_xpm ) );
 
-    // Redraw
-    AddMenuItem( viewMenu, ID_ZOOM_REDRAW,
-                 _( "&Redraw" ), _( "Redraw window's viewport" ),
-                 KiBitmap( zoom_redraw_xpm ) );
+    viewMenu->AppendSeparator();
 
     // 3D view
     AddMenuItem( viewMenu, ID_MENU_PCB_SHOW_3D_FRAME,

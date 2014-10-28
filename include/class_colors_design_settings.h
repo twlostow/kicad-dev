@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file class_colors_design_settings.h
  * @brief Handle colors used to draw all items or layers.
@@ -7,8 +31,6 @@
 #define _COLORS_DESIGN_SETTING_H
 #include <layers_id_colors_and_visibility.h>
 
-#define LAYERSCOLORSBUFFERSIZE NB_LAYERS
-#define ITEMSCOLORSBUFFERSIZE 32
 
 /**
  * Class COLORS_DESIGN_SETTINGS
@@ -20,10 +42,10 @@ public:
     // Color options for screen display of the Printed Board and schematic:
 
     // Common to Eeschema, Pcbnew, GerbView
-    EDA_COLOR_T m_LayersColors[LAYERSCOLORSBUFFERSIZE]; ///< Layer colors (tracks and graphic items)
+    EDA_COLOR_T m_LayersColors[LAYER_ID_COUNT];     ///< Layer colors (tracks and graphic items)
 
     // Common to Eeschema, Pcbnew
-    EDA_COLOR_T m_ItemsColors[ITEMSCOLORSBUFFERSIZE];   ///< All others items but layers
+    EDA_COLOR_T m_ItemsColors[32];                  ///< All others items but layers
 
 public:
     COLORS_DESIGN_SETTINGS();

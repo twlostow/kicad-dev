@@ -36,6 +36,7 @@
 
 #include <fctsys.h>
 #include <project.h>
+#include <3d_viewer.h>      // for KISYS3DMOD
 #include <dialog_fp_lib_table_base.h>
 #include <fp_lib_table.h>
 #include <fp_lib_table_lexer.h>
@@ -346,7 +347,12 @@ public:
         // Fit();
         // We derive from DIALOG_SHIM so prior size will be used anyways.
 
+        // select the last selected page
+        m_auinotebook->SetSelection( m_pageNdx );
+
         // fire pageChangedHandler() so m_cur_grid gets set
+        // m_auinotebook->SetSelection will generate a pageChangedHandler()
+        // event call later, but too late.
         wxAuiNotebookEvent uneventful;
         pageChangedHandler( uneventful );
 
@@ -493,8 +499,8 @@ private:
 
     void pageChangedHandler( wxAuiNotebookEvent& event )
     {
-        int pageNdx = m_auinotebook->GetSelection();
-        m_cur_grid = ( pageNdx == 0 ) ? m_global_grid : m_project_grid;
+        m_pageNdx = m_auinotebook->GetSelection();
+        m_cur_grid = ( m_pageNdx == 0 ) ? m_global_grid : m_project_grid;
     }
 
     void appendRowHandler( wxMouseEvent& event )
@@ -713,6 +719,9 @@ private:
         // the current project.
         unique.insert( PROJECT_VAR_NAME );
         unique.insert( FP_LIB_TABLE::GlobalPathEnvVariableName() );
+        // This special environment variable is used to locad 3d shapes
+        unique.insert( KISYS3DMOD );
+        unique.insert( FP_LIB_TABLE::GlobalPathEnvVariableName() );
 
         m_path_subs_grid->AppendRows( unique.size() );
 
@@ -742,7 +751,10 @@ private:
     FP_TBL_MODEL*       cur_model() const       { return (FP_TBL_MODEL*) m_cur_grid->GetTable(); }
 
     wxGrid*             m_cur_grid;     ///< changed based on tab choice
+    static int          m_pageNdx;      ///< Remember the last notebook page selected during a session
 };
+
+int DIALOG_FP_LIB_TABLE::m_pageNdx = 0;
 
 
 int InvokePcbLibTableEditor( wxTopLevelWindow* aParent, FP_LIB_TABLE* aGlobal, FP_LIB_TABLE* aProject )

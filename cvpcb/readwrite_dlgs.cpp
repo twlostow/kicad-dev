@@ -28,6 +28,7 @@
  */
 
 #include <fctsys.h>
+#include <kiway.h>
 #include <common.h>
 #include <confirm.h>
 #include <build_version.h>
@@ -41,31 +42,30 @@
 #include <cvpcb_mainframe.h>
 #include <cvstruct.h>
 #include <wildcards_and_files_ext.h>
+#include <fp_conflict_assignment_selector.h>
 
-#define titleComponentLibErr _( "Component Library Error" )
 
 void CVPCB_MAINFRAME::SetNewPkg( const wxString& aFootprintName )
 {
     COMPONENT* component;
     bool       hasFootprint = false;
     int        componentIndex;
-    wxString   description;
 
     if( m_netlist.IsEmpty() )
         return;
 
     // If no component is selected, select the first one
-    if( m_ListCmp->GetFirstSelected() < 0 )
+    if( m_compListBox->GetFirstSelected() < 0 )
     {
         componentIndex = 0;
-        m_ListCmp->SetSelection( componentIndex, true );
+        m_compListBox->SetSelection( componentIndex, true );
     }
 
     // iterate over the selection
-    while( m_ListCmp->GetFirstSelected() != -1 )
+    while( m_compListBox->GetFirstSelected() != -1 )
     {
         // Get the component for the current iteration
-        componentIndex = m_ListCmp->GetFirstSelected();
+        componentIndex = m_compListBox->GetFirstSelected();
         component = m_netlist.GetComponent( componentIndex );
 
         if( component == NULL )
@@ -86,7 +86,7 @@ void CVPCB_MAINFRAME::SetNewPkg( const wxString& aFootprintName )
         component->SetFPID( fpid );
 
         // create the new component description
-        description.Printf( CMP_FORMAT, componentIndex + 1,
+        wxString   description = wxString::Format( CMP_FORMAT, componentIndex + 1,
                             GetChars( component->GetReference() ),
                             GetChars( component->GetValue() ),
                             GetChars( FROM_UTF8( component->GetFPID().Format().c_str() ) ) );
@@ -101,18 +101,18 @@ void CVPCB_MAINFRAME::SetNewPkg( const wxString& aFootprintName )
         }
 
         // Set the new description and deselect the processed component
-        m_ListCmp->SetString( componentIndex, description );
-        m_ListCmp->SetSelection( componentIndex, false );
+        m_compListBox->SetString( componentIndex, description );
+        m_compListBox->SetSelection( componentIndex, false );
     }
 
     // Mark this "session" as modified
     m_modified = true;
 
     // select the next component, if there is one
-    if( componentIndex < (m_ListCmp->GetCount() - 1) )
+    if( componentIndex < (m_compListBox->GetCount() - 1) )
         componentIndex++;
 
-    m_ListCmp->SetSelection( componentIndex, true );
+    m_compListBox->SetSelection( componentIndex, true );
 
     // update the statusbar
     DisplayStatus();
@@ -166,16 +166,16 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles()
 
     ReadSchematicNetlist();
 
-    if( m_ListCmp == NULL )
+    if( m_compListBox == NULL )
         return false;
 
-    LoadProjectFile( m_NetlistFileName.GetFullPath() );
+    LoadProjectFile();
     LoadFootprintFiles();
 
     BuildFOOTPRINTS_LISTBOX();
     BuildLIBRARY_LISTBOX();
 
-    m_ListCmp->Clear();
+    m_compListBox->Clear();
     m_undefinedComponentCnt = 0;
 
     if( m_netlist.AnyFootprintsLinked() )
@@ -291,16 +291,68 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles()
         }
     }
 
+
+    // Display a dialog to select footprint selection, if the netlist
+    // and the .cmp file give 2 different valid footprints
+    std::vector <int > m_indexes;   // indexes of footprints in netlist
+
+    for( unsigned ii = 0; ii < m_netlist.GetCount(); ii++ )
+    {
+        COMPONENT* component = m_netlist.GetComponent( ii );
+
+        if( component->GetAltFPID().empty() )
+            continue;
+
+        if( component->GetFPID().IsLegacy() || component->GetAltFPID().IsLegacy())
+            continue;
+
+        m_indexes.push_back( ii );;
+    }
+
+    // If a n assignment conflict is found,
+    // open a dialog to chose between schematic assignment
+    // and .cmp file assignment:
+    if( m_indexes.size() > 0 )
+    {
+        DIALOG_FP_CONFLICT_ASSIGNMENT_SELECTOR dlg( this );
+
+        for( unsigned ii = 0; ii < m_indexes.size(); ii++ )
+        {
+            COMPONENT* component = m_netlist.GetComponent( m_indexes[ii] );
+
+            wxString cmpfpid = component->GetFPID().Format();
+            wxString schfpid = component->GetAltFPID().Format();
+
+            dlg.Add( component->GetReference(), schfpid, cmpfpid );
+        }
+
+        if( dlg.ShowModal() == wxID_OK )
+        {
+
+            // Update the fp selection:
+            for( unsigned ii = 0; ii < m_indexes.size(); ii++ )
+            {
+                COMPONENT* component = m_netlist.GetComponent( m_indexes[ii] );
+
+                int choice = dlg.GetSelection( component->GetReference() );
+
+                if( choice == 0 )   // the schematic (alt fpid) is chosen:
+                    component->SetFPID( component->GetAltFPID() );
+            }
+        }
+    }
+
+    // Populates the component list box:
     for( unsigned i = 0;  i < m_netlist.GetCount();  i++ )
     {
         COMPONENT* component = m_netlist.GetComponent( i );
 
-        msg.Printf( CMP_FORMAT, m_ListCmp->GetCount() + 1,
+        msg.Printf( CMP_FORMAT, m_compListBox->GetCount() + 1,
                     GetChars( component->GetReference() ),
                     GetChars( component->GetValue() ),
                     GetChars( FROM_UTF8( component->GetFPID().Format().c_str() ) ) );
 
-        m_ListCmp->AppendLine( msg );
+        m_compListBox->AppendLine( msg );
 
         if( component->GetFPID().empty() )
         {
@@ -310,7 +362,7 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles()
     }
 
     if( !m_netlist.IsEmpty() )
-        m_ListCmp->SetSelection( 0, true );
+        m_compListBox->SetSelection( 0, true );
 
     DisplayStatus();
 
@@ -344,6 +396,11 @@ int CVPCB_MAINFRAME::SaveCmpLinkFile( const wxString& aFullFileName )
         if( !fn.HasExt() )
             fn.SetExt( ComponentFileExtension );
 
+#if 0   // RHH 6-Jul-14: We did not auto generate the
+        // footprint table.  And the dialog which does suppport editing does the saving.
+        // Besides, this is not the place to do this, it belies the name of this
+        // function.
+
         // Save the project specific footprint library table.
         if( !Prj().PcbFootprintLibs()->IsEmpty( false ) )
         {
@@ -369,6 +426,8 @@ int CVPCB_MAINFRAME::SaveCmpLinkFile( const wxString& aFullFileName )
                 }
             }
         }
+#endif
+
     }
 
     if( !IsWritable( fn.GetFullPath() ) )
@@ -381,6 +440,16 @@ int CVPCB_MAINFRAME::SaveCmpLinkFile( const wxString& aFullFileName )
     }
 
     wxString msg = wxString::Format( _("File %s saved"), GetChars( fn.GetFullPath() ) );
+
+    // Perhaps this replaces all of the above someday.
+    {
+        STRING_FORMATTER sf;
+
+        m_netlist.FormatBackAnnotation( &sf );
+
+        Kiway().ExpressMail( FRAME_SCH, MAIL_BACKANNOTATE_FOOTPRINTS, sf.GetString() );
+    }
+
     SetStatusText( msg );
     return 1;
 }

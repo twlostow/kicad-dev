@@ -48,15 +48,15 @@ TREEPROJECT_ITEM::TREEPROJECT_ITEM( enum TreeFileType type, const wxString& data
                                     wxTreeCtrl* parent ) :
     wxTreeItemData()
 {
-    m_Type = type;
     m_parent = parent;
-    m_FileName = data;
-    m_IsRootFile    = false;    // true only for the root item of the tree (the project name)
-    m_WasPopulated  = false;
+
+    SetType( type );
+    SetFileName( data );
+    SetRootFile( false );    // true only for the root item of the tree (the project name)
+    SetPopulated( false );
 }
 
 
-// Set the state used in the icon list
 void TREEPROJECT_ITEM::SetState( int state )
 {
     wxImageList* imglist = m_parent->GetImageList();
@@ -71,20 +71,15 @@ void TREEPROJECT_ITEM::SetState( int state )
 }
 
 
-/* Get the directory containing the file */
-wxString TREEPROJECT_ITEM::GetDir() const
+const wxString TREEPROJECT_ITEM::GetDir() const
 {
     if( TREE_DIRECTORY == m_Type )
-        return m_FileName;
+        return GetFileName();
 
-    wxFileName filename = wxFileName( m_FileName );
-
-    wxString dir = filename.GetPath();
-    return dir;
+    return wxFileName( GetFileName() ).GetPath();
 }
 
 
-/* rename the file checking if extension change occurs */
 bool TREEPROJECT_ITEM::Rename( const wxString& name, bool check )
 {
     // this is broken & unsafe to use on linux.
@@ -103,7 +98,7 @@ bool TREEPROJECT_ITEM::Rename( const wxString& name, bool check )
     else
         newFile = name;
 
-    if( newFile == m_FileName )
+    if( newFile == GetFileName() )
         return false;
 
     wxString    ext = TREE_PROJECT_FRAME::GetFileExt( GetType() );
@@ -112,25 +107,16 @@ bool TREEPROJECT_ITEM::Rename( const wxString& name, bool check )
 
     if( check && !ext.IsEmpty() && !reg.Matches( newFile ) )
     {
-        wxMessageDialog dialog( m_parent,
-                                _(
-                                    "Changing file extension will change file \
-type.\n Do you want to continue ?"                                                                                 ),
-                                _( "Rename File" ),
-                                wxYES_NO | wxICON_QUESTION );
+        wxMessageDialog dialog( m_parent, _(
+            "Changing file extension will change file type.\n Do you want to continue ?" ),
+            _( "Rename File" ),
+            wxYES_NO | wxICON_QUESTION );
 
         if( wxID_YES != dialog.ShowModal() )
             return false;
     }
 
-#if ( ( wxMAJOR_VERSION < 2 ) || ( ( wxMAJOR_VERSION == 2 ) \
-    && ( wxMINOR_VERSION < 7 )  ) )
-
-    if( !wxRenameFile( m_FileName, newFile ) )
-#else
-
-    if( !wxRenameFile( m_FileName, newFile, false ) )
-#endif
+    if( !wxRenameFile( GetFileName(), newFile, false ) )
     {
         wxMessageDialog( m_parent, _( "Unable to rename file ... " ),
                          _( "Permission error ?" ), wxICON_ERROR | wxOK );
@@ -145,14 +131,13 @@ type.\n Do you want to continue ?"                                              
 }
 
 
-/*******************************************/
 bool TREEPROJECT_ITEM::Delete( bool check )
-/*******************************************/
-/* delete a file */
 {
-    wxString        msg;
+    wxString    msg = wxString::Format( _(
+                    "Do you really want to delete '%s'" ),
+                    GetChars( GetFileName() )
+                    );
 
-    msg.Printf( _( "Do you really want to delete <%s>" ), GetChars( GetFileName() ) );
     wxMessageDialog dialog( m_parent, msg,
                             _( "Delete File" ), wxYES_NO | wxICON_QUESTION );
 
@@ -160,18 +145,18 @@ bool TREEPROJECT_ITEM::Delete( bool check )
     {
         bool success;
 
-        if( !wxDirExists( m_FileName ) )
-            success = wxRemoveFile( m_FileName );
+        if( !wxDirExists( GetFileName() ) )
+            success = wxRemoveFile( GetFileName() );
         else
         {
             wxArrayString filelist;
 
-            wxDir::GetAllFiles( m_FileName, &filelist );
+            wxDir::GetAllFiles( GetFileName(), &filelist );
 
             for( unsigned int i = 0; i < filelist.Count(); i++ )
                 wxRemoveFile( filelist[i] );
 
-            success = wxRmdir( m_FileName );
+            success = wxRmdir( GetFileName() );
         }
 
         if( success )
@@ -184,16 +169,13 @@ bool TREEPROJECT_ITEM::Delete( bool check )
 }
 
 
-// Called under item activation
 void TREEPROJECT_ITEM::Activate( TREE_PROJECT_FRAME* prjframe )
 {
     wxString        sep = wxFileName().GetPathSeparator();
-    wxString        FullFileName = GetFileName();
+    wxString        fullFileName = GetFileName();
     wxTreeItemId    id = GetId();
 
-    KICAD_MANAGER_FRAME* mainFrame = (KICAD_MANAGER_FRAME*) Pgm().App().GetTopWindow();
-
-    AddDelimiterString( FullFileName );
+    KICAD_MANAGER_FRAME* frame = (KICAD_MANAGER_FRAME*) Pgm().App().GetTopWindow();
 
     switch( GetType() )
     {
@@ -205,24 +187,42 @@ void TREEPROJECT_ITEM::Activate( TREE_PROJECT_FRAME* prjframe )
         break;
 
     case TREE_SCHEMA:
-        mainFrame->Execute( m_parent, EESCHEMA_EXE, FullFileName );
+        if( fullFileName == frame->SchFileName() )
+        {
+            // the project's schematic is opened using the *.kiface as part of this process.
+            frame->RunEeschema( fullFileName );
+        }
+        else
+        {
+            // schematics not part of the project are opened in a separate process.
+            frame->Execute( m_parent, EESCHEMA_EXE, fullFileName );
+        }
         break;
 
     case TREE_LEGACY_PCB:
     case TREE_SEXP_PCB:
-        mainFrame->Execute( m_parent, PCBNEW_EXE, FullFileName );
+        if( fullFileName == frame->PcbFileName() || fullFileName == frame->PcbLegacyFileName() )
+        {
+            // the project's BOARD is opened using the *.kiface as part of this process.
+            frame->RunPcbNew( fullFileName );
+        }
+        else
+        {
+            // boards not part of the project are opened in a separate process.
+            frame->Execute( m_parent, PCBNEW_EXE, fullFileName );
+        }
         break;
 
     case TREE_GERBER:
-        mainFrame->Execute( m_parent, GERBVIEW_EXE, FullFileName );
+        frame->Execute( m_parent, GERBVIEW_EXE, fullFileName );
         break;
 
     case TREE_PDF:
-        OpenPDF( FullFileName );
+        OpenPDF( fullFileName );
         break;
 
     case TREE_NET:
-        mainFrame->Execute( m_parent, CVPCB_EXE, FullFileName );
+        frame->Execute( m_parent, CVPCB_EXE, fullFileName );
         break;
 
     case TREE_TXT:
@@ -230,18 +230,17 @@ void TREEPROJECT_ITEM::Activate( TREE_PROJECT_FRAME* prjframe )
             wxString editorname = Pgm().GetEditorName();
 
             if( !editorname.IsEmpty() )
-                mainFrame->Execute( m_parent, editorname, FullFileName );
-
-            break;
+                frame->Execute( m_parent, editorname, fullFileName );
         }
+        break;
 
     case TREE_PAGE_LAYOUT_DESCR:
-        mainFrame->Execute( m_parent, PL_EDITOR_EXE, FullFileName );
+        frame->Execute( m_parent, PL_EDITOR_EXE, fullFileName );
         break;
 
     default:
-        OpenFile( FullFileName );
+        AddDelimiterString( fullFileName );
+        OpenFile( fullFileName );
         break;
     }
-
 }

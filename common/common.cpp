@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2004 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
+ * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2008-2011 Wayne Stambaugh <stambaughw@verizon.net>
  * Copyright (C) 1992-2011 KiCad Developers, see AUTHORS.txt for contributors.
  *
@@ -37,18 +37,13 @@
 #include <build_version.h>
 #include <confirm.h>
 #include <base_units.h>
+#include <reporter.h>
 
 #include <wx/process.h>
+#include <wx/config.h>
+#include <wx/utils.h>
+#include <wx/stdpaths.h>
 
-// Show warning if wxWidgets Gnome or GTK printing was not configured.
-// Since wxWidgets 3.0, this is no more needed (build in printing works!)
-#if defined( __WXGTK__ )
-    #if !wxCHECK_VERSION( 3, 0, 0 )
-    #   if !wxUSE_LIBGNOMEPRINT && !wxUSE_GTKPRINT && !SWIG
-    #       warning "You must use '--with-gnomeprint' or '--with-gtkprint' in your wx library configuration for full print capabilities."
-    #   endif
-    #endif
-#endif
 
 /**
  * Global variables definitions.
@@ -59,7 +54,6 @@
  */
 
 bool           g_ShowPageLimits = true;
-
 EDA_UNITS_T    g_UserUnit;
 EDA_COLOR_T    g_GhostColor;
 
@@ -290,8 +284,8 @@ double RoundTo0( double x, double precision )
 
 wxString FormatDateLong( const wxDateTime &aDate )
 {
-    /* GetInfo was introduced only on wx 2.9; for portability reason an
-     * hardcoded format is used on wx 2.8 */
+    // GetInfo was introduced only on wx 2.9; for portability reason an
+    // hardcoded format is used on wx 2.8
 #if wxCHECK_VERSION( 2, 9, 0 )
     return aDate.Format( wxLocale::GetInfo( wxLOCALE_LONG_DATE_FMT ) );
 #else
@@ -299,3 +293,156 @@ wxString FormatDateLong( const wxDateTime &aDate )
 #endif
 }
 
+
+wxConfigBase* GetNewConfig( const wxString& aProgName )
+{
+    wxConfigBase* cfg = 0;
+    wxFileName configname;
+    configname.AssignDir( GetKicadConfigPath() );
+    configname.SetFullName( aProgName );
+
+    cfg = new wxFileConfig( wxT( "" ), wxT( "" ), configname.GetFullPath() );
+    return cfg;
+}
+
+
+wxString GetKicadConfigPath()
+{
+    wxFileName cfgpath;
+
+    // From the wxWidgets wxStandardPaths::GetUserConfigDir() help:
+    //      Unix: ~ (the home directory)
+    //      Windows: "C:\Documents and Settings\username\Application Data"
+    //      Mac: ~/Library/Preferences
+    cfgpath.AssignDir( wxStandardPaths::Get().GetUserConfigDir() );
+
+#if !defined( __WINDOWS__ ) && !defined( __WXMAC__ )
+    wxString envstr;
+
+    if( !wxGetEnv( wxT( "XDG_CONFIG_HOME" ), &envstr ) || envstr.IsEmpty() )
+    {
+        // XDG_CONFIG_HOME is not set, so use the fallback
+        cfgpath.AppendDir( wxT( ".config" ) );
+    }
+    else
+    {
+        // Override the assignment above with XDG_CONFIG_HOME
+        cfgpath.AssignDir( envstr );
+    }
+#endif
+
+    cfgpath.AppendDir( wxT( "kicad" ) );
+
+#if !wxCHECK_VERSION( 2, 9, 0 )
+    #define wxS_DIR_DEFAULT  0777
+#endif
+
+    if( !cfgpath.DirExists() )
+    {
+        cfgpath.Mkdir( wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL );
+    }
+
+    return cfgpath.GetPath();
+}
+
+
+
+bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
+                                const wxString& aBaseFilename,
+                                REPORTER*       aReporter )
+{
+    wxString msg;
+    wxString baseFilePath = wxFileName( aBaseFilename ).GetPath();
+
+    // make aTargetFullFileName path, which is relative to aBaseFilename path (if it is not
+    // already an absolute path) absolute:
+    if( !aTargetFullFileName->MakeAbsolute( baseFilePath ) )
+    {
+        if( aReporter )
+        {
+            msg.Printf( _( "*** Error: cannot make path '%s' absolute with respect to '%s'! ***" ),
+                        GetChars( aTargetFullFileName->GetPath() ),
+                        GetChars( baseFilePath ) );
+            aReporter->Report( msg );
+        }
+
+        return false;
+    }
+
+    // Ensure the path of aTargetFullFileName exists, and create it if needed:
+    wxString outputPath( aTargetFullFileName->GetPath() );
+
+    if( !wxFileName::DirExists( outputPath ) )
+    {
+        if( wxMkdir( outputPath ) )
+        {
+            if( aReporter )
+            {
+                msg.Printf( _( "Output directory '%s' created.\n" ), GetChars( outputPath ) );
+                aReporter->Report( msg );
+                return true;
+            }
+        }
+        else
+        {
+            if( aReporter )
+            {
+                msg.Printf( _( "*** Error: cannot create output directory '%s'! ***\n" ),
+                            GetChars( outputPath ) );
+                aReporter->Report( msg );
+            }
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+#ifdef __WXMAC__
+wxString GetOSXKicadUserDataDir()
+{
+    // According to wxWidgets documentation for GetUserDataDir:
+    // Mac: ~/Library/Application Support/appname
+    wxFileName udir( wxStandardPaths::Get().GetUserDataDir(), wxEmptyString );
+
+    // Since appname is different if started via launcher or standalone binary
+    // map all to "kicad" here
+    udir.RemoveLastDir();
+    udir.AppendDir( wxT( "kicad" ) );
+
+    return udir.GetPath();
+}
+
+
+wxString GetOSXKicadMachineDataDir()
+{
+    return wxT( "/Library/Application Support/kicad" );
+}
+
+
+wxString GetOSXKicadDataDir()
+{
+    // According to wxWidgets documentation for GetDataDir:
+    // Mac: appname.app/Contents/SharedSupport bundle subdirectory
+    wxFileName ddir( wxStandardPaths::Get().GetDataDir(), wxEmptyString );
+
+    // This must be mapped to main bundle for everything but kicad.app
+    const wxArrayString dirs = ddir.GetDirs();
+    if( dirs[dirs.GetCount() - 3] != wxT( "kicad.app" ) )
+    {
+        // Bundle structure resp. current path is
+        //   kicad.app/Contents/Applications/<standalone>.app/Contents/SharedSupport
+        // and will be mapped to
+        //   kicad.app/Contents/SharedSupprt
+        ddir.RemoveLastDir();
+        ddir.RemoveLastDir();
+        ddir.RemoveLastDir();
+        ddir.RemoveLastDir();
+        ddir.AppendDir( wxT( "SharedSupport" ) );
+    }
+
+    return ddir.GetPath();
+}
+#endif

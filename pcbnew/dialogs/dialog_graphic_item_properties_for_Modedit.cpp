@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2012-2014 Jean-Pierre Charras, jean-pierre.charras at wanadoo.fr
+ * Copyright (C) 1992-2014 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  @file dialog_graphic_item_properties_for_Modedit.cpp
  */
@@ -7,7 +31,7 @@
  * Circles
  * Arcs
  * used as graphic elements found on non copper layers in boards
- * Footprint texts are not always graphic items and are not handled here
+ * Footprint texts are not graphic items and are not handled here
  */
 #include <fctsys.h>
 #include <macros.h>
@@ -81,10 +105,8 @@ void FOOTPRINT_EDIT_FRAME::InstallFootprintBodyItemPropertiesDlg(EDGE_MODULE * a
     m_canvas->SetIgnoreMouseEvents( false );
 }
 
+
 void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::initDlg()
-/* Initialize messages and values in text control,
- * according to the item parameters values
-*/
 {
     SetFocus();
     m_StandardButtonsSizerOK->SetDefault();
@@ -105,6 +127,7 @@ void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::initDlg()
     {
         if( texts_unit[ii] == NULL )
             break;
+
         texts_unit[ii]->SetLabel( GetAbbreviatedUnitsLabel() );
     }
 
@@ -156,14 +179,15 @@ void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::initDlg()
 
     // Configure the layers list selector
     m_LayerSelectionCtrl->SetLayersHotkeys( false );
-    m_LayerSelectionCtrl->SetLayerMask( INTERNAL_CU_LAYERS|EDGE_LAYER );
+    m_LayerSelectionCtrl->SetLayerSet( LSET::InternalCuMask().set( Edge_Cuts ) );
     m_LayerSelectionCtrl->SetBoardFrame( m_parent );
     m_LayerSelectionCtrl->Resync();
+
     if( m_LayerSelectionCtrl->SetLayerSelection( m_item->GetLayer() ) < 0 )
     {
-        wxMessageBox( _("This item has an illegal layer id.\n"
-                        "Now, forced on the front silk screen layer. Please, fix it") );
-        m_LayerSelectionCtrl->SetLayerSelection( SILKSCREEN_N_FRONT );
+        wxMessageBox( _( "This item has an illegal layer id.\n"
+                        "Now, forced on the front silk screen layer. Please, fix it" ) );
+        m_LayerSelectionCtrl->SetLayerSelection( F_SilkS );
     }
 }
 
@@ -220,7 +244,7 @@ void DIALOG_MODEDIT_FP_BODY_ITEM_PROPERTIES::OnOkClick( wxCommandEvent& event )
     m_brdSettings.m_ModuleSegmentWidth = thickness;
     m_parent->SetDesignSettings( m_brdSettings );
 
-    m_item->SetLayer( layer );
+    m_item->SetLayer( ToLAYER_ID( layer ) );
 
     if( m_item->GetShape() == S_ARC )
     {

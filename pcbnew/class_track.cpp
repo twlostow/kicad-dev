@@ -37,7 +37,6 @@
 #include <class_drawpanel.h>
 #include <class_pcb_screen.h>
 #include <drawtxt.h>
-#include <pcbcommon.h>
 #include <colors_selection.h>
 #include <wxstruct.h>
 #include <wxBasePcbFrame.h>
@@ -67,7 +66,7 @@ static bool ShowClearance( const TRACK* aTrack )
 
 
 TRACK* GetTrack( TRACK* aStartTrace, const TRACK* aEndTrace,
-        const wxPoint& aPosition, LAYER_MSK aLayerMask )
+        const wxPoint& aPosition, LSET aLayerMask )
 {
     for( TRACK *PtSegm = aStartTrace; PtSegm != NULL; PtSegm = PtSegm->Next() )
     {
@@ -75,13 +74,13 @@ TRACK* GetTrack( TRACK* aStartTrace, const TRACK* aEndTrace,
         {
             if( aPosition == PtSegm->GetStart() )
             {
-                if( aLayerMask & PtSegm->GetLayerMask() )
+                if( ( aLayerMask & PtSegm->GetLayerSet() ).any() )
                     return PtSegm;
             }
 
             if( aPosition == PtSegm->GetEnd() )
             {
-                if( aLayerMask & PtSegm->GetLayerMask() )
+                if( ( aLayerMask & PtSegm->GetLayerSet() ).any() )
                     return PtSegm;
             }
         }
@@ -154,7 +153,7 @@ VIA::VIA( BOARD_ITEM* aParent ) :
     TRACK( aParent, PCB_VIA_T )
 {
     SetViaType( VIA_THROUGH );
-    m_BottomLayer = LAYER_N_BACK;
+    m_BottomLayer = B_Cu;
     SetDrillDefault();
 }
 
@@ -191,8 +190,8 @@ wxString VIA::GetSelectMenuText() const
         wxString netname = GetNetname();
 
         // say which layers, only two for now
-        LAYER_NUM topLayer;
-        LAYER_NUM botLayer;
+        LAYER_ID topLayer;
+        LAYER_ID botLayer;
         LayerPair( &topLayer, &botLayer );
         text.Printf( format.GetData(), GetChars( ShowWidth() ),
                      GetChars( netname ), GetNetCode(),
@@ -371,56 +370,57 @@ SEARCH_RESULT TRACK::Visit( INSPECTOR* inspector, const void* testData,
 }
 
 
-bool VIA::IsOnLayer( LAYER_NUM layer_number ) const
+bool VIA::IsOnLayer( LAYER_ID layer_number ) const
 {
-    LAYER_NUM bottom_layer, top_layer;
+    LAYER_ID bottom_layer, top_layer;
 
     LayerPair( &top_layer, &bottom_layer );
 
-    if( bottom_layer <= layer_number && layer_number <= top_layer )
+    wxASSERT( top_layer <= bottom_layer );
+
+    if( top_layer <= layer_number && layer_number <= bottom_layer )
         return true;
     else
         return false;
 }
 
-LAYER_MSK VIA::GetLayerMask() const
+
+LSET VIA::GetLayerSet() const
 {
     if( GetViaType() == VIA_THROUGH )
-        return ALL_CU_LAYERS;
+        return LSET::AllCuMask();
 
     // VIA_BLIND_BURIED or VIA_MICRVIA:
 
-    LAYER_NUM bottom_layer, top_layer;
+    LSET layermask;
 
-    // LayerPair() knows how layers are stored
-    LayerPair( &top_layer, &bottom_layer );
+    wxASSERT( m_Layer <= m_BottomLayer );
 
-    LAYER_MSK layermask = NO_LAYERS;
-
-    while( bottom_layer <= top_layer )
+    // LAYER_IDs are numbered from front to back, this is top to bottom.
+    for( LAYER_NUM id = m_Layer;  id <= m_BottomLayer;  ++id )
     {
-        layermask |= ::GetLayerMask( bottom_layer );
-        ++bottom_layer;
+        layermask.set( id );
     }
 
     return layermask;
 }
 
-LAYER_MSK TRACK::GetLayerMask() const
+
+LSET TRACK::GetLayerSet() const
 {
-    return ::GetLayerMask( m_Layer );
+    return LSET( m_Layer );
 }
 
 
-void VIA::SetLayerPair( LAYER_NUM aTopLayer, LAYER_NUM aBottomLayer )
+void VIA::SetLayerPair( LAYER_ID aTopLayer, LAYER_ID aBottomLayer )
 {
     if( GetViaType() == VIA_THROUGH )
     {
-        aTopLayer    = LAYER_N_FRONT;
-        aBottomLayer = LAYER_N_BACK;
+        aTopLayer    = F_Cu;
+        aBottomLayer = B_Cu;
     }
 
-    if( aBottomLayer > aTopLayer )
+    if( aBottomLayer < aTopLayer )
         EXCHG( aBottomLayer, aTopLayer );
 
     m_Layer = aTopLayer;
@@ -428,17 +428,17 @@ void VIA::SetLayerPair( LAYER_NUM aTopLayer, LAYER_NUM aBottomLayer )
 }
 
 
-void VIA::LayerPair( LAYER_NUM* top_layer, LAYER_NUM* bottom_layer ) const
+void VIA::LayerPair( LAYER_ID* top_layer, LAYER_ID* bottom_layer ) const
 {
-    LAYER_NUM b_layer = LAYER_N_BACK;
-    LAYER_NUM t_layer = LAYER_N_FRONT;
+    LAYER_ID t_layer = F_Cu;
+    LAYER_ID b_layer = B_Cu;
 
     if( GetViaType() != VIA_THROUGH )
     {
         b_layer = m_BottomLayer;
         t_layer = m_Layer;
 
-        if( b_layer > t_layer )
+        if( b_layer < t_layer )
             EXCHG( b_layer, t_layer );
     }
 
@@ -594,7 +594,7 @@ void TRACK::DrawShortNetname( EDA_DRAW_PANEL* panel,
             }
         }
 
-        LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+        LAYER_ID curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
         if( ( aDC->LogicalToDeviceXRel( tsize ) >= MIN_TEXT_SIZE )
          && ( !(!IsOnLayer( curr_layer )&& DisplayOpt.ContrastModeDisplay) ) )
         {
@@ -613,6 +613,7 @@ void TRACK::DrawShortNetname( EDA_DRAW_PANEL* panel,
     }
 }
 
+
 void TRACK::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
                   const wxPoint& aOffset )
 {
@@ -630,7 +631,7 @@ void TRACK::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
 
     if( ( aDrawMode & GR_ALLOW_HIGHCONTRAST ) && DisplayOpt.ContrastModeDisplay )
     {
-        LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+        LAYER_ID curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
 
         if( !IsOnLayer( curr_layer ) )
             ColorTurnToDarkDarkGray( &color );
@@ -677,6 +678,7 @@ void TRACK::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
     DrawShortNetname( panel, aDC, aDrawMode, color );
 }
 
+
 void SEGZONE::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
                     const wxPoint& aOffset )
 {
@@ -697,7 +699,7 @@ void SEGZONE::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
 
     if( ( aDrawMode & GR_ALLOW_HIGHCONTRAST ) && DisplayOpt.ContrastModeDisplay )
     {
-        LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+        LAYER_ID curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
 
         if( !IsOnLayer( curr_layer ) )
             ColorTurnToDarkDarkGray( &color );
@@ -761,7 +763,7 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
                    const wxPoint& aOffset )
 {
     int radius;
-    LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+    LAYER_ID curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
 
     int fillvia = 0;
     PCB_BASE_FRAME* frame  = (PCB_BASE_FRAME*) panel->GetParent();
@@ -772,11 +774,15 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
 
     GRSetDrawMode( aDC, aDrawMode );
 
-    BOARD * brd =  GetBoard( );
-    EDA_COLOR_T color = brd->GetVisibleElementColor(VIAS_VISIBLE + GetViaType());
+    BOARD * brd =  GetBoard();
+    EDA_COLOR_T color = brd->GetVisibleElementColor( VIAS_VISIBLE + GetViaType() );
 
     if( brd->IsElementVisible( PCB_VISIBLE(VIAS_VISIBLE + GetViaType()) ) == false
         && ( color & HIGHLIGHT_FLAG ) != HIGHLIGHT_FLAG )
+        return;
+
+    // Only draw the via if at least one of the layers it crosses is being displayed
+    if( !( brd->GetVisibleLayers() & GetLayerSet() ).any() )
         return;
 
     if( DisplayOpt.ContrastModeDisplay )
@@ -876,7 +882,7 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
     {
         int ax, ay, bx, by;
 
-        if( IsOnLayer( LAYER_N_BACK ) )
+        if( IsOnLayer( B_Cu ) )
         {
             ax = radius; ay = 0;
             bx = drill_radius; by = 0;
@@ -887,7 +893,7 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
             bx = by = (drill_radius * 707) / 1000;
         }
 
-        /* lines | or \ */
+        // lines '|' or '\'
         GRLine( panel->GetClipBox(), aDC, m_Start.x + aOffset.x - ax,
                 m_Start.y + aOffset.y - ay,
                 m_Start.x + aOffset.x - bx,
@@ -897,7 +903,7 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
                 m_Start.x + aOffset.x + ax,
                 m_Start.y + aOffset.y + ay, 0, color );
 
-        // lines - or /
+        // lines - or '/'
         GRLine( panel->GetClipBox(), aDC, m_Start.x + aOffset.x + ay,
                 m_Start.y + aOffset.y - ax,
                 m_Start.x + aOffset.x + by,
@@ -913,7 +919,7 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
     if( GetViaType() == VIA_BLIND_BURIED )
     {
         int ax = 0, ay = radius, bx = 0, by = drill_radius;
-        LAYER_NUM layer_top, layer_bottom;
+        LAYER_ID layer_top, layer_bottom;
 
         ( (VIA*) this )->LayerPair( &layer_top, &layer_bottom );
 
@@ -973,10 +979,31 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
 
 void VIA::ViewGetLayers( int aLayers[], int& aCount ) const
 {
-    // Just show it on common via & via holes layers
-    aLayers[0] = ITEM_GAL_LAYER( VIA_THROUGH_VISIBLE );
-    aLayers[1] = ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE );
+    aLayers[0] = ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE );
     aCount = 2;
+
+    // Just show it on common via & via holes layers
+    switch( GetViaType() )
+    {
+    case VIA_THROUGH:
+        aLayers[1] = ITEM_GAL_LAYER( VIA_THROUGH_VISIBLE );
+        break;
+
+    case VIA_BLIND_BURIED:
+        aLayers[1] = ITEM_GAL_LAYER( VIA_BBLIND_VISIBLE );
+        aLayers[2] = m_Layer;
+        aLayers[3] = m_BottomLayer;
+        aCount += 2;
+        break;
+
+    case VIA_MICROVIA:
+        aLayers[1] = ITEM_GAL_LAYER( VIA_MICROVIA_VISIBLE );
+        break;
+
+    default:
+        assert( false );
+        break;
+    }
 }
 
 
@@ -995,7 +1022,7 @@ void TRACK::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
         double trackLen = 0;
         double lenPadToDie = 0;
         board->MarkTrace( this, NULL, &trackLen, &lenPadToDie, false );
-        msg = ::CoordinateToString( trackLen );
+        msg = ::LengthDoubleToString( trackLen );
         aList.push_back( MSG_PANEL_ITEM( _( "Track Len" ), msg, DARKCYAN ) );
 
         if( lenPadToDie != 0 )
@@ -1175,7 +1202,7 @@ void VIA::GetMsgPanelInfoBase( std::vector< MSG_PANEL_ITEM >& aList )
 
 
     // Display layer pair
-    LAYER_NUM top_layer, bottom_layer;
+    LAYER_ID top_layer, bottom_layer;
 
     LayerPair( &top_layer, &bottom_layer );
     if( board )
@@ -1253,9 +1280,10 @@ bool VIA::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) const
         return arect.Intersects( box );
 }
 
-VIA* TRACK::GetVia( const wxPoint& aPosition, LAYER_NUM aLayer)
+
+VIA* TRACK::GetVia( const wxPoint& aPosition, LAYER_ID aLayer)
 {
-    for( VIA *via = GetFirstVia( this ); via; via = GetFirstVia( via->Next() ) )
+    for( VIA* via = GetFirstVia( this ); via; via = GetFirstVia( via->Next() ) )
     {
         if( via->HitTest( aPosition ) &&
                 !via->GetState( BUSY | IS_DELETED ) &&
@@ -1267,14 +1295,17 @@ VIA* TRACK::GetVia( const wxPoint& aPosition, LAYER_NUM aLayer)
 }
 
 
-VIA* TRACK::GetVia( TRACK* aEndTrace, const wxPoint& aPosition, LAYER_MSK aLayerMask )
+VIA* TRACK::GetVia( TRACK* aEndTrace, const wxPoint& aPosition, LSET aLayerMask )
 {
-    for( VIA *via = GetFirstVia( this, aEndTrace ); via; via = GetFirstVia( via->Next() ) )
+    for( VIA* via = GetFirstVia( this, aEndTrace ); via; via = GetFirstVia( via->Next() ) )
     {
         if( via->HitTest( aPosition ) &&
-                !via->GetState( BUSY | IS_DELETED ) &&
-                (aLayerMask & via->GetLayerMask()) )
+            !via->GetState( BUSY | IS_DELETED ) &&
+            ( aLayerMask & via->GetLayerSet() ).any()
+            )
+        {
             return via;
+        }
     }
 
     return NULL;
@@ -1284,10 +1315,10 @@ VIA* TRACK::GetVia( TRACK* aEndTrace, const wxPoint& aPosition, LAYER_MSK aLayer
 TRACK* TRACK::GetTrack( TRACK* aStartTrace, TRACK* aEndTrace, ENDPOINT_T aEndPoint,
         bool aSameNetOnly, bool aSequential )
 {
-    const wxPoint &position = GetEndPoint( aEndPoint );
-    LAYER_MSK refLayers = GetLayerMask();
-    TRACK *previousSegment;
-    TRACK *nextSegment;
+    const   wxPoint& position = GetEndPoint( aEndPoint );
+    LSET    refLayers = GetLayerSet();
+    TRACK*  previousSegment;
+    TRACK*  nextSegment;
 
     if( aSequential )
     {
@@ -1321,7 +1352,7 @@ TRACK* TRACK::GetTrack( TRACK* aStartTrace, TRACK* aEndTrace, ENDPOINT_T aEndPoi
         {
             if ( (nextSegment != this) &&
                  !nextSegment->GetState( BUSY | IS_DELETED ) &&
-                 (refLayers & nextSegment->GetLayerMask()) )
+                 ( refLayers & nextSegment->GetLayerSet() ).any() )
             {
                 if( (position == nextSegment->m_Start) ||
                     (position == nextSegment->m_End) )
@@ -1338,9 +1369,10 @@ TRACK* TRACK::GetTrack( TRACK* aStartTrace, TRACK* aEndTrace, ENDPOINT_T aEndPoi
         // Same as above, looking back. During sequential search this branch is inactive
         if( previousSegment )
         {
-            if ( (previousSegment != this) &&
-                 !previousSegment->GetState( BUSY | IS_DELETED ) &&
-                 (refLayers & previousSegment->GetLayerMask()) )
+            if( (previousSegment != this) &&
+                !previousSegment->GetState( BUSY | IS_DELETED ) &&
+                ( refLayers & previousSegment->GetLayerSet() ).any()
+                )
             {
                 if( (position == previousSegment->m_Start) ||
                     (position == previousSegment->m_End) )
@@ -1362,7 +1394,7 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
 {
     TRACK* Track, * via, * segm, * TrackListEnd;
     int      NbEnds, ii, ok = 0;
-    LAYER_MSK layerMask;
+    LSET layerMask;
 
     if( aCount <= 1 )
     {
@@ -1370,7 +1402,7 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
         return 1;
     }
 
-    /* Calculation of the limit analysis. */
+    // Calculation of the limit analysis.
     *aStartTrace = *aEndTrace = NULL;
     TrackListEnd = Track = this;
     ii = 0;
@@ -1381,7 +1413,7 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
         Track->m_Param = 0;
     }
 
-    /* Calculate the extremes. */
+    // Calculate the extremes.
     NbEnds = 0;
     Track = this;
     ii = 0;
@@ -1391,12 +1423,12 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
         if( Track->Type() == PCB_VIA_T )
             continue;
 
-        layerMask = Track->GetLayerMask();
+        layerMask = Track->GetLayerSet();
         via = GetVia( TrackListEnd, Track->m_Start, layerMask );
 
         if( via )
         {
-            layerMask |= via->GetLayerMask();
+            layerMask |= via->GetLayerSet();
             via->SetState( BUSY, true );
         }
 
@@ -1419,7 +1451,7 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
                 int BeginPad, EndPad;
                 *aEndTrace = Track;
 
-                /* Swap ox, oy with fx, fy */
+                // Swap ox, oy with fx, fy
                 BeginPad = Track->GetState( BEGIN_ONPAD );
                 EndPad   = Track->GetState( END_ONPAD );
 
@@ -1438,12 +1470,12 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
             }
         }
 
-        layerMask = Track->GetLayerMask();
+        layerMask = Track->GetLayerSet();
         via = GetVia( TrackListEnd, Track->m_End, layerMask );
 
         if( via )
         {
-            layerMask |= via->GetLayerMask();
+            layerMask |= via->GetLayerSet();
             via->SetState( BUSY, true );
         }
 
@@ -1463,7 +1495,7 @@ int TRACK::GetEndSegments( int aCount, TRACK** aStartTrace, TRACK** aEndTrace )
                 *aStartTrace = Track;
                 NbEnds++;
 
-                /* Swap ox, oy with fx, fy */
+                // Swap ox, oy with fx, fy
                 BeginPad = Track->GetState( BEGIN_ONPAD );
                 EndPad   = Track->GetState( END_ONPAD );
 

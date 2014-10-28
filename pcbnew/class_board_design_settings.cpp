@@ -54,15 +54,16 @@
 BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS() :
     m_Pad_Master( NULL )
 {
-    m_enabledLayers = ALL_LAYERS;               // All layers enabled at first.
-                                                // SetCopperLayerCount() will adjust this.
+    LSET    all_set = LSET().set();
 
-    SetVisibleLayers( FULL_LAYERS );
+    m_enabledLayers = all_set;              // All layers enabled at first.
+                                            // SetCopperLayerCount() will adjust this.
+    SetVisibleLayers( all_set );
 
     // set all but hidden text as visible.
     m_visibleElements = ~( 1 << MOD_TEXT_INVISIBLE );
 
-    SetCopperLayerCount( 2 );                   // Default design is a double sided board
+    SetCopperLayerCount( 2 );               // Default design is a double sided board
 
     // via type (VIA_BLIND_BURIED, VIA_THROUGH VIA_MICROVIA).
     m_CurrentViaType = VIA_THROUGH;
@@ -305,17 +306,17 @@ void BOARD_DESIGN_SETTINGS::SetTrackWidthIndex( unsigned aIndex )
 
 void BOARD_DESIGN_SETTINGS::SetVisibleAlls()
 {
-    SetVisibleLayers( FULL_LAYERS );
+    SetVisibleLayers( LSET().set() );
     m_visibleElements = -1;
 }
 
 
-void BOARD_DESIGN_SETTINGS::SetLayerVisibility( LAYER_NUM aLayer, bool aNewState )
+void BOARD_DESIGN_SETTINGS::SetLayerVisibility( LAYER_ID aLayer, bool aNewState )
 {
     if( aNewState && IsLayerEnabled( aLayer ) )
-        m_visibleLayers |= GetLayerMask( aLayer );
+        m_visibleLayers.set( aLayer, true );
     else
-        m_visibleLayers &= ~GetLayerMask( aLayer );
+        m_visibleLayers.set( aLayer, false );
 }
 
 
@@ -338,6 +339,8 @@ void BOARD_DESIGN_SETTINGS::SetCopperLayerCount( int aNewLayerCount )
     m_copperLayerCount = aNewLayerCount;
 
     // ensure consistency with the m_EnabledLayers member
+#if 0
+    // was:
     m_enabledLayers &= ~ALL_CU_LAYERS;
     m_enabledLayers |= LAYER_BACK;
 
@@ -345,14 +348,19 @@ void BOARD_DESIGN_SETTINGS::SetCopperLayerCount( int aNewLayerCount )
         m_enabledLayers |= LAYER_FRONT;
 
     for( LAYER_NUM ii = LAYER_N_2; ii < aNewLayerCount - 1; ++ii )
-        m_enabledLayers |= GetLayerMask( ii );
+        m_enabledLayers |= GetLayerSet( ii );
+#else
+    // Update only enabled copper layers mask
+    m_enabledLayers &= ~LSET::AllCuMask();
+    m_enabledLayers |= LSET::AllCuMask( aNewLayerCount );
+#endif
 }
 
 
-void BOARD_DESIGN_SETTINGS::SetEnabledLayers( LAYER_MSK aMask )
+void BOARD_DESIGN_SETTINGS::SetEnabledLayers( LSET aMask )
 {
     // Back and front layers are always enabled.
-    aMask |= LAYER_BACK | LAYER_FRONT;
+    aMask.set( B_Cu ).set( F_Cu );
 
     m_enabledLayers = aMask;
 
@@ -360,7 +368,7 @@ void BOARD_DESIGN_SETTINGS::SetEnabledLayers( LAYER_MSK aMask )
     m_visibleLayers &= aMask;
 
     // update m_CopperLayerCount to ensure its consistency with m_EnabledLayers
-    m_copperLayerCount = LayerMaskCountSet( aMask & ALL_CU_LAYERS);
+    m_copperLayerCount = ( aMask & LSET::AllCuMask() ).count();
 }
 
 

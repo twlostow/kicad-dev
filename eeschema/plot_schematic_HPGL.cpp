@@ -31,6 +31,7 @@
 #include <wxEeschemaStruct.h>
 #include <base_units.h>
 #include <sch_sheet_path.h>
+#include <project.h>
 
 #include <dialog_plot_schematic.h>
 
@@ -109,7 +110,6 @@ void DIALOG_PLOT_SCHEMATIC::SetHPGLPenWidth()
 
 void DIALOG_PLOT_SCHEMATIC::createHPGLFile( bool aPlotAll, bool aPlotFrameRef )
 {
-    wxString        plotFileName;
     SCH_SCREEN*     screen = m_parent->GetScreen();
     SCH_SHEET_PATH* sheetpath;
     SCH_SHEET_PATH  oldsheetpath = m_parent->GetCurrentSheet();
@@ -124,6 +124,7 @@ void DIALOG_PLOT_SCHEMATIC::createHPGLFile( bool aPlotAll, bool aPlotFrameRef )
 
     sheetpath = SheetList.GetFirst();
     SCH_SHEET_PATH  list;
+    WX_TEXT_CTRL_REPORTER reporter(m_MessagesBox);
 
     SetHPGLPenWidth();
 
@@ -166,6 +167,7 @@ void DIALOG_PLOT_SCHEMATIC::createHPGLFile( bool aPlotAll, bool aPlotFrameRef )
 
         // Calculate offsets
         wxPoint plotOffset;
+        wxString msg;
 
         if( GetPlotOriginCenter() )
         {
@@ -173,22 +175,32 @@ void DIALOG_PLOT_SCHEMATIC::createHPGLFile( bool aPlotAll, bool aPlotFrameRef )
             plotOffset.y    = -plotPage.GetHeightIU() / 2;
         }
 
-        plotFileName = m_parent->GetUniqueFilenameForCurrentSheet() + wxT( "." )
-                       + HPGL_PLOTTER::GetDefaultFileExtension();
+        try
+        {
+            wxString fname = m_parent->GetUniqueFilenameForCurrentSheet();
+            wxString ext = HPGL_PLOTTER::GetDefaultFileExtension();
+            wxFileName plotFileName = createPlotFileName( m_outputDirectoryName, fname,
+                                                          ext, &reporter );
 
-        LOCALE_IO toggle;
+            LOCALE_IO toggle;
 
-        wxString msg;
-        if( Plot_1_Page_HPGL( plotFileName, screen, plotPage, plotOffset,
-                              plot_scale, aPlotFrameRef ) )
-            msg.Printf( _( "Plot: <%s> OK\n" ), GetChars( plotFileName ) );
-        else    // Error
-            msg.Printf( _( "Unable to create <%s>\n" ), GetChars( plotFileName ) );
+            if( Plot_1_Page_HPGL( plotFileName.GetFullPath(), screen, plotPage, plotOffset,
+                                plot_scale, aPlotFrameRef ) )
+                msg.Printf( _( "Plot: '%s' OK\n" ), GetChars( plotFileName.GetFullPath() ) );
+            else    // Error
+                msg.Printf( _( "Unable to create '%s'\n" ), GetChars( plotFileName.GetFullPath() ) );
 
-        m_MessagesBox->AppendText( msg );
+            m_MessagesBox->AppendText( msg );
 
-        if( !aPlotAll )
-            break;
+            if( !aPlotAll )
+                break;
+        }
+        catch (IO_ERROR& e)
+        {
+            msg.Printf( _( "HPGL Plotter Exception : '%s'"), wxString(e.errorText ) );
+            m_MessagesBox->AppendText( msg );
+        }
+
     }
 
     m_parent->SetCurrentSheet( oldsheetpath );

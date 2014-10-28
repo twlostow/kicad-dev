@@ -37,16 +37,14 @@
 #include <specctra_lexer.h>
 #include <pcbnew.h>
 
-
-class TYPE_COLLECTOR;           // outside the DSN namespace
+// all outside the DSN namespace:
 class BOARD;
 class TRACK;
 class VIA;
 class NETCLASS;
 class MODULE;
 
-typedef DSN::T            DSN_T;
-using namespace DSN;
+typedef DSN::T  DSN_T;
 
 
 /**
@@ -3620,7 +3618,7 @@ class SPECCTRA_DB : public SPECCTRA_LEXER
     std::vector<int> kicadLayer2pcb;
 
     /// maps PCB layer number to BOARD layer numbers
-    std::vector<LAYER_NUM> pcbLayer2kicad;
+    std::vector<LAYER_ID>   pcbLayer2kicad;
 
     /// used during FromSESSION() only, memory for it is not owned here.
     UNIT_RES*       routeResolution;

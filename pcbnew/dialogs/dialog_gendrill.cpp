@@ -288,12 +288,7 @@ void DIALOG_GENDRILL::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
     // Build the absolute path of current output plot directory
     // to preselect it when opening the dialog.
     wxFileName  fn( m_outputDirectoryName->GetValue() );
-    wxString    path;
-
-    if( fn.IsRelative() )
-        path = wxGetCwd() + fn.GetPathSeparator() + m_outputDirectoryName->GetValue();
-    else
-        path = m_outputDirectoryName->GetValue();
+    wxString    path = Prj().AbsolutePath( m_outputDirectoryName->GetValue() );
 
     wxDirDialog dirDialog( this, _( "Select Output Directory" ), path );
 
@@ -308,7 +303,9 @@ void DIALOG_GENDRILL::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
 
     if( dialog.ShowModal() == wxID_YES )
     {
-        wxString boardFilePath = ( (wxFileName) m_parent->GetBoard()->GetFileName() ).GetPath();
+        wxString boardFilePath = Prj().AbsolutePath( m_parent->GetBoard()->GetFileName() );
+
+        boardFilePath = wxPathOnly( boardFilePath );
 
         if( !dirName.MakeRelativeTo( boardFilePath ) )
             wxMessageBox( _( "Cannot make path relative.  The target volume is different from board file volume!" ),
@@ -354,21 +351,21 @@ void DIALOG_GENDRILL::SetParams()
 
 void DIALOG_GENDRILL::GenDrillAndMapFiles(bool aGenDrill, bool aGenMap)
 {
-    wxString   layer_extend;              /* added to the  Board FileName to
-                                           * create FullFileName (= Board
-                                           * FileName + layer pair names) */
+    wxString   layername_extend;        /* added to the  Board FileName to
+                                         * create FullFileName (= Board
+                                         * FileName + layer pair names)
+                                         */
     wxString   msg;
-    bool       hasBuriedVias = false;  /* If true, drill files are created
-                                        * layer pair by layer pair for
-                                        * buried vias */
-    int        layer1 = LAYER_N_BACK;
-    int        layer2 = LAYER_N_FRONT;
+    bool       hasBuriedVias = false;   /* If true, drill files are created
+                                         * layer pair by layer pair for
+                                         * buried vias
+                                         */
+    int        layer1 = F_Cu;
+    int        layer2 = B_Cu;
     bool       gen_through_holes = true;
     bool       gen_NPTH_holes    = false;
 
-    wxString   currentWD = ::wxGetCwd();
-
-    UpdateConfig(); // set params and Save drill options
+    UpdateConfig();     // set params and Save drill options
 
     m_parent->ClearMsgPanel();
 
@@ -392,30 +389,28 @@ void DIALOG_GENDRILL::GenDrillAndMapFiles(bool aGenDrill, bool aGenMap)
         if( excellonWriter.GetHolesCount() > 0 ) // has holes?
         {
             fn = m_parent->GetBoard()->GetFileName();
-            layer_extend.Empty();
+            layername_extend.Empty();
 
             if( gen_NPTH_holes )
             {
-                layer_extend << wxT( "-NPTH" );
+                layername_extend << wxT( "-NPTH" );
             }
             else if( !gen_through_holes )
             {
-                if( layer1 == LAYER_N_BACK )
-                    layer_extend << wxT( "-back" );
+                if( layer1 == F_Cu )
+                    layername_extend << wxT( "-front" );
                 else
-                    layer_extend << wxT( "-inner" ) << layer1;
+                    layername_extend << wxT( "-inner" ) << layer1;
 
-                if( layer2 == LAYER_N_FRONT )
-                    layer_extend << wxT( "-front" );
+                if( layer2 == B_Cu )
+                    layername_extend << wxT( "-back" );
                 else
-                    layer_extend << wxT( "-inner" ) << layer2;
+                    layername_extend << wxT( "-inner" ) << layer2;
             }
 
-            fn.SetName( fn.GetName() + layer_extend );
-            wxString defaultPath = m_plotOpts.GetOutputDirectory();
+            fn.SetName( fn.GetName() + layername_extend );
 
-            if( defaultPath.IsEmpty() )
-                defaultPath = ::wxGetCwd();
+            wxString defaultPath = Prj().AbsolutePath( m_plotOpts.GetOutputDirectory() );
 
             fn.SetPath( defaultPath );
 
@@ -468,14 +463,14 @@ void DIALOG_GENDRILL::GenDrillAndMapFiles(bool aGenDrill, bool aGenMap)
             gen_NPTH_holes = true;
         else
         {
-            if(  gen_through_holes )
-                layer2 = layer1 + 1;    // prepare generation of first layer pair
+            if( gen_through_holes )
+                layer2 = layer1 + 1;    // done with through-board holes, prepare generation of first layer pair
             else
             {
-                if( layer2 >= LAYER_N_FRONT )    // no more layer pair to consider
+                if( layer2 >= B_Cu )    // no more layer pair to consider
                 {
-                    layer1 = LAYER_N_BACK;
-                    layer2 = LAYER_N_FRONT;
+                    layer1 = F_Cu;
+                    layer2 = B_Cu;
                     gen_NPTH_holes = true;
                     continue;
                 }
@@ -484,15 +479,12 @@ void DIALOG_GENDRILL::GenDrillAndMapFiles(bool aGenDrill, bool aGenMap)
                 layer2++;                      // use next layer pair
 
                 if( layer2 == m_parent->GetBoard()->GetCopperLayerCount() - 1 )
-                    layer2 = LAYER_N_FRONT;         // the last layer is always the
-                                                    // Front layer
+                    layer2 = B_Cu;      // the last layer is always the back layer
             }
 
             gen_through_holes = false;
         }
     }
-
-    ::wxSetWorkingDirectory( currentWD );
 }
 
 

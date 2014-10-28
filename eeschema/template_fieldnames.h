@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2010 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 
 #ifndef _TEMPLATE_FIELDNAME_H_
 #define _TEMPLATE_FIELDNAME_H_
@@ -13,7 +37,7 @@ class TEMPLATE_FIELDNAMES_LEXER;
 /**
  * Enum NumFieldType
  * is the set of all field indices assuming an array like sequence that a
- * SCH_COMPONENT or LIB_COMPONENT can hold.
+ * SCH_COMPONENT or LIB_PART can hold.
  * The first fields are called fixed fields and the quantity of them is
  * given by MANDATORY_FIELDS.  After that come an unlimited number of
  * user defined fields, only some of which have indices defined here.
@@ -25,7 +49,7 @@ enum  NumFieldType {
     DATASHEET,              ///< name of datasheet
 
     /// The first 4 are mandatory, and must be instantiated in SCH_COMPONENT
-    /// and LIB_COMPONENT constructors
+    /// and LIB_PART constructors
     MANDATORY_FIELDS,
 
     FIELD1 = MANDATORY_FIELDS,
@@ -60,6 +84,13 @@ struct TEMPLATE_FIELDNAME
         m_Name( aName ),
         m_Visible( false )
     {
+    }
+
+    TEMPLATE_FIELDNAME( const TEMPLATE_FIELDNAME& ref )
+    {
+        m_Name = ref.m_Name;
+        m_Value = ref.m_Value;
+        m_Visible = ref.m_Visible;
     }
 
     /**

@@ -6,7 +6,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2012 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
+ * Copyright (C) 2012 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2013 CERN (www.cern.ch)
  * Copyright (C) 2004-2012 KiCad Developers, see change_log.txt for contributors.
  *
@@ -41,7 +41,6 @@
 #include <wildcards_and_files_ext.h>
 #include <menus_helpers.h>
 
-#define USE_KIFACE              1
 
 #define TreeFrameWidthEntry     wxT( "LeftWinWidth" )
 
@@ -126,6 +125,60 @@ wxConfigBase* KICAD_MANAGER_FRAME::config()
 }
 
 
+void KICAD_MANAGER_FRAME::SetProjectFileName( const wxString& aFullProjectProFileName )
+{
+    // ensure file name is absolute:
+    wxFileName fn( aFullProjectProFileName );
+
+    if( !fn.IsAbsolute() )
+        fn.MakeAbsolute();
+
+    Prj().SetProjectFullName( fn.GetFullPath() );
+}
+
+
+const wxString KICAD_MANAGER_FRAME::GetProjectFileName()
+{
+    return  Prj().GetProjectFullName();
+}
+
+
+const wxString KICAD_MANAGER_FRAME::SchFileName()
+{
+   wxFileName   fn( GetProjectFileName() );
+
+   fn.SetExt( SchematicFileExtension );
+
+   return fn.GetFullPath();
+}
+
+
+const wxString KICAD_MANAGER_FRAME::PcbFileName()
+{
+   wxFileName   fn( GetProjectFileName() );
+
+   fn.SetExt( PcbFileExtension );
+
+   return fn.GetFullPath();
+}
+
+
+const wxString KICAD_MANAGER_FRAME::PcbLegacyFileName()
+{
+   wxFileName   fn( GetProjectFileName() );
+
+   fn.SetExt( LegacyPcbFileExtension );
+
+   return fn.GetFullPath();
+}
+
+
+void KICAD_MANAGER_FRAME::ReCreateTreePrj()
+{
+    m_LeftWin->ReCreateTreePrj();
+}
+
+
 const SEARCH_STACK& KICAD_MANAGER_FRAME::sys_search()
 {
     return Pgm().SysSearch();
@@ -159,7 +212,7 @@ void KICAD_MANAGER_FRAME::OnCloseWindow( wxCloseEvent& Event )
     {
         int px, py;
 
-        UpdateFileHistory( m_ProjectFileName.GetFullPath(), &Pgm().GetFileHistory() );
+        UpdateFileHistory( GetProjectFileName(), &Pgm().GetFileHistory() );
 
         if( !IsIconized() )   // save main frame position and size
         {
@@ -199,11 +252,14 @@ void KICAD_MANAGER_FRAME::TERMINATE_HANDLER::OnTerminate( int pid, int status )
 
 
 void KICAD_MANAGER_FRAME::Execute( wxWindow* frame, const wxString& execFile,
-                                   const wxString& param )
+                                   wxString params )
 {
+    if( params.size() )
+        AddDelimiterString( params );
+
     TERMINATE_HANDLER* callback = new TERMINATE_HANDLER( execFile );
 
-    long pid = ExecuteFile( frame, execFile, param, callback );
+    long pid = ExecuteFile( frame, execFile, params, callback );
 
     if( pid > 0 )
     {
@@ -219,6 +275,128 @@ void KICAD_MANAGER_FRAME::Execute( wxWindow* frame, const wxString& execFile,
 }
 
 
+void KICAD_MANAGER_FRAME::RunEeschema( const wxString& aProjectSchematicFileName )
+{
+    KIWAY_PLAYER* frame = Kiway.Player( FRAME_SCH, false );
+
+    // Please: note: DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::initBuffers() calls
+    // Kiway.Player( FRAME_SCH, true )
+    // therefore, the schematic editor is sometimes running, but the schematic project
+    // is not loaded, if the library editor was called, and the dialog field editor was used.
+    // On linux, it happens the first time the schematic editor is launched, if
+    // library editor was running, and the dialog field editor was open
+    // On Windows, it happens always after the library editor was called,
+    // and the dialog field editor was used
+    if( !frame )
+    {
+        frame = Kiway.Player( FRAME_SCH, true );
+    }
+
+    if( !frame->IsShown() ) // the frame exists, (created by the dialog field editor)
+                            // but no project loaded.
+    {
+        frame->OpenProjectFiles( std::vector<wxString>( 1, aProjectSchematicFileName ) );
+        frame->Show( true );
+    }
+
+    // On Windows, Raise() does not bring the window on screen, when iconized or not shown
+    // On linux, Raise() brings the window on screen, but this code works fine
+    if( frame->IsIconized() )
+        frame->Iconize( false );
+
+    frame->Raise();
+}
+
+
+void KICAD_MANAGER_FRAME::OnRunEeschema( wxCommandEvent& event )
+{
+    wxFileName fn( GetProjectFileName() );
+
+    fn.SetExt( SchematicFileExtension );
+
+    RunEeschema( fn.GetFullPath() );
+}
+
+
+void KICAD_MANAGER_FRAME::OnRunSchLibEditor( wxCommandEvent& event )
+{
+    KIWAY_PLAYER* frame = Kiway.Player( FRAME_SCH_LIB_EDITOR, false );
+
+    if( !frame )
+    {
+        frame = Kiway.Player( FRAME_SCH_LIB_EDITOR, true );
+        // frame->OpenProjectFiles( std::vector<wxString>( 1, aProjectSchematicFileName ) );
+        frame->Show( true );
+    }
+
+    // On Windows, Raise() does not bring the window on screen, when iconized
+    if( frame->IsIconized() )
+        frame->Iconize( false );
+
+    frame->Raise();
+}
+
+
+void KICAD_MANAGER_FRAME::RunPcbNew( const wxString& aProjectBoardFileName )
+{
+#if 0   // line 171 of modview_frame.cpp breaks this code
+    KIWAY_PLAYER* frame = Kiway.Player( FRAME_PCB, false );
+    if( !frame )
+    {
+        frame = Kiway.Player( FRAME_PCB, true );
+        frame->OpenProjectFiles( std::vector<wxString>( 1, aProjectBoardFileName ) );
+        frame->Show( true );
+    }
+#else
+    KIWAY_PLAYER* frame = Kiway.Player( FRAME_PCB, true );
+
+    if( !frame->IsVisible() )
+    {
+        frame->OpenProjectFiles( std::vector<wxString>( 1, aProjectBoardFileName ) );
+        frame->Show( true );
+    }
+
+#endif
+
+    // On Windows, Raise() does not bring the window on screen, when iconized
+    if( frame->IsIconized() )
+        frame->Iconize( false );
+
+    frame->Raise();
+}
+
+
+void KICAD_MANAGER_FRAME::OnRunPcbNew( wxCommandEvent& event )
+{
+    wxFileName  kicad_board( PcbFileName() );
+    wxFileName  legacy_board( PcbLegacyFileName() );
+
+    wxFileName& board = ( !legacy_board.FileExists() || kicad_board.FileExists() ) ?
+                            kicad_board : legacy_board;
+
+    RunPcbNew( board.GetFullPath() );
+}
+
+
+void KICAD_MANAGER_FRAME::OnRunPcbFpEditor( wxCommandEvent& event )
+{
+    KIWAY_PLAYER* frame = Kiway.Player( FRAME_PCB_MODULE_EDITOR, false );
+
+    if( !frame )
+    {
+        frame = Kiway.Player( FRAME_PCB_MODULE_EDITOR, true );
+//        frame->OpenProjectFiles( std::vector<wxString>( 1, aProjectBoardFileName ) );
+        frame->Show( true );
+    }
+
+    // On Windows, Raise() does not bring the window on screen, when iconized
+    if( frame->IsIconized() )
+        frame->Iconize( false );
+
+    frame->Raise();
+}
+
+
 void KICAD_MANAGER_FRAME::OnRunBitmapConverter( wxCommandEvent& event )
 {
     Execute( this, BITMAPCONVERTER_EXE );
@@ -230,45 +408,24 @@ void KICAD_MANAGER_FRAME::OnRunPcbCalculator( wxCommandEvent& event )
     Execute( this, PCB_CALCULATOR_EXE );
 }
 
+
 void KICAD_MANAGER_FRAME::OnRunPageLayoutEditor( wxCommandEvent& event )
 {
     Execute( this, PL_EDITOR_EXE );
 }
 
 
-void KICAD_MANAGER_FRAME::OnRunPcbNew( wxCommandEvent& event )
-{
-    wxFileName  legacy_board( m_ProjectFileName );
-    wxFileName  kicad_board( m_ProjectFileName );
-
-    legacy_board.SetExt( LegacyPcbFileExtension );
-    kicad_board.SetExt( KiCadPcbFileExtension );
-
-    wxFileName& board = ( !legacy_board.FileExists() || kicad_board.FileExists() ) ?
-                            kicad_board : legacy_board;
-
-#if USE_KIFACE
-    KIWAY_PLAYER* frame = Kiway.Player( FRAME_PCB, false );
-    if( !frame )
-    {
-        frame = Kiway.Player( FRAME_PCB, true );
-        frame->OpenProjectFiles( std::vector<wxString>( 1, board.GetFullPath() ) );
-        frame->Show( true );
-    }
-    frame->Raise();
-#else
-    Execute( this, PCBNEW_EXE, QuoteFullPath( board ) );
-#endif
-}
-
-
+// Dead code: Cvpcb can be run only from the schematic editor now,
+// This is due to the fact the footprint field of components in schematics
+// are now always set by Cvpcb.
+// ( The idea is to drop the .cmp files to avoid to have 2 places were
+// footprints are stored, but only one: the schematic )
 void KICAD_MANAGER_FRAME::OnRunCvpcb( wxCommandEvent& event )
 {
-    wxFileName fn( m_ProjectFileName );
+    wxFileName fn( GetProjectFileName() );
 
     fn.SetExt( NetlistFileExtension );
 
-#if USE_KIFACE
     KIWAY_PLAYER* frame = Kiway.Player( FRAME_CVPCB, false );
     if( !frame )
     {
@@ -276,42 +433,16 @@ void KICAD_MANAGER_FRAME::OnRunCvpcb( wxCommandEvent& event )
         frame->OpenProjectFiles( std::vector<wxString>( 1, fn.GetFullPath() ) );
         frame->Show( true );
     }
+
     frame->Raise();
-#else
-    Execute( this, CVPCB_EXE, QuoteFullPath( fn ) );
-#endif
 }
 
-
-void KICAD_MANAGER_FRAME::OnRunEeschema( wxCommandEvent& event )
-{
-    wxFileName fn( m_ProjectFileName );
-
-    fn.SetExt( SchematicFileExtension );
-
-#if USE_KIFACE
-    KIWAY_PLAYER* frame = Kiway.Player( FRAME_SCH, false );
-    if( !frame )
-    {
-        frame = Kiway.Player( FRAME_SCH, true );
-        frame->OpenProjectFiles( std::vector<wxString>( 1, fn.GetFullPath() ) );
-        frame->Show( true );
-    }
-    frame->Raise();
-#else
-    Execute( this, EESCHEMA_EXE, QuoteFullPath( fn ) );
-#endif
-}
 
 void KICAD_MANAGER_FRAME::OnRunGerbview( wxCommandEvent& event )
 {
     // Gerbview is called without any file to open, because we do not know
     // the list and the name of files to open (if any...).
-#if USE_KIFACE && 0
-
-#else
     Execute( this, GERBVIEW_EXE, wxEmptyString );
-#endif
 }
 
 
@@ -333,7 +464,7 @@ void KICAD_MANAGER_FRAME::OnOpenFileInTextEditor( wxCommandEvent& event )
 #endif
 
     mask = _( "Text file (" ) + mask + wxT( ")|" ) + mask;
-    wxString default_dir = wxGetCwd();
+    wxString default_dir = wxFileName( Prj().GetProjectFullName() ).GetPathWithSep();
 
     wxFileDialog dlg( this, _( "Load File to Edit" ), default_dir,
                       wxEmptyString, mask, wxFD_OPEN );
@@ -385,15 +516,12 @@ void KICAD_MANAGER_FRAME::SaveSettings( wxConfigBase* aCfg )
 
 /**
  * a minor helper function:
- * Prints the Current Working Dir name and the projet name on the text panel.
+ * Prints the Current Project full name on the text panel.
  */
 void KICAD_MANAGER_FRAME::PrintPrjInfo()
 {
-    wxString msg = wxString::Format( _(
-            "Working dir: %s\nProject: %s\n" ),
-            GetChars( wxGetCwd() ),
-            GetChars( m_ProjectFileName.GetFullPath() )
-            );
+    wxString msg = wxString::Format( _( "Project name:\n%s\n" ),
+                        GetChars( GetProjectFileName() ) );
     PrintMsg( msg );
 }
 

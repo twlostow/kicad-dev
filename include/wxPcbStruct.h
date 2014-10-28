@@ -30,7 +30,7 @@
 #define  WXPCB_STRUCT_H_
 
 
-#include <wxBasePcbFrame.h>
+#include <pcb_base_edit_frame.h>
 #include <config_params.h>
 #include <class_macros_record.h>
 #include <class_undoredo_container.h>
@@ -73,7 +73,7 @@ namespace PCB { struct IFACE; }     // KIFACE_I is in pcbnew.cpp
  *
  * See also class PCB_BASE_FRAME(): Basic class for Pcbnew and GerbView.
  */
-class PCB_EDIT_FRAME : public PCB_BASE_FRAME
+class PCB_EDIT_FRAME : public PCB_BASE_EDIT_FRAME
 {
     friend class PCB::IFACE;
     friend class PCB_LAYER_WIDGET;
@@ -86,9 +86,6 @@ class PCB_EDIT_FRAME : public PCB_BASE_FRAME
 
     /// The auxiliary right vertical tool bar used to access the microwave tools.
     wxAuiToolBar* m_microWaveToolBar;
-
-    /// User defined rotation angle (in tenths of a degree).
-    int             m_rotationAngle;
 
     /**
      * Function loadFootprints
@@ -120,9 +117,8 @@ protected:
     bool              m_useCmpFileForFpNames;   ///< is true, use the .cmp file from CvPcb, else use the netlist
                                                 // to know the footprint name of components.
 
+    // The Tool Framework initalization
     void setupTools();
-    void destroyTools();
-    void onGenericCommand( wxCommandEvent& aEvent );
 
     // we'll use lower case function names for private member functions.
     void createPopUpMenuForZones( ZONE_CONTAINER* edge_zone, wxMenu* aPopMenu );
@@ -252,6 +248,7 @@ public:
     void OnUpdateAutoPlaceModulesMode( wxUpdateUIEvent& aEvent );
     void OnUpdateAutoPlaceTracksMode( wxUpdateUIEvent& aEvent );
     void OnUpdateMuWaveToolbar( wxUpdateUIEvent& aEvent );
+    void OnLayerColorChange( wxCommandEvent& aEvent );
 
     /**
      * Function RecordMacros.
@@ -283,8 +280,8 @@ public:
      * @param aPrintMirrorMode = true to plot mirrored
      * @param aData = a pointer on an auxiliary data (NULL if not used)
      */
-    virtual void PrintPage( wxDC* aDC, LAYER_MSK aPrintMaskLayer, bool aPrintMirrorMode,
-                            void * aData = NULL );
+    virtual void PrintPage( wxDC* aDC, LSET aPrintMaskLayer, bool aPrintMirrorMode,
+                            void* aData = NULL );
 
     void GetKicadAbout( wxCommandEvent& event );
 
@@ -314,9 +311,6 @@ public:
      */
     virtual void SetGridColor(EDA_COLOR_T aColor);
 
-    int GetRotationAngle() const { return m_rotationAngle; }
-    void SetRotationAngle( int aRotationAngle );
-
     // Configurations:
     void Process_Config( wxCommandEvent& event );
 
@@ -342,13 +336,12 @@ public:
     void SaveProjectSettings( bool aAskForSave );
 
     /**
-     * Load the project file configuration settings.
+     * Load the current project's file configuration settings which are pertinent
+     * to this PCB_EDIT_FRAME instance.
      *
-     * @param aProjectFileName = The project filename.
-     *  if not found use kicad.pro and initialize default values
      * @return always returns true.
      */
-    bool LoadProjectSettings( const wxString& aProjectFileName );
+    bool LoadProjectSettings();
 
     /**
      * Function GetConfigurationSettings
@@ -423,7 +416,7 @@ public:
      * @param aPosition The cursor position in logical (drawing) units.
      * @param aItem = NULL or pointer on a EDA_ITEM under the mouse cursor
      */
-    void OnHotKey( wxDC* aDC, int aHotkeyCode, const wxPoint& aPosition, EDA_ITEM* aItem = NULL );
+    bool OnHotKey( wxDC* aDC, int aHotkeyCode, const wxPoint& aPosition, EDA_ITEM* aItem = NULL );
 
     /**
      * Function OnHotkeyDeleteItem
@@ -521,6 +514,19 @@ public:
      */
     void ReCreateLayerBox( bool aForceResizeToolbar = true );
 
+
+    /**
+     * Function SetCurrentNetClass
+     * Must be called after a netclass selection (or after a netclass parameter change
+     * calls BOARD_DESIGN_SETTINGS::SetCurrentNetClass() and update trace width and via size
+     * combo boxes on main toolbar
+     * Initialize vias and tracks values displayed in comb boxes of the auxiliary toolbar
+     * and some others parameters (netclass name ....)
+     * @param aNetClassName = the new netclass name
+     * @return true if lists of tracks and vias sizes are modified
+     */
+    bool SetCurrentNetClass( const wxString& aNetClassName );
+
     /**
      * Function OnModify
      * must be called after a board change to set the modified flag.
@@ -532,32 +538,11 @@ public:
     virtual void OnModify();
 
     /**
-     * Function SetHighContrastLayer
-     * takes care of display settings for the given layer to be displayed in high contrast mode.
-     */
-    void SetHighContrastLayer( LAYER_NUM aLayer );
-
-    /**
-     * Function SetTopLayer
-     * moves the selected layer to the top, so it is displayed above all others.
-     */
-    void SetTopLayer( LAYER_NUM aLayer );
-
-    /**
      * Function SetActiveLayer
      * will change the currently active layer to \a aLayer and also
      * update the PCB_LAYER_WIDGET.
      */
-    void SetActiveLayer( LAYER_NUM aLayer, bool doLayerWidgetUpdate = true );
-
-    /**
-     * Function GetActiveLayer
-     * returns the active layer
-     */
-    LAYER_NUM GetActiveLayer() const
-    {
-        return ( (PCB_SCREEN*) GetScreen() )->m_Active_Layer;
-    }
+    virtual void SetActiveLayer( LAYER_ID aLayer );
 
     /**
      * Function IsElementVisible
@@ -610,7 +595,7 @@ public:
      */
     void SwitchCanvas( wxCommandEvent& aEvent );
 
-    void GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
+    bool GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
 
     /**
      * Function ShowDesignRulesEditor
@@ -679,22 +664,22 @@ public:
                                  bool               aRebuildRatsnet = true );
 
     /**
-     * Function GetBoardFromRedoList
+     * Function RestoreCopyFromRedoList
      *  Redo the last edition:
      *  - Save the current board in Undo list
      *  - Get an old version of the board from Redo list
      *  @return none
      */
-    void GetBoardFromRedoList( wxCommandEvent& aEvent );
+    void RestoreCopyFromRedoList( wxCommandEvent& aEvent );
 
     /**
-     * Function GetBoardFromUndoList
+     * Function RestoreCopyFromUndoList
      *  Undo the last edition:
      *  - Save the current board in Redo list
      *  - Get an old version of the board from Undo list
      *  @return none
      */
-    void GetBoardFromUndoList( wxCommandEvent& aEvent );
+    void RestoreCopyFromUndoList( wxCommandEvent& aEvent );
 
     /* Block operations: */
 
@@ -784,8 +769,6 @@ public:
     void InstallDisplayOptionsDialog( wxCommandEvent& aEvent );
     void InstallPcbGlobalDeleteFrame( const wxPoint& pos );
 
-    void InstallDialogLayerSetup();
-
     /**
      * Function GenFootprintsPositionFile
      * Calls DoGenFootprintsPositionFile to create a footprint position file
@@ -855,14 +838,10 @@ public:
     bool OpenProjectFiles( const std::vector<wxString>& aFileSet, int aCtl = 0 );
 
     /**
-     * Function ReadPcbFile
-     * reads a board file  &ltfile&gt.brd
-     * @param aReader The line reader object to read from.
-     * @param Append if 0: a previously loaded board is deleted before loading
-     *               the file else all items of the board file are added to the
-     *               existing board
+     * Function AppendBoardFile
+     * appends a board file onto the current one, creating God knows what.
      */
-    int ReadPcbFile( LINE_READER* aReader, bool Append );
+    bool AppendBoardFile( const wxString& aFullFileName, int aCtl );
 
     /**
      * Function SavePcbFile
@@ -889,14 +868,11 @@ public:
      */
     bool Clear_Pcb( bool aQuery );
 
-    /// @copydoc PCB_BASE_FRAME::SetBoard()
+    ///> @copydoc PCB_BASE_FRAME::SetBoard()
     void SetBoard( BOARD* aBoard );
 
-    /**
-    * Function ViewReloadBoard
-    * adds all items from the current board to the VIEW, so they can be displayed by GAL.
-    */
-    void ViewReloadBoard( const BOARD* aBoard ) const;
+    ///> @copydoc PCB_BASE_FRAME::SetPageSettings()
+    void SetPageSettings( const PAGE_INFO& aPageSettings ); // overload
 
     // Drc control
 
@@ -958,12 +934,15 @@ public:
      * @param aMMtoWRMLunit = the VRML scaling factor:
      *      1.0 to export in mm. 0.001 for meters
      * @param aExport3DFiles = true to copy 3D shapes in the subir a3D_Subdir
-     * @param a3D_Subdir = sub directory where 3D shapes files are copied
-     * used only when aExport3DFiles == true
+     * @param aUseRelativePaths set to true to use relative paths instead of absolute paths
+     *                          in the board VRML file URLs.
+     * @param a3D_Subdir = sub directory where 3D shapes files are copied.  This is only used
+     *                     when aExport3DFiles == true
      * @return true if Ok.
      */
     bool ExportVRML_File( const wxString & aFullFileName, double aMMtoWRMLunit,
-                          bool aExport3DFiles, const wxString & a3D_Subdir );
+                          bool aExport3DFiles, bool aUseRelativePaths,
+                          const wxString & a3D_Subdir );
 
     /**
      * Function ExportToIDF3
@@ -1263,7 +1242,7 @@ public:
     bool MergeCollinearTracks( TRACK* track, wxDC* DC, int end );
 
     void Start_DragTrackSegmentAndKeepSlope( TRACK* track, wxDC* DC );
-    void SwitchLayer( wxDC* DC, LAYER_NUM layer );
+    void SwitchLayer( wxDC* DC, LAYER_ID layer );
 
     /**
      * Function Add45DegreeSegment
@@ -1463,7 +1442,7 @@ public:
     DRAWSEGMENT* Begin_DrawSegment( DRAWSEGMENT* Segment, STROKE_T shape, wxDC* DC );
     void End_Edge( DRAWSEGMENT* Segment, wxDC* DC );
     void Delete_Segment_Edge( DRAWSEGMENT* Segment, wxDC* DC );
-    void Delete_Drawings_All_Layer( LAYER_NUM aLayer );
+    void Delete_Drawings_All_Layer( LAYER_ID aLayer );
 
     // Dimension handling:
     void ShowDimensionPropertyDialog( DIMENSION* aDimension, wxDC* aDC );
@@ -1683,20 +1662,5 @@ public:
 
     DECLARE_EVENT_TABLE()
 };
-
-
-/**
- * Function AskBoardFileName
- * puts up a wxFileDialog asking for a BOARD filename to open.
- *
- * @param aParent is a wxFrame passed to wxFileDialog.
- * @param aCtl is where to put the OpenProjectFiles() control bits.
- *
- * @param aFileName on entry is a probable choice, on return is the chosen filename.
- *
- * @return bool - true if chosen, else false if user aborted.
- */
-bool AskBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName );
-
 
 #endif  // WXPCB_STRUCT_H_

@@ -1,7 +1,30 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2014 CERN
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * @author Maciej Suminski <maciej.suminski@cern.ch>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 
 #include <pgm_base.h>
 #include <common.h>
-
 
 
 /**
@@ -80,48 +103,52 @@ wxString SearchHelpFileFullPath( const SEARCH_STACK& aSStack, const wxString& aB
 
     wxLocale* i18n = Pgm().GetLocale();
 
-    // Step 1 : Try to find help file in help/<canonical name>
-    subdirs.Add( i18n->GetCanonicalName() );
-    altsubdirs.Add( i18n->GetCanonicalName() );
+    // We try to find help file in help/<canonical name>
+    // If fails, try to find help file in help/<short canonical name>
+    // If fails, try to find help file in help/en
+    wxArrayString locale_name_dirs;
+    locale_name_dirs.Add( i18n->GetCanonicalName() );           // canonical name like fr_FR
+    // wxLocale::GetName() does not return always the short name
+    locale_name_dirs.Add( i18n->GetName().BeforeLast( '_' ) );  // short canonical name like fr
+    locale_name_dirs.Add( wxT("en") );                          // default (en)
 
 #if defined(DEBUG) && 0
     ss.Show( __func__ );
     printf( "%s: m_help_file:'%s'\n", __func__, TO_UTF8( aBaseName ) );
 #endif
 
-    wxString fn = FindFileInSearchPaths( ss, aBaseName, &altsubdirs );
+    // Help files can be html (.html ext) or pdf (.pdf ext) files.
+    // Therefore, <BaseName>.html file is searched and if not found,
+    // <BaseName>.pdf file is searched in the same paths
+    wxString fn;
 
-    if( !fn  )
-        fn = FindFileInSearchPaths( ss, aBaseName, &subdirs );
-
-    // Step 2 : if not found Try to find help file in help/<short name>
-    if( !fn  )
+    for( unsigned ii = 0; ii < locale_name_dirs.GetCount(); ii++ )
     {
+        subdirs.Add( locale_name_dirs[ii] );
+        altsubdirs.Add( locale_name_dirs[ii] );
+
+        fn = FindFileInSearchPaths( ss, aBaseName + wxT(".html"), &altsubdirs );
+
+        if( !fn.IsEmpty() )
+            break;
+
+        fn = FindFileInSearchPaths( ss, aBaseName + wxT(".pdf"), &altsubdirs );
+
+        if( !fn.IsEmpty() )
+            break;
+
+        fn = FindFileInSearchPaths( ss, aBaseName + wxT(".html"), &subdirs );
+
+        if( !fn.IsEmpty() )
+            break;
+
+        fn = FindFileInSearchPaths( ss, aBaseName + wxT(".pdf"), &subdirs );
+
+        if( !fn.IsEmpty() )
+            break;
+
         subdirs.RemoveAt( subdirs.GetCount() - 1 );
         altsubdirs.RemoveAt( altsubdirs.GetCount() - 1 );
-
-        // wxLocale::GetName() does not return always the short name
-        subdirs.Add( i18n->GetName().BeforeLast( '_' ) );
-        altsubdirs.Add( i18n->GetName().BeforeLast( '_' ) );
-
-        fn = FindFileInSearchPaths( ss, aBaseName, &altsubdirs );
-
-        if( !fn )
-            fn = FindFileInSearchPaths( ss, aBaseName, &subdirs );
-    }
-
-    // Step 3 : if not found Try to find help file in help/en
-    if( !fn )
-    {
-        subdirs.RemoveAt( subdirs.GetCount() - 1 );
-        altsubdirs.RemoveAt( altsubdirs.GetCount() - 1 );
-        subdirs.Add( wxT( "en" ) );
-        altsubdirs.Add( wxT( "en" ) );
-
-        fn = FindFileInSearchPaths( ss, aBaseName, &altsubdirs );
-
-        if( !fn )
-            fn = FindFileInSearchPaths( ss, aBaseName, &subdirs );
     }
 
     return fn;

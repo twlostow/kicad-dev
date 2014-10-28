@@ -31,10 +31,8 @@
 
 #include <pcb_lexer.h>
 #include <hashtables.h>
-#include <layers_id_colors_and_visibility.h>    // LAYER_NUM
+#include <layers_id_colors_and_visibility.h>    // LAYER_ID
 #include <common.h>                             // KiROUND
-
-using namespace PCB_KEYS_T;
 
 
 class BOARD;
@@ -52,6 +50,7 @@ class PCB_TARGET;
 class VIA;
 class S3D_MASTER;
 class ZONE_CONTAINER;
+struct LAYER;
 
 
 /**
@@ -61,12 +60,12 @@ class ZONE_CONTAINER;
  */
 class PCB_PARSER : public PCB_LEXER
 {
-    typedef boost::unordered_map< std::string, LAYER_NUM > LAYER_NUM_MAP;
-    typedef boost::unordered_map< std::string, LAYER_MSK > LAYER_MSK_MAP;
+    typedef boost::unordered_map< std::string, LAYER_ID >   LAYER_ID_MAP;
+    typedef boost::unordered_map< std::string, LSET >       LSET_MAP;
 
     BOARD*              m_board;
-    LAYER_NUM_MAP       m_layerIndices;     ///< map layer name to it's index
-    LAYER_MSK_MAP       m_layerMasks;       ///< map layer names to their masks
+    LAYER_ID_MAP        m_layerIndices;     ///< map layer name to it's index
+    LSET_MAP            m_layerMasks;       ///< map layer names to their masks
     std::vector<int>    m_netCodes;         ///< net codes mapping for boards being loaded
 
     ///> Converts net code using the mapping table if available,
@@ -91,7 +90,10 @@ class PCB_PARSER : public PCB_LEXER
     void parseGeneralSection() throw( IO_ERROR, PARSE_ERROR );
     void parsePAGE_INFO() throw( IO_ERROR, PARSE_ERROR );
     void parseTITLE_BLOCK() throw( IO_ERROR, PARSE_ERROR );
+
     void parseLayers() throw( IO_ERROR, PARSE_ERROR );
+    void parseLayer( LAYER* aLayer ) throw( IO_ERROR, PARSE_ERROR );
+
     void parseSetup() throw( IO_ERROR, PARSE_ERROR );
     void parseNETINFO_ITEM() throw( IO_ERROR, PARSE_ERROR );
     void parseNETCLASS() throw( IO_ERROR, PARSE_ERROR );
@@ -138,7 +140,7 @@ class PCB_PARSER : public PCB_LEXER
      * @throw PARSE_ERROR if the layer syntax is incorrect.
      * @return The index the parsed #BOARD_ITEM layer.
      */
-    LAYER_NUM parseBoardItemLayer() throw( IO_ERROR, PARSE_ERROR );
+    LAYER_ID parseBoardItemLayer() throw( IO_ERROR, PARSE_ERROR );
 
     /**
      * Function parseBoardItemLayersAsMask
@@ -148,7 +150,7 @@ class PCB_PARSER : public PCB_LEXER
      * @throw PARSE_ERROR if the layers syntax is incorrect.
      * @return The mask of layers the parsed #BOARD_ITEM is on.
      */
-    LAYER_MSK parseBoardItemLayersAsMask() throw( PARSE_ERROR, IO_ERROR );
+    LSET parseBoardItemLayersAsMask() throw( PARSE_ERROR, IO_ERROR );
 
     /**
      * Function parseXY
@@ -192,7 +194,7 @@ class PCB_PARSER : public PCB_LEXER
         return parseDouble();
     }
 
-    inline double parseDouble( T aToken ) throw( IO_ERROR )
+    inline double parseDouble( PCB_KEYS_T::T aToken ) throw( IO_ERROR )
     {
         return parseDouble( GetTokenText( aToken ) );
     }
@@ -216,7 +218,7 @@ class PCB_PARSER : public PCB_LEXER
         return KiROUND( parseDouble( aExpected ) * IU_PER_MM );
     }
 
-    inline int parseBoardUnits( T aToken ) throw( PARSE_ERROR )
+    inline int parseBoardUnits( PCB_KEYS_T::T aToken ) throw( PARSE_ERROR )
     {
         return parseBoardUnits( GetTokenText( aToken ) );
     }

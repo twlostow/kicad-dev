@@ -146,25 +146,18 @@ void DIALOG_PLOT::Init_Dialog()
     m_plotPSNegativeOpt->SetValue( m_plotOpts.GetNegative() );
     m_forcePSA4OutputOpt->SetValue( m_plotOpts.GetA4Output() );
 
-    // List layers in same order than in setup layers dialog
-    // (Front or Top to Back or Bottom)
-    DECLARE_LAYERS_ORDER_LIST( layersOrder );
-    int layerIndex, checkIndex;
-    LAYER_NUM layer;
+    // Could devote a PlotOrder() function in place of UIOrder().
+    m_layerList = m_board->GetEnabledLayers().UIOrder();
 
-    for( layerIndex = 0; layerIndex < NB_LAYERS; layerIndex++ )
+    for( LSEQ seq = m_layerList;  seq;  ++seq )
     {
-        layer = layersOrder[layerIndex];
-
-        wxASSERT( layer < NB_LAYERS );
-
-        if( !m_board->IsLayerEnabled( layer ) )
-            continue;
+        LAYER_ID layer = *seq;
 
         m_layerList.push_back( layer );
-        checkIndex = m_layerCheckListBox->Append( m_board->GetLayerName( layer ) );
 
-        if( m_plotOpts.GetLayerSelection() & GetLayerMask( layer ) )
+        int checkIndex = m_layerCheckListBox->Append( m_board->GetLayerName( layer ) );
+
+        if( m_plotOpts.GetLayerSelection()[layer] )
             m_layerCheckListBox->Check( checkIndex );
     }
 
@@ -173,6 +166,9 @@ void DIALOG_PLOT::Init_Dialog()
 
     // Option for including Gerber attributes (from Gerber X2 format) in the output
     m_useGerberAttributes->SetValue( m_plotOpts.GetUseGerberAttributes() );
+
+    // Gerber precision for coordinates
+    m_rbGerberFormat->SetSelection( m_plotOpts.GetGerberPrecision() == 5 ? 0 : 1 );
 
     // Option for excluding contents of "Edges Pcb" layer
     m_excludeEdgeLayerOpt->SetValue( m_plotOpts.GetExcludeEdgeLayer() );
@@ -243,48 +239,46 @@ void DIALOG_PLOT::OnPopUpLayers( wxCommandEvent& event )
 
     switch( event.GetId() )
     {
-        case ID_LAYER_FAB: // Select layers usually needed to build a board
-            for( i = 0; i < m_layerList.size(); i++ )
-            {
-                LAYER_MSK layermask = GetLayerMask( m_layerList[ i ] );
-                if( layermask & ( ALL_CU_LAYERS | ALL_TECH_LAYERS ) )
-                    m_layerCheckListBox->Check( i, true );
-                else
-                    m_layerCheckListBox->Check( i, false );
+    case ID_LAYER_FAB: // Select layers usually needed to build a board
+        for( i = 0; i < m_layerList.size(); i++ )
+        {
+            LSET layermask( m_layerList[ i ] );
 
-            }
-            break;
-
-        case ID_SELECT_COPPER_LAYERS:
-            for( i = 0; i < m_layerList.size(); i++ )
-            {
-                if( m_layerList[i] <= LAST_COPPER_LAYER )
-                    m_layerCheckListBox->Check( i, true );
-
-            }
-            break;
-
-        case ID_DESELECT_COPPER_LAYERS:
-            for( i = 0; i < m_layerList.size(); i++ )
-            {
-                if( m_layerList[i] <= LAST_COPPER_LAYER )
-                    m_layerCheckListBox->Check( i, false );
-
-            }
-            break;
-
-        case ID_SELECT_ALL_LAYERS:
-            for( i = 0; i < m_layerList.size(); i++ )
+            if( ( layermask & ( LSET::AllCuMask() | LSET::AllTechMask() ) ).any() )
                 m_layerCheckListBox->Check( i, true );
-            break;
-
-        case ID_DESELECT_ALL_LAYERS:
-            for( i = 0; i < m_layerList.size(); i++ )
+            else
                 m_layerCheckListBox->Check( i, false );
-            break;
+        }
+        break;
 
-        default:
-            break;
+    case ID_SELECT_COPPER_LAYERS:
+        for( i = 0; i < m_layerList.size(); i++ )
+        {
+            if( IsCopperLayer( m_layerList[i] ) )
+                m_layerCheckListBox->Check( i, true );
+        }
+        break;
+
+    case ID_DESELECT_COPPER_LAYERS:
+        for( i = 0; i < m_layerList.size(); i++ )
+        {
+            if( IsCopperLayer( m_layerList[i] ) )
+                m_layerCheckListBox->Check( i, false );
+        }
+        break;
+
+    case ID_SELECT_ALL_LAYERS:
+        for( i = 0; i < m_layerList.size(); i++ )
+            m_layerCheckListBox->Check( i, true );
+        break;
+
+    case ID_DESELECT_ALL_LAYERS:
+        for( i = 0; i < m_layerList.size(); i++ )
+            m_layerCheckListBox->Check( i, false );
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -312,12 +306,7 @@ void DIALOG_PLOT::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
     // Build the absolute path of current output plot directory
     // to preselect it when opening the dialog.
     wxFileName  fn( m_outputDirectoryName->GetValue() );
-    wxString    path;
-
-    if( fn.IsRelative() )
-        path = wxGetCwd() + fn.GetPathSeparator() + m_outputDirectoryName->GetValue();
-    else
-        path = m_outputDirectoryName->GetValue();
+    wxString    path = Prj().AbsolutePath( m_outputDirectoryName->GetValue() );
 
     wxDirDialog dirDialog( this, _( "Select Output Directory" ), path );
 
@@ -332,7 +321,9 @@ void DIALOG_PLOT::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
 
     if( dialog.ShowModal() == wxID_YES )
     {
-        wxString boardFilePath = ( (wxFileName) m_parent->GetBoard()->GetFileName() ).GetPath();
+        wxString boardFilePath = Prj().AbsolutePath( m_parent->GetBoard()->GetFileName() );
+
+        boardFilePath = wxPathOnly( boardFilePath );
 
         if( !dirName.MakeRelativeTo( boardFilePath ) )
             wxMessageBox( _( "Cannot make path relative (target volume different from board file volume)!" ),
@@ -677,19 +668,18 @@ void DIALOG_PLOT::applyPlotSettings()
     ConfigBaseWriteDouble( m_config, CONFIG_PS_FINEWIDTH_ADJ,
                            (double)m_PSWidthAdjust / IU_PER_MM );
 
-    tempOptions.SetUseGerberExtensions( m_useGerberExtensions->GetValue() );
-
-    tempOptions.SetUseGerberAttributes( m_useGerberAttributes->GetValue() );
-
     tempOptions.SetFormat( GetPlotFormat() );
 
-    long            selectedLayers = 0;
-    unsigned int    i;
+    tempOptions.SetUseGerberExtensions( m_useGerberExtensions->GetValue() );
+    tempOptions.SetUseGerberAttributes( m_useGerberAttributes->GetValue() );
+    tempOptions.SetGerberPrecision( m_rbGerberFormat->GetSelection() == 0 ? 5 : 6 );
 
-    for( i = 0; i < m_layerList.size(); i++ )
+    LSET selectedLayers;
+
+    for( unsigned i = 0; i < m_layerList.size(); i++ )
     {
         if( m_layerCheckListBox->IsChecked( i ) )
-            selectedLayers |= GetLayerMask( m_layerList[i] );
+            selectedLayers.set( m_layerList[i] );
     }
 
     tempOptions.SetLayerSelection( selectedLayers );
@@ -721,7 +711,7 @@ void DIALOG_PLOT::Plot( wxCommandEvent& event )
     wxString              boardFilename = m_parent->GetBoard()->GetFileName();
     WX_TEXT_CTRL_REPORTER reporter( m_messagesBox );
 
-    if( !EnsureOutputDirectory( &outputDir, boardFilename, &reporter ) )
+    if( !EnsureFileDirectoryExists( &outputDir, boardFilename, &reporter ) )
     {
         wxString msg;
         msg.Printf( _( "Could not write plot files to folder \"%s\"." ),
@@ -787,51 +777,49 @@ void DIALOG_PLOT::Plot( wxCommandEvent& event )
 
     wxBusyCursor dummy;
 
-    for( LAYER_NUM layer = FIRST_LAYER; layer < NB_PCB_LAYERS; ++layer )
+    for( LSEQ seq = m_plotOpts.GetLayerSelection().UIOrder();  seq;  ++seq )
     {
-        if( m_plotOpts.GetLayerSelection() & GetLayerMask( layer ) )
+        LAYER_ID layer = *seq;
+
+        // Pick the basename from the board file
+        wxFileName fn( boardFilename );
+
+        // Use Gerber Extensions based on layer number
+        // (See http://en.wikipedia.org/wiki/Gerber_File)
+        if( m_plotOpts.GetFormat() == PLOT_FORMAT_GERBER && m_useGerberExtensions->GetValue() )
+            file_ext = GetGerberExtension( layer );
+
+        // Create file name (from the English layer name for non copper layers).
+        BuildPlotFileName( &fn, outputDir.GetPath(),
+                           m_board->GetStandardLayerName( layer ),
+                           file_ext );
+
+        LOCALE_IO toggle;
+
+        BOARD*      board = m_parent->GetBoard();
+        PLOTTER*    plotter = StartPlotBoard( board, &m_plotOpts, layer, fn.GetFullPath(), wxEmptyString );
+
+        // Print diags in messages box:
+        wxString msg;
+
+        if( plotter )
         {
-            // Pick the basename from the board file
-            wxFileName fn( boardFilename );
+            PlotOneBoardLayer( board, plotter, layer, m_plotOpts );
+            plotter->EndPlot();
+            delete plotter;
 
-            // Use Gerber Extensions based on layer number
-            // (See http://en.wikipedia.org/wiki/Gerber_File)
-            if( ( m_plotOpts.GetFormat() == PLOT_FORMAT_GERBER )
-                && m_useGerberExtensions->GetValue() )
-                file_ext = GetGerberExtension( layer );
-
-            // Create file name (from the English layer name for non copper layers).
-            BuildPlotFileName( &fn, outputDir.GetPath(),
-                               m_board->GetStandardLayerName( layer ),
-                               file_ext );
-
-            LOCALE_IO toggle;
-            BOARD *board = m_parent->GetBoard();
-            PLOTTER *plotter = StartPlotBoard( board, &m_plotOpts,
-                                               layer, fn.GetFullPath(),
-                                               wxEmptyString );
-
-            // Print diags in messages box:
-            wxString msg;
-
-            if( plotter )
-            {
-                PlotOneBoardLayer( board, plotter, layer, m_plotOpts );
-                plotter->EndPlot();
-                delete plotter;
-
-                msg.Printf( _( "Plot file <%s> created" ), GetChars( fn.GetFullPath() ) );
-            }
-            else
-                msg.Printf( _( "Unable to create <%s>" ), GetChars( fn.GetFullPath() ) );
-
-            msg << wxT( "\n" );
-            m_messagesBox->AppendText( msg );
+            msg.Printf( _( "Plot file <%s> created" ), GetChars( fn.GetFullPath() ) );
         }
+        else
+            msg.Printf( _( "Unable to create <%s>" ), GetChars( fn.GetFullPath() ) );
+
+        msg << wxT( "\n" );
+        m_messagesBox->AppendText( msg );
     }
 
     // If no layer selected, we have nothing plotted.
     // Prompt user if it happens because he could think there is a bug in Pcbnew.
-    if( !m_plotOpts.GetLayerSelection() )
+    if( !m_plotOpts.GetLayerSelection().any() )
         DisplayError( this, _( "No layer selected" ) );
 }
+

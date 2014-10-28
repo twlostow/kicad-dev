@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2014 CERN
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * @author Maciej Suminski <maciej.suminski@cern.ch>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 
 #include <wx/stdpaths.h>
 
@@ -26,15 +50,25 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
     // Otherwise don't set it.
     maybe.AddPaths( wxGetenv( wxT( "KICAD" ) ) );
 
+#ifdef __WXMAC__
+    // Add the directory for the user-dependent, program specific data files.
+    maybe.AddPaths( GetOSXKicadUserDataDir() );
+
+    // Global machine specific application data
+    maybe.AddPaths( GetOSXKicadMachineDataDir() );
+
+    // Global application specific data files inside bundle
+    maybe.AddPaths( GetOSXKicadDataDir() );
+#else
     // This is from CMAKE_INSTALL_PREFIX.
     // Useful when KiCad is installed by `make install`.
     // Use as second ranked place.
     maybe.AddPaths( wxT( DEFAULT_INSTALL_PATH ) );
 
-    // Add the directory for the user-dependent, program specific, data files:
+    // Add the directory for the user-dependent, program specific data files.
+    // According to wxWidgets documentation:
     // Unix: ~/.appname
     // Windows: C:\Documents and Settings\username\Application Data\appname
-    // Mac: ~/Library/Application Support/appname
     maybe.AddPaths( wxStandardPaths::Get().GetUserDataDir() );
 
     {
@@ -77,11 +111,9 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
      */
 #if defined(__MINGW32__)
     maybe.AddPaths( wxGetenv( wxT( "PROGRAMFILES" ) ) );
-#elif __WXMAC__
-    maybe.AddPaths( wxString( wxGetenv( wxT( "HOME" ) ) ) + wxT( "/Library/Application Support" ) );
-    maybe.AddPaths( wxT( "/Library/Application Support" ) );
 #else
     maybe.AddPaths( wxGetenv( wxT( "PATH" ) ) );
+#endif
 #endif
 
 #if defined(DEBUG) && 0
@@ -96,6 +128,7 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
     {
         wxFileName fn( maybe[i], wxEmptyString );
 
+#ifndef __WXMAC__
         if( fn.GetPath().AfterLast( fn.GetPathSeparator() ) == wxT( "bin" ) )
         {
             fn.RemoveLastDir();
@@ -103,9 +136,11 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
             if( !fn.GetDirCount() )
                 continue;               // at least on linux
         }
+#endif
 
         aSearchStack->AddPaths( fn.GetPath() );
 
+#ifndef __WXMAC__
         fn.AppendDir( wxT( "kicad" ) );
         aSearchStack->AddPaths( fn.GetPath() );     // add maybe[i]/kicad
 
@@ -120,6 +155,7 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
 
         fn.AppendDir( wxT( "kicad" ) );
         aSearchStack->AddPaths( fn.GetPath() );     // add maybe[i]/share/kicad
+#endif
     }
 
 #if defined(DEBUG) && 0
@@ -127,4 +163,3 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
     aSearchStack->Show( __func__ );
 #endif
 }
-

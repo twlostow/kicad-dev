@@ -23,6 +23,9 @@
  */
 
 #include <tool/tool_action.h>
+#include <boost/optional.hpp>
+
+class TOOL_EVENT;
 
 /**
  * Class COMMON_ACTIONS
@@ -87,6 +90,21 @@ public:
     /// Activation of the drawing tool (placing a MODULE)
     static TOOL_ACTION placeModule;
 
+    /// Activation of the drawing tool (placing a drawing from DXF file)
+    static TOOL_ACTION placeDXF;
+
+    /// Activation of the drawing tool (placing the footprint anchor)
+    static TOOL_ACTION setAnchor;
+
+    /// Increase width of currently drawn line
+    static TOOL_ACTION incWidth;
+
+    /// Decrease width of currently drawn line
+    static TOOL_ACTION decWidth;
+
+    /// Switch posture when drawing arc
+    static TOOL_ACTION arcPosture;
+
     // Push and Shove Router Tool
     /// Activation of the Push and Shove router
     static TOOL_ACTION routerActivate;
@@ -94,6 +112,28 @@ public:
     // Point Editor
     /// Update edit points
     static TOOL_ACTION pointEditorUpdate;
+
+    /// Break outline (insert additional points to an edge)
+    static TOOL_ACTION pointEditorBreakOutline;
+
+    // Placement tool
+    /// Align items to the top edge of selection bounding box
+    static TOOL_ACTION alignTop;
+
+    /// Align items to the bottom edge of selection bounding box
+    static TOOL_ACTION alignBottom;
+
+    /// Align items to the left edge of selection bounding box
+    static TOOL_ACTION alignLeft;
+
+    /// Align items to the right edge of selection bounding box
+    static TOOL_ACTION alignRight;
+
+    /// Distributes items evenly along the horizontal axis
+    static TOOL_ACTION distributeHorizontally;
+
+    /// Distributes items evenly along the vertical axis
+    static TOOL_ACTION distributeVertically;
 
     // View controls
     static TOOL_ACTION zoomIn;
@@ -107,6 +147,9 @@ public:
     static TOOL_ACTION trackDisplayMode;
     static TOOL_ACTION padDisplayMode;
     static TOOL_ACTION viaDisplayMode;
+    static TOOL_ACTION zoneDisplayEnable;
+    static TOOL_ACTION zoneDisplayDisable;
+    static TOOL_ACTION zoneDisplayOutlines;
     static TOOL_ACTION highContrastMode;
     static TOOL_ACTION highContrastInc;
     static TOOL_ACTION highContrastDec;
@@ -125,6 +168,8 @@ public:
     static TOOL_ACTION layerAlphaInc;
     static TOOL_ACTION layerAlphaDec;
 
+    static TOOL_ACTION layerChanged;        // notification
+
     // Grid control
     static TOOL_ACTION gridFast1;
     static TOOL_ACTION gridFast2;
@@ -140,11 +185,46 @@ public:
 
     static TOOL_ACTION trackViaSizeChanged;   // notification
 
+    // Zone actions
+    static TOOL_ACTION zoneFill;
+    static TOOL_ACTION zoneFillAll;
+    static TOOL_ACTION zoneUnfill;
+
+    // Module editor tools
+    /// Activation of the drawing tool (placing a PAD)
+    static TOOL_ACTION placePad;
+
+    /// Tool for quick pad enumeration
+    static TOOL_ACTION enumeratePads;
+
+    /// Copying module items to clipboard
+    static TOOL_ACTION copyItems;
+
+    /// Pasting module items from clipboard
+    static TOOL_ACTION pasteItems;
+
+    /// Display module edges as outlines
+    static TOOL_ACTION moduleEdgeOutlines;
+
+    /// Display module texts as outlines
+    static TOOL_ACTION moduleTextOutlines;
+
     // Miscellaneous
+    static TOOL_ACTION selectionTool;
     static TOOL_ACTION resetCoords;
+    static TOOL_ACTION switchCursor;
     static TOOL_ACTION switchUnits;
     static TOOL_ACTION showHelp;
+    static TOOL_ACTION toBeDone;
 
+    /// Find an item
+    static TOOL_ACTION find;
+
+    /// Find an item and start moving
+    static TOOL_ACTION findMove;
+
+    /// Blocks CTRL+F, it is handled by wxWidgets
+    static TOOL_ACTION findDummy;
     /**
      * Function TranslateLegacyId()
      * Translates legacy tool ids to the corresponding TOOL_ACTION name.
@@ -152,5 +232,5 @@ public:
      * @return std::string is name of the corresponding TOOL_ACTION. It may be empty, if there is
      * no corresponding TOOL_ACTION.
      */
-    static std::string TranslateLegacyId( int aId );
+    static boost::optional<TOOL_EVENT> TranslateLegacyId( int aId );
 };

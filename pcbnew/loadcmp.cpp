@@ -30,18 +30,17 @@
 
 #include <fctsys.h>
 #include <class_drawpanel.h>
+#include <pcb_draw_panel_gal.h>
 #include <confirm.h>
 #include <eda_doc.h>
 #include <kicad_string.h>
 #include <pgm_base.h>
 #include <kiway.h>
-//#include <frame_type.h>
 #include <wxPcbStruct.h>
 #include <dialog_helpers.h>
 #include <filter_reader.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <pcbcommon.h>
 #include <fp_lib_table.h>
 #include <fpid.h>
 
@@ -55,9 +54,10 @@
 #include <dialog_get_component.h>
 #include <modview_frame.h>
 #include <wildcards_and_files_ext.h>
+#include <class_pcb_layer_widget.h>
 
 
-static void DisplayCmpDoc( wxString& Name );
+static void DisplayCmpDoc( wxString& aName, void* aData );
 
 static FOOTPRINT_LIST MList;
 
@@ -105,10 +105,11 @@ bool FOOTPRINT_EDIT_FRAME::Load_Module_From_BOARD( MODULE* aModule )
 
     SetCrossHairPosition( wxPoint( 0, 0 ) );
     PlaceModule( newModule, NULL );
+    newModule->SetPosition( wxPoint( 0, 0 ) ); // cursor in GAL may not be initialized at the moment
 
     // Put it on FRONT layer,
     // because this is the default in ModEdit, and in libs
-    if( newModule->GetLayer() != LAYER_N_FRONT )
+    if( newModule->GetLayer() != F_Cu )
         newModule->Flip( newModule->GetPosition() );
 
     // Put it in orientation 0,
@@ -116,6 +117,9 @@ bool FOOTPRINT_EDIT_FRAME::Load_Module_From_BOARD( MODULE* aModule )
     Rotate_Module( NULL, newModule, 0, false );
     GetScreen()->ClrModify();
     Zoom_Automatique( false );
+
+    if( IsGalCanvasActive() )
+        updateView();
 
     return true;
 }
@@ -160,7 +164,7 @@ MODULE* PCB_BASE_FRAME::LoadModuleFromLibrary( const wxString& aLibrary,
     static wxString      lastComponentName;
 
     // Ask for a component name or key words
-    DIALOG_GET_COMPONENT dlg( this, HistoryList, _( "Load Module" ), aUseFootprintViewer );
+    DIALOG_GET_COMPONENT dlg( this, HistoryList, _( "Load Footprint" ), aUseFootprintViewer );
 
     dlg.SetComponentName( lastComponentName );
 
@@ -270,7 +274,12 @@ MODULE* PCB_BASE_FRAME::LoadModuleFromLibrary( const wxString& aLibrary,
 
         module->SetFlags( IS_NEW );
         module->SetLink( 0 );
-        module->SetPosition( curspos );
+
+        if( IsGalCanvasActive() )
+            module->SetPosition( wxPoint( 0, 0 ) ); // cursor in GAL may not be initialized at the moment
+        else
+            module->SetPosition( curspos );
+
         module->SetTimeStamp( GetNewTimeStamp() );
         GetBoard()->m_Status_Pcb = 0;
 
@@ -439,7 +448,7 @@ wxString PCB_BASE_FRAME::SelectFootprint( EDA_DRAW_FRAME* aWindow,
 }
 
 
-static void DisplayCmpDoc( wxString& aName )
+static void DisplayCmpDoc( wxString& aName, void* aData )
 {
     FOOTPRINT_INFO* module_info = MList.GetModuleInfo( aName );
 
@@ -483,7 +492,7 @@ MODULE* FOOTPRINT_EDIT_FRAME::SelectFootprint( BOARD* aPcb )
         itemsToDisplay.push_back( item );
     }
 
-    EDA_LIST_DIALOG dlg( this, msg, headers, itemsToDisplay, wxEmptyString, NULL, SORT_LIST );
+    EDA_LIST_DIALOG dlg( this, msg, headers, itemsToDisplay, wxEmptyString, NULL, NULL, SORT_LIST );
 
     if( dlg.ShowModal() == wxID_OK )
         fpname = dlg.GetTextSelection();
@@ -521,7 +530,6 @@ void FOOTPRINT_EDIT_FRAME::OnSaveLibraryAs( wxCommandEvent& aEvent )
         PLUGIN::RELEASER dst( IO_MGR::PluginFind( dstType ) );
 
         wxArrayString mods = cur->FootprintEnumerate( curLibPath );
-
         for( unsigned i = 0;  i < mods.size();  ++i )
         {
             std::auto_ptr<MODULE> m( cur->FootprintLoad( curLibPath, mods[i] ) );

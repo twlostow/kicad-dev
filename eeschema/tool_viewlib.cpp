@@ -37,16 +37,16 @@
 #include <class_library.h>
 #include <viewlib_frame.h>
 #include <dialog_helpers.h>
+#include <menus_helpers.h>
+#include <help_common_strings.h>
 
 
 void LIB_VIEW_FRAME::ReCreateHToolbar()
 {
-    int  ii;
-    wxString msg;
-    CMP_LIBRARY* lib;
-    LIB_COMPONENT* component = NULL;
-    LIB_ALIAS* entry = NULL;
-    bool asdeMorgan = false;
+    wxString    msg;
+    LIB_ALIAS*  entry = NULL;
+    bool        asdeMorgan = false;
+    LIB_PART*   part = NULL;
 
     if( m_mainToolBar  == NULL )
     {
@@ -72,22 +72,22 @@ void LIB_VIEW_FRAME::ReCreateHToolbar()
                                 _( "Display next component" ) );
 
         m_mainToolBar->AddSeparator();
-        msg = AddHotkeyName( _( "Zoom in" ), s_Viewlib_Hokeys_Descr,
+        msg = AddHotkeyName( _( "Zoom in" ), g_Viewlib_Hokeys_Descr,
                              HK_ZOOM_IN, IS_COMMENT );
         m_mainToolBar->AddTool( ID_ZOOM_IN, wxEmptyString,
                                 KiBitmap( zoom_in_xpm ), msg );
 
-        msg = AddHotkeyName( _( "Zoom out" ), s_Viewlib_Hokeys_Descr,
+        msg = AddHotkeyName( _( "Zoom out" ), g_Viewlib_Hokeys_Descr,
                              HK_ZOOM_OUT, IS_COMMENT );
         m_mainToolBar->AddTool( ID_ZOOM_OUT, wxEmptyString,
                                 KiBitmap( zoom_out_xpm ), msg );
 
-        msg = AddHotkeyName( _( "Redraw view" ), s_Viewlib_Hokeys_Descr,
+        msg = AddHotkeyName( _( "Redraw view" ), g_Viewlib_Hokeys_Descr,
                              HK_ZOOM_REDRAW, IS_COMMENT );
         m_mainToolBar->AddTool( ID_ZOOM_REDRAW, wxEmptyString,
                              KiBitmap( zoom_redraw_xpm ), msg );
 
-        msg = AddHotkeyName( _( "Zoom auto" ), s_Viewlib_Hokeys_Descr,
+        msg = AddHotkeyName( _( "Zoom auto" ), g_Viewlib_Hokeys_Descr,
                              HK_ZOOM_AUTO, IS_COMMENT );
         m_mainToolBar->AddTool( ID_ZOOM_PAGE, wxEmptyString,
                                 KiBitmap( zoom_fit_in_page_xpm ), msg );
@@ -131,13 +131,11 @@ void LIB_VIEW_FRAME::ReCreateHToolbar()
 
     if( m_libraryName.size() && m_entryName.size() )
     {
-        lib = CMP_LIBRARY::FindLibrary( m_libraryName );
-
-        if( lib )
+        if( PART_LIB* lib = Prj().SchLibs()->FindLibrary( m_libraryName ) )
         {
-            component = lib->FindComponent( m_entryName );
+            part = lib->FindPart( m_entryName );
 
-            if( component && component->HasConversion() )
+            if( part && part->HasConversion() )
                 asdeMorgan = true;
 
             entry = lib->FindEntry( m_entryName );
@@ -162,22 +160,21 @@ void LIB_VIEW_FRAME::ReCreateHToolbar()
 
     int parts_count = 1;
 
-    if( component )
-        parts_count = std::max( component->GetPartCount(), 1 );
+    if( part )
+        parts_count = std::max( part->GetUnitCount(), 1 );
 
     m_selpartBox->Clear();
 
-    for( ii = 0; ii < parts_count; ii++ )
+    for( int ii = 0; ii < parts_count; ii++ )
     {
         wxString msg = wxString::Format( _( "Unit %c" ), 'A' + ii );
         m_selpartBox->Append( msg );
     }
 
-    m_selpartBox->SetSelection( (m_unit > 0 ) ? m_unit - 1 : 0 );
+    m_selpartBox->SetSelection( m_unit > 0 ? m_unit - 1 : 0 );
     m_selpartBox->Enable( parts_count > 1 );
 
-    m_mainToolBar->EnableTool( ID_LIBVIEW_VIEWDOC,
-                               entry && ( entry->GetDocFileName() != wxEmptyString ) );
+    m_mainToolBar->EnableTool( ID_LIBVIEW_VIEWDOC, entry && !!entry->GetDocFileName() );
 
     m_mainToolBar->Refresh();
 }
@@ -185,4 +182,98 @@ void LIB_VIEW_FRAME::ReCreateHToolbar()
 
 void LIB_VIEW_FRAME::ReCreateVToolbar()
 {
+}
+
+
+// Virtual function
+void LIB_VIEW_FRAME::ReCreateMenuBar( void )
+{
+    // Create and try to get the current menubar
+    wxMenuBar* menuBar = GetMenuBar();
+
+    if( !menuBar )
+        menuBar = new wxMenuBar();
+
+    // Delete all existing menus so they can be rebuilt.
+    // This allows language changes of the menu text on the fly.
+    menuBar->Freeze();
+
+    while( menuBar->GetMenuCount() )
+        delete menuBar->Remove( 0 );
+
+    // Recreate all menus:
+    wxString text;
+
+    // Menu File:
+    wxMenu* fileMenu = new wxMenu;
+
+    // Active library selection
+    AddMenuItem( fileMenu, ID_LIBVIEW_SELECT_LIB, _("Set Current Library"),
+                           _( "Select library to be displayed" ),
+                           KiBitmap( open_library_xpm ) );
+    fileMenu->AppendSeparator();
+
+    // Close viewer
+    AddMenuItem( fileMenu, wxID_EXIT,
+                 _( "Cl&ose" ),
+                 _( "Close schematic component viewer" ),
+                 KiBitmap( exit_xpm ) );
+
+    // View menu
+    wxMenu* viewMenu = new wxMenu;
+
+    text = AddHotkeyName( _( "Zoom &In" ), g_Viewlib_Hokeys_Descr,
+                          HK_ZOOM_IN, IS_ACCELERATOR );
+    AddMenuItem( viewMenu, ID_ZOOM_IN, text, HELP_ZOOM_IN, KiBitmap( zoom_in_xpm ) );
+
+    text = AddHotkeyName( _( "Zoom &Out" ), g_Viewlib_Hokeys_Descr,
+                          HK_ZOOM_OUT, IS_ACCELERATOR );
+    AddMenuItem( viewMenu, ID_ZOOM_OUT, text, HELP_ZOOM_OUT, KiBitmap( zoom_out_xpm ) );
+
+    text = AddHotkeyName( _( "&Fit on Screen" ), g_Viewlib_Hokeys_Descr,
+                          HK_ZOOM_AUTO  );
+    AddMenuItem( viewMenu, ID_ZOOM_PAGE, text, HELP_ZOOM_FIT,
+                 KiBitmap( zoom_fit_in_page_xpm ) );
+
+    text = AddHotkeyName( _( "&Redraw" ), g_Viewlib_Hokeys_Descr, HK_ZOOM_REDRAW );
+    AddMenuItem( viewMenu, ID_ZOOM_REDRAW, text,
+                 HELP_ZOOM_REDRAW, KiBitmap( zoom_redraw_xpm ) );
+
+    // Menu Help:
+    wxMenu* helpMenu = new wxMenu;
+
+    // Version info
+    AddHelpVersionInfoMenuEntry( helpMenu );
+
+    // Contents
+    AddMenuItem( helpMenu, wxID_HELP,
+                 _( "Eesc&hema Manual" ),
+                 _( "Open Eeschema manual" ),
+                 KiBitmap( online_help_xpm ) );
+
+    AddMenuItem( helpMenu, wxID_INDEX,
+                 _( "&Getting Started in KiCad" ),
+                 _( "Open the \"Getting Started in KiCad\" guide for beginners" ),
+                 KiBitmap( help_xpm ) );
+
+    // About Pcbnew
+    helpMenu->AppendSeparator();
+    AddMenuItem( helpMenu, wxID_ABOUT,
+                 _( "&About Eeschema" ),
+                 _( "About Eeschema schematic designer" ),
+                 KiBitmap( info_xpm ) );
+
+    // Append menus to the menubar
+    menuBar->Append( fileMenu, _( "&File" ) );
+
+    menuBar->Append( viewMenu, _( "&View" ) );
+    menuBar->Append( helpMenu, _( "&Help" ) );
+
+    menuBar->Thaw();
+
+    // Associate the menu bar with the frame, if no previous menubar
+    if( GetMenuBar() == NULL )
+        SetMenuBar( menuBar );
+    else
+        menuBar->Refresh();
 }

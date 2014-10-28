@@ -28,6 +28,7 @@
 #include <cstdlib>
 
 #include <boost/context/fcontext.hpp>
+#include <boost/version.hpp>
 
 #include "delegate.h"
 
@@ -56,11 +57,10 @@ template <class ReturnType, class ArgType>
 class COROUTINE
 {
 public:
-    COROUTINE()
+    COROUTINE() :
+        m_saved( NULL ), m_self( NULL ), m_stack( NULL ), m_stackSize( c_defaultStackSize ),
+        m_running( false )
     {
-        m_stackSize = c_defaultStackSize;
-        m_stack = NULL;
-        m_saved = NULL;
     }
 
     /**
@@ -69,7 +69,8 @@ public:
      */
     template <class T>
     COROUTINE( T* object, ReturnType(T::* ptr)( ArgType ) ) :
-        m_func( object, ptr ), m_saved( NULL ), m_stack( NULL ), m_stackSize( c_defaultStackSize )
+        m_func( object, ptr ), m_self( NULL ), m_saved( NULL ), m_stack( NULL ),
+        m_stackSize( c_defaultStackSize ), m_running( false )
     {
     }
 
@@ -78,13 +79,20 @@ public:
      * Creates a coroutine from a delegate object
      */
     COROUTINE( DELEGATE<ReturnType, ArgType> aEntry ) :
-        m_func( aEntry ), m_saved( NULL ), m_stack( NULL ), m_stackSize( c_defaultStackSize )
-    {};
+        m_func( aEntry ), m_saved( NULL ), m_self( NULL ), m_stack( NULL ),
+        m_stackSize( c_defaultStackSize ), m_running( false )
+    {
+    }
 
     ~COROUTINE()
     {
         if( m_saved )
             delete m_saved;
+
+#if BOOST_VERSION >= 105600
+        if( m_self )
+            delete m_self;
+#endif
 
         if( m_stack )
             free( m_stack );
@@ -99,7 +107,7 @@ public:
      */
     void Yield()
     {
-        boost::context::jump_fcontext( m_self, m_saved, 0 );
+        jump( m_self, m_saved, 0 );
     }
 
     /**
@@ -111,11 +119,11 @@ public:
     void Yield( ReturnType& aRetVal )
     {
         m_retVal = aRetVal;
-        boost::context::jump_fcontext( m_self, m_saved, 0 );
+        jump( m_self, m_saved, 0 );
     }
 
     /**
-     *  <F11>* Function SetEntry()
+     * Function SetEntry()
      *
      * Defines the entry point for the coroutine, if not set in the constructor.
      */
@@ -138,13 +146,24 @@ public:
         // align to 16 bytes
         void* sp = (void*) ( ( ( (ptrdiff_t) m_stack ) + m_stackSize - 0xf ) & ( ~0x0f ) );
 
+        // correct the stack size
+        m_stackSize -= ( (size_t) m_stack + m_stackSize - (size_t) sp );
+
+        assert( m_self == NULL );
+        assert( m_saved == NULL );
+
         m_args = &aArgs;
+#if BOOST_VERSION >= 105600
+        m_self = new boost::context::fcontext_t();
+        *m_self = boost::context::make_fcontext( sp, m_stackSize, callerStub );
+#else
         m_self = boost::context::make_fcontext( sp, m_stackSize, callerStub );
+#endif
         m_saved = new boost::context::fcontext_t();
 
         m_running = true;
         // off we go!
-        boost::context::jump_fcontext( m_saved, m_self, reinterpret_cast<intptr_t>( this ) );
+        jump( m_saved, m_self, reinterpret_cast<intptr_t>( this ) );
         return m_running;
     }
 
@@ -157,7 +176,7 @@ public:
      */
     bool Resume()
     {
-        boost::context::jump_fcontext( m_saved, m_self, 0 );
+        jump( m_saved, m_self, 0 );
 
         return m_running;
     }
@@ -196,7 +215,18 @@ private:
         cor->m_running = false;
 
         // go back to wherever we came from.
-        boost::context::jump_fcontext( cor->m_self, cor->m_saved, 0 );    // reinterpret_cast<intptr_t>( this ));
+        jump( cor->m_self, cor->m_saved, 0 );    // reinterpret_cast<intptr_t>( this ));
+    }
+
+    ///> Wrapper for jump_fcontext to assure compatibility between different boost versions
+    static inline intptr_t jump(boost::context::fcontext_t* aOld, boost::context::fcontext_t* aNew,
+                                intptr_t aP, bool aPreserveFPU = true )
+    {
+#if BOOST_VERSION >= 105600
+        return boost::context::jump_fcontext( aOld, *aNew, aP, aPreserveFPU );
+#else
+        return boost::context::jump_fcontext( aOld, aNew, aP, aPreserveFPU );
+#endif
     }
 
     template <typename T>

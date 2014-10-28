@@ -42,7 +42,6 @@
 #include <macros.h>
 #include <math_for_graphics.h>
 #include <wxBasePcbFrame.h>
-#include <pcbcommon.h>
 #include <msgpanel.h>
 #include <base_units.h>
 
@@ -57,7 +56,7 @@ EDGE_MODULE::EDGE_MODULE( MODULE* parent, STROKE_T aShape ) :
 {
     m_Shape = aShape;
     m_Angle = 0;
-    m_Layer = SILKSCREEN_N_FRONT;
+    m_Layer = F_SilkS;
 }
 
 
@@ -90,6 +89,25 @@ void EDGE_MODULE::Copy( EDGE_MODULE* source )
 }
 
 
+void EDGE_MODULE::SetLocalCoord()
+{
+    MODULE* module = (MODULE*) m_Parent;
+
+    if( module == NULL )
+    {
+        m_Start0 = m_Start;
+        m_End0 = m_End;
+        return;
+    }
+
+    m_Start0 = m_Start - module->GetPosition();
+    m_End0 = m_End - module->GetPosition();
+    double angle = module->GetOrientation();
+    RotatePoint( &m_Start0.x, &m_Start0.y, -angle );
+    RotatePoint( &m_End0.x, &m_End0.y, -angle );
+}
+
+
 void EDGE_MODULE::SetDrawCoord()
 {
     MODULE* module = (MODULE*) m_Parent;
@@ -111,18 +129,16 @@ void EDGE_MODULE::SetDrawCoord()
 void EDGE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
                         const wxPoint& offset )
 {
-    int             ux0, uy0, dx, dy, radius, StAngle, EndAngle;
-    int             type_trace;
-    int             typeaff;
-    LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
-    PCB_BASE_FRAME* frame;
+    int         ux0, uy0, dx, dy, radius, StAngle, EndAngle;
+    int         typeaff;
+    LAYER_ID    curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+
     MODULE* module = (MODULE*) m_Parent;
 
-    if( module == NULL )
+    if( !module )
         return;
 
-
-    BOARD * brd = GetBoard( );
+    BOARD* brd = GetBoard( );
 
     if( brd->IsLayerVisible( m_Layer ) == false )
         return;
@@ -135,10 +151,7 @@ void EDGE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
             ColorTurnToDarkDarkGray( &color );
     }
 
-
-    frame = (PCB_BASE_FRAME*) panel->GetParent();
-
-    type_trace = m_Shape;
+    PCB_BASE_FRAME* frame = (PCB_BASE_FRAME*) panel->GetParent();
 
     ux0 = m_Start.x - offset.x;
     uy0 = m_Start.y - offset.y;
@@ -149,7 +162,7 @@ void EDGE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
     GRSetDrawMode( DC, draw_mode );
     typeaff = frame->m_DisplayModEdge;
 
-    if( m_Layer <= LAST_COPPER_LAYER )
+    if( IsCopperLayer( m_Layer ) )
     {
         typeaff = frame->m_DisplayPcbTrackFill;
 
@@ -160,7 +173,7 @@ void EDGE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
     if( DC->LogicalToDeviceXRel( m_Width ) <= MIN_DRAW_WIDTH )
         typeaff = LINE;
 
-    switch( type_trace )
+    switch( m_Shape )
     {
     case S_SEGMENT:
         if( typeaff == LINE )
@@ -229,10 +242,9 @@ void EDGE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
         break;
 
     case S_POLYGON:
-
+        {
         // We must compute true coordinates from m_PolyPoints
         // which are relative to module position, orientation 0
-
         std::vector<wxPoint> points = m_PolyPoints;
 
         for( unsigned ii = 0; ii < points.size(); ii++ )
@@ -244,6 +256,10 @@ void EDGE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
         }
 
         GRPoly( panel->GetClipBox(), DC, points.size(), &points[0], true, m_Width, color, color );
+        }
+        break;
+
+    default:
         break;
     }
 }
@@ -296,3 +312,41 @@ EDA_ITEM* EDGE_MODULE::Clone() const
     return new EDGE_MODULE( *this );
 }
 
+
+
+void EDGE_MODULE::Flip(const wxPoint& aCentre )
+{
+    wxPoint pt;
+
+    switch( GetShape() )
+    {
+    case S_ARC:
+        SetAngle( -GetAngle() );
+        //Fall through
+    default:
+    case S_SEGMENT:
+        pt = GetStart();
+        pt.y -= aCentre.y;
+        pt.y  = -pt.y;
+        pt.y += aCentre.y;
+        SetStart( pt );
+
+        pt = GetEnd();
+        pt.y -= aCentre.y;
+        pt.y  = -pt.y;
+        pt.y += aCentre.y;
+        SetEnd( pt );
+
+        NEGATE( m_Start0.y );
+        NEGATE( m_End0.y );
+        break;
+
+    case S_POLYGON:
+        // polygon corners coordinates are always relative to the
+        // footprint position, orientation 0
+        for( unsigned ii = 0; ii < m_PolyPoints.size(); ii++ )
+            NEGATE( m_PolyPoints[ii].y );
+    }
+
+    SetLayer( FlipLayer( GetLayer() ) );
+}

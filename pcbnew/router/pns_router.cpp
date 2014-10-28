@@ -116,30 +116,29 @@ private:
 
 PNS_ITEM* PNS_ROUTER::syncPad( D_PAD* aPad )
 {
-    PNS_LAYERSET layers( 0, 15 );
+    PNS_LAYERSET layers( 0, MAX_CU_LAYERS - 1 );
 
     switch( aPad->GetAttribute() )
     {
     case PAD_STANDARD:
-        layers = PNS_LAYERSET( 0, 15 );
+        layers = PNS_LAYERSET( 0, MAX_CU_LAYERS - 1 ); // TODO necessary? it is already initialized
         break;
 
     case PAD_SMD:
     case PAD_CONN:
-    {
-        LAYER_MSK lmsk = aPad->GetLayerMask();
-        int i;
-
-        for( i = FIRST_COPPER_LAYER; i <= LAST_COPPER_LAYER; i++ )
         {
-            if( lmsk & ( 1 << i ) )
+            LSET lmsk = aPad->GetLayerSet();
+
+            for( int i = 0; i < MAX_CU_LAYERS; i++ )
             {
-                layers = PNS_LAYERSET( i );
-                break;
+                if( lmsk[i] )
+                {
+                    layers = PNS_LAYERSET( i );
+                    break;
+                }
             }
         }
         break;
-    }
 
     default:
         TRACE( 0, "unsupported pad type 0x%x", aPad->GetAttribute() );
@@ -192,7 +191,7 @@ PNS_ITEM* PNS_ROUTER::syncPad( D_PAD* aPad )
                 else
                     delta = VECTOR2I( 0, ( sz.y - sz.x ) / 2 );
 
-                SHAPE_SEGMENT* shape = new SHAPE_SEGMENT( c - delta,  c + delta,
+                SHAPE_SEGMENT* shape = new SHAPE_SEGMENT( c - delta, c + delta,
                                                           std::min( sz.x, sz.y ) );
                 solid->SetShape( shape );
             }
@@ -228,12 +227,15 @@ PNS_ITEM* PNS_ROUTER::syncTrack( TRACK* aTrack )
 
 PNS_ITEM* PNS_ROUTER::syncVia( VIA* aVia )
 {
+    LAYER_ID top, bottom;
+    aVia->LayerPair( &top, &bottom );
     PNS_VIA* v = new PNS_VIA(
             aVia->GetPosition(),
-            PNS_LAYERSET( 0, 15 ),
+            PNS_LAYERSET( top, bottom ),
             aVia->GetWidth(),
             aVia->GetDrillValue(),
-            aVia->GetNetCode() );
+            aVia->GetNetCode(),
+            aVia->GetViaType() );
 
     v->SetParent( aVia );
 
@@ -250,20 +252,20 @@ void PNS_ROUTER::SetBoard( BOARD* aBoard )
 
 int PNS_ROUTER::NextCopperLayer( bool aUp )
 {
-    LAYER_MSK mask = m_board->GetEnabledLayers() & m_board->GetVisibleLayers();
-    LAYER_NUM l = m_currentLayer;
+    LSET        mask = m_board->GetEnabledLayers() & m_board->GetVisibleLayers();
+    LAYER_NUM   l = m_currentLayer;
 
     do
     {
         l += ( aUp ? 1 : -1 );
 
-        if( l > LAST_COPPER_LAYER )
-            l = FIRST_COPPER_LAYER;
+        if( l >= MAX_CU_LAYERS )
+            l = 0;
 
-        if( l < FIRST_COPPER_LAYER )
-            l = LAST_COPPER_LAYER;
+        if( l < 0 )
+            l = MAX_CU_LAYERS - 1;
 
-        if( mask & GetLayerMask( l ) )
+        if( mask[l] )
             return l;
     }
     while( l != m_currentLayer );
@@ -324,6 +326,7 @@ PNS_ROUTER::PNS_ROUTER()
 
     m_currentLayer = 1;
     m_placingVia = false;
+    m_startsOnVia = false;
     m_currentNet = -1;
     m_state = IDLE;
     m_world = NULL;
@@ -369,7 +372,10 @@ PNS_ROUTER::~PNS_ROUTER()
 void PNS_ROUTER::ClearWorld()
 {
     if( m_world )
+    {
+        m_world->KillChildren();
         delete m_world;
+    }
 
     if( m_clearanceFunc )
         delete m_clearanceFunc;
@@ -525,7 +531,7 @@ const VECTOR2I PNS_ROUTER::CurrentEnd() const
 void PNS_ROUTER::eraseView()
 {
     BOOST_FOREACH( BOARD_ITEM* item, m_hiddenItems )
-	{
+    {
         item->ViewSetVisible( true );
     }
 
@@ -600,8 +606,8 @@ void PNS_ROUTER::Move( const VECTOR2I& aP, PNS_ITEM* endItem )
             moveDragging( aP, endItem );
             break;
 
-		default:
-			break;
+        default:
+            break;
     }
 }
 
@@ -613,7 +619,7 @@ void PNS_ROUTER::moveDragging( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     m_dragger->Drag( aP );
     PNS_ITEMSET dragged = m_dragger->Traces();
 
-    updateView ( m_dragger->CurrentNode(), dragged );
+    updateView( m_dragger->CurrentNode(), dragged );
 }
 
 
@@ -745,7 +751,7 @@ void PNS_ROUTER::CommitRouting( PNS_NODE* aNode )
             track->SetStart( wxPoint( s.A.x, s.A.y ) );
             track->SetEnd( wxPoint( s.B.x, s.B.y ) );
             track->SetWidth( seg->Width() );
-            track->SetLayer( seg->Layers().Start() );
+            track->SetLayer( ToLAYER_ID( seg->Layers().Start() ) );
             track->SetNetCode( seg->Net() );
             newBI = track;
             break;
@@ -759,6 +765,9 @@ void PNS_ROUTER::CommitRouting( PNS_NODE* aNode )
             via_board->SetWidth( via->Diameter() );
             via_board->SetDrill( via->Drill() );
             via_board->SetNetCode( via->Net() );
+            via_board->SetViaType( via->ViaType() ); // MUST be before SetLayerPair()
+            via_board->SetLayerPair( ToLAYER_ID( via->Layers().Start() ),
+                                     ToLAYER_ID( via->Layers().End() ) );
             newBI = via_board;
             break;
         }
@@ -810,6 +819,7 @@ bool PNS_ROUTER::FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     {
         case ROUTE_TRACK:
             rv = m_placer->FixRoute( aP, aEndItem );
+            m_startsOnVia = m_placingVia;
             m_placingVia = false;
             break;
 
@@ -875,8 +885,7 @@ void PNS_ROUTER::SwitchLayer( int aLayer )
         if( m_startsOnVia )
         {
             m_currentLayer = aLayer;
-            //m_placer->StartPlacement( m_currentStart, m_currentNet, m_currentWidth,
-            //        m_currentLayer );
+            m_placer->SetLayer( aLayer );
         }
         break;
 
@@ -886,12 +895,32 @@ void PNS_ROUTER::SwitchLayer( int aLayer )
 }
 
 
-void PNS_ROUTER::ToggleViaPlacement()
+void PNS_ROUTER::ToggleViaPlacement(VIATYPE_T type)
 {
+    const int layercount = m_board->GetDesignSettings().GetCopperLayerCount();
+
+    // Cannot place microvias or blind vias if not allowed (obvious)
+    if( ( type == VIA_BLIND_BURIED ) && ( !m_board->GetDesignSettings().m_BlindBuriedViaAllowed ) )
+        return;
+    if( ( type == VIA_MICROVIA ) && ( !m_board->GetDesignSettings().m_MicroViasAllowed ) )
+        return;
+    
+    //Can only place through vias on 2-layer boards
+    if( ( type != VIA_THROUGH ) && ( layercount <= 2 ) )
+        return;
+    
+    //Can only place microvias if we're on an outer layer, or directly adjacent to one
+    if( ( type == VIA_MICROVIA ) && ( m_currentLayer > In1_Cu ) && ( m_currentLayer < layercount-2 ) )
+        return;
+    
+    //Cannot place blind vias with front/back as the layer pair, this doesn't make sense
+    if( ( type == VIA_BLIND_BURIED ) && ( Settings().GetLayerTop() == F_Cu ) && ( Settings().GetLayerBottom() == B_Cu ) )
+        return;
+    
     if( m_state == ROUTE_TRACK )
     {
         m_placingVia = !m_placingVia;
-        m_placer->AddVia( m_placingVia, m_settings.GetViaDiameter(), m_settings.GetViaDrill() );
+        m_placer->AddVia( m_placingVia, m_settings.GetViaDiameter(), m_settings.GetViaDrill(), type );
     }
 }
 

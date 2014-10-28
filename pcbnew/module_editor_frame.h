@@ -30,6 +30,7 @@
 #define MODULE_EDITOR_FRAME_H_
 
 #include <wxBasePcbFrame.h>
+#include <pcb_base_edit_frame.h>
 #include <io_mgr.h>
 
 
@@ -38,7 +39,7 @@ class FP_LIB_TABLE;
 namespace PCB { struct IFACE; }     // A KIFACE_I coded in pcbnew.c
 
 
-class FOOTPRINT_EDIT_FRAME : public PCB_BASE_FRAME
+class FOOTPRINT_EDIT_FRAME : public PCB_BASE_EDIT_FRAME
 {
     friend struct PCB::IFACE;
 
@@ -123,7 +124,7 @@ public:
      * case insensitive
      * </p>
      */
-    void OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition, EDA_ITEM* aItem = NULL );
+    bool OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition, EDA_ITEM* aItem = NULL );
 
     bool OnHotkeyEditItem( int aIdCommand );
     bool OnHotkeyDeleteItem( int aIdCommand );
@@ -136,7 +137,7 @@ public:
      */
     void Show3D_Frame( wxCommandEvent& event );
 
-    void GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
+    bool GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
     void OnVerticalToolbar( wxCommandEvent& aEvent );
 
     void OnUpdateVerticalToolbar( wxUpdateUIEvent& aEvent );
@@ -147,6 +148,9 @@ public:
     void OnUpdateInsertModuleInBoard( wxUpdateUIEvent& aEvent );
     void OnUpdateReplaceModuleInBoard( wxUpdateUIEvent& aEvent );
     void OnUpdateSelectCurrentLib( wxUpdateUIEvent& aEvent );
+
+    ///> @copydoc PCB_BASE_EDIT_FRAME::OnEditItemRequest()
+    void OnEditItemRequest( wxDC* aDC, BOARD_ITEM* aItem );
 
     /**
      * Function LoadModuleFromBoard
@@ -161,7 +165,7 @@ public:
      * and prepare, if needed the refresh of the 3D frame showing the footprint
      * do not forget to call the basic OnModify function to update auxiliary info
      */
-    virtual void OnModify( );
+    virtual void OnModify();
 
     /**
      * Function ToPrinter
@@ -178,7 +182,7 @@ public:
      * @param aPrintMirrorMode = not used here (Set when printing in mirror mode)
      * @param aData = a pointer on an auxiliary data (NULL if not used)
      */
-    virtual void PrintPage( wxDC* aDC, LAYER_MSK aPrintMaskLayer, bool aPrintMirrorMode,
+    virtual void PrintPage( wxDC* aDC, LSET aPrintMaskLayer, bool aPrintMirrorMode,
                             void * aData = NULL);
 
     // BOARD handling
@@ -217,7 +221,6 @@ public:
     BOARD_ITEM* ModeditLocateAndDisplay( int aHotKeyCode = 0 );
 
     /* Undo and redo functions */
-public:
 
     /**
      * Function SaveCopyInUndoList.
@@ -244,6 +247,22 @@ public:
     virtual void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
                                      UNDO_REDO_T aTypeCommand,
                                      const wxPoint& aTransformPoint = wxPoint( 0, 0 ) );
+
+    /**
+     * Function RestoreCopyFromUndoList
+     * performs an undo operation on the last edition:
+     *  - Place the current edited library component in Redo list
+     *  - Get old version of the current edited library component
+     */
+    void RestoreCopyFromUndoList( wxCommandEvent& aEvent );
+
+    /**
+     * Function RestoreCopyFromRedoList
+     * performs a redo operation on the the last edition:
+     *  - Place the current edited library component in undo list
+     *  - Get old version of the current edited library component
+     */
+    void RestoreCopyFromRedoList( wxCommandEvent& aEvent );
 
     /// Return the current library nickname.
     const wxString GetCurrentLib() const;
@@ -399,6 +418,12 @@ public:
 
     virtual EDA_COLOR_T GetGridColor() const;
 
+    ///> @copydoc PCB_BASE_FRAME::SetActiveLayer()
+    void SetActiveLayer( LAYER_ID aLayer );
+
+    ///> @copydoc EDA_DRAW_FRAME::UseGalCanvas()
+    virtual void UseGalCanvas( bool aEnable );
+
     DECLARE_EVENT_TABLE()
 
 protected:
@@ -406,28 +431,16 @@ protected:
     /// protected so only friend PCB::IFACE::CreateWindow() can act as sole factory.
     FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent );
 
-
-    /**
-     * Function GetComponentFromUndoList
-     * performs an undo operation on the last edition:
-     *  - Place the current edited library component in Redo list
-     *  - Get old version of the current edited library component
-     */
-    void GetComponentFromUndoList( wxCommandEvent& event );
-
-    /**
-     * Function GetComponentFromRedoList
-     * performs a redo operation on the the last edition:
-     *  - Place the current edited library component in undo list
-     *  - Get old version of the current edited library component
-     */
-    void GetComponentFromRedoList( wxCommandEvent& event );
+    PCB_LAYER_WIDGET* m_Layers;
 
     /**
      * Function UpdateTitle
      * updates window title according to getLibNickName().
      */
     void updateTitle();
+
+    /// Reloads displayed items and sets view.
+    void updateView();
 
     /// The libPath is not publicly visible, grab it from the FP_LIB_TABLE if we must.
     const wxString getLibPath();

@@ -55,7 +55,7 @@ public:
      * Starts routing a single track at point aP, taking item aStartItem as anchor
      * (unless NULL).
      */
-    void Start ( const VECTOR2I& aP, PNS_ITEM* aStartItem );
+    void Start( const VECTOR2I& aP, PNS_ITEM* aStartItem );
 
     /**
      * Function Move()
@@ -84,8 +84,9 @@ public:
      * @param aEnabled if true, a via is attached during placement
      * @param aDiameter diameter of the via
      * @param aDrill drill of the via
+     * @param aType Type of the via
      */
-    void AddVia( bool aEnabled, int aDiameter, int aDrill );
+    void AddVia( bool aEnabled, int aDiameter, int aDrill, VIATYPE_T aType );
 
     /**
      * Function SetLayer()
@@ -212,7 +213,7 @@ private:
      *
      * Sets the board to route.
      */
-    void setWorld ( PNS_NODE* aWorld );
+    void setWorld( PNS_NODE* aWorld );
     
     /**
      * Function startPlacement()
@@ -385,6 +386,9 @@ private:
 
     ///> current via drill
     int m_viaDrill;
+    
+    ///> current via type
+    VIATYPE_T m_viaType;
 
     ///> current track width
     int m_currentWidth;

@@ -85,11 +85,35 @@ struct TOOL_DISPATCHER::BUTTON_STATE
         dragging = false;
         pressed = false;
     }
+
+    ///> Checks the current state of the button.
+    bool GetState() const
+    {
+        wxMouseState mouseState = wxGetMouseState();
+
+        switch( button )
+        {
+        case BUT_LEFT:
+            return mouseState.LeftIsDown();
+
+        case BUT_MIDDLE:
+            return mouseState.MiddleIsDown();
+
+        case BUT_RIGHT:
+            return mouseState.RightIsDown();
+
+        default:
+            assert( false );
+            break;
+        }
+
+        return false;
+    }
 };
 
 
-TOOL_DISPATCHER::TOOL_DISPATCHER( TOOL_MANAGER* aToolMgr, PCB_BASE_FRAME* aEditFrame ) :
-    m_toolMgr( aToolMgr ), m_editFrame( aEditFrame )
+TOOL_DISPATCHER::TOOL_DISPATCHER( TOOL_MANAGER* aToolMgr ) :
+    m_toolMgr( aToolMgr )
 {
     m_buttons.push_back( new BUTTON_STATE( BUT_LEFT, wxEVT_LEFT_DOWN,
                          wxEVT_LEFT_UP, wxEVT_LEFT_DCLICK ) );
@@ -118,7 +142,7 @@ void TOOL_DISPATCHER::ResetState()
 
 KIGFX::VIEW* TOOL_DISPATCHER::getView()
 {
-    return m_editFrame->GetGalCanvas()->GetView();
+    return static_cast<PCB_BASE_FRAME*>( m_toolMgr->GetEditFrame() )->GetGalCanvas()->GetView();
 }
 
 
@@ -129,9 +153,21 @@ bool TOOL_DISPATCHER::handleMouseButton( wxEvent& aEvent, int aIndex, bool aMoti
     boost::optional<TOOL_EVENT> evt;
     bool isClick = false;
 
-    bool up = type == st->upEvent;
-    bool down = type == st->downEvent;
+//    bool up = type == st->upEvent;
+//    bool down = type == st->downEvent;
+    bool up = false, down = false;
     bool dblClick = type == st->dblClickEvent;
+    bool state = st->GetState();
+
+    if( !dblClick )
+    {
+        // Sometimes the dispatcher does not receive mouse button up event, so it stays
+        // in the dragging mode even if the mouse button is not held anymore
+        if( st->pressed && !state )
+            up = true;
+        else if( !st->pressed && state )
+            down = true;
+    }
 
     int mods = decodeModifiers<wxMouseEvent>( static_cast<wxMouseEvent*>( &aEvent ) );
     int args = st->button | mods;
@@ -229,7 +265,7 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
         {
             motion = true;
             m_lastMousePos = pos;
-            m_editFrame->UpdateStatusBar();
+            static_cast<PCB_BASE_FRAME*>( m_toolMgr->GetEditFrame() )->UpdateStatusBar();
         }
 
         for( unsigned int i = 0; i < m_buttons.size(); i++ )
@@ -245,7 +281,7 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
         // TODO That's a big ugly workaround, somehow DRAWPANEL_GAL loses focus
         // after second LMB click and currently I have no means to do better debugging
         if( type == wxEVT_LEFT_UP )
-            m_editFrame->GetGalCanvas()->SetFocus();
+            static_cast<PCB_BASE_FRAME*>( m_toolMgr->GetEditFrame() )->GetGalCanvas()->SetFocus();
 #endif /* __APPLE__ */
     }
 
@@ -288,27 +324,10 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
 
 void TOOL_DISPATCHER::DispatchWxCommand( wxCommandEvent& aEvent )
 {
-    boost::optional<TOOL_EVENT> evt;
-
-    switch( aEvent.GetId() )
-    {
-    case ID_ZOOM_IN:        // toolbar button "Zoom In"
-        evt = COMMON_ACTIONS::zoomInCenter.MakeEvent();
-        break;
-
-    case ID_ZOOM_OUT:       // toolbar button "Zoom In"
-        evt = COMMON_ACTIONS::zoomOutCenter.MakeEvent();
-        break;
-
-    case ID_ZOOM_PAGE:      // toolbar button "Fit on Screen"
-        evt = COMMON_ACTIONS::zoomFitScreen.MakeEvent();
-        break;
-
-    default:
-        aEvent.Skip();
-        break;
-    }
+    boost::optional<TOOL_EVENT> evt = COMMON_ACTIONS::TranslateLegacyId( aEvent.GetId() );
 
     if( evt )
         m_toolMgr->ProcessEvent( *evt );
+    else
+        aEvent.Skip();
 }

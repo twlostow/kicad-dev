@@ -41,100 +41,6 @@
 #include <wx/filename.h>
 #include <wx/dir.h>
 
-/* List of default paths used to locate help files and KiCad library files.
- *
- * Under windows, KiCad search its files from the binary path file (first
- * argument when running "main")   So for a standard install, default paths
- * are not mandatory, but they exist, just in case.
- * KiCad is often installed in c:/Program Files/kicad or c:/kicad (or d: or
- * e: ... ) and the directory "share" has no meaning under windows.
- *
- * Under linux, the problem is more complex.
- * In fact there are 3 cases:
- * 1 - When released in a distribution:
- * binaries are in /usr/bin, KiCad libs in /usr/share/kicad/ and doc in
- * /usr/share/doc/kicad/
- * 2 - When compiled by an user:
- * binaries also can be  in /usr/local/bin, KiCad libs in
- * /usr/local/share/kicad/ and doc in /usr/local/share/doc/kicad/
- * 3 - When in an "universal tarball" or build for a server:
- * all files are in /usr/local/kicad
- * This is mandatory when KiCad is installed on a server (in a school for
- * instance) because one can export /usr/local/kicad and obviously the others
- * paths cannot be used (cannot be mounted by the client, because they are
- * already used).
- *
- * in cases 1 and 2 KiCad files cannot be found from the binary path.
- * in case 3 KiCad files can be found from the binary path only if this is
- * a KiCad binary file which is launched.
- * But if an user creates a symbolic link to the actual binary file to run
- * KiCad, the binary path is not good and the defaults paths must be used
- *
- * Note:
- * KiCad uses first the bin path lo locate KiCad tree.
- * if not found KiCad uses the environment variable KICAD to find its files
- * and at last KiCad uses the default paths.
- * So we can export (linux and windows) the variable KICAD:
- *  like export KICAD=/my_path/kicad if /my_path/kicad is not a default path
- */
-
-
-wxString MakeReducedFileName( const wxString& fullfilename,
-                              const wxString& default_path,
-                              const wxString& default_ext )
-{
-    wxString reduced_filename = fullfilename;
-    wxString Cwd, ext, path;
-
-    Cwd  = default_path;
-    ext  = default_ext;
-    path = wxPathOnly( reduced_filename ) + UNIX_STRING_DIR_SEP;
-    reduced_filename.Replace( WIN_STRING_DIR_SEP, UNIX_STRING_DIR_SEP );
-    Cwd.Replace( WIN_STRING_DIR_SEP, UNIX_STRING_DIR_SEP );
-
-    if( Cwd.Last() != '/' )
-        Cwd += UNIX_STRING_DIR_SEP;
-
-    path.Replace( WIN_STRING_DIR_SEP, UNIX_STRING_DIR_SEP );
-
-#ifdef __WINDOWS__
-
-    // names are case insensitive under windows
-    path.MakeLower();
-    Cwd.MakeLower();
-    ext.MakeLower();
-#endif
-
-    // if the path is "default_path" -> remove it
-    wxString root_path = path.Left( Cwd.Length() );
-
-    if( root_path == Cwd )
-    {
-        reduced_filename.Remove( 0, Cwd.Length() );
-    }
-    else    // if the path is the current path -> change path to ./
-    {
-        Cwd = wxGetCwd() + UNIX_STRING_DIR_SEP;
-#ifdef __WINDOWS__
-        Cwd.MakeLower();
-#endif
-        Cwd.Replace( WIN_STRING_DIR_SEP, UNIX_STRING_DIR_SEP );
-
-        if( path == Cwd )
-        {   // the path is the current path -> path = "./"
-            reduced_filename.Remove( 0, Cwd.Length() );
-            wxString tmp = wxT( "./" ) + reduced_filename;
-            reduced_filename = tmp;
-        }
-    }
-
-    // remove extension if == default_ext:
-    if( !ext.IsEmpty() && reduced_filename.Contains( ext ) )
-        reduced_filename.Truncate( reduced_filename.Length() - ext.Length() );
-
-    return reduced_filename;
-}
-
 
 void AddDelimiterString( wxString& string )
 {
@@ -236,8 +142,11 @@ wxString FindKicadFile( const wxString& shortname )
 {
     // Test the presence of the file in the directory shortname of
     // the KiCad binary path.
+#ifndef __WXMAC__
     wxString fullFileName = Pgm().GetExecutablePath() + shortname;
-
+#else
+    wxString fullFileName = Pgm().GetExecutablePath() + wxT( "Contents/MacOS/" ) + shortname;
+#endif
     if( wxFileExists( fullFileName ) )
         return fullFileName;
 
@@ -251,16 +160,22 @@ wxString FindKicadFile( const wxString& shortname )
             return fullFileName;
     }
 
-    // find binary file from possibilities list:
-    //  /usr/local/kicad/linux or c:/kicad/winexe
-
     // Path list for KiCad binary files
     const static wxChar* possibilities[] = {
-#ifdef __WINDOWS__
+#if defined( __WINDOWS__ )
         wxT( "c:/kicad/bin/" ),
         wxT( "d:/kicad/bin/" ),
         wxT( "c:/Program Files/kicad/bin/" ),
         wxT( "d:/Program Files/kicad/bin/" ),
+#elif defined( __WXMAC__ )
+        // all internal paths are relative to main bundle kicad.app
+        wxT( "Contents/Applications/cvpcb.app/Contents/MacOS/" ),
+        wxT( "Contents/Applications/pcbnew.app/Contents/MacOS/" ),
+        wxT( "Contents/Applications/eeschema.app/Contents/MacOS/" ),
+        wxT( "Contents/Applications/gerbview.app/Contents/MacOS/" ),
+        wxT( "Contents/Applications/bitmap2component.app/Contents/MacOS/" ),
+        wxT( "Contents/Applications/pcb_calculator.app/Contents/MacOS/" ),
+        wxT( "Contents/Applications/pl_editor.app/Contents/MacOS/" ),
 #else
         wxT( "/usr/bin/" ),
         wxT( "/usr/local/bin/" ),
@@ -268,9 +183,15 @@ wxString FindKicadFile( const wxString& shortname )
 #endif
     };
 
+    // find binary file from possibilities list:
     for( unsigned i=0;  i<DIM(possibilities);  ++i )
     {
+#ifndef __WXMAC__
         fullFileName = possibilities[i] + shortname;
+#else
+        // make relative paths absolute
+        fullFileName = Pgm().GetExecutablePath() + possibilities[i] + shortname;
+#endif
 
         if( wxFileExists( fullFileName ) )
             return fullFileName;
@@ -283,23 +204,8 @@ wxString FindKicadFile( const wxString& shortname )
 int ExecuteFile( wxWindow* frame, const wxString& ExecFile, const wxString& param,
                  wxProcess *callback )
 {
-    wxString fullFileName;
+    wxString fullFileName = FindKicadFile( ExecFile );
 
-
-    fullFileName = FindKicadFile( ExecFile );
-
-#ifdef __WXMAC__
-    if( wxFileExists( fullFileName ) || wxDir::Exists( fullFileName ) )
-    {
-        return ProcessExecute( Pgm().GetExecutablePath() + wxT( "/" )
-                               + ExecFile + wxT( " " )
-                               + param, wxEXEC_ASYNC, callback );
-    }
-    else
-    {
-        return ProcessExecute( wxT( "/usr/bin/open " ) + param, wxEXEC_ASYNC, callback );
-    }
-#else
     if( wxFileExists( fullFileName ) )
     {
         if( !param.IsEmpty() )
@@ -307,7 +213,16 @@ int ExecuteFile( wxWindow* frame, const wxString& ExecFile, const wxString& para
 
         return ProcessExecute( fullFileName, wxEXEC_ASYNC, callback );
     }
+#ifdef __WXMAC__
+    else
+    {
+        if( !param.IsEmpty() )
+            fullFileName += wxT( " " ) + param;
+
+        return ProcessExecute( wxT( "/usr/bin/open -a " ) + fullFileName, wxEXEC_ASYNC, callback );
+    }
 #endif
+
     wxString msg;
     msg.Printf( _( "Command <%s> could not found" ), GetChars( fullFileName ) );
     DisplayError( frame, msg, 20 );
@@ -327,6 +242,7 @@ wxString KicadDatasPath()
     }
     else    // Path of executables.
     {
+#ifndef __WXMAC__
         wxString tmp = Pgm().GetExecutablePath();
 #ifdef __WINDOWS__
         tmp.MakeLower();
@@ -397,6 +313,11 @@ wxString KicadDatasPath()
                 break;
             }
         }
+#else
+        // On OSX point to Contents/SharedSupport folder of main bundle
+        data_path = GetOSXKicadDataDir();
+        found = true;
+#endif
     }
 
     if( found )

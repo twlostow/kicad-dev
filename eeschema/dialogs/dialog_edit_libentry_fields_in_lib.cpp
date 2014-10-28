@@ -54,12 +54,13 @@ static int s_SelectedRow;
 class DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB : public DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB_BASE
 {
 public:
-    DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB( LIB_EDIT_FRAME* aParent, LIB_COMPONENT* aLibEntry );
+    DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB( LIB_EDIT_FRAME* aParent, LIB_PART*      aLibEntry );
     //~DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB() {}
 
 private:
     // Events handlers:
     void OnInitDialog( wxInitDialogEvent& event );
+	void OnCloseDialog( wxCloseEvent& event );
 
     void OnListItemDeselected( wxListEvent& event );
     void OnListItemSelected( wxListEvent& event );
@@ -125,7 +126,7 @@ private:
     }
 
     LIB_EDIT_FRAME*    m_parent;
-    LIB_COMPONENT*     m_libEntry;
+    LIB_PART*          m_libEntry;
     bool               m_skipCopyFromPanel;
 
     /// a copy of the edited component's LIB_FIELDs
@@ -135,16 +136,18 @@ private:
 
 void LIB_EDIT_FRAME::InstallFieldsEditorDialog( wxCommandEvent& event )
 {
-    if( m_component == NULL )
+    if( !GetCurPart() )
         return;
 
     m_canvas->EndMouseCapture( ID_NO_TOOL_SELECTED, m_canvas->GetDefaultCursor() );
 
-    DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB dlg( this, m_component );
+    DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB dlg( this, GetCurPart() );
 
-    int abort = dlg.ShowQuasiModal();
-
-    if( abort )
+    // This dialog itself subsequently can invoke a KIWAY_PLAYER as a quasimodal
+    // frame. Therefore this dialog as a modal frame parent, MUST be run under
+    // quasimodal mode for the quasimodal frame support to work.  So don't use
+    // the QUASIMODAL macros here.
+    if( dlg.ShowQuasiModal() != wxID_OK )
         return;
 
     UpdateAliasSelectList();
@@ -156,7 +159,7 @@ void LIB_EDIT_FRAME::InstallFieldsEditorDialog( wxCommandEvent& event )
 
 DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB(
     LIB_EDIT_FRAME* aParent,
-    LIB_COMPONENT*  aLibEntry ) :
+    LIB_PART*       aLibEntry ) :
     DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB_BASE( aParent )
 {
     m_parent   = aParent;
@@ -212,7 +215,19 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::OnListItemSelected( wxListEvent& event 
 
 void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::OnCancelButtonClick( wxCommandEvent& event )
 {
-    EndQuasiModal( 1 );
+    EndQuasiModal( wxID_CANCEL );
+}
+
+
+void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::OnCloseDialog( wxCloseEvent& event )
+{
+    // On wxWidgets 2.8, and on Linux, call EndQuasiModal here is mandatory
+    // Otherwise, the main event loop is never restored, and Eeschema does not
+    // respond to any event, because the DIALOG_SHIM destructor is never called.
+    // on wxWidgets 3.0, or on Windows, the DIALOG_SHIM destructor is called,
+    // and calls EndQuasiModal.
+    // Therefore calling EndQuasiModal here is not mandatory but it creates no issues.
+    EndQuasiModal( wxID_CANCEL );
 }
 
 
@@ -283,7 +298,7 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::OnOKButtonClick( wxCommandEvent& event 
 
     m_parent->OnModify();
 
-    EndQuasiModal( 0 );
+    EndQuasiModal( wxID_OK );
 }
 
 
@@ -353,11 +368,10 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB:: moveUpButtonHandler( wxCommandEvent& e
     if( fieldNdx >= m_FieldsBuf.size() )    // traps the -1 case too
         return;
 
-    if( fieldNdx < MANDATORY_FIELDS )
-    {
-        wxBell();
+    // The first field which can be moved up is the second user field
+    // so any field which id <= MANDATORY_FIELDS cannot be moved up
+    if( fieldNdx <= MANDATORY_FIELDS )
         return;
-    }
 
     if( !copyPanelToSelectedField() )
         return;
@@ -368,9 +382,11 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB:: moveUpButtonHandler( wxCommandEvent& e
 
     m_FieldsBuf[fieldNdx - 1] = m_FieldsBuf[fieldNdx];
     setRowItem( fieldNdx - 1, m_FieldsBuf[fieldNdx] );
+    m_FieldsBuf[fieldNdx - 1].SetId(fieldNdx - 1);
 
     m_FieldsBuf[fieldNdx] = tmp;
     setRowItem( fieldNdx, tmp );
+    m_FieldsBuf[fieldNdx].SetId(fieldNdx);
 
     updateDisplay( );
 
@@ -665,7 +681,7 @@ void DIALOG_EDIT_LIBENTRY_FIELDS_IN_LIB::copySelectedFieldToPanel()
 
     // only user defined fields may be moved, and not the top most user defined
     // field since it would be moving up into the fixed fields, > not >=
-    moveUpButton->Enable( fieldNdx >= MANDATORY_FIELDS );
+    moveUpButton->Enable( fieldNdx > MANDATORY_FIELDS );
 
     // if fieldNdx == REFERENCE, VALUE, then disable delete button
     deleteFieldButton->Enable( fieldNdx >= MANDATORY_FIELDS );

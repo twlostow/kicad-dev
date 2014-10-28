@@ -91,9 +91,31 @@ public:
      * Function Add
      * adds the given item to this MODULE and takes ownership of its memory.
      * @param aBoardItem The item to add to this board.
-     * @param doInsert If true, then insert, else append
-     *  void    Add( BOARD_ITEM* aBoardItem, bool doInsert = true );
+     * @param doAppend If true, then append, else insert.
      */
+    void Add( BOARD_ITEM* aBoardItem, bool doAppend = true );
+
+    /**
+     * Function Delete
+     * removes the given single item from this MODULE and deletes its memory.
+     * @param aBoardItem The item to remove from this module and delete
+     */
+    void Delete( BOARD_ITEM* aBoardItem )
+    {
+        // developers should run DEBUG versions and fix such calls with NULL
+        wxASSERT( aBoardItem );
+
+        if( aBoardItem )
+            delete Remove( aBoardItem );
+    }
+
+    /**
+     * Function Remove
+     * removes \a aBoardItem from this MODULE and returns it to caller without deleting it.
+     * @param aBoardItem The item to remove from this module.
+     * @return BOARD_ITEM* \a aBoardItem which was passed in.
+     */
+    BOARD_ITEM* Remove( BOARD_ITEM* aBoardItem );
 
     /**
      * Function CalculateBoundingBox
@@ -189,7 +211,7 @@ public:
      * function IsFlipped
      * @return true if the module is flipped, i.e. on the back side of the board
      */
-    bool IsFlipped() const {return GetLayer() == LAYER_N_BACK; }
+    bool IsFlipped() const {return GetLayer() == B_Cu; }
 
 // m_ModuleStatus bits:
 #define MODULE_is_LOCKED    0x01        ///< module LOCKED: no autoplace allowed
@@ -259,11 +281,13 @@ public:
      * @param glcanvas = the openGL canvas
      * @param  aAllowNonTransparentObjects = true to load non transparent objects
      * @param  aAllowTransparentObjects = true to load non transparent objects
+     * @param  aSideToLoad = false will load not fliped, true will load fliped objects
      * in openGL, transparent objects should be drawn *after* non transparent objects
      */
     void ReadAndInsert3DComponentShape( EDA_3D_CANVAS* glcanvas,
                                         bool aAllowNonTransparentObjects,
-                                        bool aAllowTransparentObjects );
+                                        bool aAllowTransparentObjects,
+                                        bool aSideToLoad );
 
     /**
      * function TransformPadsShapesWithClearanceToPolygon
@@ -282,7 +306,7 @@ public:
      *  the radius of circle approximated by segments is
      *  initial radius * aCorrectionFactor
      */
-    void TransformPadsShapesWithClearanceToPolygon( LAYER_NUM aLayer,
+    void TransformPadsShapesWithClearanceToPolygon( LAYER_ID aLayer,
                             CPOLYGONS_LIST& aCornerBuffer,
                             int             aInflateValue,
                             int             aCircleToSegmentsCount,
@@ -306,12 +330,11 @@ public:
      *  initial radius * aCorrectionFactor
      */
     void TransformGraphicShapesWithClearanceToPolygonSet(
-                            LAYER_NUM aLayer,
+                            LAYER_ID aLayer,
                             CPOLYGONS_LIST& aCornerBuffer,
                             int             aInflateValue,
                             int             aCircleToSegmentsCount,
                             double          aCorrectionFactor );
-
 
     /**
      * Function DrawEdgesOnly
@@ -342,7 +365,7 @@ public:
      */
     const wxString& GetReference() const
     {
-        return m_Reference->m_Text;
+        return m_Reference->GetText();
     }
 
     /**
@@ -352,16 +375,16 @@ public:
      */
     void SetReference( const wxString& aReference )
     {
-        m_Reference->m_Text = aReference;
+        m_Reference->SetText( aReference );
     }
 
     /**
      * Function GetValue
      * @return const wxString& - the value text.
      */
-    const wxString& GetValue()
+    const wxString& GetValue() const
     {
-        return m_Value->m_Text;
+        return m_Value->GetText();
     }
 
     /**
@@ -370,7 +393,7 @@ public:
      */
     void SetValue( const wxString& aValue )
     {
-        m_Value->m_Text = aValue;
+        m_Value->SetText( aValue );
     }
 
     /// read/write accessors:
@@ -400,7 +423,7 @@ public:
      * @param aLayerMask A layer or layers to mask the hit test.
      * @return A pointer to a D_PAD object if found otherwise NULL.
      */
-    D_PAD* GetPad( const wxPoint& aPosition, LAYER_MSK aLayerMask = ALL_LAYERS );
+    D_PAD* GetPad( const wxPoint& aPosition, LSET aLayerMask = LSET::AllLayersMask() );
 
     enum INCLUDE_NPTH_T
     {
@@ -437,14 +460,6 @@ public:
      */
     void Add3DModel( S3D_MASTER* a3DModel );
 
-    /**
-     * Function AddPad
-     * adds \a aPad to the end of the pad list.
-     *
-     * @param aPad A pointer to a #D_PAD to add to the list.
-     */
-    void AddPad( D_PAD* aPad );
-
     SEARCH_RESULT Visit( INSPECTOR* inspector, const void* testData,
                          const KICAD_T scanTypes[] );
 
@@ -469,6 +484,12 @@ public:
 
     /// @copydoc VIEW_ITEM::ViewUpdate()
     void ViewUpdate( int aUpdateFlags = KIGFX::VIEW_ITEM::ALL );
+
+    /// @copydoc VIEW_ITEM::ViewGetLayers()
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
+
+    /// @copydoc VIEW_ITEM::ViewGetLOD()
+    virtual unsigned int ViewGetLOD( int aLayer ) const;
 
     /**
      * Function CopyNetlistSettings

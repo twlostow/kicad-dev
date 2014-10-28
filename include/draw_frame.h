@@ -28,6 +28,8 @@
 #include <wxstruct.h>
 #include <kiway_player.h>
 
+class wxSingleInstanceChecker;
+
 
 /**
  * Class EDA_DRAW_FRAME
@@ -43,21 +45,24 @@ class EDA_DRAW_FRAME : public KIWAY_PLAYER
     ///< Id of active button on the vertical toolbar.
     int         m_toolId;
 
-    BASE_SCREEN*    m_currentScreen;        ///< current used SCREEN
+    BASE_SCREEN*    m_currentScreen;            ///< current used SCREEN
 
-    bool        m_snapToGrid;               ///< Indicates if cursor should be snapped to grid.
-    bool        m_galCanvasActive;          ///< whether to use new GAL engine
+    bool        m_snapToGrid;                   ///< Indicates if cursor should be snapped to grid.
+    bool        m_galCanvasActive;              ///< whether to use new GAL engine
 
     EDA_DRAW_PANEL_GAL* m_galCanvas;
 
 protected:
+
+    wxSingleInstanceChecker* m_file_checker;    ///< prevents opening same file multiple times.
+
     EDA_HOTKEY_CONFIG* m_HotkeysZoomAndGridList;
     int         m_LastGridSizeId;           // the command id offset (>= 0) of the last selected grid
                                             // 0 is for the grid corresponding to
                                             // a wxCommand ID = ID_POPUP_GRID_LEVEL_1000.
-    bool        m_DrawGrid;                 // hide/Show grid
+    bool        m_drawGrid;                 // hide/Show grid
     bool        m_showPageLimits;           ///< true to display the page limits
-    EDA_COLOR_T m_GridColor;                // Grid color
+    EDA_COLOR_T m_gridColor;                // Grid color
     EDA_COLOR_T m_drawBgColor;              ///< the background color of the draw canvas
                                             ///< BLACK for Pcbnew, BLACK or WHITE for eeschema
 
@@ -142,6 +147,20 @@ public:
                     const wxString& aFrameName );
 
     ~EDA_DRAW_FRAME();
+
+    /**
+     * Function LockFile
+     * marks a schematic file as being in use.  Use ReleaseFile() to undo this.
+     * @param aFileName = full path to the file.
+     * @return false if the file was already locked, true otherwise.
+     */
+    bool LockFile( const wxString& aFileName );
+
+    /**
+     * Function ReleaseFile
+     * Release the current file marked in use.  See m_file_checker.
+     */
+    void ReleaseFile();
 
     virtual void SetPageSettings( const PAGE_INFO& aPageSettings ) = 0;
     virtual const PAGE_INFO& GetPageSettings() const = 0;
@@ -239,8 +258,16 @@ public:
     virtual void SetTitleBlock( const TITLE_BLOCK& aTitleBlock ) = 0;
 
     // the background color of the draw canvas:
-    EDA_COLOR_T GetDrawBgColor() const { return m_drawBgColor; }
-    void SetDrawBgColor( EDA_COLOR_T aColor) { m_drawBgColor= aColor ; }
+    // Virtual because some frames can have a specific way to get/set the bg color
+    /**
+     * @return the EDA_COLOR_T for the canvas background
+     */
+    virtual EDA_COLOR_T GetDrawBgColor() const { return m_drawBgColor; }
+
+    /**
+     * @param aColor: the EDA_COLOR_T for the canvas background
+     */
+    virtual void SetDrawBgColor( EDA_COLOR_T aColor) { m_drawBgColor= aColor ; }
 
     int GetCursorShape() const { return m_cursorShape; }
 
@@ -278,7 +305,8 @@ public:
     void OnMenuOpen( wxMenuEvent& event );
     void  OnMouseEvent( wxMouseEvent& event );
 
-    /** function SkipNextLeftButtonReleaseEvent
+    /**
+     * function SkipNextLeftButtonReleaseEvent
      * after calling this function, if the left mouse button
      * is down, the next left mouse button release event will be ignored.
      * It is is usefull for instance when closing a dialog on a mouse click,
@@ -290,7 +318,7 @@ public:
      */
     void SkipNextLeftButtonReleaseEvent();
 
-    virtual void OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
+    virtual bool OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
                            EDA_ITEM* aItem = NULL );
 
     /**
@@ -335,7 +363,7 @@ public:
      */
     virtual bool IsGridVisible() const
     {
-        return m_DrawGrid;
+        return m_drawGrid;
     }
 
     /**
@@ -345,7 +373,7 @@ public:
      */
     virtual void SetGridVisibility( bool aVisible )
     {
-        m_DrawGrid = aVisible;
+        m_drawGrid = aVisible;
     }
 
     /**
@@ -354,7 +382,7 @@ public:
      */
     virtual EDA_COLOR_T GetGridColor() const
     {
-        return m_GridColor;
+        return m_gridColor;
     }
 
     /**
@@ -363,7 +391,7 @@ public:
      */
     virtual void SetGridColor( EDA_COLOR_T aColor )
     {
-        m_GridColor = aColor;
+        m_gridColor = aColor;
     }
 
     /**
@@ -433,7 +461,10 @@ public:
      * @param aPosition The current cursor position in logical (drawing) units.
      * @param aHotKey A key event used for application specific control if not zero.
      */
-    virtual void GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 ) { }
+    virtual bool GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 )
+    {
+        return false;
+    }
 
     /**
      * Function OnSize
@@ -636,7 +667,7 @@ public:
      * @param aPrintMirrorMode = not used here (Set when printing in mirror mode)
      * @param aData = a pointer on an auxiliary data (not always used, NULL if not used)
      */
-    virtual void PrintPage( wxDC* aDC, LAYER_MSK aPrintMask, bool aPrintMirrorMode, void* aData = NULL );
+    virtual void PrintPage( wxDC* aDC, LSET aPrintMask, bool aPrintMirrorMode, void* aData = NULL );
 
     /**
      * Function CoordinateToString
@@ -675,7 +706,6 @@ public:
      * @return True for GAL-based canvas, false for standard canvas.
      */
     bool IsGalCanvasActive() const          { return m_galCanvasActive; }
-    void SetGalCanvasActive( bool aState )  { m_galCanvasActive = aState; }
 
     /**
      * Function GetGalCanvas

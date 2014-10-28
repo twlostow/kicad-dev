@@ -75,6 +75,9 @@ CAIRO_GAL::CAIRO_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
 
     SetSize( aParent->GetSize() );
     screenSize = VECTOR2I( aParent->GetSize() );
+
+    cursorPixels = NULL;
+    cursorPixelsSaved = NULL;
     initCursor();
 
     // Grid color settings are different in Cairo and OpenGL
@@ -219,6 +222,19 @@ void CAIRO_GAL::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aS
 
     cairo_new_sub_path( currentContext );
     cairo_arc( currentContext, aCenterPoint.x, aCenterPoint.y, aRadius, aStartAngle, aEndAngle );
+
+    if( isFillEnabled )
+    {
+        VECTOR2D startPoint( cos( aStartAngle ) * aRadius + aCenterPoint.x,
+                             sin( aStartAngle ) * aRadius + aCenterPoint.y );
+        VECTOR2D endPoint( cos( aEndAngle ) * aRadius + aCenterPoint.x,
+                           sin( aEndAngle ) * aRadius + aCenterPoint.y );
+
+        cairo_move_to( currentContext, aCenterPoint.x, aCenterPoint.y );
+        cairo_line_to( currentContext, startPoint.x, startPoint.y );
+        cairo_line_to( currentContext, endPoint.x, endPoint.y );
+        cairo_close_path( currentContext );
+    }
 
     isElementAdded = true;
 }
@@ -808,6 +824,13 @@ void CAIRO_GAL::ClearTarget( RENDER_TARGET aTarget )
 }
 
 
+void CAIRO_GAL::SetCursorSize( unsigned int aCursorSize )
+{
+    GAL::SetCursorSize( aCursorSize );
+    initCursor();
+}
+
+
 void CAIRO_GAL::DrawCursor( const VECTOR2D& aCursorPosition )
 {
     // Now we should only store the position of the mouse cursor
@@ -890,6 +913,12 @@ void CAIRO_GAL::skipMouseEvent( wxMouseEvent& aEvent )
 
 void CAIRO_GAL::initCursor()
 {
+    if( cursorPixels )
+        delete cursorPixels;
+
+    if( cursorPixelsSaved )
+        delete cursorPixelsSaved;
+
     cursorPixels      = new wxBitmap( cursorSize, cursorSize );
     cursorPixelsSaved = new wxBitmap( cursorSize, cursorSize );
 

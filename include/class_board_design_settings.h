@@ -1,6 +1,26 @@
-/**********************************************************/
-/*  class_board_design_settings.h :  handle board options */
-/**********************************************************/
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2009-2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 
 #ifndef BOARD_DESIGN_SETTINGS_H_
 #define BOARD_DESIGN_SETTINGS_H_
@@ -46,6 +66,7 @@ struct VIA_DIMENSION
         return m_Drill < aOther.m_Drill;
     }
 };
+
 
 /**
  * Class BOARD_DESIGN_SETTINGS
@@ -326,7 +347,7 @@ public:
      * returns a bit-mask of all the layers that are visible
      * @return int - the visible layers in bit-mapped form.
      */
-    inline LAYER_MSK GetVisibleLayers() const
+    inline LSET GetVisibleLayers() const
     {
         return m_visibleLayers;
     }
@@ -343,30 +364,30 @@ public:
      * changes the bit-mask of visible layers
      * @param aMask = The new bit-mask of visible layers
      */
-    inline void SetVisibleLayers( LAYER_MSK aMask )
+    inline void SetVisibleLayers( LSET aMask )
     {
-        m_visibleLayers = aMask & m_enabledLayers & FULL_LAYERS;
+        m_visibleLayers = aMask & m_enabledLayers;
     }
 
     /**
      * Function IsLayerVisible
      * tests whether a given layer is visible
-     * @param aLayer = The layer to be tested
+     * @param aLayerId = The layer to be tested
      * @return bool - true if the layer is visible.
      */
-    inline bool IsLayerVisible( LAYER_NUM aLayer ) const
+    inline bool IsLayerVisible( LAYER_ID aLayerId ) const
     {
         // If a layer is disabled, it is automatically invisible
-        return m_visibleLayers & m_enabledLayers & GetLayerMask( aLayer );
+        return (m_visibleLayers & m_enabledLayers)[aLayerId];
     }
 
     /**
      * Function SetLayerVisibility
      * changes the visibility of a given layer
-     * @param aLayer = The layer to be changed
+     * @param aLayerId = The layer to be changed
      * @param aNewState = The new visibility state of the layer
      */
-    void SetLayerVisibility( LAYER_NUM aLayer, bool aNewState );
+    void SetLayerVisibility( LAYER_ID aLayerId, bool aNewState );
 
     /**
      * Function GetVisibleElements
@@ -417,7 +438,7 @@ public:
      * returns a bit-mask of all the layers that are enabled
      * @return int - the enabled layers in bit-mapped form.
      */
-    inline LAYER_MSK GetEnabledLayers() const
+    inline LSET GetEnabledLayers() const
     {
         return m_enabledLayers;
     }
@@ -427,17 +448,17 @@ public:
      * changes the bit-mask of enabled layers
      * @param aMask = The new bit-mask of enabled layers
      */
-    void SetEnabledLayers( LAYER_MSK aMask );
+    void SetEnabledLayers( LSET aMask );
 
     /**
      * Function IsLayerEnabled
      * tests whether a given layer is enabled
-     * @param aLayer = The of the layer to be tested
+     * @param aLayerId = The layer to be tested
      * @return bool - true if the layer is enabled
      */
-    inline bool IsLayerEnabled( LAYER_NUM aLayer ) const
+    inline bool IsLayerEnabled( LAYER_ID aLayerId ) const
     {
-        return m_enabledLayers & GetLayerMask( aLayer );
+        return m_enabledLayers[aLayerId];
     }
 
     /**
@@ -485,11 +506,13 @@ private:
     ///> Custom via size (used after UseCustomTrackViaSize( true ) was called).
     VIA_DIMENSION m_customViaSize;
 
-    int       m_copperLayerCount;   ///< Number of copper layers for this design
-    LAYER_MSK m_enabledLayers;      ///< Bit-mask for layer enabling
-    LAYER_MSK m_visibleLayers;      ///< Bit-mask for layer visibility
-    int       m_visibleElements;    ///< Bit-mask for element category visibility
-    int       m_boardThickness;     ///< Board thickness for 3D viewer
+    int     m_copperLayerCount; ///< Number of copper layers for this design
+
+    LSET    m_enabledLayers;    ///< Bit-mask for layer enabling
+    LSET    m_visibleLayers;    ///< Bit-mask for layer visibility
+
+    int     m_visibleElements;  ///< Bit-mask for element category visibility
+    int     m_boardThickness;   ///< Board thickness for 3D viewer
 
     /// Current net class name used to display netclass info.
     /// This is also the last used netclass after starting a track.

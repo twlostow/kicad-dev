@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 2014 KiCad Developers, see CHANGELOG.TXT for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file class_plotter.cpp
  * @brief KiCad: Base of all the plot routines
@@ -48,13 +72,7 @@ PLOTTER::~PLOTTER()
     }
 }
 
-/*
- * Open or create the plot file aFullFilename
- * return true if success, false if the file connot be created/opened
- *
- * Virtual because some plotters use ascii files, some others binary files (PDF)
- * The base class open the file in text mode
- */
+
 bool PLOTTER::OpenFile( const wxString& aFullFilename )
 {
     filename = aFullFilename;
@@ -71,11 +89,7 @@ bool PLOTTER::OpenFile( const wxString& aFullFilename )
     return true;
 }
 
-/**
- * Modifies coordinates according to the orientation,
- * scale factor, and offsets trace. Also convert from a wxPoint to DPOINT,
- * since some output engines needs floating point coordinates.
- */
+
 DPOINT PLOTTER::userToDeviceCoordinates( const wxPoint& aCoordinate )
 {
     wxPoint pos = aCoordinate - plotOffset;
@@ -100,29 +114,20 @@ DPOINT PLOTTER::userToDeviceCoordinates( const wxPoint& aCoordinate )
     return DPOINT( x, y );
 }
 
-/**
- * Modifies size according to the plotter scale factors
- * (wxSize version, returns a DPOINT)
- */
+
 DPOINT PLOTTER::userToDeviceSize( const wxSize& size )
 {
     return DPOINT( size.x * plotScale * iuPerDeviceUnit,
 	           size.y * plotScale * iuPerDeviceUnit );
 }
 
-/**
- * Modifies size according to the plotter scale factors
- * (simple double version)
- */
+
 double PLOTTER::userToDeviceSize( double size )
 {
     return size * plotScale * iuPerDeviceUnit;
 }
 
 
-/**
- * Generic fallback: arc rendered as a polyline
- */
 void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
                    FILL_T fill, int width )
 {
@@ -149,11 +154,8 @@ void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int r
     FinishTo( end );
 }
 
-/**
- * Fallback: if it doesn't handle bitmaps, we plot a rectangle
- */
-void PLOTTER::PlotImage(const wxImage & aImage, const wxPoint& aPos,
-                        double aScaleFactor )
+
+void PLOTTER::PlotImage(const wxImage & aImage, const wxPoint& aPos, double aScaleFactor )
 {
     wxSize size( aImage.GetWidth() * aScaleFactor,
 	         aImage.GetHeight() * aScaleFactor );
@@ -170,9 +172,6 @@ void PLOTTER::PlotImage(const wxImage & aImage, const wxPoint& aPos,
 }
 
 
-/**
- * Plot a square centered on the position. Building block for markers
- */
 void PLOTTER::markerSquare( const wxPoint& position, int radius )
 {
     double r = KiROUND( radius / 1.4142 );
@@ -194,20 +193,16 @@ void PLOTTER::markerSquare( const wxPoint& position, int radius )
     corner.y = position.y + r;
     corner_list.push_back( corner );
 
-    PlotPoly( corner_list, NO_FILL );
+    PlotPoly( corner_list, NO_FILL, GetCurrentLineWidth() );
 }
 
-/**
- * Plot a circle centered on the position. Building block for markers
- */
+
 void PLOTTER::markerCircle( const wxPoint& position, int radius )
 {
-    Circle( position, radius * 2, NO_FILL );
+    Circle( position, radius * 2, NO_FILL, GetCurrentLineWidth() );
 }
 
-/**
- * Plot a lozenge centered on the position. Building block for markers
- */
+
 void PLOTTER::markerLozenge( const wxPoint& position, int radius )
 {
     std::vector< wxPoint > corner_list;
@@ -228,51 +223,38 @@ void PLOTTER::markerLozenge( const wxPoint& position, int radius )
     corner.y = position.y + radius;
     corner_list.push_back( corner );
 
-    PlotPoly( corner_list, NO_FILL );
+    PlotPoly( corner_list, NO_FILL, GetCurrentLineWidth() );
 }
 
-/**
- * Plot a - bar centered on the position. Building block for markers
- */
+
 void PLOTTER::markerHBar( const wxPoint& pos, int radius )
 {
     MoveTo( wxPoint( pos.x - radius, pos.y ) );
     FinishTo( wxPoint( pos.x + radius, pos.y ) );
 }
 
-/**
- * Plot a / bar centered on the position. Building block for markers
- */
+
 void PLOTTER::markerSlash( const wxPoint& pos, int radius )
 {
     MoveTo( wxPoint( pos.x - radius, pos.y - radius ) );
     FinishTo( wxPoint( pos.x + radius, pos.y + radius ) );
 }
 
-/**
- * Plot a \ bar centered on the position. Building block for markers
- */
+
 void PLOTTER::markerBackSlash( const wxPoint& pos, int radius )
 {
     MoveTo( wxPoint( pos.x + radius, pos.y - radius ) );
     FinishTo( wxPoint( pos.x - radius, pos.y + radius ) );
 }
 
-/**
- * Plot a | bar centered on the position. Building block for markers
- */
+
 void PLOTTER::markerVBar( const wxPoint& pos, int radius )
 {
     MoveTo( wxPoint( pos.x, pos.y - radius ) );
     FinishTo( wxPoint( pos.x, pos.y + radius ) );
 }
 
-/**
- * Draw a pattern shape number aShapeId, to coord x0, y0.
- * x0, y0 = coordinates tables
- * Diameter diameter = (coord table) hole
- * AShapeId = index (used to generate forms characters)
- */
+
 void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
 {
     int radius = diametre / 2;
@@ -354,8 +336,8 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
     };
     if( aShapeId >= MARKER_COUNT )
     {
-	// Fallback shape
-	markerCircle( position, radius );
+        // Fallback shape
+        markerCircle( position, radius );
     }
     else
     {
@@ -376,13 +358,9 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
 	if( pat & 0100 )
 	    markerCircle( position, radius );
     }
-
 }
 
 
-/**
- * Convert a thick segment and plot it as an oval
- */
 void PLOTTER::segmentAsOval( const wxPoint& start, const wxPoint& end, int width,
                              EDA_DRAW_MODE_T tracemode )
 {
@@ -404,8 +382,7 @@ void PLOTTER::segmentAsOval( const wxPoint& start, const wxPoint& end, int width
 }
 
 
-void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient,
-                          int width )
+void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient, int width )
 {
     SetCurrentLineWidth( width );
     width = currentPenWidth;
@@ -453,8 +430,6 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
 }
 
 
-/* Plot 1 segment like a track segment
- */
 void PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                             EDA_DRAW_MODE_T tracemode )
 {
@@ -530,8 +505,7 @@ void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
 }
 
 
-void PLOTTER::ThickCircle( const wxPoint& pos, int diametre, int width,
-                           EDA_DRAW_MODE_T tracemode )
+void PLOTTER::ThickCircle( const wxPoint& pos, int diametre, int width, EDA_DRAW_MODE_T tracemode )
 {
     switch( tracemode )
     {
@@ -557,4 +531,3 @@ void PLOTTER::SetPageSettings( const PAGE_INFO& aPageSettings )
     wxASSERT( !outputFile );
     pageInfo = aPageSettings;
 }
-

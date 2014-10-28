@@ -71,13 +71,13 @@ public:
      * Function IsLayerLocked
      * @return bool - true if the given layer is locked, else false.
      */
-    virtual     bool IsLayerLocked( LAYER_NUM layer ) const = 0;
+    virtual     bool IsLayerLocked( LAYER_ID layer ) const = 0;
 
     /**
      * Function IsLayerVisible
      * @return bool - true if the given layer is visible, else false.
      */
-    virtual     bool IsLayerVisible( LAYER_NUM layer ) const = 0;
+    virtual     bool IsLayerVisible( LAYER_ID layer ) const = 0;
 
     /**
      * Function IgnoreLockedLayers
@@ -95,7 +95,7 @@ public:
      * Function GetPreferredLayer
      * @return int - the preferred layer for HitTest()ing.
      */
-    virtual     LAYER_NUM GetPreferredLayer() const = 0;
+    virtual     LAYER_ID GetPreferredLayer() const = 0;
 
     /**
      * Function IgnorePreferredLayer
@@ -131,28 +131,28 @@ public:
      can simply omit from scanTypes[] PCB_ZONE_T */
 
     /**
-     * Function IgnoreMTextsOnCu
-     * @return bool - true if should ignore MTexts on copper layer.
+     * Function IgnoreMTextsOnBack
+     * @return bool - true if should ignore MTexts on back layers
      */
-    virtual     bool IgnoreMTextsOnCopper() const = 0;
+    virtual     bool IgnoreMTextsOnBack() const = 0;
 
     /**
-     * Function IgnoreMTextsOnCmp
-     * @return bool - true if should ignore MTexts on component layer.
+     * Function IgnoreMTextsOnFront
+     * @return bool - true if should ignore MTexts on front layers.
      */
-    virtual     bool IgnoreMTextsOnCmp() const = 0;
+    virtual     bool IgnoreMTextsOnFront() const = 0;
 
     /**
-     * Function IgnoreModulesOnCu
+     * Function IgnoreModulesOnBack
      * @return bool - true if should ignore MODULEs on Back Side.
      */
-    virtual     bool IgnoreModulesOnCu() const = 0;
+    virtual     bool IgnoreModulesOnBack() const = 0;
 
     /**
-     * Function IgnoreModulesOnCmp
+     * Function IgnoreModulesOnFront
      * @return bool - ture if should ignore MODULEs on Front Side.
      */
-    virtual     bool IgnoreModulesOnCmp() const = 0;
+    virtual     bool IgnoreModulesOnFront() const = 0;
 
     /**
      * Function IgnorePadsOnBack
@@ -206,7 +206,7 @@ public:
  * Philosophy: this class knows nothing of the context in which a BOARD is used
  * and that means it knows nothing about which layers are visible or current,
  * but can handle those concerns by the SetPreferredLayer() function and the
- * SetLayerMask() function.
+ * SetLayerSet() function.
  */
 class GENERAL_COLLECTOR : public COLLECTOR
 {
@@ -262,7 +262,7 @@ public:
     /**
      * A scan list for only MODULEs
      */
-    static const KICAD_T ModuleItems[];
+    static const KICAD_T Modules[];
 
 
     /**
@@ -280,6 +280,12 @@ public:
      * A scan list for MODULEs and their items (for Modedit)
      */
     static const KICAD_T ModulesAndTheirItems[];
+
+
+    /**
+     * A scan list for primary module items.
+     */
+    static const KICAD_T ModuleItems[];
 
 
     /**
@@ -376,23 +382,23 @@ private:
     // the storage architecture here is not important, since this is only
     // a carrier object and its functions are what is used, and data only indirectly.
 
-    LAYER_NUM m_PreferredLayer;
+    LAYER_ID m_PreferredLayer;
     bool    m_IgnorePreferredLayer;
 
-    LAYER_MSK m_LayerLocked;                  ///< bit-mapped layer locked bits
+    LSET    m_LayerLocked;                  ///< bit-mapped layer locked bits
     bool    m_IgnoreLockedLayers;
 
-    LAYER_MSK m_LayerVisible;                 ///< bit-mapped layer visible bits
+    LSET    m_LayerVisible;                 ///< bit-mapped layer visible bits
     bool    m_IgnoreNonVisibleLayers;
 
     bool    m_IgnoreLockedItems;
     bool    m_IncludeSecondary;
 
     bool    m_IgnoreMTextsMarkedNoShow;
-    bool    m_IgnoreMTextsOnCopper;
-    bool    m_IgnoreMTextsOnCmp;
-    bool    m_IgnoreModulesOnCu;
-    bool    m_IgnoreModulesOnCmp;
+    bool    m_IgnoreMTextsOnBack;
+    bool    m_IgnoreMTextsOnFront;
+    bool    m_IgnoreModulesOnBack;
+    bool    m_IgnoreModulesOnFront;
     bool    m_IgnorePadsOnFront;
     bool    m_IgnorePadsOnBack;
     bool    m_IgnoreModulesVals;
@@ -407,11 +413,10 @@ public:
      * @param aVisibleLayerMask = current visible layers (bit mask)
      * @param aPreferredLayer = the layer to search first
      */
-    GENERAL_COLLECTORS_GUIDE( LAYER_MSK aVisibleLayerMask, LAYER_NUM aPreferredLayer )
+    GENERAL_COLLECTORS_GUIDE( LSET aVisibleLayerMask, LAYER_ID aPreferredLayer )
     {
-        m_PreferredLayer            = LAYER_N_FRONT;
+        m_PreferredLayer            = aPreferredLayer;
         m_IgnorePreferredLayer      = false;
-        m_LayerLocked               = NO_LAYERS;
         m_LayerVisible              = aVisibleLayerMask;
         m_IgnoreLockedLayers        = true;
         m_IgnoreNonVisibleLayers    = true;
@@ -423,13 +428,11 @@ public:
         m_IncludeSecondary          = true;
 #endif
 
-        m_PreferredLayer            = aPreferredLayer;
-
         m_IgnoreMTextsMarkedNoShow  = true; // g_ModuleTextNOVColor;
-        m_IgnoreMTextsOnCopper      = true;
-        m_IgnoreMTextsOnCmp         = false;
-        m_IgnoreModulesOnCu         = true; // !Show_Modules_Cmp;
-        m_IgnoreModulesOnCmp        = false;
+        m_IgnoreMTextsOnBack        = true;
+        m_IgnoreMTextsOnFront       = false;
+        m_IgnoreModulesOnBack       = true; // !Show_Modules_Cmp;
+        m_IgnoreModulesOnFront      = false;
 
         m_IgnorePadsOnFront         = false;
         m_IgnorePadsOnBack          = false;
@@ -443,59 +446,52 @@ public:
      * Function IsLayerLocked
      * @return bool - true if the given layer is locked, else false.
      */
-    bool IsLayerLocked( LAYER_NUM aLayer ) const  
-    {  
-        return GetLayerMask( aLayer ) & m_LayerLocked; 
-    }
-    void SetLayerLocked( LAYER_NUM aLayer, bool isLocked )
+    bool IsLayerLocked( LAYER_ID aLayerId ) const
     {
-        if( isLocked )
-            m_LayerLocked |= GetLayerMask( aLayer );
-        else
-            m_LayerLocked &= ~GetLayerMask( aLayer );
+        return m_LayerLocked[aLayerId];
     }
 
+    void SetLayerLocked( LAYER_ID aLayerId, bool isLocked )
+    {
+        m_LayerLocked.set( aLayerId, isLocked );
+    }
 
     /**
      * Function IsLayerVisible
      * @return bool - true if the given layer is visible, else false.
      */
-    bool IsLayerVisible( LAYER_NUM aLayer ) const 
-    { 
-        return GetLayerMask( aLayer ) & m_LayerVisible; 
-    }
-    void SetLayerVisible( LAYER_NUM aLayer, bool isVisible )
+    bool IsLayerVisible( LAYER_ID aLayerId ) const
     {
-        if( isVisible )
-            m_LayerVisible |= GetLayerMask( aLayer );
-        else
-            m_LayerVisible &= ~GetLayerMask( aLayer );
+        return m_LayerVisible[aLayerId];
     }
-    void SetLayerVisibleBits( LAYER_MSK aLayerBits ) { m_LayerVisible = aLayerBits; }
-
+    void SetLayerVisible( LAYER_ID aLayerId, bool isVisible )
+    {
+        m_LayerVisible.set( aLayerId, isVisible );
+    }
+    void SetLayerVisibleBits( LSET aLayerBits ) { m_LayerVisible = aLayerBits; }
 
     /**
      * Function IgnoreLockedLayers
      * @return bool - true if should ignore locked layers, else false.
      */
-    bool IgnoreLockedLayers() const { return m_IgnoreLockedLayers; }
-    void SetIgnoreLockedLayers( bool ignore ) { m_IgnoreLockedLayers = ignore; }
+    bool IgnoreLockedLayers() const                 { return m_IgnoreLockedLayers; }
+    void SetIgnoreLockedLayers( bool ignore )       { m_IgnoreLockedLayers = ignore; }
 
 
     /**
      * Function IgnoredNonVisibleLayers
      * @return bool - true if should ignore non-visible layers, else false.
      */
-    bool IgnoreNonVisibleLayers() const { return m_IgnoreNonVisibleLayers; }
-    void SetIgnoreNonVisibleLayers( bool ignore ) { m_IgnoreLockedLayers = ignore; }
+    bool IgnoreNonVisibleLayers() const             { return m_IgnoreNonVisibleLayers; }
+    void SetIgnoreNonVisibleLayers( bool ignore )   { m_IgnoreLockedLayers = ignore; }
 
 
     /**
      * Function GetPreferredLayer
      * @return int - the preferred layer for HitTest()ing.
      */
-    LAYER_NUM GetPreferredLayer() const { return m_PreferredLayer; }
-    void SetPreferredLayer( LAYER_NUM aLayer )  { m_PreferredLayer = aLayer; }
+    LAYER_ID GetPreferredLayer() const             { return m_PreferredLayer; }
+    void SetPreferredLayer( LAYER_ID aLayer )      { m_PreferredLayer = aLayer; }
 
 
     /**
@@ -503,16 +499,16 @@ public:
      * provides wildcard behavior regarding the preferred layer.
      * @return bool - true if should ignore preferred layer, else false.
      */
-    bool IgnorePreferredLayer() const { return  m_IgnorePreferredLayer; }
-    void SetIgnorePreferredLayer( bool ignore )  { m_IgnorePreferredLayer = ignore; }
+    bool IgnorePreferredLayer() const               { return  m_IgnorePreferredLayer; }
+    void SetIgnorePreferredLayer( bool ignore )     { m_IgnorePreferredLayer = ignore; }
 
 
     /**
      * Function IgnoreLockedItems
      * @return bool - true if should ignore locked items, else false.
      */
-    bool IgnoreLockedItems() const  { return m_IgnoreLockedItems; }
-    void SetIgnoreLockedItems( bool ignore ) { m_IgnoreLockedItems = ignore; }
+    bool IgnoreLockedItems() const                  { return m_IgnoreLockedItems; }
+    void SetIgnoreLockedItems( bool ignore )        { m_IgnoreLockedItems = ignore; }
 
 
     /**
@@ -534,31 +530,31 @@ public:
 
     /**
      * Function IgnoreMTextsOnCu
-     * @return bool - true if should ignore MTexts on copper layer.
+     * @return bool - true if should ignore MTexts on back layers
      */
-    bool IgnoreMTextsOnCopper() const { return m_IgnoreMTextsOnCopper; }
-    void SetIgnoreMTextsOnCopper( bool ignore ) { m_IgnoreMTextsOnCopper = ignore; }
+    bool IgnoreMTextsOnBack() const { return m_IgnoreMTextsOnBack; }
+    void SetIgnoreMTextsOnBack( bool ignore ) { m_IgnoreMTextsOnBack = ignore; }
 
     /**
-     * Function IgnoreMTextsOnCmp
-     * @return bool - true if should ignore MTexts on component layer.
+     * Function IgnoreMTextsOnFront
+     * @return bool - true if should ignore MTexts on front layers
      */
-    bool IgnoreMTextsOnCmp() const { return m_IgnoreMTextsOnCmp; }
-    void SetIgnoreMTextsOnCmp( bool ignore ) { m_IgnoreMTextsOnCmp = ignore; }
+    bool IgnoreMTextsOnFront() const { return m_IgnoreMTextsOnFront; }
+    void SetIgnoreMTextsOnFront( bool ignore ) { m_IgnoreMTextsOnFront = ignore; }
 
     /**
-     * Function IgnoreModulesOnCu
-     * @return bool - true if should ignore MODULEs on copper layer.
+     * Function IgnoreModulesOnBack
+     * @return bool - true if should ignore MODULEs on the back side
      */
-    bool IgnoreModulesOnCu() const { return m_IgnoreModulesOnCu; }
-    void SetIgnoreModulesOnCu( bool ignore ) { m_IgnoreModulesOnCu = ignore; }
+    bool IgnoreModulesOnBack() const { return m_IgnoreModulesOnBack; }
+    void SetIgnoreModulesOnBack( bool ignore ) { m_IgnoreModulesOnBack = ignore; }
 
     /**
-     * Function IgnoreModulesOnCmp
+     * Function IgnoreModulesOnFront
      * @return bool - true if should ignore MODULEs on component layer.
      */
-    bool IgnoreModulesOnCmp() const { return m_IgnoreModulesOnCmp; }
-    void SetIgnoreModulesOnCmp( bool ignore ) { m_IgnoreModulesOnCmp = ignore; }
+    bool IgnoreModulesOnFront() const { return m_IgnoreModulesOnFront; }
+    void SetIgnoreModulesOnFront( bool ignore ) { m_IgnoreModulesOnFront = ignore; }
 
     /**
      * Function IgnorePadsOnBack
@@ -591,11 +587,11 @@ public:
 
 
 /**
- * Class TYPE_COLLECTOR
+ * Class PCB_TYPE_COLLECTOR
  * merely gathers up all BOARD_ITEMs of a given set of KICAD_T type(s).
  * @see class COLLECTOR
  */
-class TYPE_COLLECTOR : public COLLECTOR
+class PCB_TYPE_COLLECTOR : public COLLECTOR
 {
 
 public:
@@ -637,7 +633,5 @@ public:
      */
     void Collect( BOARD_ITEM* aBoard, const KICAD_T aScanList[] );
 };
-
-
 
 #endif // COLLECTORS_H

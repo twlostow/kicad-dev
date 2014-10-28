@@ -31,7 +31,6 @@
 #include <fctsys.h>
 #include <macros.h>
 #include <gr_basic.h>
-#include <pcbcommon.h>
 #include <trigo.h>
 #include <wxstruct.h>
 #include <class_drawpanel.h>
@@ -49,7 +48,7 @@ DIMENSION::DIMENSION( BOARD_ITEM* aParent ) :
     BOARD_ITEM( aParent, PCB_DIMENSION_T ),
     m_Width( Millimeter2iu( 0.2 ) ), m_Unit( INCHES ), m_Value( 0 ), m_Height( 0 ), m_Text( this )
 {
-    m_Layer = DRAW_N;
+    m_Layer = Dwgs_User;
 }
 
 
@@ -82,7 +81,7 @@ const wxString DIMENSION::GetText() const
 }
 
 
-void DIMENSION::SetLayer( LAYER_NUM aLayer )
+void DIMENSION::SetLayer( LAYER_ID aLayer )
 {
     m_Layer = aLayer;
     m_Text.SetLayer( aLayer );

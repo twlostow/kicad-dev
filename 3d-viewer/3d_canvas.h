@@ -46,7 +46,8 @@
 
 class BOARD_DESIGN_SETTINGS;
 class EDA_3D_FRAME;
-class S3D_VERTEX;
+class CPOLYGONS_LIST;
+
 class VIA;
 class D_PAD;
 
@@ -61,8 +62,14 @@ enum GL_LIST_ID
     GL_ID_BOARD,                // List id for copper layers
     GL_ID_TECH_LAYERS,          // List id for non copper layers (masks...)
     GL_ID_AUX_LAYERS,           // List id for user layers (draw, eco, comment)
-    GL_ID_3DSHAPES_SOLID,       // List id for 3D shapes, non transparent entities
-    GL_ID_3DSHAPES_TRANSP,      // List id for 3D shapes, transparent entities
+    GL_ID_3DSHAPES_SOLID_FRONT, // List id for 3D shapes, non transparent entities
+    GL_ID_3DSHAPES_TRANSP_FRONT,// List id for 3D shapes, transparent entities
+    GL_ID_3DSHAPES_SOLID_BACK,  // List id for 3D shapes, non transparent entities
+    GL_ID_3DSHAPES_TRANSP_BACK, // List id for 3D shapes, transparent entities
+    GL_ID_SHADOW_FRONT,
+    GL_ID_SHADOW_BACK,
+    GL_ID_SHADOW_BOARD,
+    GL_ID_BODY,                 // Body only list
     GL_ID_END
 };
 
@@ -75,6 +82,17 @@ private:
     wxRealPoint     m_draw3dOffset;     // offset to draw the 3D mesh.
     double          m_ZBottom;          // position of the back layer
     double          m_ZTop;             // position of the front layer
+
+    GLuint          m_text_pcb;
+    GLuint          m_text_silk;
+
+    bool            m_shadow_init;
+    GLuint          m_text_fake_shadow_front;
+    GLuint          m_text_fake_shadow_back;
+    GLuint          m_text_fake_shadow_board;
+
+    void Create_and_Render_Shadow_Buffer( GLuint *aDst_gl_texture,
+            GLuint aTexture_size, bool aDraw_body, int aBlurPasses );
 
 public:
     EDA_3D_CANVAS( EDA_3D_FRAME* parent, int* attribList = 0 );
@@ -90,7 +108,7 @@ public:
      * @param aGlList = the list to clear.
      * if 0 (default) all lists are cleared
      */
-    void   ClearLists( GLuint aGlList = 0 );
+    void   ClearLists( int aGlList = 0 );
 
     // Event functions:
     void   OnPaint( wxPaintEvent& event );
@@ -117,11 +135,72 @@ public:
     void   CreateDrawGL_List();
     void   InitGL();
     void   SetLights();
+
     void   SetOffset(double aPosX, double aPosY)
     {
         m_draw3dOffset.x = aPosX;
         m_draw3dOffset.y = aPosY;
     }
+
+    /** @return the INFO3D_VISU which contains the current parameters
+     * to draw the 3D view og the board
+     */
+    INFO3D_VISU& GetPrm3DVisu() const;
+
+
+private:
+
+    /**
+     * return true if we are in realistic mode render
+     */
+    bool isRealisticMode() const;
+
+    /**
+     * @return true if aItem should be displayed
+     * @param aItem = an item of DISPLAY3D_FLG enum
+     */
+    bool isEnabled( DISPLAY3D_FLG aItem ) const;
+
+    /** Helper function
+     * @return true if aLayer should be displayed, false otherwise
+     */
+    bool is3DLayerEnabled( LAYER_ID aLayer ) const;
+
+    /**
+     * @return the size of the board in pcb units
+     */
+    wxSize getBoardSize() const;
+
+    /**
+     * @return the position of the board center in pcb units
+     */
+    wxPoint getBoardCenter() const;
+
+    /**
+     * Helper function SetGLTechLayersColor
+     * Initialize the color to draw the non copper layers
+     * in realistic mode and normal mode.
+     */
+    void setGLTechLayersColor( LAYER_NUM aLayer );
+
+    /**
+     * Helper function SetGLCopperColor
+     * Initialize the copper color to draw the board
+     * in realistic mode (a golden yellow color )
+     */
+    void setGLCopperColor();
+
+    /**
+     * Helper function SetGLEpoxyColor
+     * Initialize the color to draw the epoxy body board in realistic mode.
+     */
+    void setGLEpoxyColor( double aTransparency = 1.0 );
+
+    /**
+     * Helper function SetGLSolderMaskColor
+     * Initialize the color to draw the solder mask layers in realistic mode.
+     */
+    void setGLSolderMaskColor( double aTransparency = 1.0 );
 
     /**
      * Function BuildBoard3DView
@@ -129,14 +208,20 @@ public:
      * Populates the OpenGL GL_ID_BOARD draw list with board items only on copper layers.
      * 3D footprint shapes, tech layers and aux layers are not on this list
      */
-    void   BuildBoard3DView();
+    void   BuildBoard3DView(GLuint aBoardList, GLuint aBodyOnlyList);
 
     /**
      * Function BuildTechLayers3DView
      * Called by CreateDrawGL_List()
-     * Populates the OpenGL GL_ID_BOARD draw list with items on tech layers
+     * Populates the OpenGL GL_ID_TECH_LAYERS draw list with items on tech layers
      */
     void   BuildTechLayers3DView();
+
+    /**
+     * Function BuildShadowList
+     * Called by CreateDrawGL_List()
+     */
+     void BuildShadowList( GLuint aFrontList, GLuint aBacklist, GLuint aBoardList );
 
     /**
      * Function BuildFootprintShape3DList
@@ -148,7 +233,8 @@ public:
      * which need to be drawn after all other items
      */
     void   BuildFootprintShape3DList( GLuint aOpaqueList,
-                                      GLuint aTransparentList);
+                                      GLuint aTransparentList,
+                                      bool aSideToLoad );
     /**
      * Function BuildBoard3DAuxLayers
      * Called by CreateDrawGL_List()
@@ -160,10 +246,38 @@ public:
     void   Draw3DGrid( double aGriSizeMM );
     void   Draw3DAxis();
 
+    /**
+     * Helper function BuildPadShapeThickOutlineAsPolygon:
+     * Build a pad outline as non filled polygon, to draw pads on silkscreen layer
+     * with a line thickness = aWidth
+     * Used only to draw pads outlines on silkscreen layers.
+     */
+    void BuildPadShapeThickOutlineAsPolygon( const D_PAD*          aPad,
+                                             CPOLYGONS_LIST& aCornerBuffer,
+                                             int             aWidth,
+                                             int             aCircleToSegmentsCount,
+                                             double          aCorrectionFactor );
+
+
+    /**
+     * Helper function Draw3DViaHole:
+     * Draw the via hole:
+     * Build a vertical hole (a cylinder) between the first and the last via layers
+     */
     void   Draw3DViaHole( const VIA * aVia );
+
+    /**
+     * Helper function Draw3DPadHole:
+     * Draw the pad hole:
+     * Build a vertical hole (round or oblong) between the front and back layers
+     */
     void   Draw3DPadHole( const D_PAD * aPad );
+
+    void   GenerateFakeShadowsTextures();
 
     DECLARE_EVENT_TABLE()
 };
+
+void CheckGLError(const char *aFileName, int aLineNumber);
 
 #endif  /*  _3D_CANVAS_H_ */

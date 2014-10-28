@@ -68,16 +68,7 @@ public:
         return m_pinName < aNet.m_pinName;
     }
 
-#if defined(DEBUG)
-    /**
-     * Function Show
-     * is used to output the object tree, currently for debugging only.
-     * @param aNestLevel An aid to prettier tree indenting, and is the level
-     *                   of nesting of this object within the overall tree.
-     * @param aReporter A reference to a #REPORTER object to output to.
-     */
-    virtual void Show( int aNestLevel, REPORTER& aReporter );
-#endif
+    int Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl );
 };
 
 
@@ -106,6 +97,11 @@ class COMPONENT
 
     /// The #FPID of the footprint assigned to the component.
     FPID           m_fpid;
+
+    /// The alt FPID of the footprint, when there are 2 different assigned footprints,
+    /// One from the netlist, the other from the .cmp file.
+    /// this one is a copy of the netlist footprint assignment
+    FPID           m_altFpid;
 
     /// The #MODULE loaded for #m_fpid.
     std::auto_ptr< MODULE > m_footprint;
@@ -159,9 +155,16 @@ public:
         m_fpid = aFPID;
     }
 
-    const FPID& GetFPID() const { return m_fpid; }
+    void SetAltFPID( const FPID& aFPID )
+    {
+        m_altFpid = aFPID;
+    }
 
-    const wxString& GetTimeStamp() const { return m_timeStamp; }
+   const FPID& GetFPID() const { return m_fpid; }
+
+    const FPID& GetAltFPID() const { return m_altFpid; }
+
+     const wxString& GetTimeStamp() const { return m_timeStamp; }
 
     void SetFootprintFilters( const wxArrayString& aFilterList )
     {
@@ -192,16 +195,7 @@ public:
 
     bool FootprintChanged() const { return m_footprintChanged; }
 
-#if defined(DEBUG)
-    /**
-     * Function Show
-     * is used to output the object tree, currently for debugging only.
-     * @param aNestLevel An aid to prettier tree indenting, and is the level
-     *                   of nesting of this object within the overall tree.
-     * @param aReporter A reference to a #REPORTER object to output to.
-     */
-    virtual void Show( int aNestLevel, REPORTER& aReporter );
-#endif
+    void Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl );
 };
 
 
@@ -279,7 +273,7 @@ public:
      */
     void AddComponent( COMPONENT* aComponent );
 
-    /*
+    /**
      * Function GetComponentByReference
      * returns a #COMPONENT by \a aReference.
      *
@@ -288,7 +282,7 @@ public:
      */
     COMPONENT* GetComponentByReference( const wxString& aReference );
 
-    /*
+    /**
      * Function GetComponentByTimeStamp
      * returns a #COMPONENT by \a aTimeStamp.
      *
@@ -348,16 +342,18 @@ public:
      */
     bool AnyFootprintsChanged() const;
 
-#if defined(DEBUG)
-    /**
-     * Function Show
-     * is used to output the object tree, currently for debugging only.
-     * @param aNestLevel An aid to prettier tree indenting, and is the level
-     *                   of nesting of this object within the overall tree.
-     * @param aReporter A reference to a #REPORTER object to output to.
-     */
-    virtual void Show( int aNestLevel, REPORTER& aReporter );
-#endif
+    void Format( const char* aDocName, OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl = 0 );
+
+#define CTL_OMIT_EXTRA      (1<<0)
+#define CTL_OMIT_NETS       (1<<1)
+#define CTL_OMIT_FILTERS    (1<<2)
+
+#define CTL_FOR_BACKANNO    (CTL_OMIT_NETS | CTL_OMIT_FILTERS | CTL_OMIT_EXTRA)
+
+    void FormatBackAnnotation( OUTPUTFORMATTER* aOut )
+    {
+        Format( "back_annotation", aOut, 0, CTL_FOR_BACKANNO );
+    }
 };
 
 

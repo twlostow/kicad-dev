@@ -37,7 +37,7 @@
 #include <class_sch_screen.h>
 
 class wxListBox;
-class CMP_LIBRARY;
+class PART_LIB;
 
 
 /**
@@ -53,7 +53,7 @@ public:
      *  FRAME_SCH_LIB_VIEWER_MODAL
      */
     LIB_VIEW_FRAME( KIWAY* aKiway, wxWindow* aParent,
-            FRAME_T aFrameType, CMP_LIBRARY* aLibrary = NULL );
+            FRAME_T aFrameType, PART_LIB* aLibrary = NULL );
 
     ~LIB_VIEW_FRAME();
 
@@ -79,15 +79,28 @@ public:
     void DisplayLibInfos();
     void RedrawActiveWindow( wxDC* DC, bool EraseBg );
     void OnCloseWindow( wxCloseEvent& Event );
+    void CloseLibraryViewer( wxCommandEvent& event );
     void ReCreateHToolbar();
     void ReCreateVToolbar();
+    void ReCreateMenuBar();
+
     void OnLeftClick( wxDC* DC, const wxPoint& MousePos );
     double BestZoom();
     void ClickOnLibList( wxCommandEvent& event );
     void ClickOnCmpList( wxCommandEvent& event );
     void OnSetRelativeOffset( wxCommandEvent& event );
 
-    void GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
+    bool GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey = 0 );
+
+    /**
+     * Function OnHotKey
+     * handle hot key events.
+     * <p?
+     * Some commands are relative to the item under the mouse cursor.  Commands are
+     * case insensitive
+     * </p>
+     */
+    bool OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition, EDA_ITEM* aItem = NULL );
 
     void LoadSettings( wxConfigBase* aCfg );
     void SaveSettings( wxConfigBase* aCfg );
@@ -128,7 +141,7 @@ private:
      * exports the current component to schematic and close the library browser.
      */
     void ExportToSchematicLibraryPart( wxCommandEvent& event );
-    void ViewOneLibraryContent( CMP_LIBRARY* Lib, int Flag );
+    void ViewOneLibraryContent( PART_LIB* Lib, int Flag );
     bool OnRightClick( const wxPoint& MousePos, wxMenu* PopMenu );
     void DClickOnCmpList( wxCommandEvent& event );
 

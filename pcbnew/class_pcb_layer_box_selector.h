@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2012-2014 Jean-Pierre Charras, jean-pierre.charras@ujf-grenoble.fr
+ * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 #ifndef CLASS_PCB_PCB_LAYER_BOX_SELECTOR_H
 #define CLASS_PCB_PCB_LAYER_BOX_SELECTOR_H 1
 
@@ -5,17 +29,18 @@
 
 class PCB_BASE_FRAME;
 
-/* class to display a pcb layer list in a wxBitmapComboBox.
+/**
+ * Class to display a pcb layer list in a wxBitmapComboBox.
  */
-
 class PCB_LAYER_BOX_SELECTOR : public LAYER_BOX_SELECTOR
 {
-    PCB_BASE_FRAME * m_boardFrame;
-    LAYER_MSK m_layerMaskDisable;    // A mask to remove some layers from layer list
+    PCB_BASE_FRAME* m_boardFrame;
+
+    LSET m_layerMaskDisable;    // A mask to remove some layers from layer list
 
 public:
     // Hotkey Info
-    struct EDA_HOTKEY_CONFIG* m_hotkeys;
+    EDA_HOTKEY_CONFIG* m_hotkeys;
 
 public:
     // If you are thinking the constructor is a bit curious,
@@ -27,11 +52,10 @@ public:
                         const wxString& value = wxEmptyString,
                         const wxPoint& pos = wxDefaultPosition,
                         const wxSize& size = wxDefaultSize,
-                        int n = 0, const wxString choices[] = NULL, int style = 0 )
-        :LAYER_BOX_SELECTOR( parent, id, pos, size, n, choices )
+                        int n = 0, const wxString choices[] = NULL, int style = 0 ) :
+        LAYER_BOX_SELECTOR( parent, id, pos, size, n, choices )
     {
         m_boardFrame = NULL;
-        m_layerMaskDisable = 0;
     }
 
     // Accessors
@@ -39,11 +63,11 @@ public:
     // SetBoardFrame should be called after creating a PCB_LAYER_BOX_SELECTOR
     // It is not passed through the constructor because when using wxFormBuilder
     // we should use a constructor compatible with a wxBitmapComboBox
-    void SetBoardFrame( PCB_BASE_FRAME * aFrame ) { m_boardFrame = aFrame; };
+    void SetBoardFrame( PCB_BASE_FRAME* aFrame ) { m_boardFrame = aFrame; };
 
-    // SetLayerMask allows disableing some layers, whiech are not
+    // SetLayerSet allows disableing some layers, which are not
     // shown in list;
-    void SetLayerMask( LAYER_MSK aMask ) { m_layerMaskDisable = aMask; }
+    void SetLayerSet( LSET aMask ) { m_layerMaskDisable = aMask; }
 
     // Reload the Layers names and bitmaps
     // Virtual function
@@ -61,6 +85,8 @@ private:
     // Returns the name of the layer id
     // Virtual function
     wxString GetLayerName( LAYER_NUM aLayer ) const;
+
+    LSET getEnabledLayers() const;
 };
 
-#endif //CLASS_PCB_PCB_LAYER_BOX_SELECTOR_H
+#endif // CLASS_PCB_PCB_LAYER_BOX_SELECTOR_H

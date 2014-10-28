@@ -1,6 +1,26 @@
-/**************/
-/* gerbview.h */
-/**************/
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2007-2014 Jean-Pierre Charras  jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2014 KiCad Developers, see change_log.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 
 #ifndef GERBVIEW_H
 #define GERBVIEW_H
@@ -8,9 +28,6 @@
 #include <vector>
 #include <set>
 
-#include <dcode.h>
-#include <class_gerber_draw_item.h>
-#include <class_aperture_macro.h>
 
 #define CURSEUR_ON_GRILLE  0
 #define CURSEUR_OFF_GRILLE 1
@@ -32,6 +49,8 @@ extern const wxChar* g_GerberPageSizeList[8];
 #define GERB_STOP_DRAW   2      // Extinguish light (lift pen)
 #define GERB_FLASH       3      // Flash
 
+// number fo draw layers in Gerbview
+#define GERBER_DRAWLAYERS_COUNT 32
 
 /**
  * Enum GERBER_VISIBLE_ID
@@ -46,9 +65,6 @@ enum GERBER_VISIBLE_ID
                                 // instaed of background color, to make them visible
     END_GERBER_VISIBLE_LIST     // sentinel
 };
-
-extern const wxString GerbviewProjectFileExt;
-extern const wxString GerbviewProjectFileWildcard;
 
 // Interpolation type
 enum Gerb_Interpolation
@@ -93,13 +109,6 @@ enum Gerb_Analyse_Cmd
     ENTER_RS274X_CMD
 };
 
-
-/**************/
-/* rs274x.cpp */
-/**************/
-bool GetEndOfBlock( char buff[GERBER_BUFZ], char*& text, FILE* gerber_file );
-extern GERBER_IMAGE* g_GERBER_List[32];
-
-#include <gerbview_frame.h>
+extern GERBER_IMAGE* g_GERBER_List[GERBER_DRAWLAYERS_COUNT];
 
 #endif  // ifndef GERBVIEW_H

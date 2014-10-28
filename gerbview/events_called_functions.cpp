@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2011-2014 Jean-Pierre Charras  jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2014 KiCad Developers, see change_log.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file events_called_functions.cpp
  * @brief GerbView command event functions.
@@ -11,6 +35,7 @@
 #include <gestfich.h>
 
 #include <gerbview.h>
+#include <gerbview_frame.h>
 #include <kicad_device_context.h>
 #include <gerbview_id.h>
 #include <class_GERBER.h>
@@ -163,7 +188,7 @@ void GERBVIEW_FRAME::Process_Special_Functions( wxCommandEvent& event )
         break;
 
     case ID_GERBVIEW_GLOBAL_DELETE:
-        Erase_Current_Layer( true );
+        Erase_Current_DrawLayer( true );
         ClearMsgPanel();
         break;
 
@@ -226,7 +251,7 @@ void GERBVIEW_FRAME::OnSelectActiveDCode( wxCommandEvent& event )
 
 void GERBVIEW_FRAME::OnSelectActiveLayer( wxCommandEvent& event )
 {
-    LAYER_NUM layer = getActiveLayer();
+    int layer = getActiveLayer();
 
     setActiveLayer( event.GetSelection() );
 
@@ -240,7 +265,7 @@ void GERBVIEW_FRAME::OnSelectActiveLayer( wxCommandEvent& event )
 
 void GERBVIEW_FRAME::OnShowGerberSourceFile( wxCommandEvent& event )
 {
-    LAYER_NUM     layer = getActiveLayer();
+    int     layer = getActiveLayer();
     GERBER_IMAGE* gerber_layer = g_GERBER_List[layer];
 
     if( gerber_layer )

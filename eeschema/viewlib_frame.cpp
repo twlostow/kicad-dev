@@ -70,30 +70,18 @@ BEGIN_EVENT_TABLE( LIB_VIEW_FRAME, EDA_DRAW_FRAME )
     EVT_LISTBOX( ID_LIBVIEW_CMP_LIST, LIB_VIEW_FRAME::ClickOnCmpList )
     EVT_LISTBOX_DCLICK( ID_LIBVIEW_CMP_LIST, LIB_VIEW_FRAME::DClickOnCmpList )
 
+    // Menu (and/or hotkey) events
+    EVT_MENU( wxID_HELP, EDA_DRAW_FRAME::GetKicadHelp )
+    EVT_MENU( wxID_EXIT, LIB_VIEW_FRAME::CloseLibraryViewer )
     EVT_MENU( ID_SET_RELATIVE_OFFSET, LIB_VIEW_FRAME::OnSetRelativeOffset )
+
 END_EVENT_TABLE()
 
 
-/*
- * This emulates the zoom menu entries found in the other KiCad applications.
- * The library viewer does not have any menus so add an accelerator table to
- * the main frame.
- */
-static wxAcceleratorEntry accels[] =
-{
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F1, ID_ZOOM_IN ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F2, ID_ZOOM_OUT ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F3, ID_ZOOM_REDRAW ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F4, ID_POPUP_ZOOM_CENTER ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_HOME, ID_ZOOM_PAGE ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_SPACE, ID_SET_RELATIVE_OFFSET )
-};
-
-#define ACCEL_TABLE_CNT ( sizeof( accels ) / sizeof( wxAcceleratorEntry ) )
 #define LIB_VIEW_FRAME_NAME wxT( "ViewlibFrame" )
 
 LIB_VIEW_FRAME::LIB_VIEW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrameType,
-        CMP_LIBRARY* aLibrary ) :
+        PART_LIB* aLibrary ) :
     SCH_BASE_FRAME( aKiway, aParent, aFrameType, _( "Library Browser" ),
             wxDefaultPosition, wxDefaultSize,
             aFrameType==FRAME_SCH_VIEWER ?
@@ -106,22 +94,19 @@ LIB_VIEW_FRAME::LIB_VIEW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
     if( aFrameType == FRAME_SCH_VIEWER_MODAL )
         SetModal( true );
 
-    wxAcceleratorTable table( ACCEL_TABLE_CNT, accels );
-
     m_FrameName = GetLibViewerFrameName();
     m_configPath = wxT( "LibraryViewer" );
 
     // Give an icon
     wxIcon  icon;
     icon.CopyFromBitmap( KiBitmap( library_browse_xpm ) );
-
     SetIcon( icon );
 
-    m_HotkeysZoomAndGridList = s_Viewlib_Hokeys_Descr;
+    m_HotkeysZoomAndGridList = g_Viewlib_Hokeys_Descr;
     m_cmpList   = NULL;
     m_libList   = NULL;
 
-    SetScreen( new SCH_SCREEN() );
+    SetScreen( new SCH_SCREEN( aKiway ) );
     GetScreen()->m_Center = true;      // Axis origin centered on screen.
     LoadSettings( config() );
 
@@ -131,6 +116,9 @@ LIB_VIEW_FRAME::LIB_VIEW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
     m_LastGridSizeId = ID_POPUP_GRID_LEVEL_50 - ID_POPUP_GRID_LEVEL_1000;
     GetScreen()->SetGrid( ID_POPUP_GRID_LEVEL_1000 + m_LastGridSizeId  );
 
+    // Menu bar is not mandatory: uncomment/comment the next line
+    // to add/remove the menubar
+    ReCreateMenuBar();
     ReCreateHToolbar();
     ReCreateVToolbar();
 
@@ -166,11 +154,7 @@ LIB_VIEW_FRAME::LIB_VIEW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
 
     DisplayLibInfos();
 
-    if( m_canvas )
-        m_canvas->SetAcceleratorTable( table );
-
     m_auimgr.SetManagedWindow( this );
-
 
     EDA_PANEINFO horiz;
     horiz.HorizontalToolbarPane();
@@ -284,14 +268,14 @@ double LIB_VIEW_FRAME::BestZoom()
      * and replace by static const int VIEWPORT_EXTENT = 10000;
      */
 
-    LIB_COMPONENT*  component = NULL;
-    double          bestzoom = 16.0;      // default value for bestzoom
-    CMP_LIBRARY*    lib = CMP_LIBRARY::FindLibrary( m_libraryName );
+    LIB_PART*   part = NULL;
+    double      bestzoom = 16.0;      // default value for bestzoom
+    PART_LIB*   lib = Prj().SchLibs()->FindLibrary( m_libraryName );
 
     if( lib  )
-        component = lib->FindComponent( m_entryName );
+        part = lib->FindPart( m_entryName );
 
-    if( component == NULL )
+    if( !part )
     {
         SetScrollCenterPosition( wxPoint( 0, 0 ) );
         return bestzoom;
@@ -299,13 +283,13 @@ double LIB_VIEW_FRAME::BestZoom()
 
     wxSize size = m_canvas->GetClientSize();
 
-    EDA_RECT BoundaryBox = component->GetBoundingBox( m_unit, m_convert );
+    EDA_RECT boundingBox = part->GetBoundingBox( m_unit, m_convert );
 
     // Reserve a 10% margin around component bounding box.
     double margin_scale_factor = 0.8;
-    double zx =(double) BoundaryBox.GetWidth() /
+    double zx =(double) boundingBox.GetWidth() /
                ( margin_scale_factor * (double)size.x );
-    double zy = (double) BoundaryBox.GetHeight() /
+    double zy = (double) boundingBox.GetHeight() /
                 ( margin_scale_factor * (double)size.y);
 
     // Calculates the best zoom
@@ -316,7 +300,7 @@ double LIB_VIEW_FRAME::BestZoom()
     if( bestzoom  < GetScreen()->m_ZoomList[0] )
         bestzoom  = GetScreen()->m_ZoomList[0];
 
-    SetScrollCenterPosition( BoundaryBox.Centre() );
+    SetScrollCenterPosition( boundingBox.Centre() );
 
     return bestzoom;
 }
@@ -324,11 +308,11 @@ double LIB_VIEW_FRAME::BestZoom()
 
 void LIB_VIEW_FRAME::ReCreateListLib()
 {
-    if( m_libList == NULL )
+    if( !m_libList )
         return;
 
     m_libList->Clear();
-    m_libList->Append( CMP_LIBRARY::GetLibraryNames() );
+    m_libList->Append( Prj().SchLibs()->GetLibraryNames() );
 
     // Search for a previous selection:
     int index = m_libList->FindString( m_libraryName );
@@ -361,9 +345,9 @@ void LIB_VIEW_FRAME::ReCreateListCmp()
 
     m_cmpList->Clear();
 
-    CMP_LIBRARY* Library = CMP_LIBRARY::FindLibrary( m_libraryName );
+    PART_LIB* lib = Prj().SchLibs()->FindLibrary( m_libraryName );
 
-    if( Library == NULL )
+    if( !lib )
     {
         m_libraryName = wxEmptyString;
         m_entryName = wxEmptyString;
@@ -373,7 +357,8 @@ void LIB_VIEW_FRAME::ReCreateListCmp()
     }
 
     wxArrayString  nameList;
-    Library->GetEntryNames( nameList );
+
+    lib->GetEntryNames( nameList );
     m_cmpList->Append( nameList );
 
     int index = m_cmpList->FindString( m_entryName );
@@ -506,13 +491,13 @@ void LIB_VIEW_FRAME::LoadSettings( wxConfigBase* aCfg )
 {
     EDA_DRAW_FRAME::LoadSettings( aCfg );
 
+    SetGridColor( GetLayerColor( LAYER_GRID ) );
+    SetDrawBgColor( GetLayerColor( LAYER_BACKGROUND ) );
+
     wxConfigPathChanger cpc( aCfg, m_configPath );
 
-    EDA_COLOR_T itmp = ColorByName( aCfg->Read( LIBVIEW_BGCOLOR, wxT( "WHITE" ) ) );
-    SetDrawBgColor( itmp );
-
-    aCfg->Read( LIBLIST_WIDTH_KEY, &m_libListWidth, 100 );
-    aCfg->Read( CMPLIST_WIDTH_KEY, &m_cmpListWidth, 100 );
+    aCfg->Read( LIBLIST_WIDTH_KEY, &m_libListWidth, 150 );
+    aCfg->Read( CMPLIST_WIDTH_KEY, &m_cmpListWidth, 150 );
 
     // Set parameters to a reasonable value.
     if( m_libListWidth > m_FrameSize.x/2 )
@@ -537,7 +522,6 @@ void LIB_VIEW_FRAME::SaveSettings( wxConfigBase* aCfg )
 
     m_cmpListWidth = m_cmpList->GetSize().x;
     aCfg->Write( CMPLIST_WIDTH_KEY, m_cmpListWidth );
-    aCfg->Write( LIBVIEW_BGCOLOR, ColorGetName( GetDrawBgColor() ) );
 }
 
 
@@ -549,4 +533,10 @@ void LIB_VIEW_FRAME::OnActivate( wxActivateEvent& event )
         ReCreateListLib();
 
     DisplayLibInfos();
+}
+
+
+void LIB_VIEW_FRAME::CloseLibraryViewer( wxCommandEvent& event )
+{
+    Close();
 }

@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2010-2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file hotkeys_module_editor.cpp
  */
@@ -18,11 +42,11 @@
  */
 
 
-void FOOTPRINT_EDIT_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
+bool FOOTPRINT_EDIT_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
                                      EDA_ITEM* aItem )
 {
     if( aHotKey == 0 )
-        return;
+        return false;
 
     bool           blockActive = GetScreen()->m_BlockLocate.GetCommand() != BLOCK_IDLE;
     BOARD_ITEM*    item     = GetCurItem();
@@ -41,14 +65,13 @@ void FOOTPRINT_EDIT_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPos
         HK_Descr = GetDescriptorFromHotkey( aHotKey, module_edit_Hotkey_List );
 
     if( HK_Descr == NULL )
-        return;
+        return false;
 
     switch( HK_Descr->m_Idcommand )
     {
     default:
     case HK_NOT_FOUND:
-        return;
-        break;
+        return false;
 
     case HK_HELP:                   // Display Current hotkey list
         DisplayHotkeyList( this, g_Module_Editor_Hokeys_Descr );
@@ -133,6 +156,8 @@ void FOOTPRINT_EDIT_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPos
         OnHotkeyRotateItem( HK_ROTATE_ITEM );
         break;
     }
+
+    return true;
 }
 
 

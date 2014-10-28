@@ -153,14 +153,14 @@ bool PCB_EDIT_FRAME::OnRightClick( const wxPoint& aMousePos, wxMenu* aPopMenu )
 
                 if( !( (MODULE*) item )->IsLocked() )
                 {
-                    msg = AddHotkeyName( _("Lock Module" ), g_Board_Editor_Hokeys_Descr,
+                    msg = AddHotkeyName( _("Lock Footprint" ), g_Board_Editor_Hokeys_Descr,
                                          HK_LOCK_UNLOCK_FOOTPRINT );
                     AddMenuItem( aPopMenu, ID_POPUP_PCB_AUTOPLACE_FIXE_MODULE, msg,
                                  KiBitmap( locked_xpm ) );
                 }
                 else
                 {
-                    msg = AddHotkeyName( _( "Unlock Module" ), g_Board_Editor_Hokeys_Descr,
+                    msg = AddHotkeyName( _( "Unlock Footprint" ), g_Board_Editor_Hokeys_Descr,
                                          HK_LOCK_UNLOCK_FOOTPRINT );
                     AddMenuItem( aPopMenu, ID_POPUP_PCB_AUTOPLACE_FREE_MODULE, msg,
                                  KiBitmap( unlocked_xpm ) );
@@ -168,23 +168,23 @@ bool PCB_EDIT_FRAME::OnRightClick( const wxPoint& aMousePos, wxMenu* aPopMenu )
 
                 if( !flags )
                     aPopMenu->Append( ID_POPUP_PCB_AUTOPLACE_CURRENT_MODULE,
-                                      _( "Automatically Place Module" ) );
+                                      _( "Automatically Place Footprint" ) );
             }
 
             if( m_mainToolBar->GetToolToggled( ID_TOOLBARH_PCB_MODE_TRACKS ) )
             {
                 if( !flags )
                     aPopMenu->Append( ID_POPUP_PCB_AUTOROUTE_MODULE,
-                                      _( "Automatically Route Module" ) );
+                                      _( "Automatically Route Footprint" ) );
             }
             break;
 
         case PCB_PAD_T:
-            createPopUpMenuForFpPads( (D_PAD*) item, aPopMenu );
+            createPopUpMenuForFpPads( static_cast<D_PAD*>( item ), aPopMenu );
             break;
 
         case PCB_MODULE_TEXT_T:
-            createPopUpMenuForFpTexts( (TEXTE_MODULE*) item, aPopMenu );
+            createPopUpMenuForFpTexts( static_cast<TEXTE_MODULE*>( item ), aPopMenu );
             break;
 
         case PCB_LINE_T:  // Some graphic items on technical layers
@@ -413,7 +413,7 @@ bool PCB_EDIT_FRAME::OnRightClick( const wxPoint& aMousePos, wxMenu* aPopMenu )
                          _( "Select Layer Pair" ), KiBitmap( select_layer_pair_xpm ) );
             commands->AppendSeparator();
             commands->Append( ID_POPUP_PCB_AUTOROUTE_ALL_MODULES,
-                              _( "Automatically Route All Modules" ) );
+                              _( "Automatically Route All Footprints" ) );
             commands->AppendSeparator();
             commands->Append( ID_POPUP_PCB_AUTOROUTE_RESET_UNROUTED, _( "Reset Unrouted" ) );
             aPopMenu->AppendSeparator();
@@ -464,9 +464,7 @@ void PCB_EDIT_FRAME::createPopupMenuForTracks( TRACK* Track, wxMenu* PopMenu )
     wxPoint  cursorPosition = GetCrossHairPosition();
     wxString msg;
 
-    GetDesignSettings().SetCurrentNetClass( Track->GetNetClassName() );
-    updateTraceWidthSelectBox();
-    updateViaSizeSelectBox();
+    SetCurrentNetClass( Track->GetNetClassName() );
 
     int flags = Track->GetFlags();
 
@@ -760,10 +758,10 @@ void PCB_EDIT_FRAME::createPopUpMenuForFootprints( MODULE* aModule, wxMenu* menu
         AddMenuItem( sub_menu_footprint, ID_POPUP_PCB_EDIT_MODULE_PRMS, msg,
                      KiBitmap( edit_module_xpm ) );
         AddMenuItem( sub_menu_footprint, ID_POPUP_PCB_EDIT_MODULE_WITH_MODEDIT,
-                     _( "Edit with Module Editor" ),
+                     _( "Edit with Footprint Editor" ),
                      KiBitmap( module_editor_xpm ) );
         sub_menu_footprint->AppendSeparator();
-        msg = AddHotkeyName( _( "Delete Module" ),
+        msg = AddHotkeyName( _( "Delete Footprint" ),
                              g_Board_Editor_Hokeys_Descr, HK_DELETE );
         AddMenuItem( sub_menu_footprint, ID_POPUP_PCB_DELETE_MODULE,
                      msg, KiBitmap( delete_module_xpm ) );
@@ -834,12 +832,7 @@ void PCB_EDIT_FRAME::createPopUpMenuForFpPads( D_PAD* Pad, wxMenu* menu )
     if( flags )     // Currently in edit, no others commands possible
         return;
 
-    if( GetDesignSettings().GetCurrentNetClassName() != Pad->GetNetClassName() )
-    {
-        GetDesignSettings().SetCurrentNetClass( Pad->GetNetClassName() );
-        updateTraceWidthSelectBox();
-        updateViaSizeSelectBox();
-    }
+    SetCurrentNetClass( Pad->GetNetClassName() );
 
     wxString msg = Pad->GetSelectMenuText();
 

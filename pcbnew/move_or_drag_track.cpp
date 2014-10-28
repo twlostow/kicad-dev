@@ -36,7 +36,6 @@
 #include <trigo.h>
 #include <macros.h>
 #include <gr_basic.h>
-#include <pcbcommon.h>
 
 #include <class_board.h>
 
@@ -626,7 +625,7 @@ void PCB_EDIT_FRAME::StartMoveOneNodeOrSegment( TRACK* aTrack, wxDC* aDC, int aC
         if( aCommand != ID_POPUP_PCB_MOVE_TRACK_SEGMENT )
         {
             Collect_TrackSegmentsToDrag( GetBoard(), aTrack->GetStart(),
-                                         aTrack->GetLayerMask(),
+                                         aTrack->GetLayerSet(),
                                          aTrack->GetNetCode(), aTrack->GetWidth() / 2 );
         }
 
@@ -646,17 +645,17 @@ void PCB_EDIT_FRAME::StartMoveOneNodeOrSegment( TRACK* aTrack, wxDC* aDC, int aC
 
         case ID_POPUP_PCB_DRAG_TRACK_SEGMENT:   // drag a segment
             pos = aTrack->GetStart();
-            Collect_TrackSegmentsToDrag( GetBoard(), pos, aTrack->GetLayerMask(),
+            Collect_TrackSegmentsToDrag( GetBoard(), pos, aTrack->GetLayerSet(),
                                          aTrack->GetNetCode(), aTrack->GetWidth() / 2 );
             pos = aTrack->GetEnd();
             aTrack->SetFlags( IS_DRAGGED | ENDPOINT | STARTPOINT );
-            Collect_TrackSegmentsToDrag( GetBoard(), pos, aTrack->GetLayerMask(),
+            Collect_TrackSegmentsToDrag( GetBoard(), pos, aTrack->GetLayerSet(),
                                          aTrack->GetNetCode(), aTrack->GetWidth() / 2 );
             break;
 
         case ID_POPUP_PCB_MOVE_TRACK_NODE:  // Drag via or move node
             pos = (diag & STARTPOINT) ? aTrack->GetStart() : aTrack->GetEnd();
-            Collect_TrackSegmentsToDrag( GetBoard(), pos, aTrack->GetLayerMask(),
+            Collect_TrackSegmentsToDrag( GetBoard(), pos, aTrack->GetLayerSet(),
                                          aTrack->GetNetCode(), aTrack->GetWidth() / 2 );
             PosInit = pos;
             break;
@@ -862,7 +861,8 @@ bool PCB_EDIT_FRAME::PlaceDraggedOrMovedTrackSegment( TRACK* Track, wxDC* DC )
         /* Test the connections modified by the move
          *  (only pad connection must be tested, track connection will be
          * tested by TestNetConnection() ) */
-        LAYER_MSK layerMask = GetLayerMask( Track->GetLayer() );
+        LSET layerMask( Track->GetLayer() );
+
         Track->start = GetBoard()->GetPadFast( Track->GetStart(), layerMask );
 
         if( Track->start )

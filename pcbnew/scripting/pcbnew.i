@@ -47,6 +47,11 @@
 
 %rename(AddNative) *::Add;
 
+// fix method names conflicts
+%rename(AddChild) MODULE::Add;
+%rename(RemoveChild) MODULE::Remove;
+%rename(DeleteChild) MODULE::Delete;
+
 %exception {
     try{
         $action
@@ -83,6 +88,7 @@
   #include <class_board.h>
   #include <class_module.h>
   #include <class_track.h>
+  #include <class_zone.h>
   #include <layers_id_colors_and_visibility.h>
   #include <class_pad.h>
   #include <pad_shapes.h>
@@ -91,6 +97,7 @@
   #include <class_dimension.h>
   #include <class_drawsegment.h>
   #include <class_marker_pcb.h>
+  #include <class_mire.h>
   #include <class_text_mod.h>
   #include <class_edge_mod.h>
   #include <dlist.h>
@@ -118,6 +125,7 @@
 %include <class_board.h>
 %include <class_module.h>
 %include <class_track.h>
+%include <class_zone.h>
 %include <layers_id_colors_and_visibility.h>
 %include <class_pad.h>
 %include <pad_shapes.h>
@@ -126,6 +134,7 @@
 %include <class_dimension.h>
 %include <class_drawsegment.h>
 %include <class_marker_pcb.h>
+%include <class_mire.h>
 %include <class_text_mod.h>
 %include <class_edge_mod.h>
 %include <dlist.h>
@@ -147,7 +156,6 @@
 %ignore IO_MGR::RELEASER;
 %include <io_mgr.h>
 %include <kicad_plugin.h>
-
 
 %include "board.i"
 %include "module.i"

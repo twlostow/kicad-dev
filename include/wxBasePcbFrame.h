@@ -110,10 +110,6 @@ protected:
     MODULE* loadFootprint( const FPID& aFootprintId )
         throw( IO_ERROR, PARSE_ERROR );
 
-    ///> Rendering order of layers on GAL-based canvas (lower index in the array
-    ///> means that layer is displayed closer to the user, ie. on the top).
-    static const LAYER_NUM GAL_LAYER_ORDER[];
-
 public:
     PCB_BASE_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrameType,
             const wxString& aTitle, const wxPoint& aPos, const wxSize& aSize,
@@ -139,7 +135,7 @@ public:
      */
     EDA_RECT    GetBoardBoundingBox( bool aBoardEdgesOnly = false ) const;
 
-    void SetPageSettings( const PAGE_INFO& aPageSettings );     // overload
+    virtual void SetPageSettings( const PAGE_INFO& aPageSettings ); // overload
     const PAGE_INFO& GetPageSettings() const;                   // overload
     const wxSize GetPageSizeIU() const;                         // overload
 
@@ -606,16 +602,34 @@ public:
      * @param aDlgPosition = position of dialog ( defualt = centered)
      * @return the selected layer id
      */
-    LAYER_NUM SelectLayer( LAYER_NUM aDefaultLayer,
-                           LAYER_MSK aNotAllowedLayersMask = 0,
-                           wxPoint aDlgPosition = wxDefaultPosition );
+    LAYER_ID SelectLayer( LAYER_ID aDefaultLayer,
+                          LSET aNotAllowedLayersMask = LSET(),
+                          wxPoint aDlgPosition = wxDefaultPosition );
 
     /* Display a list of two copper layers to choose a pair of copper layers
      * the layer pair is used to fast switch between copper layers when placing vias
      */
     void SelectCopperLayerPair();
 
-    virtual void SwitchLayer( wxDC* DC, LAYER_NUM layer );
+    virtual void SwitchLayer( wxDC* DC, LAYER_ID layer );
+
+    /**
+     * Function SetActiveLayer
+     * will change the currently active layer to \a aLayer.
+     */
+    virtual void SetActiveLayer( LAYER_ID aLayer )
+    {
+        ( (PCB_SCREEN*) GetScreen() )->m_Active_Layer = aLayer;
+    }
+
+    /**
+     * Function GetActiveLayer
+     * returns the active layer
+     */
+    virtual LAYER_ID GetActiveLayer() const
+    {
+        return ( (PCB_SCREEN*) GetScreen() )->m_Active_Layer;
+    }
 
     void LoadSettings( wxConfigBase* aCfg );    // override virtual
     void SaveSettings( wxConfigBase* aCfg );    // override virtual

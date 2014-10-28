@@ -32,11 +32,11 @@
 #include <kiface_i.h>
 #include <project.h>
 #include <class_drawpanel.h>
+#include <pcb_draw_panel_gal.h>
 #include <confirm.h>
 #include <gestfich.h>
 #include <xnode.h>
 #include <macros.h>
-#include <pcbcommon.h>
 #include <wxPcbStruct.h>
 #include <class_board_design_settings.h>
 #include <plot_common.h>
@@ -47,6 +47,7 @@
 #include <worksheet_shape_builder.h>
 
 #include <class_board.h>
+#include <class_module.h>
 #include <pcbplot.h>
 #include <pcbnew.h>
 #include <pcbnew_id.h>
@@ -90,7 +91,24 @@ void PCB_EDIT_FRAME::Process_Config( wxCommandEvent& event )
 
 
     case ID_PCB_LAYERS_SETUP:
-        InstallDialogLayerSetup();
+        if( InvokeLayerSetup( this, GetBoard() ) )
+        {
+            LAYER_ID cur_layer = GetActiveLayer();
+
+            // If after showing the dialog the user removed the active layer,
+            // then use a sensible alternative layer to set as the active layer.
+            if( !GetBoard()->GetEnabledLayers()[ cur_layer ] )
+                cur_layer = F_Cu;
+
+            SetActiveLayer( cur_layer );
+
+            OnModify();
+            ReCreateLayerBox();
+            ReFillLayerWidget();
+
+            if( IsGalCanvasActive() )
+                static_cast<PCB_DRAW_PANEL_GAL*>( GetGalCanvas() )->SyncLayersVisibility( GetBoard() );
+        }
         break;
 
     case ID_PCB_LIB_TABLE_EDIT:
@@ -152,7 +170,14 @@ void PCB_EDIT_FRAME::Process_Config( wxCommandEvent& event )
     case ID_PCB_MASK_CLEARANCE:
         {
             DIALOG_PADS_MASK_CLEARANCE dlg( this );
-            dlg.ShowModal();
+
+            if( dlg.ShowModal() == 1 && IsGalCanvasActive() )
+            {
+                for( MODULE* module = GetBoard()->m_Modules; module; module = module->Next() )
+                    module->ViewUpdate();
+
+                GetGalCanvas()->Refresh();
+            }
         }
         break;
 
@@ -185,13 +210,17 @@ void PCB_EDIT_FRAME::Process_Config( wxCommandEvent& event )
 
             if( !wxFileExists( dlg.GetPath() ) )
             {
-                wxString msg;
-                msg.Printf( _( "File %s not found" ), GetChars( dlg.GetPath() ) );
+                wxString msg = wxString::Format( _(
+                        "File %s not found" ),
+                        GetChars( dlg.GetPath() )
+                        );
                 DisplayError( this, msg );
                 break;
             }
 
-            LoadProjectSettings( dlg.GetPath() );
+            wxString pro_file = dlg.GetPath();
+
+            Prj().ConfigLoad( Kiface().KifaceSearch(), GROUP_PCB, GetProjectFileParameters(), pro_file );
         }
         break;
 
@@ -228,19 +257,12 @@ void PCB_EDIT_FRAME::Process_Config( wxCommandEvent& event )
 }
 
 
-bool PCB_EDIT_FRAME::LoadProjectSettings( const wxString& aProjectFileName )
+bool PCB_EDIT_FRAME::LoadProjectSettings()
 {
-    wxLogDebug( wxT( "Loading project '%s' settings." ), GetChars( aProjectFileName ) );
+    wxLogDebug( wxT( "Loading project '%s' settings." ),
+            GetChars( Prj().GetProjectFullName() ) );
 
-    wxFileName  fn = aProjectFileName;
-
-    if( fn.GetExt() != ProjectFileExtension )
-        fn.SetExt( ProjectFileExtension );
-
-    // was: wxGetApp().ReadProjectConfig( fn.GetFullPath(), GROUP, GetProjectFileParameters(), false );
-    Prj().ConfigLoad( Kiface().KifaceSearch(), fn.GetFullPath(), GROUP_PCB, GetProjectFileParameters(), false );
-
-    Prj().ElemClear( PROJECT::ELEM_FPTBL );      // Force it to be reloaded on demand.
+    bool rc = Prj().ConfigLoad( Kiface().KifaceSearch(), GROUP_PCB, GetProjectFileParameters() );
 
     // Load the page layout decr file, from the filename stored in
     // BASE_SCREEN::m_PageLayoutDescrFileName, read in config project file
@@ -248,16 +270,13 @@ bool PCB_EDIT_FRAME::LoadProjectSettings( const wxString& aProjectFileName )
     WORKSHEET_LAYOUT& pglayout = WORKSHEET_LAYOUT::GetTheInstance();
     pglayout.SetPageLayout( BASE_SCREEN::m_PageLayoutDescrFileName );
 
-    return true;
+    return rc;
 }
 
 
 void PCB_EDIT_FRAME::SaveProjectSettings( bool aAskForSave )
 {
-    wxFileName fn;
-
-    fn = GetBoard()->GetFileName();
-    fn.SetExt( ProjectFileExtension );
+    wxFileName fn = Prj().GetProjectFullName();
 
     if( aAskForSave )
     {
@@ -271,13 +290,18 @@ void PCB_EDIT_FRAME::SaveProjectSettings( bool aAskForSave )
         fn = dlg.GetPath();
     }
 
-    Prj().ConfigSave( Kiface().KifaceSearch(), fn.GetFullPath(), GROUP_PCB, GetProjectFileParameters() );
+    wxString pro_name = fn.GetFullPath();
+
+    Prj().ConfigSave( Kiface().KifaceSearch(), GROUP_PCB, GetProjectFileParameters(), pro_name );
 }
 
 
 PARAM_CFG_ARRAY PCB_EDIT_FRAME::GetProjectFileParameters()
 {
-    PARAM_CFG_ARRAY         pca;
+    PARAM_CFG_ARRAY pca;
+
+    // This one cannot be cached because some settings are going to/from the BOARD,
+    // so pointers into that cannot be saved for long.
 
     pca.push_back( new PARAM_CFG_FILENAME( wxT( "PageLayoutDescrFile" ),
                                           &BASE_SCREEN::m_PageLayoutDescrFileName ) );
@@ -293,153 +317,100 @@ PARAM_CFG_ARRAY PCB_EDIT_FRAME::GetProjectFileParameters()
 
 PARAM_CFG_ARRAY& PCB_EDIT_FRAME::GetConfigurationSettings()
 {
-    if( !m_configSettings.empty() )
-        return m_configSettings;
+    if( m_configSettings.empty() )
+    {
+        COLORS_DESIGN_SETTINGS cds;         // constructor fills this with sensible colors
 
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "ShowPageLimits" ),
-                                                    &m_showPageLimits, true ) );
-    // Units used in dialogs and toolbars
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "Units" ),
-                                                   (int*)&g_UserUnit, MILLIMETRES ) );
+        // Units used in dialogs and toolbars
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "Units" ),
+                                                       (int*)&g_UserUnit, MILLIMETRES ) );
 
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "DisplayPolarCoords" ),
-                                                    &DisplayOpt.DisplayPolarCood, false ) );
-    // Display options and modes:
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ViaHoleDisplayMode" ),
-                                                   (int*) &DisplayOpt.m_DisplayViaMode,
-                                                   VIA_SPECIAL_HOLE_SHOW, VIA_HOLE_NOT_SHOW,
-                                                   OPT_VIA_HOLE_END - 1 ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ShowNetNamesMode" ),
-                                                   &DisplayOpt.DisplayNetNamesMode, 3, 0, 3 ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "DisplayTrackFilled" ),
-                                                    &DisplayOpt.DisplayPcbTrackFill, true ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "TrackDisplayClearance" ),
-                                                   (int*) &DisplayOpt.ShowTrackClearanceMode,
-                                                   SHOW_CLEARANCE_NEW_TRACKS_AND_VIA_AREAS ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "PadFill" ),
-                                                    &DisplayOpt.DisplayPadFill, true ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "ViaFill" ),
-                                                    &DisplayOpt.DisplayViaFill, true ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "PadAffG" ),
-                                                    &DisplayOpt.DisplayPadIsol, true ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "PadSNum" ),
-                                                    &DisplayOpt.DisplayPadNum, true ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ModAffC" ),
-                                                   &DisplayOpt.DisplayModEdge, FILLED, 0, 2 ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ModAffT" ),
-                                                   &DisplayOpt.DisplayModText, FILLED, 0, 2 ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "PcbAffT" ),
-                                                   &DisplayOpt.DisplayDrawItems, FILLED, 0, 2 ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "PcbShowZonesMode" ),
-                                                   &DisplayOpt.DisplayZonesMode, 0, 0, 2 ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "DisplayPolarCoords" ),
+                                                        &DisplayOpt.DisplayPolarCood, false ) );
+        // Display options and modes:
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ViaHoleDisplayMode" ),
+                                                       (int*) &DisplayOpt.m_DisplayViaMode,
+                                                       VIA_SPECIAL_HOLE_SHOW, VIA_HOLE_NOT_SHOW,
+                                                       OPT_VIA_HOLE_END - 1 ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ShowNetNamesMode" ),
+                                                       &DisplayOpt.DisplayNetNamesMode, 3, 0, 3 ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "DisplayTrackFilled" ),
+                                                        &DisplayOpt.DisplayPcbTrackFill, true ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "TrackDisplayClearance" ),
+                                                       (int*) &DisplayOpt.ShowTrackClearanceMode,
+                                                       SHOW_CLEARANCE_NEW_TRACKS_AND_VIA_AREAS ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "PadFill" ),
+                                                        &DisplayOpt.DisplayPadFill, true ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "ViaFill" ),
+                                                        &DisplayOpt.DisplayViaFill, true ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "PadAffG" ),
+                                                        &DisplayOpt.DisplayPadIsol, true ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "PadSNum" ),
+                                                        &DisplayOpt.DisplayPadNum, true ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ModAffC" ),
+                                                       &DisplayOpt.DisplayModEdge, FILLED, 0, 2 ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "ModAffT" ),
+                                                       &DisplayOpt.DisplayModText, FILLED, 0, 2 ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "PcbAffT" ),
+                                                       &DisplayOpt.DisplayDrawItems, FILLED, 0, 2 ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "PcbShowZonesMode" ),
+                                                       &DisplayOpt.DisplayZonesMode, 0, 0, 2 ) );
 
-    // Colors:
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer0Ex" ), LOC_COLOR( 0 ),
-                                                        GREEN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer1Ex" ), LOC_COLOR( 1 ),
-                                                        BLUE ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer2Ex" ), LOC_COLOR( 2 ),
-                                                        LIGHTGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer3Ex" ), LOC_COLOR( 3 ),
-                                                        MAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer4Ex" ), LOC_COLOR( 4 ),
-                                                        RED ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer5Ex" ), LOC_COLOR( 5 ),
-                                                        MAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer6Ex" ), LOC_COLOR( 6 ),
-                                                        BROWN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer7Ex" ), LOC_COLOR( 7 ),
-                                                        MAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer8Ex" ), LOC_COLOR( 8 ),
-                                                        LIGHTGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer9Ex" ), LOC_COLOR( 9 ),
-                                                        BLUE ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer10Ex" ), LOC_COLOR( 10 ),
-                                                        GREEN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer11Ex" ), LOC_COLOR( 11 ),
-                                                        CYAN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer12Ex" ), LOC_COLOR( 12 ),
-                                                        LIGHTRED ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer13Ex" ), LOC_COLOR( 13 ),
-                                                        LIGHTMAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer14Ex" ), LOC_COLOR( 14 ),
-                                                        YELLOW ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer15Ex" ), LOC_COLOR( 15 ),
-                                                        RED ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer16Ex" ), LOC_COLOR( 16 ),
-                                                        BLUE ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer17Ex" ), LOC_COLOR( 17 ),
-                                                        MAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer18Ex" ), LOC_COLOR( 18 ),
-                                                        LIGHTCYAN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer19Ex" ), LOC_COLOR( 19 ),
-                                                        RED ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer20Ex" ), LOC_COLOR( 20 ),
-                                                        MAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer21Ex" ), LOC_COLOR( 21 ),
-                                                        CYAN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer22Ex" ), LOC_COLOR( 22 ),
-                                                        BROWN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer23Ex" ), LOC_COLOR( 23 ),
-                                                        MAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer24Ex" ), LOC_COLOR( 24 ),
-                                                        LIGHTGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer25Ex" ), LOC_COLOR( 25 ),
-                                                        BLUE ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer26Ex" ), LOC_COLOR( 26 ),
-                                                        GREEN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer27Ex" ), LOC_COLOR( 27 ),
-                                                        YELLOW ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer28Ex" ), LOC_COLOR( 28 ),
-                                                        YELLOW ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer29Ex" ), LOC_COLOR( 29 ),
-                                                        LIGHTMAGENTA ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer30Ex" ), LOC_COLOR( 30 ),
-                                                        YELLOW ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorLayer31Ex" ), LOC_COLOR( 31 ),
-                                                        LIGHTGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorTxtFrontEx" ),
-                                                        ITEM_COLOR( MOD_TEXT_FR_VISIBLE ),
-                                                        LIGHTGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorTxtBackEx" ),
-                                                        ITEM_COLOR( MOD_TEXT_BK_VISIBLE ),
-                                                        BLUE ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorTxtInvisEx" ),
-                                                        ITEM_COLOR( MOD_TEXT_INVISIBLE ),
-                                                        DARKGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorAnchorEx" ),
-                                                        ITEM_COLOR( ANCHOR_VISIBLE ), BLUE ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorPadBackEx" ),
-                                                        ITEM_COLOR( PAD_BK_VISIBLE ), GREEN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorPadFrontEx" ),
-                                                        ITEM_COLOR( PAD_FR_VISIBLE ), RED ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorViaThruEx" ),
-                                                        ITEM_COLOR( VIA_THROUGH_VISIBLE ),
-                                                        LIGHTGRAY ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorViaBBlindEx" ),
-                                                        ITEM_COLOR( VIA_BBLIND_VISIBLE ),
-                                                        BROWN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorViaMicroEx" ),
-                                                        ITEM_COLOR( VIA_MICROVIA_VISIBLE ),
-                                                        CYAN ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorNonPlatedEx" ),
-                                                        ITEM_COLOR( NON_PLATED_VISIBLE ),
-                                                        YELLOW ) );
-    m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorRatsEx" ),
-                                                        ITEM_COLOR( RATSNEST_VISIBLE ),
-                                                        WHITE ) );
+        // layer colors:
+        wxASSERT( DIM( cds.m_LayersColors ) == LAYER_ID_COUNT );
+        for( int i = 0;  i<LAYER_ID_COUNT;  ++i )
+        {
+            wxString vn = wxString::Format(
+                            wxT( "ColorPCBLayer_%s" ),
+                            LSET::Name( LAYER_ID( i ) ) );
 
-    // Miscellaneous:
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "RotationAngle" ), &m_rotationAngle,
-                                                   900, 1, 900 ) );
-    m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "MaxLnkS" ), &g_MaxLinksShowed,
-                                                   3, 0, 15 ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "ShowMRa" ),
-                                                    &g_Show_Module_Ratsnest, true ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "TwoSegT" ),
-                                                    &g_TwoSegmentTrackBuild, true ) );
-    m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "SegmPcb45Only" )
-                                                    , &g_Segments_45_Only, true ) );
+            m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, vn, LOC_COLOR( i ), cds.m_LayersColors[i] ) );
+        }
+
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorTxtFrontEx" ),
+                                                            ITEM_COLOR( MOD_TEXT_FR_VISIBLE ),
+                                                            LIGHTGRAY ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorTxtBackEx" ),
+                                                            ITEM_COLOR( MOD_TEXT_BK_VISIBLE ),
+                                                            BLUE ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorTxtInvisEx" ),
+                                                            ITEM_COLOR( MOD_TEXT_INVISIBLE ),
+                                                            DARKGRAY ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorAnchorEx" ),
+                                                            ITEM_COLOR( ANCHOR_VISIBLE ), BLUE ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorPadBackEx" ),
+                                                            ITEM_COLOR( PAD_BK_VISIBLE ), GREEN ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorPadFrontEx" ),
+                                                            ITEM_COLOR( PAD_FR_VISIBLE ), RED ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorViaThruEx" ),
+                                                            ITEM_COLOR( VIA_THROUGH_VISIBLE ),
+                                                            LIGHTGRAY ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorViaBBlindEx" ),
+                                                            ITEM_COLOR( VIA_BBLIND_VISIBLE ),
+                                                            BROWN ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorViaMicroEx" ),
+                                                            ITEM_COLOR( VIA_MICROVIA_VISIBLE ),
+                                                            CYAN ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorNonPlatedEx" ),
+                                                            ITEM_COLOR( NON_PLATED_VISIBLE ),
+                                                            YELLOW ) );
+        m_configSettings.push_back( new PARAM_CFG_SETCOLOR( true, wxT( "ColorRatsEx" ),
+                                                            ITEM_COLOR( RATSNEST_VISIBLE ),
+                                                            WHITE ) );
+
+        // Miscellaneous:
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "RotationAngle" ), &m_rotationAngle,
+                                                       900, 1, 900 ) );
+        m_configSettings.push_back( new PARAM_CFG_INT( true, wxT( "MaxLnkS" ), &g_MaxLinksShowed,
+                                                       3, 0, 15 ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "ShowMRa" ),
+                                                        &g_Show_Module_Ratsnest, true ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "TwoSegT" ),
+                                                        &g_TwoSegmentTrackBuild, true ) );
+        m_configSettings.push_back( new PARAM_CFG_BOOL( true, wxT( "SegmPcb45Only" )
+                                                        , &g_Segments_45_Only, true ) );
+    }
+
     return m_configSettings;
 }
 

@@ -35,7 +35,6 @@
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <wxPcbStruct.h>
-#include <pcbcommon.h>      // enum PCB_VISIBLE
 #include <collectors.h>
 #include <build_version.h>
 #include <macros.h>
@@ -52,13 +51,13 @@
 #include <hotkeys.h>
 #include <pcbnew_config.h>
 #include <module_editor_frame.h>
-#include <dialog_SVG_print.h>
 #include <dialog_helpers.h>
 #include <dialog_plot.h>
 #include <convert_from_iu.h>
 #include <view/view.h>
 #include <view/view_controls.h>
 #include <pcb_painter.h>
+#include <invoke_pcb_dialog.h>
 
 #include <class_track.h>
 #include <class_board.h>
@@ -70,13 +69,24 @@
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
 
+#include <tools/selection_tool.h>
+#include <router/router_tool.h>
+#include <tools/edit_tool.h>
+#include <tools/drawing_tool.h>
+#include <tools/point_editor.h>
+#include <tools/pcbnew_control.h>
+#include <tools/pcb_editor_control.h>
+#include <tools/placement_tool.h>
+#include <tools/common_actions.h>
+
+
 #if defined(KICAD_SCRIPTING) || defined(KICAD_SCRIPTING_WXPYTHON)
 #include <python_scripting.h>
 // The name of the pane info handling the python console:
 #define PYTHONCONSOLE_STRID   wxT( "PythonPanel" )
 #endif
 
-#include <class_draw_panel_gal.h>
+#include <pcb_draw_panel_gal.h>
 #include <boost/bind.hpp>
 
 // Keys used in read/write config
@@ -174,21 +184,21 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_MENU( ID_MENU_PCB_SHOW_3D_FRAME, PCB_EDIT_FRAME::Show3D_Frame )
 
     // Switching canvases
-    EVT_MENU( ID_MENU_CANVAS_DEFAULT,           PCB_EDIT_FRAME::SwitchCanvas )
-    EVT_MENU( ID_MENU_CANVAS_CAIRO,             PCB_EDIT_FRAME::SwitchCanvas )
-    EVT_MENU( ID_MENU_CANVAS_OPENGL,            PCB_EDIT_FRAME::SwitchCanvas )
+    EVT_MENU( ID_MENU_CANVAS_DEFAULT, PCB_EDIT_FRAME::SwitchCanvas )
+    EVT_MENU( ID_MENU_CANVAS_CAIRO, PCB_EDIT_FRAME::SwitchCanvas )
+    EVT_MENU( ID_MENU_CANVAS_OPENGL, PCB_EDIT_FRAME::SwitchCanvas )
 
     // Menu Get Design Rules Editor
     EVT_MENU( ID_MENU_PCB_SHOW_DESIGN_RULES_DIALOG, PCB_EDIT_FRAME::ShowDesignRulesEditor )
 
     // Horizontal toolbar
-    EVT_TOOL( ID_TO_LIBRARY, PCB_EDIT_FRAME::Process_Special_Functions )
+    EVT_TOOL( ID_RUN_LIBRARY, PCB_EDIT_FRAME::Process_Special_Functions )
     EVT_TOOL( ID_SHEET_SET, EDA_DRAW_FRAME::Process_PageSettings )
     EVT_TOOL( wxID_CUT, PCB_EDIT_FRAME::Process_Special_Functions )
     EVT_TOOL( wxID_COPY, PCB_EDIT_FRAME::Process_Special_Functions )
     EVT_TOOL( wxID_PASTE, PCB_EDIT_FRAME::Process_Special_Functions )
-    EVT_TOOL( wxID_UNDO, PCB_EDIT_FRAME::GetBoardFromUndoList )
-    EVT_TOOL( wxID_REDO, PCB_EDIT_FRAME::GetBoardFromRedoList )
+    EVT_TOOL( wxID_UNDO, PCB_EDIT_FRAME::RestoreCopyFromUndoList )
+    EVT_TOOL( wxID_REDO, PCB_EDIT_FRAME::RestoreCopyFromRedoList )
     EVT_TOOL( wxID_PRINT, PCB_EDIT_FRAME::ToPrinter )
     EVT_TOOL( ID_GEN_PLOT_SVG, PCB_EDIT_FRAME::SVG_Print )
     EVT_TOOL( ID_GEN_PLOT, PCB_EDIT_FRAME::Process_Special_Functions )
@@ -294,15 +304,15 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
                          PCB_EDIT_FRAME::OnUpdateZoneDisplayStyle )
     EVT_UPDATE_UI_RANGE( ID_PCB_MUWAVE_START_CMD, ID_PCB_MUWAVE_END_CMD,
                          PCB_EDIT_FRAME::OnUpdateMuWaveToolbar )
+
+    EVT_COMMAND( wxID_ANY, LAYER_WIDGET::EVT_LAYER_COLOR_CHANGE, PCB_EDIT_FRAME::OnLayerColorChange )
 END_EVENT_TABLE()
 
-
-///////****************************///////////:
 
 #define PCB_EDIT_FRAME_NAME wxT( "PcbFrame" )
 
 PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-    PCB_BASE_FRAME( aKiway, aParent, FRAME_PCB, wxT( "Pcbnew" ), wxDefaultPosition,
+    PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB, wxT( "Pcbnew" ), wxDefaultPosition,
         wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE, PCB_EDIT_FRAME_NAME )
 {
     m_FrameName = PCB_EDIT_FRAME_NAME;
@@ -329,6 +339,10 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     for ( int i = 0; i < 10; i++ )
         m_Macros[i].m_Record.clear();
+
+    // Create GAL canvas
+    SetGalCanvas( new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0, 0 ), m_FrameSize,
+                                          PCB_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) );
 
     SetBoard( new BOARD() );
 
@@ -403,7 +417,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     lyrs.MinSize( m_Layers->GetBestSize() );    // updated in ReFillLayerWidget
     lyrs.BestSize( m_Layers->GetBestSize() );
     lyrs.Caption( _( "Visibles" ) );
-
+    lyrs.TopDockable( false ).BottomDockable( false );
 
     if( m_mainToolBar )    // The main horizontal toolbar
     {
@@ -459,12 +473,13 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_auimgr.Update();
 
     setupTools();
+
+    Zoom_Automatique( true );
 }
 
 
 PCB_EDIT_FRAME::~PCB_EDIT_FRAME()
 {
-    destroyTools();
     m_RecordingMacros = -1;
 
     for( int i = 0; i < 10; i++ )
@@ -480,87 +495,80 @@ void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard )
 
     if( IsGalCanvasActive() )
     {
-        ViewReloadBoard( aBoard );
+        PCB_DRAW_PANEL_GAL* drawPanel = static_cast<PCB_DRAW_PANEL_GAL*>( GetGalCanvas() );
+
+        drawPanel->DisplayBoard( aBoard );
+        aBoard->GetRatsnest()->Recalculate();
+
+        // reload the worksheet
+        SetPageSettings( aBoard->GetPageSettings() );
 
         // update the tool manager with the new board and its view.
-        m_toolManager->SetEnvironment( aBoard, GetGalCanvas()->GetView(),
-                                       GetGalCanvas()->GetViewControls(), this );
-        m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
+        if( m_toolManager )
+        {
+            m_toolManager->SetEnvironment( aBoard, drawPanel->GetView(),
+                                           drawPanel->GetViewControls(), this );
+            m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
+        }
     }
 }
 
 
-void PCB_EDIT_FRAME::ViewReloadBoard( const BOARD* aBoard ) const
+void PCB_EDIT_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
 {
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
-    view->Clear();
-
-    // All of PCB drawing elements should be added to the VIEW
-    // in order to be displayed
-
-    // Load zones
-    for( int i = 0; i < aBoard->GetAreaCount(); ++i )
-        view->Add( (KIGFX::VIEW_ITEM*) ( aBoard->GetArea( i ) ) );
-
-    // Load drawings
-    for( BOARD_ITEM* drawing = aBoard->m_Drawings; drawing; drawing = drawing->Next() )
-        view->Add( drawing );
-
-    // Load tracks
-    for( TRACK* track = aBoard->m_Track; track; track = track->Next() )
-        view->Add( track );
-
-    // Load modules and its additional elements
-    for( MODULE* module = aBoard->m_Modules; module; module = module->Next() )
-    {
-        module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
-        view->Add( module );
-    }
-
-    // Segzones (equivalent of ZONE_CONTAINER for legacy boards)
-    for( SEGZONE* zone = aBoard->m_Zone; zone; zone = zone->Next() )
-        view->Add( zone );
-
-    KIGFX::WORKSHEET_VIEWITEM* worksheet = aBoard->GetWorksheetViewItem();
-    worksheet->SetSheetName( std::string( GetScreenDesc().mb_str() ) );
-
-    BASE_SCREEN* screen = GetScreen();
-
-    if( screen != NULL )
-    {
-        worksheet->SetSheetNumber( screen->m_ScreenNumber );
-        worksheet->SetSheetCount( screen->m_NumberOfScreens );
-    }
-
-    view->Add( worksheet );
-    view->Add( aBoard->GetRatsnestViewItem() );
-    aBoard->GetRatsnest()->Recalculate();
-
-    // Apply layer coloring scheme & display options
-    if( view->GetPainter() )
-    {
-        KIGFX::PCB_RENDER_SETTINGS* settings =
-                static_cast<KIGFX::PCB_RENDER_SETTINGS*>( view->GetPainter()->GetSettings() );
-
-        // Load layers' colors from PCB data
-        settings->ImportLegacyColors( m_Pcb->GetColorsSettings() );
-
-        // Load display options (such as filled/outline display of items)
-        settings->LoadDisplayOptions( DisplayOpt );
-    }
-
-    // Limit panning to the size of worksheet frame
-    GetGalCanvas()->GetViewControls()->SetPanBoundary( aBoard->GetWorksheetViewItem()->ViewBBox() );
-    view->RecacheAllItems( true );
+    PCB_BASE_FRAME::SetPageSettings( aPageSettings );
 
     if( IsGalCanvasActive() )
-        GetGalCanvas()->Refresh();
+    {
+        PCB_DRAW_PANEL_GAL* drawPanel = static_cast<PCB_DRAW_PANEL_GAL*>( GetGalCanvas() );
+
+        // Prepare worksheet template
+        KIGFX::WORKSHEET_VIEWITEM* worksheet;
+        worksheet = new KIGFX::WORKSHEET_VIEWITEM( &m_Pcb->GetPageSettings(),
+                                                   &m_Pcb->GetTitleBlock() );
+        worksheet->SetSheetName( std::string( GetScreenDesc().mb_str() ) );
+
+        BASE_SCREEN* screen = GetScreen();
+
+        if( screen != NULL )
+        {
+            worksheet->SetSheetNumber( screen->m_ScreenNumber );
+            worksheet->SetSheetCount( screen->m_NumberOfScreens );
+        }
+
+        // PCB_DRAW_PANEL_GAL takes ownership of the worksheet
+        drawPanel->SetWorksheet( worksheet );
+    }
 }
 
 
 bool PCB_EDIT_FRAME::isAutoSaveRequired() const
 {
     return GetScreen()->IsSave();
+}
+
+
+void PCB_EDIT_FRAME::setupTools()
+{
+    // Create the manager and dispatcher & route draw panel events to the dispatcher
+    m_toolManager = new TOOL_MANAGER;
+    m_toolManager->SetEnvironment( NULL, GetGalCanvas()->GetView(),
+                                   GetGalCanvas()->GetViewControls(), this );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
+
+    // Register tools
+    m_toolManager->RegisterTool( new SELECTION_TOOL );
+    m_toolManager->RegisterTool( new ROUTER_TOOL );
+    m_toolManager->RegisterTool( new EDIT_TOOL );
+    m_toolManager->RegisterTool( new DRAWING_TOOL );
+    m_toolManager->RegisterTool( new POINT_EDITOR );
+    m_toolManager->RegisterTool( new PCBNEW_CONTROL );
+    m_toolManager->RegisterTool( new PCB_EDITOR_CONTROL );
+    m_toolManager->RegisterTool( new PLACEMENT_TOOL );
+    m_toolManager->ResetTools( TOOL_BASE::RUN );
+
+    // Run the selection tool, it is supposed to be always active
+    m_toolManager->InvokeTool( "pcbnew.InteractiveSelection" );
 }
 
 
@@ -593,11 +601,14 @@ void PCB_EDIT_FRAME::OnCloseWindow( wxCloseEvent& Event )
 {
     m_canvas->SetAbortRequest( true );
 
-    if( GetScreen()->IsModify() && !GetBoard()->IsEmpty() )
+    if( GetScreen()->IsModify() )
     {
-        wxString msg;
-        msg.Printf( _("Save the changes in\n<%s>\nbefore closing?"),
-                    GetChars( GetBoard()->GetFileName() ) );
+        wxString msg = wxString::Format( _(
+                "Save the changes in\n"
+                "'%s'\n"
+                "before closing?" ),
+                GetChars( GetBoard()->GetFileName() )
+                );
 
         int ii = DisplayExitDialog( this, msg );
         switch( ii )
@@ -626,10 +637,10 @@ void PCB_EDIT_FRAME::OnCloseWindow( wxCloseEvent& Event )
     // Remove the auto save file on a normal close of Pcbnew.
     if( fn.FileExists() && !wxRemoveFile( fn.GetFullPath() ) )
     {
-        wxString msg;
-
-        msg.Printf( _( "The auto save file <%s> could not be removed!" ),
-                    GetChars( fn.GetFullPath() ) );
+        wxString msg = wxString::Format( _(
+                "The auto save file '%s' could not be removed!" ),
+                GetChars( fn.GetFullPath() )
+                );
 
         wxMessageBox( msg, Pgm().App().GetAppName(), wxOK | wxICON_ERROR, this );
     }
@@ -676,14 +687,18 @@ void PCB_EDIT_FRAME::UseGalCanvas( bool aEnable )
 
     if( aEnable )
     {
-        ViewReloadBoard( m_Pcb );
-        GetGalCanvas()->GetView()->RecacheAllItems();
-
-        m_toolManager->SetEnvironment( m_Pcb, GetGalCanvas()->GetView(),
-                                       GetGalCanvas()->GetViewControls(), this );
-        m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
-
+        SetBoard( m_Pcb );
+        m_toolManager->ResetTools( TOOL_BASE::GAL_SWITCH );
+        GetGalCanvas()->GetView()->RecacheAllItems( true );
+        GetGalCanvas()->SetEventDispatcher( m_toolDispatcher );
         GetGalCanvas()->StartDrawing();
+    }
+    else
+    {
+        m_toolManager->ResetTools( TOOL_BASE::GAL_SWITCH );
+
+        // Redirect all events to the legacy canvas
+        GetGalCanvas()->SetEventDispatcher( NULL );
     }
 }
 
@@ -806,7 +821,7 @@ void PCB_EDIT_FRAME::SetGridColor(EDA_COLOR_T aColor)
 bool PCB_EDIT_FRAME::IsMicroViaAcceptable()
 {
     int copperlayercnt = GetBoard()->GetCopperLayerCount( );
-    LAYER_NUM currLayer = GetActiveLayer();
+    LAYER_ID currLayer = GetActiveLayer();
 
     if( !GetDesignSettings().m_MicroViasAllowed )
         return false;   // Obvious..
@@ -814,113 +829,30 @@ bool PCB_EDIT_FRAME::IsMicroViaAcceptable()
     if( copperlayercnt < 4 )
         return false;   // Only on multilayer boards..
 
-    if( ( currLayer == LAYER_N_BACK )
-       || ( currLayer == LAYER_N_FRONT )
+    if( ( currLayer == B_Cu )
+       || ( currLayer == F_Cu )
        || ( currLayer == copperlayercnt - 2 )
-       || ( currLayer == LAYER_N_2 ) )
+       || ( currLayer == In1_Cu ) )
         return true;
 
     return false;
 }
 
 
-void PCB_EDIT_FRAME::SetHighContrastLayer( LAYER_NUM aLayer )
+void PCB_EDIT_FRAME::SetActiveLayer( LAYER_ID aLayer )
 {
-    // Set display settings for high contrast mode
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
-    KIGFX::RENDER_SETTINGS* rSettings = view->GetPainter()->GetSettings();
+    PCB_BASE_FRAME::SetActiveLayer( aLayer );
 
-    SetTopLayer( aLayer );
+    GetGalCanvas()->SetHighContrastLayer( aLayer );
 
-    rSettings->ClearActiveLayers();
-    rSettings->SetActiveLayer( aLayer );
-
-    if( IsCopperLayer( aLayer ) )
-    {
-        // Bring some other layers to the front in case of copper layers and make them colored
-        // fixme do not like the idea of storing the list of layers here,
-        // should be done in some other way I guess..
-        LAYER_NUM layers[] = {
-                GetNetnameLayer( aLayer ), ITEM_GAL_LAYER( VIA_THROUGH_VISIBLE ),
-                ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE ), ITEM_GAL_LAYER( PADS_VISIBLE ),
-                ITEM_GAL_LAYER( PADS_HOLES_VISIBLE ), NETNAMES_GAL_LAYER( PADS_NETNAMES_VISIBLE ),
-                ITEM_GAL_LAYER( GP_OVERLAY ), ITEM_GAL_LAYER( RATSNEST_VISIBLE )
-        };
-
-        for( unsigned int i = 0; i < sizeof( layers ) / sizeof( LAYER_NUM ); ++i )
-            rSettings->SetActiveLayer( layers[i] );
-
-        // Pads should be shown too
-        if( aLayer == FIRST_COPPER_LAYER )
-        {
-            rSettings->SetActiveLayer( ITEM_GAL_LAYER( PAD_BK_VISIBLE ) );
-            rSettings->SetActiveLayer( NETNAMES_GAL_LAYER( PAD_BK_NETNAMES_VISIBLE ) );
-        }
-        else if( aLayer == LAST_COPPER_LAYER )
-        {
-            rSettings->SetActiveLayer( ITEM_GAL_LAYER( PAD_FR_VISIBLE ) );
-            rSettings->SetActiveLayer( NETNAMES_GAL_LAYER( PAD_FR_NETNAMES_VISIBLE ) );
-        }
-    }
-
-    view->UpdateAllLayersColor();
-}
-
-
-void PCB_EDIT_FRAME::SetTopLayer( LAYER_NUM aLayer )
-{
-    // Set display settings for high contrast mode
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
-
-    view->ClearTopLayers();
-    view->SetTopLayer( aLayer );
-
-    if( IsCopperLayer( aLayer ) )
-    {
-        // Bring some other layers to the front in case of copper layers and make them colored
-        // fixme do not like the idea of storing the list of layers here,
-        // should be done in some other way I guess..
-        LAYER_NUM layers[] = {
-                GetNetnameLayer( aLayer ), ITEM_GAL_LAYER( VIA_THROUGH_VISIBLE ),
-                ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE ), ITEM_GAL_LAYER( PADS_VISIBLE ),
-                ITEM_GAL_LAYER( PADS_HOLES_VISIBLE ), NETNAMES_GAL_LAYER( PADS_NETNAMES_VISIBLE ),
-                ITEM_GAL_LAYER( GP_OVERLAY ), ITEM_GAL_LAYER( RATSNEST_VISIBLE ), DRAW_N,
-                ITEM_GAL_LAYER( DRC_VISIBLE )
-        };
-
-        for( unsigned int i = 0; i < sizeof( layers ) / sizeof( LAYER_NUM ); ++i )
-        {
-            view->SetTopLayer( layers[i] );
-        }
-
-        // Pads should be shown too
-        if( aLayer == FIRST_COPPER_LAYER )
-        {
-            view->SetTopLayer( ITEM_GAL_LAYER( PAD_BK_VISIBLE ) );
-            view->SetTopLayer( NETNAMES_GAL_LAYER( PAD_BK_NETNAMES_VISIBLE ) );
-        }
-        else if( aLayer == LAST_COPPER_LAYER )
-        {
-            view->SetTopLayer( ITEM_GAL_LAYER( PAD_FR_VISIBLE ) );
-            view->SetTopLayer( NETNAMES_GAL_LAYER( PAD_FR_NETNAMES_VISIBLE ) );
-        }
-    }
-
-    view->UpdateAllLayersOrder();
-}
-
-
-void PCB_EDIT_FRAME::SetActiveLayer( LAYER_NUM aLayer, bool doLayerWidgetUpdate )
-{
-    ( (PCB_SCREEN*) GetScreen() )->m_Active_Layer = aLayer;
-
-    SetHighContrastLayer( aLayer );
-
-    if( doLayerWidgetUpdate )
-        syncLayerWidgetLayer();
+    syncLayerWidgetLayer();
 
     if( IsGalCanvasActive() )
+    {
+        m_toolManager->RunAction( COMMON_ACTIONS::layerChanged );       // notify other tools
+        GetGalCanvas()->SetFocus();                 // otherwise hotkeys are stuck somewhere
         GetGalCanvas()->Refresh();
+    }
 }
 
 
@@ -940,29 +872,7 @@ void PCB_EDIT_FRAME::syncRenderStates()
 void PCB_EDIT_FRAME::syncLayerVisibilities()
 {
     m_Layers->SyncLayerVisibilities();
-
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
-
-    // Load layer & elements visibility settings
-    for( LAYER_NUM i = 0; i < NB_LAYERS; ++i )
-    {
-        view->SetLayerVisible( i, m_Pcb->IsLayerVisible( i ) );
-
-        // Synchronize netname layers as well
-        if( IsCopperLayer( i ) )
-            view->SetLayerVisible( GetNetnameLayer( i ), m_Pcb->IsLayerVisible( i ) );
-    }
-
-    for( LAYER_NUM i = 0; i < END_PCB_VISIBLE_LIST; ++i )
-    {
-        view->SetLayerVisible( ITEM_GAL_LAYER( i ), m_Pcb->IsElementVisible( i ) );
-    }
-
-    // Enable some layers that are GAL specific
-    view->SetLayerVisible( ITEM_GAL_LAYER( PADS_HOLES_VISIBLE ), true );
-    view->SetLayerVisible( ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE ), true );
-    view->SetLayerVisible( ITEM_GAL_LAYER( WORKSHEET ), true );
-    view->SetLayerVisible( ITEM_GAL_LAYER( GP_OVERLAY ), true );
+    static_cast<PCB_DRAW_PANEL_GAL*>( GetGalCanvas() )->SyncLayersVisibility( m_Pcb );
 }
 
 
@@ -1052,9 +962,18 @@ void PCB_EDIT_FRAME::OnModify( )
 
 void PCB_EDIT_FRAME::SVG_Print( wxCommandEvent& event )
 {
-    DIALOG_SVG_PRINT frame( this );
+    PCB_PLOT_PARAMS  tmp = GetPlotSettings();
 
-    frame.ShowModal();
+    // we don't want dialogs knowing about complex wxFrame functions so
+    // pass everything the dialog needs without reference to *this frame's class.
+    if( InvokeSVGPrint( this, GetBoard(), &tmp ) )
+    {
+        if( tmp != GetPlotSettings() )
+        {
+            SetPlotSettings( tmp );
+            OnModify();
+        }
+    }
 }
 
 
@@ -1077,6 +996,7 @@ void PCB_EDIT_FRAME::UpdateTitle()
 
     SetTitle( title );
 }
+
 
 #if defined(KICAD_SCRIPTING_WXPYTHON)
 void PCB_EDIT_FRAME::ScriptingConsoleEnableDisable( wxCommandEvent& aEvent )
@@ -1117,6 +1037,7 @@ void PCB_EDIT_FRAME::ScriptingConsoleEnableDisable( wxCommandEvent& aEvent )
 }
 #endif
 
+
 void PCB_EDIT_FRAME::OnSelectAutoPlaceMode( wxCommandEvent& aEvent )
 {
     // Automatic placement of modules and tracks is a mutually exclusive operation so
@@ -1148,6 +1069,12 @@ void PCB_EDIT_FRAME::OnSelectAutoPlaceMode( wxCommandEvent& aEvent )
 }
 
 
+void PCB_EDIT_FRAME::OnLayerColorChange( wxCommandEvent& aEvent )
+{
+    ReCreateLayerBox();
+}
+
+
 void PCB_EDIT_FRAME::ToPlotter( wxCommandEvent& event )
 {
     DIALOG_PLOT dlg( this );
@@ -1156,11 +1083,15 @@ void PCB_EDIT_FRAME::ToPlotter( wxCommandEvent& event )
 }
 
 
-void PCB_EDIT_FRAME::SetRotationAngle( int aRotationAngle )
+bool PCB_EDIT_FRAME::SetCurrentNetClass( const wxString& aNetClassName )
 {
-    wxCHECK2_MSG( aRotationAngle > 0 && aRotationAngle <= 900, aRotationAngle = 900,
-                  wxT( "Invalid rotation angle, defaulting to 90." ) );
+    bool change = GetDesignSettings().SetCurrentNetClass( aNetClassName );
 
-    m_rotationAngle = aRotationAngle;
+    if( change )
+    {
+        updateTraceWidthSelectBox();
+        updateViaSizeSelectBox();
+    }
+
+    return change;
 }
-

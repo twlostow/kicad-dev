@@ -31,7 +31,6 @@
 #include <fctsys.h>
 #include <class_drawpanel.h>
 #include <wxPcbStruct.h>
-#include <pcbcommon.h>
 #include <pcbnew_id.h>
 #include <class_board.h>
 #include <class_module.h>
@@ -119,7 +118,7 @@ BOARD_ITEM* PCB_BASE_FRAME::PcbGeneralLocateAndDisplay( int aHotKeyCode )
     else if( GetToolId() == ID_NO_TOOL_SELECTED )
     {
         if( m_mainToolBar->GetToolToggled( ID_TOOLBARH_PCB_MODE_MODULE ) )
-            scanList = GENERAL_COLLECTOR::ModuleItems;
+            scanList = GENERAL_COLLECTOR::Modules;
         else
             scanList = (DisplayOpt.DisplayZonesMode == 0) ?
                        GENERAL_COLLECTOR::AllBoardItems :
@@ -138,7 +137,7 @@ BOARD_ITEM* PCB_BASE_FRAME::PcbGeneralLocateAndDisplay( int aHotKeyCode )
             break;
 
         case ID_PCB_MODULE_BUTT:
-            scanList = GENERAL_COLLECTOR::ModuleItems;
+            scanList = GENERAL_COLLECTOR::Modules;
             break;
 
         case ID_PCB_ZONES_BUTT:
@@ -282,19 +281,22 @@ BOARD_ITEM* PCB_BASE_FRAME::PcbGeneralLocateAndDisplay( int aHotKeyCode )
 }
 
 
-void PCB_EDIT_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey )
+bool PCB_EDIT_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey )
 {
+    bool eventHandled = true;
+
     // Filter out the 'fake' mouse motion after a keyboard movement
     if( !aHotKey && m_movingCursorWithKeyboard )
     {
         m_movingCursorWithKeyboard = false;
-        return;
+        return false;
     }
 
     // when moving mouse, use the "magnetic" grid, unless the shift+ctrl keys is pressed
     // for next cursor position
     // ( shift or ctrl key down are PAN command with mouse wheel)
     bool snapToGrid = true;
+
     if( !aHotKey && wxGetKeyState( WXK_SHIFT ) && wxGetKeyState( WXK_CONTROL ) )
         snapToGrid = false;
 
@@ -343,8 +345,10 @@ void PCB_EDIT_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aH
 
     if( aHotKey )
     {
-        OnHotKey( aDC, aHotKey, aPosition );
+        eventHandled = OnHotKey( aDC, aHotKey, aPosition );
     }
 
     UpdateStatusBar();    // Display new cursor coordinates
+
+    return eventHandled;
 }

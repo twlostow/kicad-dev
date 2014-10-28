@@ -29,6 +29,7 @@
 
 %include <std_vector.i>
 %include <std_string.i>
+%include <std_map.i>
 
 /* ignore some constructors of EDA_ITEM that will make the build fail */
 
@@ -52,24 +53,24 @@
 %ignore operator <<;
 %ignore operator=;
 
+
 /* headers/imports that must be included in the _wrapper.cpp at top */
 
 %{
     #include <cstddef>
-	#include <dlist.h>
-	#include <base_struct.h>
-	#include <common.h>
-	#include <wx_python_helpers.h>
-	#include <cstddef>
-  	#include <vector>
+    #include <dlist.h>
+    #include <base_struct.h>
+    #include <common.h>
+    #include <wx_python_helpers.h>
+    #include <cstddef>
+    #include <vector>
 
-	#include <class_title_block.h>
-	#include <class_colors_design_settings.h>
-	#include <class_marker_base.h>
-  #include <eda_text.h>
-	#include <convert_from_iu.h>
-	#include <convert_to_biu.h>
-
+    #include <class_title_block.h>
+    #include <class_colors_design_settings.h>
+    #include <class_marker_base.h>
+    #include <eda_text.h>
+    #include <convert_from_iu.h>
+    #include <convert_to_biu.h>
 %}
 
 /* all the wx wrappers for wxString, wxPoint, wxRect, wxChar .. */
@@ -109,7 +110,37 @@
 
 /* std template mappings */
 %template(intVector) std::vector<int>;
+%template(str_utf8_Map) std::map< std::string,UTF8 >;
 
 /* KiCad plugin handling */
 %include "kicadplugins.i"
+
+// ignore warning relative to operator = and operator ++:
+#pragma SWIG nowarn=362,383
+
+// Rename operators defined in utf8.h
+%rename(utf8_to_charptr) operator char* () const;
+%rename(utf8_to_wxstring) operator wxString () const;
+
+#include <utf8.h>
+%include <utf8.h>
+
+%extend UTF8
+{
+    const char*   Cast_to_CChar()    { return (self->c_str()); }
+
+    %pythoncode
+    {
+
+    # Get the char buffer of the UTF8 string
+    def GetChars(self):
+        return self.Cast_to_CChar()
+
+    # Convert the UTF8 string to a python string
+    # Same as GetChars(), but more easy to use in print command
+    def __str__(self):
+        return self.GetChars()
+
+    }
+}
 

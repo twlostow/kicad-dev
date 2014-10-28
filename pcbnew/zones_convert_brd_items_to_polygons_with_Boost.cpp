@@ -297,13 +297,13 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList( BOARD* aPcb )
 
     /* Add module edge items that are on copper layers
      * Pcbnew allows these items to be on copper layers in microwave applictions
-     * This is a bad thing, but must be handle here, until a better way is found
+     * This is a bad thing, but must be handled here, until a better way is found
      */
     for( MODULE* module = aPcb->m_Modules;  module;  module = module->Next() )
     {
         for( BOARD_ITEM* item = module->GraphicalItems();  item;  item = item->Next() )
         {
-            if( !item->IsOnLayer( GetLayer() ) )
+            if( !item->IsOnLayer( GetLayer() ) && !item->IsOnLayer( Edge_Cuts ) )
                 continue;
 
             if( item->Type() != PCB_MODULE_EDGE_T )
@@ -323,7 +323,7 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList( BOARD* aPcb )
     // Add graphic items (copper texts) and board edges
     for( BOARD_ITEM* item = aPcb->m_Drawings; item; item = item->Next() )
     {
-        if( item->GetLayer() != GetLayer() && item->GetLayer() != EDGE_N )
+        if( item->GetLayer() != GetLayer() && item->GetLayer() != Edge_Cuts )
             continue;
 
         switch( item->Type() )

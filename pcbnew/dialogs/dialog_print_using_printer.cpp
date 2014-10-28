@@ -1,6 +1,26 @@
-/****************************************/
-/* File: dialog_print_using_printer.cpp */
-/****************************************/
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2010-2014 Jean-Pierre Charras, jean-pierre.charras at wanadoo.fr
+ * Copyright (C) 1992-2014 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
 
 // Set this to 1 if you want to test PostScript printing under MSW.
 //#define wxTEST_POSTSCRIPT_IN_MSW 1
@@ -29,7 +49,7 @@
 extern int g_DrawDefaultLineThickness;
 
 // Local variables
-static LAYER_MSK s_SelectedLayers;
+static LSET s_SelectedLayers;
 static double s_ScaleList[] =
 { 0, 0.5, 0.7, 0.999, 1.0, 1.4, 2.0, 3.0, 4.0 };
 
@@ -56,14 +76,14 @@ public:
     bool IsMirrored() { return m_Print_Mirror->IsChecked(); }
     bool ExcludeEdges() { return m_Exclude_Edges_Pcb->IsChecked(); }
     bool PrintUsingSinglePage() { return m_PagesOption->GetSelection(); }
-    int SetLayerMaskFromListSelection();
+    int SetLayerSetFromListSelection();
 
 
 private:
 
     PCB_EDIT_FRAME* m_parent;
-    wxConfigBase*       m_config;
-    wxCheckBox*     m_BoxSelectLayer[32];
+    wxConfigBase*   m_config;
+    wxCheckBox*     m_BoxSelectLayer[LAYER_ID_COUNT];
     static bool     m_ExcludeEdgeLayer;
 
     void OnCloseWindow( wxCloseEvent& event );
@@ -75,7 +95,7 @@ private:
     void OnButtonCancelClick( wxCommandEvent& event ) { Close(); }
     void SetPrintParameters( );
     void SetPenWidth();
-    void InitValues( );
+    void initValues( );
 };
 
 
@@ -127,7 +147,9 @@ DIALOG_PRINT_USING_PRINTER::DIALOG_PRINT_USING_PRINTER( PCB_EDIT_FRAME* parent )
     m_parent = parent;
     m_config = Kiface().KifaceSettings();
 
-    InitValues( );
+    memset( m_BoxSelectLayer, 0, sizeof( m_BoxSelectLayer ) );
+
+    initValues( );
 
     if( GetSizer() )
     {
@@ -143,54 +165,40 @@ DIALOG_PRINT_USING_PRINTER::DIALOG_PRINT_USING_PRINTER( PCB_EDIT_FRAME* parent )
 }
 
 
-void DIALOG_PRINT_USING_PRINTER::InitValues( )
+void DIALOG_PRINT_USING_PRINTER::initValues( )
 {
     wxString msg;
     BOARD*   board = m_parent->GetBoard();
 
     s_Parameters.m_PageSetupData = s_pageSetupData;
 
-     // Create layer list.
-    LAYER_NUM layer;
+    // Create layer list.
     wxString layerKey;
-    for( layer = FIRST_LAYER; layer < NB_PCB_LAYERS; ++layer )
+
+    LSEQ seq = board->GetEnabledLayers().UIOrder();
+
+    for( ;  seq;  ++seq )
     {
-        if( !board->IsLayerEnabled( layer ) )
-            m_BoxSelectLayer[layer] = NULL;
-        else
-        m_BoxSelectLayer[layer] =
-            new wxCheckBox( this, -1, board->GetLayerName( layer ) );
-    }
+        LAYER_ID layer = *seq;
 
-    // Add wxCheckBoxes in layers lists dialog
-    //  List layers in same order than in setup layers dialog
-    // (Front or Top to Back or Bottom)
-    DECLARE_LAYERS_ORDER_LIST(layersOrder);
-    for( LAYER_NUM layer_idx = FIRST_LAYER; layer_idx < NB_PCB_LAYERS; ++layer_idx )
-    {
-        layer = layersOrder[layer_idx];
+        m_BoxSelectLayer[layer] = new wxCheckBox( this, -1, board->GetLayerName( layer ) );
 
-        wxASSERT(layer < NB_PCB_LAYERS);
-
-        if( m_BoxSelectLayer[layer] == NULL )
-            continue;
-
-        if( layer <= LAST_COPPER_LAYER )
+        if( IsCopperLayer( layer ) )
             m_CopperLayersBoxSizer->Add( m_BoxSelectLayer[layer],
                                      0, wxGROW | wxALL, 1 );
         else
             m_TechnicalLayersBoxSizer->Add( m_BoxSelectLayer[layer],
                                      0, wxGROW | wxALL, 1 );
 
-
         layerKey.Printf( OPTKEY_LAYERBASE, layer );
+
         bool option;
+
         if( m_config->Read( layerKey, &option ) )
             m_BoxSelectLayer[layer]->SetValue( option );
         else
         {
-            LAYER_MSK mask = GetLayerMask( layer );
-            if( mask & s_SelectedLayers )
+            if( s_SelectedLayers[layer] )
                 m_BoxSelectLayer[layer]->SetValue( true );
         }
     }
@@ -220,11 +228,11 @@ void DIALOG_PRINT_USING_PRINTER::InitValues( )
             s_Parameters.m_YScaleAdjust > MAX_SCALE )
             s_Parameters.m_XScaleAdjust = s_Parameters.m_YScaleAdjust = 1.0;
 
-        s_SelectedLayers = NO_LAYERS;
-        for( LAYER_NUM layer = FIRST_LAYER; layer< NB_PCB_LAYERS; ++layer )
+        s_SelectedLayers = LSET();
+
+        for( seq.Rewind();  seq;  ++seq )
         {
-            if( m_BoxSelectLayer[layer] == NULL )
-                continue;
+            LAYER_ID layer = *seq;
 
             wxString layerKey;
             bool     option;
@@ -236,7 +244,7 @@ void DIALOG_PRINT_USING_PRINTER::InitValues( )
             {
                 m_BoxSelectLayer[layer]->SetValue( option );
                 if( option )
-                    s_SelectedLayers |= GetLayerMask( layer );
+                    s_SelectedLayers.set( layer );
             }
         }
     }
@@ -277,20 +285,21 @@ void DIALOG_PRINT_USING_PRINTER::InitValues( )
 }
 
 
-int DIALOG_PRINT_USING_PRINTER::SetLayerMaskFromListSelection()
+int DIALOG_PRINT_USING_PRINTER::SetLayerSetFromListSelection()
 {
-    int page_count;
+    int page_count = 0;
 
-    s_Parameters.m_PrintMaskLayer = NO_LAYERS;
-    LAYER_NUM ii;
-    for( ii = FIRST_LAYER, page_count = 0; ii < NB_PCB_LAYERS; ++ii )
+    s_Parameters.m_PrintMaskLayer = LSET();
+
+    for( unsigned ii = 0; ii < DIM(m_BoxSelectLayer); ++ii )
     {
-        if( m_BoxSelectLayer[ii] == NULL )
+        if( !m_BoxSelectLayer[ii] )
             continue;
+
         if( m_BoxSelectLayer[ii]->IsChecked() )
         {
             page_count++;
-            s_Parameters.m_PrintMaskLayer |= GetLayerMask( ii );
+            s_Parameters.m_PrintMaskLayer.set( ii );
         }
     }
 
@@ -323,10 +332,12 @@ void DIALOG_PRINT_USING_PRINTER::OnCloseWindow( wxCloseEvent& event )
         m_config->Write( OPTKEY_PRINT_PAGE_PER_LAYER, s_Parameters.m_OptionPrintPage );
         m_config->Write( OPTKEY_PRINT_PADS_DRILL, (long) s_Parameters.m_DrillShapeOpt );
         wxString layerKey;
-        for( LAYER_NUM layer = FIRST_LAYER; layer < NB_PCB_LAYERS;  ++layer )
+
+        for( unsigned layer = 0; layer < DIM(m_BoxSelectLayer);  ++layer )
         {
-            if( m_BoxSelectLayer[layer] == NULL )
+            if( !m_BoxSelectLayer[layer] )
                 continue;
+
             layerKey.Printf( OPTKEY_LAYERBASE, layer );
             m_config->Write( layerKey, m_BoxSelectLayer[layer]->IsChecked() );
         }
@@ -350,7 +361,7 @@ void DIALOG_PRINT_USING_PRINTER::SetPrintParameters( )
     if( m_PagesOption )
         s_Parameters.m_OptionPrintPage = m_PagesOption->GetSelection() != 0;
 
-    SetLayerMaskFromListSelection();
+    SetLayerSetFromListSelection();
 
     int idx = m_ScaleOption->GetSelection();
     s_Parameters.m_PrintScale =  s_ScaleList[idx];

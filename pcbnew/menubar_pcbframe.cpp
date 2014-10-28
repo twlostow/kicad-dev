@@ -43,6 +43,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 {
     wxString    text;
     wxMenuBar*  menuBar = GetMenuBar();
+    wxMenuItem * menutitem;
 
     wxFileHistory&  fhist = Kiface().GetFileHistory();
 
@@ -95,10 +96,14 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
                      KiBitmap( open_project_xpm ) );
     }
 
-    AddMenuItem( filesMenu, ID_APPEND_FILE,
+    menutitem = AddMenuItem( filesMenu, ID_APPEND_FILE,
                  _( "&Append Board" ),
-                 _( "Append another Pcbnew board to the current loaded board" ),
+                 _( "Append another Pcbnew board to the current loaded board. Available only when Pcbnew runs in stand alone mode" ),
                  KiBitmap( import_xpm ) );
+    if( ! Kiface().IsSingle() )      // disable when under a project mgr
+        menutitem->Enable( false );
+
+
     filesMenu->AppendSeparator();
 
     text = AddHotkeyName( _( "&Save" ), g_Board_Editor_Hokeys_Descr, HK_SAVE_BOARD );
@@ -129,8 +134,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     //----- Fabrication Outputs submenu -----------------------------------------
     wxMenu* fabricationOutputsMenu = new wxMenu;
     AddMenuItem( fabricationOutputsMenu, ID_PCB_GEN_POS_MODULES_FILE,
-                 _( "&Modules Position (.pos) File" ),
-                 _( "Generate modules position file for pick and place" ),
+                 _( "&Footprint Position (.pos) File" ),
+                 _( "Generate footprint position file for pick and place" ),
                  KiBitmap( post_compo_xpm ) );
 
     AddMenuItem( fabricationOutputsMenu, ID_PCB_GEN_DRILL_FILE,
@@ -139,8 +144,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
                  KiBitmap( post_drill_xpm ) );
 
     AddMenuItem( fabricationOutputsMenu, ID_GEN_EXPORT_FILE_MODULE_REPORT,
-                 _( "&Module (.rpt) Report" ),
-                 _( "Create a report of all modules on the current board" ),
+                 _( "&Footprint (.rpt) Report" ),
+                 _( "Create a report of all footprints on the current board" ),
                  KiBitmap( tools_xpm ) );
 
     AddMenuItem( fabricationOutputsMenu, ID_PCB_GEN_D356_FILE,
@@ -274,7 +279,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 
     AddMenuItem( editMenu, ID_PCB_GLOBAL_DELETE,
                  _( "&Global Deletions" ),
-                 _( "Delete tracks, modules, texts... on board" ),
+                 _( "Delete tracks, footprints, texts... on board" ),
                  KiBitmap( general_deletions_xpm ) );
 
     AddMenuItem( editMenu, ID_MENU_PCB_CLEAN,
@@ -288,8 +293,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
                  KiBitmap( swap_layer_xpm ) );
 
     AddMenuItem( editMenu, ID_MENU_PCB_RESET_TEXTMODULE_FIELDS_SIZES,
-                 _( "&Reset Module Field Sizes" ),
-                 _( "Reset text size and width of all module fields to current defaults" ),
+                 _( "&Reset Footprint Field Sizes" ),
+                 _( "Reset text size and width of all footprint fields to current defaults" ),
                  KiBitmap( reset_text_xpm ) );
 
     //----- View menu -----------------------------------------------------------
@@ -315,15 +320,14 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     AddMenuItem( viewMenu, ID_ZOOM_OUT, text, HELP_ZOOM_OUT, KiBitmap( zoom_out_xpm ) );
 
     text = AddHotkeyName( _( "&Fit on Screen" ), g_Pcbnew_Editor_Hokeys_Descr,
-                          HK_ZOOM_AUTO, IS_ACCELERATOR  );
+                          HK_ZOOM_AUTO  );
     AddMenuItem( viewMenu, ID_ZOOM_PAGE, text, HELP_ZOOM_FIT,
                  KiBitmap( zoom_fit_in_page_xpm ) );
-
-    viewMenu->AppendSeparator();
 
     text = AddHotkeyName( _( "&Redraw" ), g_Pcbnew_Editor_Hokeys_Descr, HK_ZOOM_REDRAW );
     AddMenuItem( viewMenu, ID_ZOOM_REDRAW, text,
                  HELP_ZOOM_REDRAW, KiBitmap( zoom_redraw_xpm ) );
+
     viewMenu->AppendSeparator();
 
     AddMenuItem( viewMenu, ID_MENU_PCB_SHOW_3D_FRAME,
@@ -360,13 +364,13 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     //----- Place Menu ----------------------------------------------------------
     wxMenu* placeMenu = new wxMenu;
 
-    text = AddHotkeyName( _( "&Module" ), g_Pcbnew_Editor_Hokeys_Descr,
+    text = AddHotkeyName( _( "&Footprint" ), g_Pcbnew_Editor_Hokeys_Descr,
                           HK_ADD_MODULE );
     AddMenuItem( placeMenu, ID_PCB_MODULE_BUTT, text,
-                 _( "Add modules" ), KiBitmap( module_xpm ) );
+                 _( "Add footprints" ), KiBitmap( module_xpm ) );
 
     text = AddHotkeyName( _( "&Track" ), g_Pcbnew_Editor_Hokeys_Descr,
-                          HK_ADD_NEW_TRACK );
+                          HK_ADD_NEW_TRACK, IS_COMMENT );
     AddMenuItem( placeMenu, ID_TRACK_BUTT, text,
                  _( "Add tracks and vias" ), KiBitmap( add_tracks_xpm ) );
 

@@ -140,13 +140,13 @@ const wxPoint& ZONE_CONTAINER::GetPosition() const
 void ZONE_CONTAINER::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE aDrawMode,
                            const wxPoint& offset )
 {
-    if( DC == NULL )
+    if( !DC )
         return;
 
-    wxPoint seg_start, seg_end;
-    LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+    wxPoint     seg_start, seg_end;
+    LAYER_ID    curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+    BOARD*      brd   = GetBoard();
 
-    BOARD*  brd   = GetBoard();
     EDA_COLOR_T color = brd->GetLayerColor( m_Layer );
 
     if( brd->IsLayerVisible( m_Layer ) == false && ( color & HIGHLIGHT_FLAG ) != HIGHLIGHT_FLAG )
@@ -227,8 +227,8 @@ void ZONE_CONTAINER::DrawFilledArea( EDA_DRAW_PANEL* panel,
     if( m_FilledPolysList.GetCornersCount() == 0 )  // Nothing to draw
         return;
 
-    BOARD* brd = GetBoard();
-    LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+    BOARD*      brd = GetBoard();
+    LAYER_ID    curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
     EDA_COLOR_T color = brd->GetLayerColor( m_Layer );
 
     if( brd->IsLayerVisible( m_Layer ) == false && ( color & HIGHLIGHT_FLAG ) != HIGHLIGHT_FLAG )
@@ -366,11 +366,11 @@ void ZONE_CONTAINER::DrawWhileCreateOutline( EDA_DRAW_PANEL* panel, wxDC* DC,
     bool    is_close_segment = false;
     wxPoint seg_start, seg_end;
 
-    if( DC == NULL )
+    if( !DC )
         return;
 
-    LAYER_NUM curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
-    BOARD* brd   = GetBoard();
+    LAYER_ID    curr_layer = ( (PCB_SCREEN*) panel->GetScreen() )->m_Active_Layer;
+    BOARD*      brd   = GetBoard();
     EDA_COLOR_T color = brd->GetLayerColor( m_Layer );
 
     if( DisplayOpt.ContrastModeDisplay )
@@ -804,7 +804,8 @@ void ZONE_CONTAINER::Copy( ZONE_CONTAINER* src )
     SetTimeStamp( src->m_TimeStamp );
     m_Poly->RemoveAllContours();
     m_Poly->Copy( src->m_Poly );                // copy outlines
-    m_CornerSelection  = -1;                    // For corner moving, corner index to drag, or -1 if no selection
+    m_CornerSelection  = -1;                    // For corner moving, corner index to drag,
+                                                // or -1 if no selection
     m_ZoneClearance    = src->m_ZoneClearance;  // clearance value
     m_ZoneMinThickness = src->m_ZoneMinThickness;
     m_FillMode = src->m_FillMode;               // Filling mode (segments/polygons)

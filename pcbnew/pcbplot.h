@@ -69,20 +69,18 @@ class REPORTER;
 
 
 // A helper class to plot board items
-class BRDITEMS_PLOTTER: public PCB_PLOT_PARAMS
+class BRDITEMS_PLOTTER : public PCB_PLOT_PARAMS
 {
-    PLOTTER* m_plotter;
-    BOARD*   m_board;
-    int      m_layerMask;
-
+    PLOTTER*    m_plotter;
+    BOARD*      m_board;
+    LSET        m_layerMask;
 
 public:
-    BRDITEMS_PLOTTER( PLOTTER* aPlotter, BOARD* aBoard, const PCB_PLOT_PARAMS& aPlotOpts )
-        : PCB_PLOT_PARAMS( aPlotOpts )
+    BRDITEMS_PLOTTER( PLOTTER* aPlotter, BOARD* aBoard, const PCB_PLOT_PARAMS& aPlotOpts ) :
+        PCB_PLOT_PARAMS( aPlotOpts )
     {
         m_plotter = aPlotter;
         m_board = aBoard;
-        m_layerMask = 0;
     }
 
     /**
@@ -99,7 +97,7 @@ public:
     }
 
     // Basic functions to plot a board item
-    void SetLayerMask( int aLayerMask ){ m_layerMask = aLayerMask; }
+    void SetLayerSet( LSET aLayerMask )     { m_layerMask = aLayerMask; }
     void Plot_Edges_Modules();
     void Plot_1_EdgeModule( EDGE_MODULE* aEdge );
     void PlotTextModule( TEXTE_MODULE* aTextMod, EDA_COLOR_T aColor );
@@ -178,7 +176,7 @@ PLOTTER* StartPlotBoard( BOARD* aBoard,
  * @param aLayer = the layer id to plot
  * @param aPlotOpt = the plot options (files, sketch). Has meaning for some formats only
  */
-void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, LAYER_NUM aLayer,
+void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, LAYER_ID aLayer,
                         const PCB_PLOT_PARAMS& aPlotOpt );
 
 /**
@@ -202,7 +200,7 @@ void PlotOneBoardLayer( BOARD *aBoard, PLOTTER* aPlotter, LAYER_NUM aLayer,
  *      SetDrillMarksType( DrillMarksType aVal ) controle the actual hole:
  *              no hole, small hole, actual hole
  */
-void PlotStandardLayer( BOARD* aBoard, PLOTTER* aPlotter, LAYER_MSK aLayerMask,
+void PlotStandardLayer( BOARD* aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                         const PCB_PLOT_PARAMS& aPlotOpt );
 
 /**
@@ -214,7 +212,7 @@ void PlotStandardLayer( BOARD* aBoard, PLOTTER* aPlotter, LAYER_MSK aLayerMask,
  * @param aPlotOpt = the plot options. Has meaning for some formats only
  */
 void PlotLayerOutlines( BOARD *aBoard, PLOTTER* aPlotter,
-                        LAYER_MSK aLayerMask, const PCB_PLOT_PARAMS& aPlotOpt );
+                        LSET aLayerMask, const PCB_PLOT_PARAMS& aPlotOpt );
 
 /**
  * Function PlotSilkScreen
@@ -225,22 +223,9 @@ void PlotLayerOutlines( BOARD *aBoard, PLOTTER* aPlotter,
  * @param aLayerMask = the mask to define the layers to plot (silkscreen Front and/or Back)
  * @param aPlotOpt = the plot options (files, sketch). Has meaning for some formats only
  */
-void PlotSilkScreen( BOARD* aBoard, PLOTTER* aPlotter, LAYER_MSK aLayerMask,
+void PlotSilkScreen( BOARD* aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                      const PCB_PLOT_PARAMS&  aPlotOpt );
 
-
-/**
- * Function EnsureOutputDirectory (helper function)
- * make \a OutputDir absolute and creates the path if it doesn't exist.
- * @param aOutputDir  the wxFileName containing the full path and file name to modify.  The path
- *                    may be absolute or relative to \a aBoardFilename .
- * @param aBoardFilename the board full path and filename.
- * @param aReporter a point to a REPORTER object use to show messages (can be NULL)
- * @return true if \a aOutputDir already exists or was successfully created.
- */
-bool EnsureOutputDirectory( wxFileName*     aOutputDir,
-                            const wxString& aBoardFilename,
-                            REPORTER*       aReporter = NULL );
 
 /**
  * Function BuildPlotFileName (helper function)
@@ -264,7 +249,7 @@ void BuildPlotFileName( wxFileName*     aFilename,
  * Function GetGerberExtension
  * @return the appropriate Gerber file extension for \a aLayer
  */
-extern wxString GetGerberExtension( LAYER_NUM aLayer );
+const wxString GetGerberExtension( LAYER_NUM aLayer );
 
 /**
  * Function GetGerberFileFunction

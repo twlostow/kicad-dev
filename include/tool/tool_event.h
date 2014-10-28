@@ -91,8 +91,11 @@ enum TOOL_ACTIONS
     // This event is sent *before* undo/redo command is performed.
     TA_UNDO_REDO            = 0x10000,
 
-    // Tool action (allows to control tools)
+    // Tool action (allows to control tools).
     TA_ACTION               = 0x20000,
+
+    // Tool activation event.
+    TA_ACTIVATE             = 0x40000,
 
     TA_ANY = 0xffffffff
 };
@@ -121,6 +124,14 @@ enum TOOL_ACTION_SCOPE
     AS_CONTEXT = 1,  ///> Action belongs to a particular tool (i.e. a part of a pop-up menu)
     AS_ACTIVE,       ///> All active tools
     AS_GLOBAL        ///> Global action (toolbar/main menu event, global shortcut)
+};
+
+/// Flags for tool actions
+enum TOOL_ACTION_FLAGS
+{
+    AF_NONE     = 0,
+    AF_ACTIVATE = 1,    ///> Action activates a tool
+    AF_NOTIFY   = 2     ///> Action is a notification (it is by default passed to all tools)
 };
 
 /// Defines when a context menu is opened.
@@ -160,7 +171,10 @@ public:
             TOOL_ACTION_SCOPE aScope = AS_GLOBAL ) :
         m_category( aCategory ),
         m_actions( aAction ),
-        m_scope( aScope )
+        m_scope( aScope ),
+        m_mouseButtons( 0 ),
+        m_keyCode( 0 ),
+        m_modifiers( 0 )
     {
         if( aCategory == TC_MOUSE )
         {
@@ -186,7 +200,9 @@ public:
         m_category( aCategory ),
         m_actions( aAction ),
         m_scope( aScope ),
-        m_mouseButtons( 0 )
+        m_mouseButtons( 0 ),
+        m_keyCode( 0 ),
+        m_modifiers( 0 )
     {
         if( aCategory == TC_COMMAND || aCategory == TC_MESSAGE )
             m_commandStr = aExtraParam;
@@ -265,6 +281,11 @@ public:
         return m_actions == TA_CANCEL_TOOL;
     }
 
+    bool IsActivate() const
+    {
+        return m_actions == TA_ACTIVATE;
+    }
+
     ///> Returns information about key modifiers state (Ctrl, Alt, etc.)
     int Modifier( int aMask = MD_MODIFIER_MASK ) const
     {
@@ -313,14 +334,11 @@ public:
 
         if( m_category == TC_COMMAND || m_category == TC_MESSAGE )
         {
-            if( m_commandStr && aEvent.m_commandStr )
+            if( (bool) m_commandStr && (bool) aEvent.m_commandStr )
                 return *m_commandStr == *aEvent.m_commandStr;
 
-            if( m_commandId && aEvent.m_commandId )
+            if( (bool) m_commandId && (bool) aEvent.m_commandId )
                 return *m_commandId == *aEvent.m_commandId;
-
-            // Command-type event has to contain either id or string
-            assert( false );
         }
 
         return true;
@@ -334,9 +352,14 @@ public:
      */
     bool IsAction( const TOOL_ACTION* aAction ) const;
 
-    boost::optional<int> GetCommandId()
+    boost::optional<int> GetCommandId() const
     {
         return m_commandId;
+    }
+
+    boost::optional<std::string> GetCommandStr() const
+    {
+        return m_commandStr;
     }
 
 private:
@@ -495,7 +518,6 @@ inline const TOOL_EVENT_LIST operator||( const TOOL_EVENT& aEventA, const TOOL_E
 
     return l;
 }
-
 
 inline const TOOL_EVENT_LIST operator||( const TOOL_EVENT& aEvent,
                                          const TOOL_EVENT_LIST& aEventList )

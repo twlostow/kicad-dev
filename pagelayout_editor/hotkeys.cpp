@@ -59,7 +59,7 @@
 
 // mouse click command:
 static EDA_HOTKEY HkMouseLeftClick( wxT( "Mouse Left Click" ), HK_LEFT_CLICK, WXK_RETURN, 0 );
-static EDA_HOTKEY HkMouseLeftDClick( wxT( "Mouse Left DClick" ), HK_LEFT_DCLICK, WXK_END, 0 );
+static EDA_HOTKEY HkMouseLeftDClick( wxT( "Mouse Left Double Click" ), HK_LEFT_DCLICK, WXK_END, 0 );
 
 static EDA_HOTKEY    HkResetLocalCoord( wxT( "Reset Local Coordinates" ),
                                         HK_RESET_LOCAL_COORD, ' ' );
@@ -107,24 +107,17 @@ EDA_HOTKEY* s_PlEditor_Hotkey_List[] =
 // list of sections and corresponding hotkey list for Pl_Editor
 // (used to create an hotkey config file)
 wxString s_PlEditorSectionTag( wxT( "[pl_editor]" ) );
+wxString s_PlEditorSectionTitle( wxT( "Part Layout Editor" ) );
 
 struct EDA_HOTKEY_CONFIG s_PlEditor_Hokeys_Descr[] =
 {
-    { &g_CommonSectionTag,    s_Common_Hotkey_List,     L"Common keys"    },
-    { &s_PlEditorSectionTag,  s_PlEditor_Hotkey_List,   L"pl_editor keys" },
-    { NULL,                   NULL,                     NULL              }
+    { &g_CommonSectionTag,    s_Common_Hotkey_List,     &g_CommonSectionTitle    },
+    { &s_PlEditorSectionTag,  s_PlEditor_Hotkey_List,   &s_PlEditorSectionTitle  },
+    { NULL,                   NULL,                     NULL                     }
 };
 
 
-/* OnHotKey.
- *  ** Commands are case insensitive **
- *  Some commands are relative to the item under the mouse cursor
- * aDC = current device context
- * aHotkeyCode = hotkey code (ascii or wxWidget code for special keys)
- * aPosition The cursor position in logical (drawing) units.
- * aItem = NULL or pointer on a EDA_ITEM under the mouse cursor
- */
-void PL_EDITOR_FRAME::OnHotKey( wxDC* aDC, int aHotkeyCode,
+bool PL_EDITOR_FRAME::OnHotKey( wxDC* aDC, int aHotkeyCode,
                                 const wxPoint& aPosition, EDA_ITEM* aItem )
 {
     bool busy = GetScreen()->GetCurItem() != NULL;
@@ -142,14 +135,14 @@ void PL_EDITOR_FRAME::OnHotKey( wxDC* aDC, int aHotkeyCode,
         HK_Descr = GetDescriptorFromHotkey( aHotkeyCode, s_Common_Hotkey_List );
 
     if( HK_Descr == NULL )
-        return;
+        return false;
 
     WORKSHEET_DATAITEM* item;
 
     switch( HK_Descr->m_Idcommand )
     {
     case HK_NOT_FOUND:
-        return;
+        return false;
 
     case HK_LEFT_CLICK:
         OnLeftClick( aDC, aPosition );
@@ -235,7 +228,9 @@ void PL_EDITOR_FRAME::OnHotKey( wxDC* aDC, int aHotkeyCode,
         break;
 
     default:
-        wxMessageBox( wxT("Unknown hotkey") );
-        return;
+        wxMessageBox( wxT( "Unknown hotkey" ) );
+        return false;
     }
+
+    return true;
 }

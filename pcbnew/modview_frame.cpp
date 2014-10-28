@@ -32,9 +32,9 @@
 #include <kiway.h>
 #include <gr_basic.h>
 #include <class_drawpanel.h>
+#include <pcb_draw_panel_gal.h>
 #include <wxPcbStruct.h>
 #include <3d_viewer.h>
-#include <pcbcommon.h>
 #include <dialog_helpers.h>
 #include <msgpanel.h>
 #include <macros.h>
@@ -54,6 +54,13 @@
 #include <wildcards_and_files_ext.h>
 #include <pcbnew_config.h>
 
+#include <tool/tool_manager.h>
+#include <tool/tool_dispatcher.h>
+#include "tools/pcbnew_control.h"
+#include "tools/common_actions.h"
+
+#include <boost/bind.hpp>
+
 
 #define NEXT_PART       1
 #define NEW_PART        0
@@ -65,6 +72,10 @@ BEGIN_EVENT_TABLE( FOOTPRINT_VIEWER_FRAME, EDA_DRAW_FRAME )
     EVT_CLOSE( FOOTPRINT_VIEWER_FRAME::OnCloseWindow )
     EVT_SIZE( FOOTPRINT_VIEWER_FRAME::OnSize )
     EVT_ACTIVATE( FOOTPRINT_VIEWER_FRAME::OnActivate )
+
+    // Menu (and/or hotkey) events
+    EVT_MENU( wxID_EXIT, FOOTPRINT_VIEWER_FRAME::CloseFootprintViewer )
+    EVT_MENU( ID_SET_RELATIVE_OFFSET, FOOTPRINT_VIEWER_FRAME::OnSetRelativeOffset )
 
     // Toolbar events
     EVT_TOOL( ID_MODVIEW_SELECT_LIB,
@@ -84,27 +95,9 @@ BEGIN_EVENT_TABLE( FOOTPRINT_VIEWER_FRAME, EDA_DRAW_FRAME )
     EVT_LISTBOX( ID_MODVIEW_FOOTPRINT_LIST, FOOTPRINT_VIEWER_FRAME::ClickOnFootprintList )
     EVT_LISTBOX_DCLICK( ID_MODVIEW_FOOTPRINT_LIST, FOOTPRINT_VIEWER_FRAME::DClickOnFootprintList )
 
-    EVT_MENU( ID_SET_RELATIVE_OFFSET, FOOTPRINT_VIEWER_FRAME::OnSetRelativeOffset )
 END_EVENT_TABLE()
 
 
-/*
- * This emulates the zoom menu entries found in the other KiCad applications.
- * The library viewer does not have any menus so add an accelerator table to
- * the main frame.
- */
-static wxAcceleratorEntry accels[] =
-{
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F1, ID_ZOOM_IN ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F2, ID_ZOOM_OUT ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F3, ID_ZOOM_REDRAW ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_F4, ID_POPUP_ZOOM_CENTER ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_HOME, ID_ZOOM_PAGE ),
-    wxAcceleratorEntry( wxACCEL_NORMAL, WXK_SPACE, ID_SET_RELATIVE_OFFSET )
-};
-
-
-#define EXTRA_BORDER_SIZE               2
 
 #define FOOTPRINT_VIEWER_FRAME_NAME     wxT( "ModViewFrame" )
 
@@ -121,8 +114,6 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
 
     if( aFrameType == FRAME_PCB_MODULE_VIEWER_MODAL )
         SetModal( true );
-
-    wxAcceleratorTable table( DIM( accels ), accels );
 
     m_FrameName  = GetFootprintViewerFrameName();
     m_configPath = wxT( "FootprintViewer" );
@@ -154,11 +145,31 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
 
     GetScreen()->SetGrid( ID_POPUP_GRID_LEVEL_1000 + m_LastGridSizeId  );
 
+    // Menu bar is not mandatory: uncomment/comment the next line
+    // to add/remove the menubar
+    ReCreateMenuBar();
     ReCreateHToolbar();
     ReCreateVToolbar();
 
     ReCreateLibraryList();
     UpdateTitle();
+
+    PCB_BASE_FRAME* parentFrame = static_cast<PCB_BASE_FRAME*>( Kiway().Player( FRAME_PCB, true ) );
+
+    // Create GAL canvas
+    PCB_DRAW_PANEL_GAL* drawPanel = new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0, 0 ), m_FrameSize,
+                                                            parentFrame->GetGalCanvas()->GetBackend() );
+    SetGalCanvas( drawPanel );
+
+    // Create the manager and dispatcher & route draw panel events to the dispatcher
+    m_toolManager = new TOOL_MANAGER;
+    m_toolManager->SetEnvironment( GetBoard(), drawPanel->GetView(),
+                                   drawPanel->GetViewControls(), this );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
+    drawPanel->SetEventDispatcher( m_toolDispatcher );
+
+    m_toolManager->RegisterTool( new PCBNEW_CONTROL );
+    m_toolManager->ResetTools( TOOL_BASE::RUN );
 
     // If a footprint was previously loaded, reload it
     if( getCurNickname().size() && getCurFootprintName().size() )
@@ -170,8 +181,8 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
         GetBoard()->Add( loadFootprint( id ) );
     }
 
-    if( m_canvas )
-        m_canvas->SetAcceleratorTable( table );
+    drawPanel->DisplayBoard( m_Pcb );
+    updateView();
 
     m_auimgr.SetManagedWindow( this );
 
@@ -207,6 +218,8 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
     // Manage the draw panel, right pane.
     m_auimgr.AddPane( m_canvas,
                       wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane() );
+    m_auimgr.AddPane( (wxWindow*) GetGalCanvas(),
+                      wxAuiPaneInfo().Name( wxT( "DrawFrameGal" ) ).CentrePane().Hide() );
 
     // Manage the message panel, bottom pane.
     m_auimgr.AddPane( m_messagePanel,
@@ -242,8 +255,11 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
 #else
     Zoom_Automatique( false );
 #endif
+    Zoom_Automatique( true );
 
     Show( true );
+
+    UseGalCanvas( parentFrame->IsGalCanvasActive() );
 }
 
 
@@ -263,6 +279,10 @@ const wxChar* FOOTPRINT_VIEWER_FRAME::GetFootprintViewerFrameName()
 void FOOTPRINT_VIEWER_FRAME::OnCloseWindow( wxCloseEvent& Event )
 {
     DBG(printf( "%s:\n", __func__ );)
+
+    if( IsGalCanvasActive() )
+        GetGalCanvas()->StopDrawing();
+
     if( IsModal() )
     {
         // Only dismiss a modal frame once, so that the return values set by
@@ -321,6 +341,15 @@ void FOOTPRINT_VIEWER_FRAME::ReCreateLibraryList()
     ReCreateHToolbar();
 
     m_canvas->Refresh();
+}
+
+
+void FOOTPRINT_VIEWER_FRAME::UseGalCanvas( bool aEnable )
+{
+    EDA_DRAW_FRAME::UseGalCanvas( aEnable );
+
+    if( aEnable )
+        GetGalCanvas()->StartDrawing();
 }
 
 
@@ -421,6 +450,10 @@ void FOOTPRINT_VIEWER_FRAME::ClickOnFootprintList( wxCommandEvent& event )
         }
 
         UpdateTitle();
+
+        if( IsGalCanvasActive() )
+            updateView();
+
         Zoom_Automatique( false );
         m_canvas->Refresh();
         Update3D_Frame();
@@ -542,13 +575,15 @@ void FOOTPRINT_VIEWER_FRAME::OnActivate( wxActivateEvent& event )
 }
 
 
-void FOOTPRINT_VIEWER_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey )
+bool FOOTPRINT_VIEWER_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, int aHotKey )
 {
+    bool eventHandled = true;
+
     // Filter out the 'fake' mouse motion after a keyboard movement
     if( !aHotKey && m_movingCursorWithKeyboard )
     {
         m_movingCursorWithKeyboard = false;
-        return;
+        return false;
     }
 
     wxCommandEvent cmd( wxEVT_COMMAND_MENU_SELECTED );
@@ -558,7 +593,12 @@ void FOOTPRINT_VIEWER_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition
     wxPoint pos = aPosition;
     GeneralControlKeyMovement( aHotKey, &pos, true );
 
-    switch( aHotKey )
+    if( aHotKey )
+    {
+        eventHandled = OnHotKey( aDC, aHotKey, aPosition );
+    }
+
+/*    switch( aHotKey )
     {
     case WXK_F1:
         cmd.SetId( ID_POPUP_ZOOM_IN );
@@ -588,12 +628,17 @@ void FOOTPRINT_VIEWER_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition
     case ' ':
         GetScreen()->m_O_Curseur = GetCrossHairPosition();
         break;
-    }
 
+    default:
+        eventHandled = false;
+    }
+*/
     SetCrossHairPosition( pos );
     RefreshCrossHair( oldpos, aPosition, aDC );
 
     UpdateStatusBar();    // Display new cursor coordinates
+
+    return eventHandled;
 }
 
 
@@ -664,8 +709,8 @@ void FOOTPRINT_VIEWER_FRAME::OnIterateFootprintList( wxCommandEvent& event )
         break;
 
     default:
-        wxFAIL_MSG( wxT( "FOOTPRINT_VIEWER_FRAME::OnIterateFootprintList error: id = " ) +
-                    event.GetId() );
+        wxString id = wxString::Format(wxT("%i"),event.GetId());
+        wxFAIL_MSG( wxT( "FOOTPRINT_VIEWER_FRAME::OnIterateFootprintList error: id = " ) + id );
     }
 }
 
@@ -802,7 +847,11 @@ void FOOTPRINT_VIEWER_FRAME::SelectAndViewFootprint( int aMode )
             GetBoard()->Add( footprint, ADD_APPEND );
 
         Update3D_Frame();
+
+        if( IsGalCanvasActive() )
+            updateView();
     }
+
 
     UpdateTitle();
     Zoom_Automatique( false );
@@ -826,4 +875,21 @@ void FOOTPRINT_VIEWER_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
 
     if( module )
         SetMsgPanel( module );
+}
+
+
+void FOOTPRINT_VIEWER_FRAME::updateView()
+{
+    if( IsGalCanvasActive() )
+    {
+        static_cast<PCB_DRAW_PANEL_GAL*>( GetGalCanvas() )->DisplayBoard( GetBoard() );
+        m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
+        m_toolManager->RunAction( COMMON_ACTIONS::zoomFitScreen, true );
+    }
+}
+
+
+void FOOTPRINT_VIEWER_FRAME::CloseFootprintViewer( wxCommandEvent& event )
+{
+    Close();
 }

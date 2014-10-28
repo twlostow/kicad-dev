@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2007-2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 /**
  * @file pcbnew/hotkeys.cpp
  */
@@ -5,6 +29,8 @@
 #include <fctsys.h>
 #include <pcbnew.h>
 #include <wxPcbStruct.h>
+#include <modview_frame.h>
+#include <pcbnew_id.h>
 
 #include <hotkeys.h>
 
@@ -34,13 +60,15 @@
 // mouse click command:
 static EDA_HOTKEY HkMouseLeftClick( wxT( "Mouse Left Click" ),
                                     HK_LEFT_CLICK, WXK_RETURN, 0 );
-static EDA_HOTKEY HkMouseLeftDClick( wxT( "Mouse Left DClick" ),
+static EDA_HOTKEY HkMouseLeftDClick( wxT( "Mouse Left Double Click" ),
                                      HK_LEFT_DCLICK, WXK_END, 0 );
 
-static EDA_HOTKEY HkSwitch2CopperLayer( wxT( "Switch to Copper layer" ),
+static EDA_HOTKEY HkSwitch2CopperLayer( wxT( "Switch to Copper (B.Cu) layer" ),
                                         HK_SWITCH_LAYER_TO_COPPER, WXK_PAGEDOWN );
-static EDA_HOTKEY HkSwitch2ComponentLayer( wxT( "Switch to Component layer" ),
+
+static EDA_HOTKEY HkSwitch2ComponentLayer( wxT( "Switch to Component (F.Cu) layer" ),
                                            HK_SWITCH_LAYER_TO_COMPONENT, WXK_PAGEUP );
+
 static EDA_HOTKEY HkSwitch2InnerLayer1( wxT( "Switch to Inner layer 1" ),
                                         HK_SWITCH_LAYER_TO_INNER1, WXK_F5 );
 static EDA_HOTKEY HkSwitch2InnerLayer2( wxT( "Switch to Inner layer 2" ),
@@ -60,21 +88,21 @@ static EDA_HOTKEY HkSwitch2PreviousCopperLayer( wxT( "Switch to Previous Layer" 
                                                 HK_SWITCH_LAYER_TO_PREVIOUS, '-' );
 
 static EDA_HOTKEY HkSaveModule( wxT( "Save Module" ), HK_SAVE_MODULE, 'S' + GR_KB_CTRL );
-static EDA_HOTKEY HkSavefile( wxT( "Save board" ), HK_SAVE_BOARD, 'S' + GR_KB_CTRL );
-static EDA_HOTKEY HkSavefileAs( wxT( "Save board as" ), HK_SAVE_BOARD_AS, 'S' + GR_KB_CTRL + GR_KB_SHIFT );
-static EDA_HOTKEY HkLoadfile( wxT( "Load board" ), HK_LOAD_BOARD, 'L' + GR_KB_CTRL );
+static EDA_HOTKEY HkSavefile( wxT( "Save Board" ), HK_SAVE_BOARD, 'S' + GR_KB_CTRL );
+static EDA_HOTKEY HkSavefileAs( wxT( "Save Board As" ), HK_SAVE_BOARD_AS, 'S' + GR_KB_CTRL + GR_KB_SHIFT );
+static EDA_HOTKEY HkLoadfile( wxT( "Load Board" ), HK_LOAD_BOARD, 'L' + GR_KB_CTRL );
 static EDA_HOTKEY HkFindItem( wxT( "Find Item" ), HK_FIND_ITEM, 'F' + GR_KB_CTRL );
-static EDA_HOTKEY HkBackspace( wxT( "Delete track segment" ), HK_BACK_SPACE, WXK_BACK );
-static EDA_HOTKEY HkAddNewTrack( wxT( "Add new track" ), HK_ADD_NEW_TRACK, 'X' );
+static EDA_HOTKEY HkBackspace( wxT( "Delete Track Segment" ), HK_BACK_SPACE, WXK_BACK );
+static EDA_HOTKEY HkAddNewTrack( wxT( "Add New Track" ), HK_ADD_NEW_TRACK, 'X' );
 static EDA_HOTKEY HkAddThroughVia( wxT( "Add Through Via" ), HK_ADD_THROUGH_VIA, 'V' );
-static EDA_HOTKEY HkSelLayerAndAddThroughVia( wxT( "Sel Layer and Add Through Via" ),
+static EDA_HOTKEY HkSelLayerAndAddThroughVia( wxT( "Select Layer and Add Through Via" ),
                                               HK_SEL_LAYER_AND_ADD_THROUGH_VIA, '<' );
 static EDA_HOTKEY HkAddMicroVia( wxT( "Add MicroVia" ), HK_ADD_MICROVIA, 'V' + GR_KB_CTRL );
 static EDA_HOTKEY HkAddBlindBuriedVia( wxT( "Add Blind/Buried Via" ), HK_ADD_BLIND_BURIED_VIA, 'V' + GR_KB_ALT );
-static EDA_HOTKEY HkSelLayerAndAddBlindBuriedVia( wxT( "Sel Layer and Add Blind/Buried Via" ),
+static EDA_HOTKEY HkSelLayerAndAddBlindBuriedVia( wxT( "Select Layer and Add Blind/Buried Via" ),
                                                   HK_SEL_LAYER_AND_ADD_BLIND_BURIED_VIA, '<' + GR_KB_ALT );
 static EDA_HOTKEY HkSwitchTrackPosture( wxT( "Switch Track Posture" ),  HK_SWITCH_TRACK_POSTURE, '/' );
-static EDA_HOTKEY HkDragTrackKeepSlope( wxT( "Drag track keep slope" ), HK_DRAG_TRACK_KEEP_SLOPE, 'D' );
+static EDA_HOTKEY HkDragTrackKeepSlope( wxT( "Drag Track Keep Slope" ), HK_DRAG_TRACK_KEEP_SLOPE, 'D' );
 static EDA_HOTKEY HkPlaceItem( wxT( "Place Item" ), HK_PLACE_ITEM, 'P' );
 static EDA_HOTKEY HkEditBoardItem( wxT( "Edit Item" ), HK_EDIT_ITEM, 'E' );
 static EDA_HOTKEY HkFlipItem( wxT( "Flip Item" ), HK_FLIP_ITEM, 'F' );
@@ -86,16 +114,16 @@ static EDA_HOTKEY HkGetAndMoveFootprint( wxT( "Get and Move Footprint" ), HK_GET
 static EDA_HOTKEY HkLock_Unlock_Footprint( wxT( "Lock/Unlock Footprint" ), HK_LOCK_UNLOCK_FOOTPRINT, 'L' );
 static EDA_HOTKEY HkDelete( wxT( "Delete Track or Footprint" ), HK_DELETE, WXK_DELETE );
 static EDA_HOTKEY HkResetLocalCoord( wxT( "Reset Local Coordinates" ), HK_RESET_LOCAL_COORD, ' ' );
-static EDA_HOTKEY HkSwitchHighContrastMode( wxT("Switch Highcontrast mode"), HK_SWITCH_HIGHCONTRAST_MODE,'H');
+static EDA_HOTKEY HkSwitchHighContrastMode( wxT( "Toggle High Contrast Mode" ), HK_SWITCH_HIGHCONTRAST_MODE,'H');
 
-static EDA_HOTKEY HkSetGridOrigin( wxT("Set Grid Origin"), HK_SET_GRID_ORIGIN, 'S' );
-static EDA_HOTKEY HkResetGridOrigin( wxT("Reset Grid Origin"), HK_RESET_GRID_ORIGIN, 'Z' );
+static EDA_HOTKEY HkSetGridOrigin( wxT( "Set Grid Origin" ), HK_SET_GRID_ORIGIN, 'S' );
+static EDA_HOTKEY HkResetGridOrigin( wxT( "Reset Grid Origin" ), HK_RESET_GRID_ORIGIN, 'Z' );
 
-static EDA_HOTKEY HkCanvasDefault( wxT( "Switch to default canvas" ),
+static EDA_HOTKEY HkCanvasDefault( wxT( "Switch to Default Canvas" ),
                                    HK_CANVAS_DEFAULT, WXK_F9 );
-static EDA_HOTKEY HkCanvasOpenGL( wxT( "Switch to OpenGL canvas" ),
+static EDA_HOTKEY HkCanvasOpenGL( wxT( "Switch to OpenGL Canvas" ),
                                   HK_CANVAS_OPENGL, WXK_F11 );
-static EDA_HOTKEY HkCanvasCairo( wxT( "Switch to Cairo canvas" ),
+static EDA_HOTKEY HkCanvasCairo( wxT( "Switch to Cairo Canvas" ),
                                  HK_CANVAS_CAIRO, WXK_F12 );
 
 /* Fit on Screen */
@@ -221,6 +249,17 @@ EDA_HOTKEY* common_Hotkey_List[] =
     NULL
 };
 
+// common hotkey descriptors only useful in footprint viewer
+EDA_HOTKEY* common_basic_Hotkey_List[] =
+{
+    &HkHelp,        &HkZoomIn,          &HkZoomOut,
+    &HkZoomRedraw,  &HkZoomCenter,      &HkZoomAuto,
+    &HkSwitchUnits, &HkResetLocalCoord,
+    &HkMouseLeftClick,
+    &HkMouseLeftDClick,
+    NULL
+};
+
 // List of hotkey descriptors for Pcbnew
 EDA_HOTKEY* board_edit_Hotkey_List[] =
 {
@@ -261,35 +300,121 @@ EDA_HOTKEY* module_edit_Hotkey_List[] = {
     NULL
  };
 
+// List of hotkey descriptors for the module viewer
+// Currently empty
+EDA_HOTKEY* module_viewer_Hotkey_List[] = {
+    NULL
+ };
+
 // list of sections and corresponding hotkey list for Pcbnew
  // (used to create an hotkey config file, and edit hotkeys )
 struct EDA_HOTKEY_CONFIG g_Pcbnew_Editor_Hokeys_Descr[] = {
-    { &g_CommonSectionTag, common_Hotkey_List, L"Common keys" },
-    { &g_BoardEditorSectionTag, board_edit_Hotkey_List, L"Board editor keys" },
-    { &g_ModuleEditSectionTag, module_edit_Hotkey_List, L"Footprint editor keys" },
-    { NULL, NULL, NULL }
+    { &g_CommonSectionTag,      common_Hotkey_List,         &g_CommonSectionTitle      },
+    { &g_BoardEditorSectionTag, board_edit_Hotkey_List,     &g_BoardEditorSectionTitle },
+    { &g_ModuleEditSectionTag,  module_edit_Hotkey_List,    &g_ModuleEditSectionTitle  },
+    { NULL,                     NULL,                       NULL                       }
 };
 
 // list of sections and corresponding hotkey list for the board editor
 // (used to list current hotkeys in the board editor)
 struct EDA_HOTKEY_CONFIG g_Board_Editor_Hokeys_Descr[] = {
-    { &g_CommonSectionTag, common_Hotkey_List, NULL },
-    { &g_BoardEditorSectionTag, board_edit_Hotkey_List, NULL },
+    { &g_CommonSectionTag,      common_Hotkey_List,      &g_CommonSectionTitle },
+    { &g_BoardEditorSectionTag, board_edit_Hotkey_List,  &g_BoardEditorSectionTitle },
     { NULL, NULL, NULL }
 };
 
 // list of sections and corresponding hotkey list for the footprint editor
 // (used to list current hotkeys in the module editor)
 struct EDA_HOTKEY_CONFIG g_Module_Editor_Hokeys_Descr[] = {
-    { &g_CommonSectionTag, common_Hotkey_List, NULL },
-    { &g_ModuleEditSectionTag, module_edit_Hotkey_List, NULL },
-    { NULL, NULL, NULL }
+    { &g_CommonSectionTag,     common_Hotkey_List,      &g_CommonSectionTitle },
+    { &g_ModuleEditSectionTag, module_edit_Hotkey_List, &g_ModuleEditSectionTitle },
+    { NULL,                    NULL,                    NULL }
 };
 
 // list of sections and corresponding hotkey list for the footprint viewer
 // (used to list current hotkeys in the module viewer)
 struct EDA_HOTKEY_CONFIG g_Module_Viewer_Hokeys_Descr[] = {
-    { &g_CommonSectionTag, common_Hotkey_List, NULL },
-    { NULL, NULL, NULL }
+    { &g_CommonSectionTag, common_basic_Hotkey_List, &g_CommonSectionTitle },
+    { NULL,                NULL,                     NULL }
 };
 
+
+bool FOOTPRINT_VIEWER_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
+                                     EDA_ITEM* aItem )
+{
+    if( aHotKey == 0 )
+        return false;
+
+    wxCommandEvent cmd( wxEVT_COMMAND_MENU_SELECTED );
+    cmd.SetEventObject( this );
+
+    /* Convert lower to upper case (the usual toupper function has problem with non ascii
+     * codes like function keys */
+    if( (aHotKey >= 'a') && (aHotKey <= 'z') )
+        aHotKey += 'A' - 'a';
+
+    EDA_HOTKEY* HK_Descr = GetDescriptorFromHotkey( aHotKey, common_Hotkey_List );
+
+    if( HK_Descr == NULL )
+        HK_Descr = GetDescriptorFromHotkey( aHotKey, module_viewer_Hotkey_List );
+
+    if( HK_Descr == NULL )
+        return false;
+
+    switch( HK_Descr->m_Idcommand )
+    {
+    default:
+    case HK_NOT_FOUND:
+        return false;
+
+    case HK_HELP:                   // Display Current hotkey list
+        DisplayHotkeyList( this, g_Module_Viewer_Hokeys_Descr );
+        break;
+
+    case HK_RESET_LOCAL_COORD:      // set local (relative) coordinate origin
+        GetScreen()->m_O_Curseur = GetCrossHairPosition();
+        break;
+
+    case HK_LEFT_CLICK:
+        OnLeftClick( aDC, aPosition );
+        break;
+
+    case HK_LEFT_DCLICK:    // Simulate a double left click: generate 2 events
+        OnLeftClick( aDC, aPosition );
+        OnLeftDClick( aDC, aPosition );
+        break;
+
+    case HK_SWITCH_UNITS:
+        cmd.SetId( (g_UserUnit == INCHES) ?
+                    ID_TB_OPTIONS_SELECT_UNIT_MM : ID_TB_OPTIONS_SELECT_UNIT_INCH );
+        GetEventHandler()->ProcessEvent( cmd );
+        break;
+
+    case HK_ZOOM_IN:
+        cmd.SetId( ID_POPUP_ZOOM_IN );
+        GetEventHandler()->ProcessEvent( cmd );
+        break;
+
+    case HK_ZOOM_OUT:
+        cmd.SetId( ID_POPUP_ZOOM_OUT );
+        GetEventHandler()->ProcessEvent( cmd );
+        break;
+
+    case HK_ZOOM_REDRAW:
+        cmd.SetId( ID_ZOOM_REDRAW );
+        GetEventHandler()->ProcessEvent( cmd );
+        break;
+
+    case HK_ZOOM_CENTER:
+        cmd.SetId( ID_POPUP_ZOOM_CENTER );
+        GetEventHandler()->ProcessEvent( cmd );
+        break;
+
+    case HK_ZOOM_AUTO:
+        cmd.SetId( ID_ZOOM_PAGE );
+        GetEventHandler()->ProcessEvent( cmd );
+        break;
+    }
+
+    return true;
+}

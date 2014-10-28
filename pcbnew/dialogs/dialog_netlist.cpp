@@ -27,7 +27,6 @@
  */
 
 #include <fctsys.h>
-//#include <pgm_base.h>
 #include <project.h>
 #include <kiface_i.h>
 #include <confirm.h>
@@ -36,7 +35,6 @@
 #include <html_messagebox.h>
 #include <base_units.h>
 #include <wxPcbStruct.h>
-#include <pcbcommon.h>
 #include <pcb_netlist.h>
 #include <netlist_reader.h>
 #include <reporter.h>
@@ -86,12 +84,13 @@ void PCB_EDIT_FRAME::InstallNetlistFrame( wxDC* DC )
       && !GetBoard()->GetFileName().IsEmpty()
       && IsOK( NULL, _( "The project configuration has changed.  Do you want to save it?" ) ) )
     {
-        wxFileName fn = GetBoard()->GetFileName();
+        wxFileName fn = Prj().AbsolutePath( GetBoard()->GetFileName() );
         fn.SetExt( ProjectFileExtension );
 
-        // was: wxGetApp().WriteProjectConfig( fn.GetFullPath(), GROUP, GetProjectFileParameters() );
-        Prj().ConfigSave( Kiface().KifaceSearch(), fn.GetFullPath(),
-                GROUP_PCB, GetProjectFileParameters() );
+        wxString pro_name = fn.GetFullPath();
+
+        Prj().ConfigSave( Kiface().KifaceSearch(), GROUP_PCB,
+                GetProjectFileParameters(), pro_name );
     }
 }
 
@@ -123,9 +122,11 @@ DIALOG_NETLIST::~DIALOG_NETLIST()
                     (long) m_rbSingleNets->GetSelection() );
 }
 
+
 void DIALOG_NETLIST::OnOpenNetlistClick( wxCommandEvent& event )
 {
-    wxString lastPath = wxFileName::GetCwd();
+    wxString lastPath = wxFileName( Prj().GetProjectFullName() ).GetPath();
+
     wxString lastNetlistRead = m_parent->GetLastNetListRead();
 
     if( !lastNetlistRead.IsEmpty() && !wxFileName::FileExists( lastNetlistRead ) )
@@ -139,7 +140,7 @@ void DIALOG_NETLIST::OnOpenNetlistClick( wxCommandEvent& event )
         lastNetlistRead = fn.GetFullName();
     }
 
-    wxLogDebug( wxT( "Last net list read path <%s>, file name <%s>." ),
+    wxLogDebug( wxT( "Last net list read path '%s', file name '%s'." ),
                 GetChars( lastPath ), GetChars( lastNetlistRead ) );
 
     wxFileDialog FilesDialog( this, _( "Select Netlist" ), lastPath, lastNetlistRead,
@@ -355,7 +356,7 @@ void DIALOG_NETLIST::OnSaveMessagesToFile( wxCommandEvent& aEvent )
     }
     else
     {
-        fn.SetPath( wxFileName::GetCwd() );
+        fn = wxPathOnly( Prj().GetProjectFullName() );
     }
 
     wxFileDialog dlg( this, _( "Save contents of message window" ), fn.GetPath(), fn.GetName(),
@@ -433,11 +434,17 @@ bool DIALOG_NETLIST::verifyFootprints( const wxString&         aNetlistFilename,
         return false;
     }
 
-
 #if defined( DEBUG )
-    m_MessageWindow->Clear();
-    WX_TEXT_CTRL_REPORTER rpt( m_MessageWindow );
-    netlist.Show( 0, rpt );
+    {
+        m_MessageWindow->Clear();
+        WX_TEXT_CTRL_REPORTER rpt( m_MessageWindow );
+
+        STRING_FORMATTER sf;
+
+        netlist.Format( "netlist_stuff", &sf, 0 );
+
+        rpt.Report( FROM_UTF8( sf.GetString().c_str() ) );
+    }
 #endif
 
     BOARD* pcb = m_parent->GetBoard();

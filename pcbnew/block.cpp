@@ -33,7 +33,6 @@
 #include <class_drawpanel.h>
 #include <confirm.h>
 #include <block_commande.h>
-#include <pcbcommon.h>
 #include <wxPcbStruct.h>
 #include <trigo.h>
 
@@ -186,7 +185,7 @@ int PCB_EDIT_FRAME::BlockCommand( int aKey )
     switch( aKey )
     {
     default:
-        cmd = aKey & 0x255;
+        cmd = aKey & 0xFF;
         break;
 
     case 0:
@@ -220,6 +219,8 @@ int PCB_EDIT_FRAME::BlockCommand( int aKey )
 
 void PCB_EDIT_FRAME::HandleBlockPlace( wxDC* DC )
 {
+    GetBoard()->m_Status_Pcb &= ~DO_NOT_SHOW_GENERAL_RASTNEST;
+
     if( !m_canvas->IsMouseCaptured() )
     {
         DisplayError( this, wxT( "Error in HandleBlockPLace : m_mouseCaptureCallback = NULL" ) );
@@ -275,7 +276,6 @@ bool PCB_EDIT_FRAME::HandleBlockEnd( wxDC* DC )
 {
     bool nextcmd = false;       // Will be set to true if a block place is needed
     bool cancelCmd = false;
-
     // If coming here after cancel block, clean up and exit
     if( GetScreen()->m_BlockLocate.GetState() == STATE_NO_BLOCK )
     {
@@ -370,6 +370,7 @@ bool PCB_EDIT_FRAME::HandleBlockEnd( wxDC* DC )
 
     if( ! nextcmd )
     {
+        GetBoard()->m_Status_Pcb |= DO_NOT_SHOW_GENERAL_RASTNEST;
         GetScreen()->ClearBlockCommand();
         m_canvas->EndMouseCapture( GetToolId(), m_canvas->GetCurrentCursor(), wxEmptyString,
                                    false );
@@ -381,7 +382,7 @@ bool PCB_EDIT_FRAME::HandleBlockEnd( wxDC* DC )
 
 void PCB_EDIT_FRAME::Block_SelectItems()
 {
-    LAYER_MSK layerMask;
+    LSET layerMask;
     bool selectOnlyComplete = GetScreen()->m_BlockLocate.GetWidth() > 0 ;
 
     GetScreen()->m_BlockLocate.Normalize();
@@ -392,9 +393,9 @@ void PCB_EDIT_FRAME::Block_SelectItems()
     // Add modules
     if( blockIncludeModules )
     {
-        for( MODULE* module = m_Pcb->m_Modules; module != NULL; module = module->Next() )
+        for( MODULE* module = m_Pcb->m_Modules;  module;  module = module->Next() )
         {
-            LAYER_NUM layer = module->GetLayer();
+            LAYER_ID layer = module->GetLayer();
 
             if( module->HitTest( GetScreen()->m_BlockLocate, selectOnlyComplete )
                 && ( !module->IsLocked() || blockIncludeLockedModules ) )
@@ -418,7 +419,7 @@ void PCB_EDIT_FRAME::Block_SelectItems()
                 if( blockIncludeItemsOnInvisibleLayers
                   || m_Pcb->IsLayerVisible( track->GetLayer() ) )
                 {
-                    picker.SetItem ( track );
+                    picker.SetItem( track );
                     itemsList->PushItem( picker );
                 }
             }
@@ -426,13 +427,13 @@ void PCB_EDIT_FRAME::Block_SelectItems()
     }
 
     // Add graphic items
-    layerMask = EDGE_LAYER;
+    layerMask = LSET( Edge_Cuts );
 
     if( blockIncludeItemsOnTechLayers )
-        layerMask = ALL_LAYERS;
+        layerMask.set();
 
     if( !blockIncludeBoardOutlineLayer )
-        layerMask &= ~EDGE_LAYER;
+        layerMask.set( Edge_Cuts, false );
 
     for( BOARD_ITEM* PtStruct = m_Pcb->m_Drawings; PtStruct != NULL; PtStruct = PtStruct->Next() )
     {
@@ -444,7 +445,7 @@ void PCB_EDIT_FRAME::Block_SelectItems()
         switch( PtStruct->Type() )
         {
         case PCB_LINE_T:
-            if( (GetLayerMask( PtStruct->GetLayer() ) & layerMask) == 0  )
+            if( !layerMask[PtStruct->GetLayer()] )
                 break;
 
             if( !PtStruct->HitTest( GetScreen()->m_BlockLocate, selectOnlyComplete ) )
@@ -464,7 +465,7 @@ void PCB_EDIT_FRAME::Block_SelectItems()
             break;
 
         case PCB_TARGET_T:
-            if( ( GetLayerMask( PtStruct->GetLayer() ) & layerMask ) == 0  )
+            if( !layerMask[PtStruct->GetLayer()] )
                 break;
 
             if( !PtStruct->HitTest( GetScreen()->m_BlockLocate, selectOnlyComplete ) )
@@ -474,7 +475,7 @@ void PCB_EDIT_FRAME::Block_SelectItems()
             break;
 
         case PCB_DIMENSION_T:
-            if( ( GetLayerMask( PtStruct->GetLayer() ) & layerMask ) == 0 )
+            if( !layerMask[PtStruct->GetLayer()] )
                 break;
 
             if( !PtStruct->HitTest( GetScreen()->m_BlockLocate, selectOnlyComplete ) )
@@ -563,6 +564,10 @@ static void drawMovingBlock( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& a
 {
     BASE_SCREEN* screen = aPanel->GetScreen();
 
+    // do not show local module rastnest in block move, it is not usable.
+    bool tmp = g_Show_Module_Ratsnest;
+    g_Show_Module_Ratsnest = false;
+
     if( aErase )
     {
         if( screen->m_BlockLocate.GetMoveVector().x || screen->m_BlockLocate.GetMoveVector().y )
@@ -590,6 +595,8 @@ static void drawMovingBlock( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& a
         if( blockDrawItems )
             drawPickedItems( aPanel, aDC, screen->m_BlockLocate.GetMoveVector() );
     }
+
+    g_Show_Module_Ratsnest = tmp;
 }
 
 
@@ -796,6 +803,7 @@ void PCB_EDIT_FRAME::Block_Move()
         BOARD_ITEM* item = (BOARD_ITEM*) itemsList->GetPickedItem( ii );
         itemsList->SetPickedItemStatus( UR_MOVED, ii );
         item->Move( MoveVector );
+        item->ClearFlags( IS_MOVED );
 
         switch( item->Type() )
         {

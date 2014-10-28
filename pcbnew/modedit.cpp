@@ -29,6 +29,7 @@
 #include <kiface_i.h>
 #include <kiway.h>
 #include <class_drawpanel.h>
+#include <pcb_draw_panel_gal.h>
 #include <confirm.h>
 #include <gestfich.h>
 #include <pgm_base.h>
@@ -37,24 +38,28 @@
 #include <wxPcbStruct.h>
 #include <kicad_device_context.h>
 #include <macros.h>
-#include <pcbcommon.h>
+#include <invoke_pcb_dialog.h>
 
 #include <class_board.h>
 #include <class_module.h>
 #include <class_edge_mod.h>
 
+#include <ratsnest_data.h>
 #include <pcbnew.h>
 #include <protos.h>
 #include <pcbnew_id.h>
 #include <module_editor_frame.h>
 #include <modview_frame.h>
 #include <collectors.h>
+#include <tool/tool_manager.h>
 
 #include <dialog_edit_module_for_Modedit.h>
 #include <wildcards_and_files_ext.h>
 #include <menus_helpers.h>
 #include <footprint_wizard_frame.h>
 #include <pcbnew_config.h>
+
+#include <boost/bind.hpp>
 
 
 // Functions defined in block_module_editor, but used here
@@ -289,7 +294,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_MODEDIT_NEW_MODULE:
         {
-            if( ! Clear_Pcb( true ) )
+            if( !Clear_Pcb( true ) )
                 break;
 
             SetCrossHairPosition( wxPoint( 0, 0 ) );
@@ -310,6 +315,9 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
                 Zoom_Automatique( false );
             }
+
+            if( IsGalCanvasActive() )
+                updateView();
 
             GetScreen()->ClrModify();
         }
@@ -449,15 +457,31 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
                 pcbframe->SetCrossHairPosition( wxPoint( 0, 0 ) );
                 pcbframe->PlaceModule( newmodule, NULL );
+                newmodule->SetPosition( wxPoint( 0, 0 ) );
                 pcbframe->SetCrossHairPosition( cursor_pos );
                 newmodule->SetTimeStamp( GetNewTimeStamp() );
                 pcbframe->SaveCopyInUndoList( newmodule, UR_NEW );
+
+                if( IsGalCanvasActive() )
+                {
+                    KIGFX::VIEW* view = pcbframe->GetGalCanvas()->GetView();
+
+                    newmodule->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+                    view->Add( newmodule );
+                }
             }
 
             newmodule->ClearFlags();
             GetScreen()->ClrModify();
             pcbframe->SetCurItem( NULL );
             mainpcb->m_Status_Pcb = 0;
+
+            if( IsGalCanvasActive() )
+            {
+                RN_DATA* ratsnest = pcbframe->GetBoard()->GetRatsnest();
+                ratsnest->Update( newmodule );
+                ratsnest->Recalculate();
+            }
         }
         break;
 
@@ -539,6 +563,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             m_Draw3DFrame->NewDisplay();
 
         GetScreen()->ClrModify();
+        updateView();
 
         break;
 
@@ -554,10 +579,11 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         {
             SetCurItem( GetBoard()->m_Modules );
 
-            DIALOG_MODULE_MODULE_EDITOR dialog( this, (MODULE*) GetScreen()-> GetCurItem() );
+            DIALOG_MODULE_MODULE_EDITOR dialog( this, (MODULE*) GetScreen()->GetCurItem() );
 
             int ret = dialog.ShowModal();
             GetScreen()->GetCurItem()->ClearFlags();
+            GetBoard()->m_Modules.GetFirst()->ViewUpdate();
 
             if( ret > 0 )
                 m_canvas->Refresh();
@@ -630,29 +656,29 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         break;
 
     case ID_POPUP_PCB_EDIT_TEXTMODULE:
-        InstallTextModOptionsFrame( (TEXTE_MODULE*) GetScreen()->GetCurItem(), &dc );
+        InstallTextModOptionsFrame( static_cast<TEXTE_MODULE*>( GetScreen()->GetCurItem() ), &dc );
         m_canvas->MoveCursorToCrossHair();
         break;
 
     case ID_POPUP_PCB_MOVE_TEXTMODULE_REQUEST:
         m_canvas->MoveCursorToCrossHair();
-        StartMoveTexteModule( (TEXTE_MODULE*) GetScreen()->GetCurItem(), &dc );
+        StartMoveTexteModule( static_cast<TEXTE_MODULE*>( GetScreen()->GetCurItem() ), &dc );
         break;
 
     case ID_POPUP_PCB_ROTATE_TEXTMODULE:
-        RotateTextModule( (TEXTE_MODULE*) GetScreen()->GetCurItem(), &dc );
+        RotateTextModule( static_cast<TEXTE_MODULE*>( GetScreen()->GetCurItem() ), &dc );
         m_canvas->MoveCursorToCrossHair();
         break;
 
     case ID_POPUP_PCB_DELETE_TEXTMODULE:
         SaveCopyInUndoList( GetBoard()->m_Modules, UR_MODEDIT );
-        DeleteTextModule( (TEXTE_MODULE*) GetScreen()->GetCurItem() );
+        DeleteTextModule( static_cast<TEXTE_MODULE*>( GetScreen()->GetCurItem() ) );
         SetCurItem( NULL );
         m_canvas->MoveCursorToCrossHair();
         break;
 
     case ID_POPUP_PCB_MOVE_EDGE:
-        Start_Move_EdgeMod( (EDGE_MODULE*) GetScreen()->GetCurItem(), &dc );
+        Start_Move_EdgeMod( static_cast<EDGE_MODULE*>( GetScreen()->GetCurItem() ), &dc );
         m_canvas->MoveCursorToCrossHair();
         break;
 
@@ -774,6 +800,11 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         HandleBlockEnd( &dc );
         break;
 
+    case ID_GEN_IMPORT_DXF_FILE:
+        InvokeDXFDialogModuleImport( this, GetBoard()->m_Modules );
+        m_canvas->Refresh();
+        break;
+
     default:
         DisplayError( this,
                       wxT( "FOOTPRINT_EDIT_FRAME::Process_Special_Functions error" ) );
@@ -787,56 +818,13 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
 void FOOTPRINT_EDIT_FRAME::Transform( MODULE* module, int transform )
 {
-    TEXTE_MODULE* textmod;
-    wxPoint       pos;
-    double        angle = 900;  // Necessary +- 900 (+- 90 degrees).
-                                // Be prudent: because RotateMarkedItems is used to rotate some items
-                                // used the same value as RotateMarkedItems
-
     switch( transform )
     {
     case ID_MODEDIT_MODULE_ROTATE:
-        #define ROTATE( z ) RotatePoint( (&z), angle )
         RotateMarkedItems( module, wxPoint(0,0), true );
-
-        pos = module->Reference().GetTextPosition();
-        ROTATE( pos );
-        module->Reference().SetTextPosition( pos );
-        module->Reference().SetPos0( module->Reference().GetTextPosition() );
-        module->Reference().m_Orient += angle;
-
-        if( module->Reference().m_Orient >= 1800 )
-            module->Reference().m_Orient -= 1800;
-
-        pos = module->Value().GetTextPosition();
-        ROTATE( pos );
-        module->Value().SetTextPosition( pos );
-        module->Value().SetPos0( module->Value().m_Pos );
-        module->Value().m_Orient += angle;
-
-        if( module->Value().m_Orient >= 1800 )
-            module->Value().m_Orient -= 1800;
-
         break;
 
     case ID_MODEDIT_MODULE_MIRROR:
-         // Mirror reference.
-        textmod = &module->Reference();
-        NEGATE( textmod->m_Pos.x );
-        NEGATE( textmod->m_Pos0.x );
-
-        if( textmod->m_Orient )
-            textmod->m_Orient = 3600 - textmod->m_Orient;
-
-        // Mirror value.
-        textmod = &module->Value();
-        NEGATE( textmod->m_Pos.x );
-        NEGATE( textmod->m_Pos0.x );
-
-        if( textmod->m_Orient )
-            textmod->m_Orient = 3600 - textmod->m_Orient;
-
-        // Mirror pads and graphic items of the footprint:
         MirrorMarkedItems( module, wxPoint(0,0), true );
         break;
 
@@ -914,3 +902,26 @@ EDA_COLOR_T FOOTPRINT_EDIT_FRAME::GetGridColor() const
     return g_ColorsSettings.GetItemColor( GRID_VISIBLE );
 }
 
+
+void FOOTPRINT_EDIT_FRAME::SetActiveLayer( LAYER_ID aLayer )
+{
+    PCB_BASE_FRAME::SetActiveLayer( aLayer );
+
+    GetGalCanvas()->SetHighContrastLayer( aLayer );
+
+    if( IsGalCanvasActive() )
+        GetGalCanvas()->Refresh();
+}
+
+
+void FOOTPRINT_EDIT_FRAME::UseGalCanvas( bool aEnable )
+{
+    EDA_DRAW_FRAME::UseGalCanvas( aEnable );
+
+    if( aEnable )
+    {
+        SetBoard( m_Pcb );
+        updateView();
+        GetGalCanvas()->StartDrawing();
+    }
+}

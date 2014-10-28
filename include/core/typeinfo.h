@@ -98,7 +98,7 @@ enum KICAD_T
      * If you add a new draw item, type, please make sure you add it so the
      * sort order is logical.
      */
-    LIB_COMPONENT_T,
+    LIB_PART_T,
     LIB_ALIAS_T,
     LIB_ARC_T,
     LIB_CIRCLE_T,
@@ -148,15 +148,15 @@ struct remove_pointer<T*>
  * @return true, if aObject type equals T.
  */
 template <class T, class I>
-bool IsA(const I *aObject)
+bool IsA( const I* aObject )
 {
-    return aObject && remove_pointer<T>::type::ClassOf(aObject);
+    return aObject && remove_pointer<T>::type::ClassOf( aObject );
 }
 
 template <class T, class I>
-bool IsA(const I& aObject)
+bool IsA( const I& aObject )
 {
-    return remove_pointer<T>::type::ClassOf(&aObject);
+    return remove_pointer<T>::type::ClassOf( &aObject );
 }
 
 /**
@@ -168,7 +168,7 @@ bool IsA(const I& aObject)
  * @return down-casted object or NULL if type doesn't match Casted.
  */
 template<class Casted, class From>
-Casted dyn_cast(From aObject)
+Casted dyn_cast( From aObject )
 {
     if( remove_pointer<Casted>::type::ClassOf ( aObject ) )
         return static_cast<Casted>( aObject );
@@ -177,4 +177,3 @@ Casted dyn_cast(From aObject)
 }
 
 #endif // __KICAD_TYPEINFO_H
-

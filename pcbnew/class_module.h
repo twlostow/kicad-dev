@@ -217,6 +217,7 @@ public:
 #define MODULE_is_LOCKED    0x01        ///< module LOCKED: no autoplace allowed
 #define MODULE_is_PLACED    0x02        ///< In autoplace: module automatically placed
 #define MODULE_to_PLACE     0x04        ///< In autoplace: module waiting for autoplace
+#define MODULE_PADS_LOCKED  0x08        ///< In autoplace: module waiting for autoplace
 
 
     bool IsLocked() const
@@ -253,6 +254,15 @@ public:
             m_ModuleStatus |= MODULE_to_PLACE;
         else
             m_ModuleStatus &= ~MODULE_to_PLACE;
+    }
+
+    bool PadsLocked() const { return (m_ModuleStatus & MODULE_PADS_LOCKED ); }
+    void SetPadsLocked( bool aPadsLocked )
+    {
+        if( aPadsLocked )
+            m_ModuleStatus |= MODULE_PADS_LOCKED;
+        else
+            m_ModuleStatus &= ~MODULE_PADS_LOCKED;
     }
 
     void SetLastEditTime( time_t aTime ) { m_LastEditTime = aTime; }

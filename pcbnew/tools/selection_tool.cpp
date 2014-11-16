@@ -404,10 +404,10 @@ void SELECTION_TOOL::setTransitions()
 }
 
 
-bool SELECTION_TOOL::CheckLock()
+SELECTION_LOCK_FLAGS SELECTION_TOOL::CheckLock()
 {
     if( !m_locked || m_editModules )
-        return false;
+        return SELECTION_UNLOCKED;
 
     bool containsLocked = false;
 
@@ -434,15 +434,20 @@ bool SELECTION_TOOL::CheckLock()
         }
     }
 
-    if( containsLocked &&
-        !IsOK( m_frame, _( "Selection contains locked items. Do you want to continue?" ) ) )
+    if( containsLocked )
     {
-        return true;
+        if ( IsOK( m_frame, _( "Selection contains locked items. Do you want to continue?" ) ) )
+        {
+            m_locked = false;
+            return SELECTION_LOCK_OVERRIDE;
+        }
+        else
+            return SELECTION_LOCKED;
     }
-
+    
     m_locked = false;
 
-    return false;
+    return SELECTION_UNLOCKED;
 }
 
 
@@ -701,10 +706,16 @@ bool SELECTION_TOOL::selectable( const BOARD_ITEM* aItem ) const
         return m_editModules;
     
     case PCB_PAD_T:
+    {
         if( m_multiple && !m_editModules )
             return false;
-        break;
 
+        MODULE *mod = static_cast<const D_PAD *> (aItem) -> GetParent();
+        if(mod && mod->PadsLocked())
+            return false;
+
+        break;
+    }
     case NOT_USED:
     case TYPE_NOT_INIT:
         return false;
@@ -956,7 +967,7 @@ static double calcMinArea ( GENERAL_COLLECTOR& aCollector, KICAD_T aType )
     for(int i = 0; i < aCollector.GetCount(); i++)
     {
         BOARD_ITEM *item = aCollector[i];
-        if(item-Type() == aType)
+        if(item->Type() == aType)
             best = std::min(best, calcArea ( item ));
 
     }
@@ -971,7 +982,7 @@ static double calcMaxArea ( GENERAL_COLLECTOR& aCollector, KICAD_T aType )
     for(int i = 0; i < aCollector.GetCount(); i++)
     {
         BOARD_ITEM *item = aCollector[i];
-        if(item-Type() == aType)
+        if(item->Type() == aType)
             best = std::max(best, calcArea ( item ));
 
     }
@@ -979,9 +990,18 @@ static double calcMaxArea ( GENERAL_COLLECTOR& aCollector, KICAD_T aType )
     return best;
 }
 
+double calcRatio ( double a, double b )
+{
+    if ( a == 0.0 && b == 0.0 )
+        return 1.0;
+    if ( b == 0.0 )
+        return 10000000.0; // something arbitrarily big for the moment
+
+    return a / b;
+}
+
 void SELECTION_TOOL::filterSelectionCandidates( GENERAL_COLLECTOR& aCollector ) const
 {
-    BOARD_ITEM* preferred = NULL;
     std::set<BOARD_ITEM *> killed;
     
     const double footprintAreaRatio = 0.2;
@@ -989,7 +1009,8 @@ void SELECTION_TOOL::filterSelectionCandidates( GENERAL_COLLECTOR& aCollector ) 
     const double padViaAreaRatio = 0.5;
     const double trackViaLengthRatio = 2.0;
     const double trackTrackLengthRatio = 0.3;
-    const double footprintTrackRatio = 0.3;
+    const double textToFeatureMinRatio = 0.2;
+    const double textToFootprintMinRatio = 0.4;
    
     LAYER_ID actLayer = m_frame->GetActiveLayer();
 
@@ -1017,35 +1038,53 @@ void SELECTION_TOOL::filterSelectionCandidates( GENERAL_COLLECTOR& aCollector ) 
             return;
         }
     } 
-
+   
     if (aCollector.CountType ( PCB_MODULE_TEXT_T ) > 0 )
     {
+        for( int i = 0; i < aCollector.GetCount(); ++i )
+            if ( TEXTE_MODULE *txt = dyn_cast<TEXTE_MODULE *> ( aCollector[i] ) )
+            {
+                double textArea = calcArea ( txt );
 
+                for( int j = 0; j < aCollector.GetCount(); ++j )
+                {
+                    BOARD_ITEM *item = aCollector[j];
+                    double areaRatio = calcRatio ( textArea, calcArea ( item ) );
+
+                    if (item->Type () == PCB_MODULE_T && areaRatio < textToFootprintMinRatio )
+                        killed.insert ( item );
+
+                    printf("featureAreaRatio: %.3f\n", areaRatio);
+
+                    switch (item->Type())
+                    {
+                        case PCB_TRACE_T:
+                        case PCB_PAD_T:
+                        case PCB_LINE_T:
+                        case PCB_VIA_T:
+                        case PCB_MODULE_T:
+                            if ( areaRatio > textToFeatureMinRatio )
+                                killed.insert ( txt );
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
     }
     
     if( aCollector.CountType ( PCB_MODULE_T ) > 0 )
     {
-        double maxArea = 0.0;
-        double minArea = std::numeric_limits<double>::max();
-    
-        for( int i = 0; i < aCollector.GetCount(); ++i )
-            if ( MODULE *mod = dyn_cast<MODULE*> ( aCollector[i] ) )
-            {
-                double area = mod->GetFootprintRect().GetArea();
-                maxArea = std::max ( area, maxArea );
-                minArea = std::min ( area, minArea );
-            }
-
-        minArea = calMinArea ( aCollector, PCB_MODULE_T );
-        maxArea = calMaxArea ( aCollector, PCB_MODULE_T );
+        double minArea = calcMinArea ( aCollector, PCB_MODULE_T );
+        double maxArea = calcMaxArea ( aCollector, PCB_MODULE_T );
 
 
-        if( minArea / maxArea <= footprintAreaRatio )
+        if( calcRatio(minArea, maxArea) <= footprintAreaRatio )
         {
             for( int i = 0; i < aCollector.GetCount(); ++i )
                 if ( MODULE *mod = dyn_cast<MODULE*> ( aCollector[i] ) )
                 {
-                    double normalizedArea = mod->GetFootprintRect().GetArea() / maxArea;
+                    double normalizedArea = calcRatio ( calcArea(mod), maxArea );
 
                     if(normalizedArea > footprintAreaRatio)
                         killed.insert( mod );
@@ -1070,30 +1109,20 @@ void SELECTION_TOOL::filterSelectionCandidates( GENERAL_COLLECTOR& aCollector ) 
         for( int i = 0; i < aCollector.GetCount(); ++i )
             if ( VIA *via = dyn_cast<VIA*> ( aCollector[i] ) )
             {
-                double viaArea = via->GetBoundingBox().GetArea();
+                double viaArea = calcArea ( via ); 
 
                 for( int j = 0; j < aCollector.GetCount(); ++j )
                 {
-                    if ( MODULE *mod = dyn_cast<MODULE*> ( aCollector[j] ) )
-                    {
-                        double ratio = viaArea / mod->GetFootprintRect().GetArea();
+                    BOARD_ITEM *item = aCollector[j];
+                    double areaRatio = calcRatio ( viaArea,  calcArea ( item ) );
 
+                    if( item->Type() == PCB_MODULE_T && areaRatio < modulePadMinCoverRatio )
+                        killed.insert( item );
 
-                        if( ratio < modulePadMinCoverRatio )
-                            killed.insert( mod );
+                    if( item->Type() == PCB_PAD_T && areaRatio < padViaAreaRatio )
+                        killed.insert( item );
 
-                    }
-
-                    if ( D_PAD *pad = dyn_cast<D_PAD*> ( aCollector[j] ) )
-                    {
-                        double ratio = viaArea / pad->GetBoundingBox().GetArea();
-
-                        if( ratio < padViaAreaRatio )
-                            killed.insert( pad );
-                    }
-
-
-                    if ( TRACK *track = dyn_cast<TRACK*> ( aCollector[j] ) )
+                    if ( TRACK *track = dyn_cast<TRACK*> ( item ) )     
                     {
                         if( track->GetNetCode() != via->GetNetCode() )
                             continue;
@@ -1149,7 +1178,6 @@ void SELECTION_TOOL::filterSelectionCandidates( GENERAL_COLLECTOR& aCollector ) 
         }
 
     }
-
 
     BOOST_FOREACH(BOARD_ITEM *item, killed)
     {

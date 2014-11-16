@@ -78,6 +78,13 @@ private:
     friend class SELECTION_TOOL;
 };
 
+enum SELECTION_LOCK_FLAGS
+{ 
+    SELECTION_UNLOCKED = 0,
+    SELECTION_LOCK_OVERRIDE = 1,
+    SELECTION_LOCKED = 2
+};
+
 /**
  * Class SELECTION_TOOL
  *
@@ -92,6 +99,7 @@ private:
 class SELECTION_TOOL : public TOOL_INTERACTIVE
 {
 public:
+
     SELECTION_TOOL();
     ~SELECTION_TOOL();
 
@@ -149,7 +157,7 @@ public:
     }
 
     ///> Checks if the user has agreed to modify locked items for the given selection.
-    bool CheckLock();
+    SELECTION_LOCK_FLAGS CheckLock();
 
     ///> Select single item event handler.
     int SingleSelection( TOOL_EVENT& aEvent );

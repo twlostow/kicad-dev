@@ -100,6 +100,8 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
 
     m_dragging = false;         // Are selected items being dragged?
     bool restore = false;       // Should items' state be restored when finishing the tool?
+    bool lockOverride = false;
+    bool isDragAndDrop = false;
 
     // By default, modified items need to update their geometry
     m_updateFlag = KIGFX::VIEW_ITEM::GEOMETRY;
@@ -150,6 +152,8 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
         else if( evt->IsMotion() || evt->IsDrag( BUT_LEFT ) )
         {
             m_cursor = controls->GetCursorPosition();
+            isDragAndDrop = evt->IsDrag( BUT_LEFT );
+            
 
             if( m_dragging )
             {
@@ -168,13 +172,20 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
             }
             else    // Prepare to start dragging
             {
-                if( m_selectionTool->CheckLock() || selection.Empty() )
+                if ( selection.Empty() )
                     break;
+
+                SELECTION_LOCK_FLAGS lockFlags = m_selectionTool->CheckLock();
+                
+                if ( lockFlags == SELECTION_LOCKED )
+                    break;
+                else if ( lockFlags == SELECTION_LOCK_OVERRIDE )
+                    lockOverride = true;
 
                 // Save items, so changes can be undone
                 editFrame->OnModify();
-                //editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
-                saveUndoCopy(UR_CHANGED);
+                editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
+                //saveUndoCopy(UR_CHANGED);
 
                 if( selection.Size() == 1 )
                 {
@@ -207,7 +218,15 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
         }
 
         else if( evt->IsMouseUp( BUT_LEFT ) || evt->IsClick( BUT_LEFT ) )
-            break; // Finish
+        {
+            if (!isDragAndDrop)
+                break;
+
+            if (!lockOverride) 
+                break; // Finish
+
+            lockOverride = false;
+        }
     }
 
     m_dragging = false;
@@ -322,7 +341,7 @@ int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
     // Shall the selection be cleared at the end?
     bool unselect = selection.Empty();
 
-    if( !makeSelection( selection ) || m_selectionTool->CheckLock() )
+    if( !makeSelection( selection ) || ( m_selectionTool->CheckLock() == SELECTION_LOCKED ) )
     {
         setTransitions();
 
@@ -376,7 +395,7 @@ int EDIT_TOOL::Flip( TOOL_EVENT& aEvent )
     // Shall the selection be cleared at the end?
     bool unselect = selection.Empty();
 
-    if( !makeSelection( selection ) || m_selectionTool->CheckLock() )
+    if( !makeSelection( selection ) || ( m_selectionTool->CheckLock() == SELECTION_LOCKED ) )
     {
         setTransitions();
 
@@ -426,7 +445,7 @@ int EDIT_TOOL::Remove( TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
 
-    if( !makeSelection( selection ) || m_selectionTool->CheckLock() )
+    if( !makeSelection( selection ) || ( m_selectionTool->CheckLock() == SELECTION_LOCKED ) )
     {
         setTransitions();
 
@@ -482,40 +501,58 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
     // Default removal procedure
     case PCB_MODULE_TEXT_T:
     {
-        if( m_editModules )
-        {
-            TEXTE_MODULE* text = static_cast<TEXTE_MODULE*>( aItem );
+        TEXTE_MODULE* text = static_cast<TEXTE_MODULE*>( aItem );
 
-            switch( text->GetType() )
-            {
+        switch( text->GetType() )
+        {
             case TEXTE_MODULE::TEXT_is_REFERENCE:
-                DisplayError( getEditFrame<PCB_BASE_FRAME>(), _( "Cannot delete REFERENCE!" ) );
+                DisplayError( getEditFrame<PCB_BASE_FRAME>(), _( "Cannot delete component reference." ) );
                 return;
 
             case TEXTE_MODULE::TEXT_is_VALUE:
-                DisplayError( getEditFrame<PCB_BASE_FRAME>(), _( "Cannot delete VALUE!" ) );
+                DisplayError( getEditFrame<PCB_BASE_FRAME>(), _( "Cannot delete component value." ) );
                 return;
 
             case TEXTE_MODULE::TEXT_is_DIVERS:    // suppress warnings
                 break;
-            }
         }
-    }
-    /* no break */
 
-    case PCB_PAD_T:
-    case PCB_MODULE_EDGE_T:
         if( m_editModules )
         {
+
             MODULE* module = static_cast<MODULE*>( aItem->GetParent() );
             module->SetLastEditTime();
-
             board->m_Status_Pcb = 0; // it is done in the legacy view
             aItem->DeleteStructure();
         }
 
         return;
-        break;
+    }
+
+    case PCB_PAD_T:
+    case PCB_MODULE_EDGE_T:
+    {
+        MODULE* module = static_cast<MODULE*>( aItem->GetParent() );
+        module->SetLastEditTime();
+
+        board->m_Status_Pcb = 0; // it is done in the legacy view
+
+
+        if(!m_editModules)
+        {
+            if(aItem->Type() == PCB_PAD_T && module->GetPadCount() == 1)
+            {
+                DisplayError( getEditFrame<PCB_BASE_FRAME>(), _( "Cannot delete the only remaining pad of the module (modules on PCB must have at least one pad)." ) );
+                return;
+            }
+            getView()->Remove( aItem );
+            board->Remove( aItem );
+        }
+        
+        aItem->DeleteStructure();
+        
+        return;
+    }
 
     case PCB_LINE_T:                // a segment not on copper layers
     case PCB_TEXT_T:                // a text on a layer
@@ -531,7 +568,6 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
     default:                        // other types do not need to (or should not) be handled
         assert( false );
         return;
-        break;
     }
 
     getView()->Remove( aItem );
@@ -631,55 +667,3 @@ void EDIT_TOOL::processChanges( const PICKED_ITEMS_LIST* aList )
         }
     }
 }
-
-bool EDIT_TOOL::editPropertiesOnly ( const BOARD_ITEM *aItem ) const
-{
-    switch( aItem->Type() )
-    {
-        case PCB_MODULE_EDGE_T:
-        case PCB_PAD_T:
-            return m_editModules ? false : true;
-        default:
-            return false;
-    }
-}
-
-void EDIT_TOOL::saveUndoCopy(UNDO_REDO_T aCommandType)
-{
-    const  SELECTION& selection = m_selectionTool->GetSelection();
-
-
-printf("makeI\n");
-    PICKED_ITEMS_LIST items ( selection.items );
-printf("makeM\n");
-    std::set<MODULE *> modifiedModules;
-
-    int ii = 0;
-    while ( ii < items.GetCount() )
-    {
-        printf("ii %d\n", ii);
-        
-        BOARD_ITEM *item = (BOARD_ITEM*) items.GetPickedItem( ii );
-
-        if(item->Type() == PCB_PAD_T)
-        {
-            D_PAD *pad = (D_PAD *) item;
-            printf("Save-pad: parent mod %p\n", pad->GetParent());
-            modifiedModules.insert(pad->GetParent());
-            items.RemovePicker(ii);
-            ii = 0;
-        } else
-            ii++;
-    }
-
-    BOOST_FOREACH(MODULE *mod, modifiedModules)
-    {
-        items.PushItem(mod);
-    }
-    
-    PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
-    editFrame->SaveCopyInUndoList( items, aCommandType );
-
-
-}
-

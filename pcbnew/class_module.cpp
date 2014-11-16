@@ -58,7 +58,7 @@ MODULE::MODULE( BOARD* parent ) :
     m_Attributs    = MOD_DEFAULT;
     m_Layer        = F_Cu;
     m_Orient       = 0;
-    m_ModuleStatus = 0;
+    m_ModuleStatus = MODULE_PADS_LOCKED;
     flag = 0;
     m_CntRot90 = m_CntRot180 = 0;
     m_Surface  = 0.0;

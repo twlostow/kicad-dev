@@ -320,6 +320,10 @@ public:
 #define HIGHLIGHTED    (1 << 25)   ///< item is drawn in normal colors, when the rest is darkened
 #define BRIGHTENED     (1 << 26)   ///< item is drawn with a bright contour
 
+#define TRACK_TUNED    (1 << 27)   ///< Pcbnew: flag indicating that the segment is a part of length matching
+                                   ///< meander. It must persist in the files, as otherwise saving and loading 
+                                   ///< a board again would cause the router to optimize away all tuned length traces...
+
 #define EDA_ITEM_ALL_FLAGS -1
 
 typedef unsigned STATUS_FLAGS;
@@ -405,12 +409,12 @@ public:
     inline bool IsBrightened() const { return m_Flags & BRIGHTENED; }
 
     inline void SetWireImage() { SetFlags( IS_WIRE_IMAGE ); }
-    inline void SetSelected() { SetFlags( SELECTED ); ViewUpdate( COLOR ); }
-    inline void SetHighlighted() { SetFlags( HIGHLIGHTED ); ViewUpdate( COLOR ); }
+    inline void SetSelected() { SetFlags( SELECTED ); }
+    inline void SetHighlighted() { SetFlags( HIGHLIGHTED ); }
     inline void SetBrightened() { SetFlags( BRIGHTENED ); }
 
-    inline void ClearSelected() { ClearFlags( SELECTED ); ViewUpdate( COLOR ); }
-    inline void ClearHighlighted() { ClearFlags( HIGHLIGHTED ); ViewUpdate( COLOR ); }
+    inline void ClearSelected() { ClearFlags( SELECTED ); }
+    inline void ClearHighlighted() { ClearFlags( HIGHLIGHTED ); }
     inline void ClearBrightened() { ClearFlags( BRIGHTENED ); }
 
     void SetModified();

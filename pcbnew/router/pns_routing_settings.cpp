@@ -19,6 +19,8 @@
  */
 
 #include "pns_routing_settings.h"
+#include "pns_item.h"
+#include "pns_optimizer.h"
 #include "direction.h"
 
 PNS_ROUTING_SETTINGS::PNS_ROUTING_SETTINGS()
@@ -58,4 +60,32 @@ TIME_LIMIT PNS_ROUTING_SETTINGS::ShoveTimeLimit() const
 int PNS_ROUTING_SETTINGS::ShoveIterationLimit() const
 {
     return m_shoveIterationLimit;
+}
+
+int PNS_ROUTING_SETTINGS::OptimizerFlags() const 
+{  
+    int optFlags = 0;
+    
+    switch( OptimizerEffort() )
+    {
+        case OE_LOW:
+            optFlags = PNS_OPTIMIZER::MERGE_OBTUSE;
+            break;
+
+        case OE_MEDIUM:
+            optFlags = PNS_OPTIMIZER::MERGE_SEGMENTS;
+            break;
+
+        case OE_FULL:
+            optFlags = PNS_OPTIMIZER::MERGE_SEGMENTS | PNS_OPTIMIZER::PULL_OUTWARDS;
+            break;
+
+        default:
+            break;
+    }
+
+    if( SmartPads() )
+        optFlags |= PNS_OPTIMIZER::SMART_PADS ;
+
+    return optFlags;
 }

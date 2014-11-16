@@ -54,7 +54,7 @@
 #include <class_track.h>
 #include <class_zone.h>
 #include <class_marker_pcb.h>
-
+#include <class_drawsegment.h>
 
 /* This is an odd place for this, but CvPcb won't link if it is
  *  in class_board_item.cpp like I first tried it.
@@ -2558,4 +2558,25 @@ bool BOARD::GetBoardPolygonOutlines( CPOLYGONS_LIST& aOutlines,
     DSN::SPECCTRA_DB dummy;
     return dummy.GetBoardPolygonOutlines( this, aOutlines,
                                           aHoles, aErrorText );
+}
+
+void BOARD::UpdateVisibility()
+{
+    for (MODULE *mod = m_Modules; mod; mod = mod->Next() )
+    {
+        mod->Value().UpdateVisibility();
+        mod->Reference().UpdateVisibility();
+    
+        for( D_PAD* pad = mod->Pads(); pad; pad = pad->Next() )
+            pad->UpdateVisibility();
+        
+        for( BOARD_ITEM *item = mod->GraphicalItems(); item; item = item->Next() )
+            item->UpdateVisibility();
+            
+    }                    
+
+        
+    for( TRACK *item = m_Track; item; item = item->Next() )
+        item->UpdateVisibility();
+
 }

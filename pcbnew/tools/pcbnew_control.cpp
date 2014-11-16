@@ -97,7 +97,9 @@ int PCBNEW_CONTROL::ZoomInOutCenter( TOOL_EVENT& aEvent )
 int PCBNEW_CONTROL::ZoomCenter( TOOL_EVENT& aEvent )
 {
     KIGFX::VIEW* view = m_frame->GetGalCanvas()->GetView();
-    view->SetCenter( getViewControls()->GetCursorPosition() );
+    
+printf("ZoomCenter!\n");
+    //view->SetCenter( getViewControls()->GetCursorPosition() );
     setTransitions();
 
     return 0;

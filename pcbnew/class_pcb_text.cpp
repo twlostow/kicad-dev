@@ -197,3 +197,25 @@ EDA_ITEM* TEXTE_PCB::Clone() const
 {
     return new TEXTE_PCB( *this );
 }
+
+void TEXTE_PCB::UpdateVisibility()
+{
+    BOARD* brd = GetBoard( );
+
+    bool visible = true;
+// Check hidden/front/back text visibility first
+    if ( GetLayer() == F_SilkS && (!brd->IsElementVisible( MOD_TEXT_FR_VISIBLE) ) )
+        visible = false;
+    else if ( GetLayer() == B_SilkS && (!brd->IsElementVisible( MOD_TEXT_BK_VISIBLE) ) )
+        visible = false;
+
+    ViewSetVisible (visible);
+    ViewUpdate ( KIGFX::VIEW_ITEM::GEOMETRY );
+}
+
+void TEXTE_PCB::ViewGetLayers( int aLayers[], int& aCount ) const
+{
+    aLayers[0] = GetLayer();
+    aLayers[1] = ITEM_GAL_LAYER ( ANCHOR_VISIBLE );
+    aCount = 2;
+}

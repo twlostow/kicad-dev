@@ -195,3 +195,8 @@ void BOARD_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
     aCount = 1;
     aLayers[0] = m_Layer;
 }
+
+void BOARD_ITEM::UpdateVisibility()
+{
+    
+}

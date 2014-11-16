@@ -301,6 +301,10 @@ public:
 
     /// @copydoc VIEW_ITEM::ViewGetLayers()
     virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
+
+    //virtual void RunOnChildren( boost::function<void (BOARD_ITEM*)> aFunction ) {};
+
+    virtual void UpdateVisibility();
 };
 
 #endif /* BOARD_ITEM_STRUCT_H */

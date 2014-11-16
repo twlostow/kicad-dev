@@ -129,6 +129,19 @@ public:
         m_List.erase( m_List.begin() + aIndex );
     }
 
+    void Remove( const EDA_ITEM *aItem )
+    {
+        for( size_t i = 0;  i < m_List.size();  i++ )
+        {
+            if( m_List[i] == aItem )
+            {
+                m_List.erase( m_List.begin() + i);
+                return;
+            }
+        }
+    }
+
+
     /**
      * Function operator[int]
      * is used for read only access and returns the object at \a aIndex.
@@ -224,6 +237,18 @@ public:
             return false;
     }
 
+    int CountType( KICAD_T aType )
+    {
+        int cnt = 0;
+        for( size_t i = 0;  i < m_List.size();  i++ )
+        {
+            if( m_List[i]->Type() == aType )
+                cnt++;
+        }
+        return cnt;
+    }
+
+   
     /**
      * Function Collect
      * scans an EDA_ITEM using this class's Inspector method, which does

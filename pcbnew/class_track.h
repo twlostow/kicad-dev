@@ -476,6 +476,8 @@ public:
     */
     bool IsDrillDefault() const { return m_Drill <= 0; }
 
+    void UpdateVisibility();
+
 protected:
     virtual void GetMsgPanelInfoBase( std::vector< MSG_PANEL_ITEM >& aList );
 

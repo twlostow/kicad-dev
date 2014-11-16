@@ -41,6 +41,8 @@ DIALOG_PNS_SETTINGS::DIALOG_PNS_SETTINGS( wxWindow* aParent, PNS_ROUTING_SETTING
     m_effort->SetValue( m_settings.OptimizerEffort() );
     m_smoothDragged->SetValue( m_settings.SmoothDraggedSegments() );
     m_violateDrc->SetValue( m_settings.CanViolateDRC() );
+    m_optimizeDraggedSegments->SetValue( m_settings.OptimizeDraggedSegments() );
+
 }
 
 
@@ -62,6 +64,7 @@ void DIALOG_PNS_SETTINGS::OnOkClick( wxCommandEvent& aEvent )
     m_settings.SetSmartPads( m_autoNeckdown->GetValue() );
     m_settings.SetOptimizerEffort( (PNS_OPTIMIZATION_EFFORT) m_effort->GetValue() );
     m_settings.SetSmoothDraggedSegments( m_smoothDragged->GetValue() );
+    m_settings.SetOptimizeDraggedSegments ( m_optimizeDraggedSegments->GetValue() );
     m_settings.SetCanViolateDRC( m_violateDrc->GetValue() );
 
     EndModal( 1 );

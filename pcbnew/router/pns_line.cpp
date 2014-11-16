@@ -405,7 +405,7 @@ SHAPE_LINE_CHAIN dragCornerInternal( const SHAPE_LINE_CHAIN& aOrigin, const VECT
 }
 
 
-void PNS_LINE::DragCorner ( const VECTOR2I& aP, int aIndex, int aSnappingThreshold )
+SEG PNS_LINE::DragCorner ( const VECTOR2I& aP, int aIndex, int aSnappingThreshold )
 {
     SHAPE_LINE_CHAIN path;
 
@@ -426,6 +426,8 @@ void PNS_LINE::DragCorner ( const VECTOR2I& aP, int aIndex, int aSnappingThresho
 
     path.Simplify();
     m_line = path;
+    SEG s;
+    return s;
 }
 
 
@@ -517,7 +519,7 @@ VECTOR2I PNS_LINE::snapToNeighbourSegments( const SHAPE_LINE_CHAIN& aPath, const
 }
 
 
-void PNS_LINE::DragSegment ( const VECTOR2I& aP, int aIndex, int aSnappingThreshold )
+SEG PNS_LINE::DragSegment ( const VECTOR2I& aP, int aIndex, int aSnappingThreshold )
 {
     SHAPE_LINE_CHAIN path( m_line );
     VECTOR2I target( aP );
@@ -680,7 +682,17 @@ void PNS_LINE::DragSegment ( const VECTOR2I& aP, int aIndex, int aSnappingThresh
     else
         m_line.Replace( aIndex, aIndex + 1, best );
 
+    SEG rseg;
+
+ 
+    if(best.SegmentCount() == 2)            
+        rseg.A = rseg.B = best.CPoint(1);
+    else 
+        rseg = best.CSegment(1);
+
     m_line.Simplify();
+
+    return rseg;
 }
 
 

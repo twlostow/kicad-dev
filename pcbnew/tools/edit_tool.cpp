@@ -158,7 +158,11 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
 
                 // Drag items to the current cursor position
                 for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
-                    selection.Item<BOARD_ITEM>( i )->Move( movement + m_offset );
+                {
+                    BOARD_ITEM *item = selection.Item<BOARD_ITEM>( i );
+                    //if ( !editPropertiesOnly(item) )
+                        item->Move( movement + m_offset );
+                }
 
                 updateRatsnest( true );
             }
@@ -169,7 +173,8 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
 
                 // Save items, so changes can be undone
                 editFrame->OnModify();
-                editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
+                //editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
+                saveUndoCopy(UR_CHANGED);
 
                 if( selection.Size() == 1 )
                 {
@@ -256,6 +261,7 @@ int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
         // Display properties dialog
         BOARD_ITEM* item = selection.Item<BOARD_ITEM>( 0 );
 
+#if 0
         // Check if user wants to edit pad or module properties
         if( item->Type() == PCB_MODULE_T )
         {
@@ -271,6 +277,7 @@ int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
                 }
             }
         }
+#endif
 
         std::vector<PICKED_ITEMS_LIST*>& undoList = editFrame->GetScreen()->m_UndoList.m_CommandsList;
 
@@ -283,7 +290,7 @@ int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
         PICKED_ITEMS_LIST* lastChange = undoList.empty() ? NULL : undoList.back();
 
         // Display properties dialog
-        editFrame->OnEditItemRequest( NULL, item );
+            editFrame->OnEditItemRequest( NULL, item );
 
         PICKED_ITEMS_LIST* currentChange = undoList.empty() ? NULL : undoList.back();
 
@@ -624,3 +631,55 @@ void EDIT_TOOL::processChanges( const PICKED_ITEMS_LIST* aList )
         }
     }
 }
+
+bool EDIT_TOOL::editPropertiesOnly ( const BOARD_ITEM *aItem ) const
+{
+    switch( aItem->Type() )
+    {
+        case PCB_MODULE_EDGE_T:
+        case PCB_PAD_T:
+            return m_editModules ? false : true;
+        default:
+            return false;
+    }
+}
+
+void EDIT_TOOL::saveUndoCopy(UNDO_REDO_T aCommandType)
+{
+    const  SELECTION& selection = m_selectionTool->GetSelection();
+
+
+printf("makeI\n");
+    PICKED_ITEMS_LIST items ( selection.items );
+printf("makeM\n");
+    std::set<MODULE *> modifiedModules;
+
+    int ii = 0;
+    while ( ii < items.GetCount() )
+    {
+        printf("ii %d\n", ii);
+        
+        BOARD_ITEM *item = (BOARD_ITEM*) items.GetPickedItem( ii );
+
+        if(item->Type() == PCB_PAD_T)
+        {
+            D_PAD *pad = (D_PAD *) item;
+            printf("Save-pad: parent mod %p\n", pad->GetParent());
+            modifiedModules.insert(pad->GetParent());
+            items.RemovePicker(ii);
+            ii = 0;
+        } else
+            ii++;
+    }
+
+    BOOST_FOREACH(MODULE *mod, modifiedModules)
+    {
+        items.PushItem(mod);
+    }
+    
+    PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
+    editFrame->SaveCopyInUndoList( items, aCommandType );
+
+
+}
+

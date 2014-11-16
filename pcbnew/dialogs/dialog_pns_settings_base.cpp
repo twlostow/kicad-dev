@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
+// C++ code generated with wxFormBuilder (version Jun  6 2014)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -42,6 +42,9 @@ DIALOG_PNS_SETTINGS_BASE::DIALOG_PNS_SETTINGS_BASE( wxWindow* parent, wxWindowID
 	
 	m_violateDrc = new wxCheckBox( this, wxID_ANY, _("Allow DRC violations"), wxDefaultPosition, wxDefaultSize, 0 );
 	bOptions->Add( m_violateDrc, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
+	
+	m_optimizeDraggedSegments = new wxCheckBox( this, wxID_ANY, _("Optimize dragged segments"), wxDefaultPosition, wxDefaultSize, 0 );
+	bOptions->Add( m_optimizeDraggedSegments, 0, wxALL, 5 );
 	
 	m_suggestEnding = new wxCheckBox( this, wxID_ANY, _("Suggest track finish"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_suggestEnding->Enable( false );

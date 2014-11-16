@@ -380,6 +380,7 @@ void DrawGraphicText( EDA_RECT* aClipBox,
         break;
     }
 
+    
     // Note: if aPanel == NULL, we are using a GL Canvas that handle scaling
     if( aSize.x == 0 )
         return;

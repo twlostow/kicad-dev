@@ -127,20 +127,24 @@ static bool TestForExistingItem( BOARD* aPcb, BOARD_ITEM* aItem )
         BOARD_ITEM* item;
 
         // Count tracks:
+        printf("Trk\n");
         for( item = aPcb->m_Track; item != NULL; item = item->Next() )
             icnt++;
 
         // Count modules:
+        printf("m\n");
         for( item = aPcb->m_Modules; item != NULL; item = item->Next() )
             icnt++;
 
+printf("d\n");
         // Count drawings
         for( item = aPcb->m_Drawings; item != NULL; item = item->Next() )
             icnt++;
 
-        // Count zones outlines
+        printf("ac\n");// Count zones outlines
         icnt +=  aPcb->GetAreaCount();
 
+printf("segz\n");
         // Count zones segm (now obsolete):
         for( item = aPcb->m_Zone; item != NULL; item = item->Next() )
              icnt++;
@@ -149,32 +153,34 @@ static bool TestForExistingItem( BOARD* aPcb, BOARD_ITEM* aItem )
         itemsList.clear();
         itemsList.reserve(icnt);
 
+printf("Trk2\n");
         // Store items in list:
         // Append tracks:
         for( item = aPcb->m_Track; item != NULL; item = item->Next() )
             itemsList.push_back( item );
 
+printf("mod\n");
         // Append modules:
         for( item = aPcb->m_Modules; item != NULL; item = item->Next() )
             itemsList.push_back( item );
-
+printf("dr\n");
         // Append drawings
         for( item = aPcb->m_Drawings; item != NULL; item = item->Next() )
             itemsList.push_back( item );
-
+printf("zo\n");
         // Append zones outlines
         for( int ii = 0; ii < aPcb->GetAreaCount(); ii++ )
             itemsList.push_back( aPcb->GetArea( ii ) );
-
+printf("z2\n");
         // Append zones segm:
         for( item = aPcb->m_Zone; item != NULL; item = item->Next() )
             itemsList.push_back( item );
-
+printf("srt\n");
         // Sort list
         std::sort( itemsList.begin(), itemsList.end() );
         return false;
     }
-
+printf("bs\n");
     // search in list:
     return std::binary_search( itemsList.begin(), itemsList.end(), aItem );
 }
@@ -470,11 +476,20 @@ void PCB_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
 
     bool build_item_list = true;    // if true the list of existing items must be rebuilt
 
+    printf("prev-st?\n");
     for( int ii = aList->GetCount() - 1; ii >= 0 ; ii-- )
     {
+        printf("lCount %d ii %d\n", ii, aList->GetCount() );
         item = (BOARD_ITEM*) aList->GetPickedItem( ii );
         wxASSERT( item );
+        printf("lCount2 %d ii %d\n", ii, aList->GetCount() );
 
+        
+        if(!aList->GetCount())
+        {
+            printf("list-finish\n");
+            break;
+        }
         /* Test for existence of item on board.
          * It could be deleted, and no more on board:
          *   - if a call to SaveCopyInUndoList was forgotten in Pcbnew
@@ -495,7 +510,9 @@ void PCB_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
             if( !TestForExistingItem( GetBoard(), item ) )
             {
                 // Remove this non existent item
+                printf("pre-remove-cnt %d\n", aList->GetCount());
                 aList->RemovePicker( ii );
+                printf("post-remove-cnt %d\n", aList->GetCount());
                 ii++;       // the current item was removed, ii points now the next item
                             // decrement it because it will be incremented later
                 not_found = true;
@@ -632,6 +649,7 @@ void PCB_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
 
 void PCB_EDIT_FRAME::RestoreCopyFromUndoList( wxCommandEvent& aEvent )
 {
+    printf("rest-copy\n");
     if( GetScreen()->GetUndoCommandCount() <= 0 )
         return;
 

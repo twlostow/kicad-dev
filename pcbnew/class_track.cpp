@@ -1555,6 +1555,36 @@ wxString TRACK::GetSelectMenuText() const
     return text;
 }
 
+void VIA::UpdateVisibility()
+{
+    BOARD *brd = GetBoard();
+    bool visible = true;
+ 
+    switch( GetViaType() )
+    {
+    case VIA_THROUGH:
+        if ( !brd->IsElementVisible( VIA_THROUGH_VISIBLE ) )
+            visible = false;
+        break;
+
+    case VIA_BLIND_BURIED:
+        if ( !brd->IsElementVisible( VIA_BBLIND_VISIBLE ) )
+            visible = false;
+        break;
+
+    case VIA_MICROVIA:
+        if ( !brd->IsElementVisible( VIA_MICROVIA_VISIBLE ) )
+            visible = false;
+        break;
+
+    default:
+        assert( false );
+        break;
+    }
+
+    ViewSetVisible( visible );
+}
+
 
 #if defined(DEBUG)
 

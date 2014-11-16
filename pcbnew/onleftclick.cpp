@@ -103,6 +103,7 @@ void PCB_EDIT_FRAME::OnLeftClick( wxDC* aDC, const wxPoint& aPosition )
                 break;
 
             case PCB_PAD_T:
+                printf("place-pad!\n");
                 PlacePad( static_cast<D_PAD*>( DrawStruct ), aDC );
                 exit = true;
                 break;

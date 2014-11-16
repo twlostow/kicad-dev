@@ -101,6 +101,7 @@ void VERTEX_MANAGER::FreeItem( VERTEX_ITEM& aItem ) const
 }
 
 
+#if 0
 void VERTEX_MANAGER::ChangeItemColor( const VERTEX_ITEM& aItem, const COLOR4D& aColor ) const
 {
     unsigned int size   = aItem.GetSize();
@@ -119,6 +120,7 @@ void VERTEX_MANAGER::ChangeItemColor( const VERTEX_ITEM& aItem, const COLOR4D& a
 
     m_container->SetDirty();
 }
+#endif
 
 
 void VERTEX_MANAGER::ChangeItemDepth( const VERTEX_ITEM& aItem, GLfloat aDepth ) const
@@ -215,4 +217,9 @@ void VERTEX_MANAGER::putVertex( VERTEX& aTarget, GLfloat aX, GLfloat aY, GLfloat
     {
         aTarget.shader[j] = m_shader[j];
     }
+}
+
+void VERTEX_MANAGER::OverrideColor ( bool aOverride, const COLOR4D& aColor )
+{
+    m_gpu->OverrideColor( aOverride, aColor );
 }

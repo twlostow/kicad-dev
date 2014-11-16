@@ -104,6 +104,11 @@ public:
     }
 
 private:
+
+    void saveUndoCopy(UNDO_REDO_T aCommandType);
+    
+    bool editPropertiesOnly ( const BOARD_ITEM *aItem ) const;
+    
     ///> Selection tool used for obtaining selected items
     SELECTION_TOOL* m_selectionTool;
 

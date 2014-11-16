@@ -184,6 +184,8 @@ public:
 #if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); }    // override
 #endif
+    
+    void UpdateVisibility();
 
 private:
     /* Note: orientation in 1/10 deg relative to the footprint
@@ -197,4 +199,5 @@ private:
                             ///< text coordinate ref point is the text centre
 };
 
+    
 #endif // TEXT_MODULE_H_

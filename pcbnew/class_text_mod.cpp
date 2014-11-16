@@ -317,12 +317,15 @@ void TEXTE_MODULE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE draw_mode,
     if( m_Mirror )
         size.x = -size.x;
 
+    //printf("VjustD %d\n", m_VJustify);
+
     EDA_RECT* clipbox = panel? panel->GetClipBox() : NULL;
     DrawGraphicText( clipbox, DC, pos, color, GetShownText(), orient,
                      size, m_HJustify, m_VJustify, width, m_Italic, m_Bold );
 
+    
     // Enable these line to draw the bounding box (debug tests purposes only)
-#if 0
+#if 1
     {
         EDA_RECT BoundaryBox = GetBoundingBox();
         GRRect( clipbox, DC, BoundaryBox, 0, BROWN );
@@ -468,28 +471,9 @@ const BOX2I TEXTE_MODULE::ViewBBox() const
 
 void TEXTE_MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
 {
-    if( m_NoShow )      // Hidden text
-    {
-        aLayers[0] = ITEM_GAL_LAYER( MOD_TEXT_INVISIBLE );
-    }
-    else
-    {
-        switch( m_Type )
-        {
-        case TEXT_is_REFERENCE:
-            aLayers[0] = ITEM_GAL_LAYER( MOD_REFERENCES_VISIBLE );
-            break;
-
-        case TEXT_is_VALUE:
-            aLayers[0] = ITEM_GAL_LAYER( MOD_VALUES_VISIBLE );
-            break;
-
-        case TEXT_is_DIVERS:
-            aLayers[0] = GetLayer();
-        }
-    }
-
-    aCount = 1;
+    aLayers[0] = GetLayer();
+    aLayers[1] = ITEM_GAL_LAYER ( ANCHOR_VISIBLE );
+    aCount = 2;
 }
 
 /**
@@ -553,3 +537,26 @@ wxString TEXTE_MODULE::GetShownText() const
 }
 
 
+void TEXTE_MODULE::UpdateVisibility()
+{
+    BOARD* brd = GetBoard( );
+    
+    bool visible = true;
+
+    // Check hidden/front/back text visibility first
+    if ( GetLayer() == F_SilkS && (!brd->IsElementVisible(MOD_TEXT_FR_VISIBLE) || !brd->IsElementVisible(MOD_FR_VISIBLE) ) )
+        visible = false;
+    else if ( GetLayer() == B_SilkS && (!brd->IsElementVisible(MOD_TEXT_BK_VISIBLE) || !brd->IsElementVisible(MOD_BK_VISIBLE) ) )
+        visible = false;
+    else if ( m_NoShow && !brd->IsElementVisible(MOD_TEXT_INVISIBLE) )
+        visible = false;
+    
+    // Check value/reference visibility next
+    if ( m_Type == TEXT_is_REFERENCE && !brd->IsElementVisible(MOD_REFERENCES_VISIBLE))
+        visible = false;
+    else if ( m_Type == TEXT_is_VALUE && !brd->IsElementVisible(MOD_VALUES_VISIBLE))
+        visible = false;
+    
+    ViewSetVisible (visible);
+    ViewUpdate ( KIGFX::VIEW_ITEM::GEOMETRY );
+}

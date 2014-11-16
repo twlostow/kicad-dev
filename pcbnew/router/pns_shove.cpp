@@ -865,6 +865,7 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::shoveMainLoop()
 
         if( st == SH_INCOMPLETE || timeLimit.Expired() || m_iter >= iterLimit ) 
         {
+            printf("Incomplete: [iter %d]\n", m_iter);
             st = SH_INCOMPLETE;
             break;
         }
@@ -1009,7 +1010,7 @@ void PNS_SHOVE::runOptimizer( PNS_NODE* aNode, PNS_LINE* aHead )
             break;
 
         case OE_FULL:
-            optFlags = PNS_OPTIMIZER::MERGE_SEGMENTS;
+            optFlags = PNS_OPTIMIZER::MERGE_SEGMENTS | PNS_OPTIMIZER::PULL_OUTWARDS;
             n_passes = 2;
             break;
 

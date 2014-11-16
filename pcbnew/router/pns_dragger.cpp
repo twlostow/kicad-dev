@@ -213,11 +213,12 @@ bool PNS_DRAGGER::dragShove( const VECTOR2I& aP )
     	{
     	    int thresh = Settings().SmoothDraggedSegments() ? m_draggedLine->Width() / 4 : 0;
         	PNS_LINE tmp( *m_draggedLine );
+            SEG dragged;
 
     		if( m_mode == SEGMENT )
-    			tmp.DragSegment( aP, m_draggedSegmentIndex, thresh );
+    			dragged = tmp.DragSegment( aP, m_draggedSegmentIndex, thresh );
     		else
-    			tmp.DragCorner( aP, m_draggedSegmentIndex, thresh );
+    			dragged = tmp.DragCorner( aP, m_draggedSegmentIndex, thresh );
             
             PNS_SHOVE::SHOVE_STATUS st = m_shove->ShoveLines( tmp );
             
@@ -231,8 +232,18 @@ bool PNS_DRAGGER::dragShove( const VECTOR2I& aP )
 
             m_lastNode = m_shove->CurrentNode()->Branch();
 
+            PNS_OPTIMIZER optimizer (m_lastNode);
+
+            optimizer.SetEffortLevel( Settings().OptimizerFlags() );
+            optimizer.SetCollisionMask( PNS_ITEM::ANY );
+            optimizer.RestrictSegment ( dragged );
+            PNS_LINE optimized;
+            
+            optimizer.Optimize(&tmp, &optimized);
+            //PNS_ROUTER::GetInstance()->DisplayDebugLine(xxx.CLine(), 3, 10000);
+            
             if( ok )
-                m_lastValidDraggedLine = tmp;
+                m_lastValidDraggedLine = optimized;
             
             m_lastValidDraggedLine.ClearSegmentLinks();
             m_lastValidDraggedLine.Unmark();

@@ -177,7 +177,6 @@ const EDA_RECT D_PAD::GetBoundingBox() const
         area.SetOrigin( m_Pos.x-dx, m_Pos.y-dy );
         area.SetSize( 2*dx, 2*dy );
         break;
-        break;
 
     case PAD_RECT:
         //Use two corners and track their rotation
@@ -991,4 +990,20 @@ const BOX2I D_PAD::ViewBBox() const
 
     return BOX2I( VECTOR2I( bbox.GetOrigin() ) - VECTOR2I( xMargin, yMargin ),
                   VECTOR2I( bbox.GetSize() ) + VECTOR2I( 2 * xMargin, 2 * yMargin ) );
+}
+
+void D_PAD::UpdateVisibility()
+{
+    BOARD *brd = GetBoard();
+    
+    bool visible = true;
+
+    // through-hole pads should disappear when both front and back layers are hidden
+    if( m_Attribute == PAD_HOLE_NOT_PLATED || m_Attribute == PAD_STANDARD )
+    {
+        if( !brd->IsElementVisible ( PAD_FR_VISIBLE ) && !brd->IsElementVisible( PAD_BK_VISIBLE ) )
+            visible = false;
+    }
+
+    ViewSetVisible ( visible );
 }

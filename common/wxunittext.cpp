@@ -197,3 +197,27 @@ void WX_UNIT_TEXT::onSpinDownEvent( wxSpinEvent& aEvent )
 
 
 const wxString WX_UNIT_TEXT::DEFAULT_VALUE = _( "default ");
+
+class WX_UNITS_BINDER
+{
+public:
+    WX_UNITS_BINDER ( wxTextCtrl *aInput, wxStaticText *aLabel, bool aUseGlobalUnits = true ):
+        m_input(aInput),
+        m_label(aLabel)
+    {
+
+    }
+
+    void SetValueIU( int aValue );
+    int GetValueIU() const;
+
+    void SetValueDouble ( double aValue );
+    double GetValueDouble() const;
+
+    bool HasChanged() const;
+    void SetMultiValued();
+
+private:
+    wxTextCtrl *m_input;
+    wxStaticText *m_label;
+};

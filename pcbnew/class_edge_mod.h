@@ -104,6 +104,8 @@ public:
     void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); } // override
 #endif
 
+    void UpdateVisibility();
+
 //protected:  @todo: is it just me?
 
     wxPoint m_Start0;       // Start point or center, relative to module origin, orient 0.

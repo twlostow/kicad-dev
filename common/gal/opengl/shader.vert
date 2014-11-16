@@ -34,6 +34,9 @@ const float SHADER_STROKED_CIRCLE       = 3.0f;
 // Minimum line width
 const float MIN_WIDTH = 1.0f;
 
+uniform float attrOverrideColor = 0.0;
+uniform vec4 attrOverrideColorValue;
+
 attribute vec4 attrShaderParams;
 varying vec4 shaderParams;
 varying vec2 circleCoords;
@@ -94,5 +97,8 @@ void main()
         gl_Position = ftransform();
     }
 
-    gl_FrontColor = gl_Color;
+    if(attrOverrideColor != 0.0)
+        gl_FrontColor = attrOverrideColorValue;
+    else
+        gl_FrontColor = gl_Color;
 }

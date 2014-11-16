@@ -480,7 +480,7 @@ public:
      * Invokes a function on all BOARD_ITEMs that belong to the module (pads, drawings, texts).
      * @param aFunction is the function to be invoked.
      */
-    void RunOnChildren( boost::function<void (BOARD_ITEM*)> aFunction );
+    virtual void RunOnChildren( boost::function<void (BOARD_ITEM*)> aFunction );
 
     /// @copydoc VIEW_ITEM::ViewUpdate()
     void ViewUpdate( int aUpdateFlags = KIGFX::VIEW_ITEM::ALL );
@@ -490,6 +490,9 @@ public:
 
     /// @copydoc VIEW_ITEM::ViewGetLOD()
     virtual unsigned int ViewGetLOD( int aLayer ) const;
+
+    /// @copydoc VIEW_ITEM::ViewBBox()
+    virtual const BOX2I ViewBBox() const;
 
     /**
      * Function CopyNetlistSettings
@@ -543,6 +546,8 @@ public:
         delete m_initial_comments;
         m_initial_comments = aInitialComments;
     }
+
+    double PadCoverageRatio() const;
 
     /// Return the initial comments block or NULL if none, without transfer of ownership.
     const wxArrayString* GetInitialComments() const { return m_initial_comments; }

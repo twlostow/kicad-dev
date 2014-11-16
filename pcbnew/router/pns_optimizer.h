@@ -33,6 +33,20 @@ class PNS_NODE;
 class PNS_LINE;
 class PNS_ROUTER;
 
+#if 0
+class PNS_RESTRICTION
+{
+public:
+    PNS_RESTRICTION(){};
+    virtual ~PNS_RESTRICTION() {};
+
+    virtual bool Violates ( const SHAPE_LINE_CHAIN& aOldPath, const SHAPE_LINE_CHAIN& aNewPath, int aStart, int aEnd, int aWidth ) const{};
+
+    virtual bool Violates( const SEG& aSeg, int aWidth )const {}
+};
+
+#endif
+
 /**
  * Class PNS_COST_ESTIMATOR
  *
@@ -91,7 +105,8 @@ public:
         MERGE_SEGMENTS  = 0x01,
         SMART_PADS      = 0x02,
         MERGE_OBTUSE    = 0x04,
-        FANOUT_CLEANUP    = 0x08
+        FANOUT_CLEANUP  = 0x08,
+        PULL_OUTWARDS   = 0x10
     };
 
     PNS_OPTIMIZER( PNS_NODE* aWorld );
@@ -117,6 +132,9 @@ public:
         m_effortLevel = aEffort;
     }
 
+    void RestrictArea ( const BOX2I& aArea );
+    void RestrictSegment ( const SEG& aSeg );
+
 private:
     static const int MaxCachedItems = 256;
 
@@ -138,10 +156,16 @@ private:
     bool fanoutCleanup( PNS_LINE * aLine );
 
     bool checkColliding( PNS_ITEM* aItem, bool aUpdateCache = true );
-    bool checkColliding( PNS_LINE* aLine, const SHAPE_LINE_CHAIN& aOptPath );
+    //bool checkColliding( PNS_LINE* aLine, const SHAPE_LINE_CHAIN& aOptPath );
+    bool checkRestrictions ( PNS_LINE *aLine, const SHAPE_LINE_CHAIN& aOldPath, const SHAPE_LINE_CHAIN& aNewPath );//, int aStart, int aEnd, int aWidth );
 
     void cacheAdd( PNS_ITEM* aItem, bool aIsStatic );
     void removeCachedSegments( PNS_LINE* aLine, int aStartVertex = 0, int aEndVertex = -1 );
+
+    int pullIterate ( PNS_LINE *aLine, const SEG& aA, const SEG& aB, const VECTOR2I& aGuide, SEG& aResult);
+    bool pullAcuteAndRight( PNS_LINE *aLine, const SEG& aA, const SEG& aB, SHAPE_LINE_CHAIN& aResult );
+    bool pullOutwards( PNS_LINE* aLine );
+
 
     BREAKOUT_LIST circleBreakouts( int aWidth, const SHAPE* aShape, bool aPermitDiagonal ) const;
     BREAKOUT_LIST rectBreakouts( int aWidth, const SHAPE* aShape, bool aPermitDiagonal ) const;
@@ -160,6 +184,8 @@ private:
     int m_collisionKindMask;
     int m_effortLevel;
     bool m_keepPostures;
+    boost::optional<SEG> m_restrictedSegment;
+    boost::optional<BOX2I> m_restrictedArea;
 };
 
 #endif

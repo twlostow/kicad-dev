@@ -161,6 +161,11 @@ public:
             return ANG_STRAIGHT;
     }
 
+    static AngleType Angle ( const SEG& a, const SEG& b ) 
+	{
+        return DIRECTION_45(a).Angle(DIRECTION_45(b));
+    }
+
     /**
      * Function IsObtuse()
      * @return true, when (this) forms an obtuse angle with aOther

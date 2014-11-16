@@ -350,3 +350,22 @@ void EDGE_MODULE::Flip(const wxPoint& aCentre )
 
     SetLayer( FlipLayer( GetLayer() ) );
 }
+
+void EDGE_MODULE::UpdateVisibility()
+{
+    BOARD *brd = GetBoard();
+    bool visible = true;
+
+    MODULE *parent = GetParentModule();
+
+    if(!parent)
+        return;
+
+    // through-hole pads should disappear when both front and back layers are hidden
+    if( parent->GetLayer() == F_Cu && !brd->IsElementVisible ( MOD_FR_VISIBLE ) )
+        visible = false;
+    else if( parent->GetLayer() == B_Cu && !brd->IsElementVisible ( MOD_BK_VISIBLE ) )
+        visible = false;
+    
+    ViewSetVisible ( visible );
+}

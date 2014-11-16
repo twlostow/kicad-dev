@@ -836,6 +836,8 @@ public:
         depthStack.pop();
     }
 
+    virtual void OverrideColor ( bool aOverride, const COLOR4D& aColor ) {};
+
     /// Depth level on which the grid is drawn
     static const int GRID_DEPTH = 1024;
 

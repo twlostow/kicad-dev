@@ -196,6 +196,7 @@ public:
 
     /// @copydoc PAINTER::Draw()
     virtual bool Draw( const VIEW_ITEM* aItem, int aLayer );
+    void drawAnchor( const BOARD_ITEM *aItem, const VECTOR2D& aCenter );
 
 protected:
     PCB_RENDER_SETTINGS m_pcbSettings;

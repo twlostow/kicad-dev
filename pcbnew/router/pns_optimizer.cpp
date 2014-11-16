@@ -29,6 +29,52 @@
 #include "pns_utils.h"
 #include "pns_router.h"
 
+#if 0
+
+
+
+class PNS_SEGMENT_RESTRICTION : public PNS_RESTRICTION 
+{
+
+public:
+    PNS_SEGMENT_RESTRICTION( const SEG& aSeg ):
+        m_seg(aSeg) {};
+    ~PNS_SEGMENT_RESTRICTION() {};
+
+    virtual bool Violates ( const SEG& aSeg, int aWidth ) const
+    {      
+      
+        
+        return false;
+    }
+
+    virtual bool Violates ( const SHAPE_LINE_CHAIN& aOldPath, const SHAPE_LINE_CHAIN& aNewPath, int aStart, int aEnd, int aWidth ) const;
+
+    
+private:
+    SEG m_seg;
+};
+
+#endif
+
+#if 0
+class PNS_AREA_RESTRICTION : public PNS_RESTRICTION {
+public:
+    PNS_AREA_RESTRICTION( const BOX2I& aArea ):
+        m_area(aArea) {};
+    ~PNS_AREA_RESTRICTION() {};
+
+    bool Violates ( const PNS_LINE* aLine ) const
+    {
+        return false;
+    }
+
+private:
+    BOX2I m_area;
+};
+#endif
+
+
 /**
  *  Cost Estimator Methods
  */
@@ -254,6 +300,7 @@ bool PNS_OPTIMIZER::checkColliding( PNS_ITEM* aItem, bool aUpdateCache )
 }
 
 
+#if 0
 bool PNS_OPTIMIZER::checkColliding( PNS_LINE* aLine, const SHAPE_LINE_CHAIN& aOptPath )
 {
     PNS_LINE tmp( *aLine, aOptPath );
@@ -261,6 +308,7 @@ bool PNS_OPTIMIZER::checkColliding( PNS_LINE* aLine, const SHAPE_LINE_CHAIN& aOp
     return checkColliding( &tmp );
 }
 
+#endif
 
 bool PNS_OPTIMIZER::mergeObtuse( PNS_LINE* aLine )
 {
@@ -354,6 +402,7 @@ bool PNS_OPTIMIZER::mergeObtuse( PNS_LINE* aLine )
 }
 
 
+
 bool PNS_OPTIMIZER::mergeFull( PNS_LINE* aLine )
 {
     SHAPE_LINE_CHAIN& line = aLine->Line();
@@ -404,10 +453,13 @@ bool PNS_OPTIMIZER::Optimize( PNS_LINE* aLine, PNS_LINE* aResult )//, int aStart
 
     if( m_effortLevel & MERGE_SEGMENTS )
         rv |= mergeFull( aResult );
-
+    
     if( m_effortLevel & MERGE_OBTUSE )
         rv |= mergeObtuse( aResult );
 
+    if( m_effortLevel & PULL_OUTWARDS )
+        rv |= pullOutwards (aResult );
+    
     if( m_effortLevel & SMART_PADS )
         rv |= runSmartPads( aResult );
 
@@ -416,6 +468,113 @@ bool PNS_OPTIMIZER::Optimize( PNS_LINE* aLine, PNS_LINE* aResult )//, int aStart
 
     return rv;
 }
+
+int PNS_OPTIMIZER::pullIterate ( PNS_LINE *aLine, const SEG& aA, const SEG& aB, const VECTOR2I& aGuide, SEG& aResult)
+{
+    int len_a = aA.Length();
+    int len_b = aB.Length();
+
+
+    VECTOR2I lead = aA.B - aA.A;
+    int d = std::min(len_a, len_b), step = d / 2;
+    //lead = lead.Resize(d);
+
+//    printf("lead-l %d\n", d );
+
+    SHAPE_LINE_CHAIN la(aA.B, aA.B - lead.Resize(d));
+
+    //PNS_ROUTER::GetInstance()->DisplayDebugLine(la, 5, 10000);
+    int i = 0;
+
+    if(step <= 1)
+    {
+        aResult = SEG( aA.B, aB.A );
+        return -1;
+    }
+
+    while(step > 0)
+    {
+        VECTOR2I ip_a = aA.B - lead.Resize(d);
+        SEG g (ip_a, ip_a + aGuide);
+        VECTOR2I ip_b = *g.IntersectLines( aB );
+
+        PNS_SEGMENT repl ( *aLine, SEG(ip_a, ip_b) );
+
+        aResult = SEG( ip_a ,ip_b);
+
+        //SHAPE_LINE_CHAIN lc ( ip_a, ip_b );
+
+        SHAPE_LINE_CHAIN orig ( aA.A, aA.B, aB.A, aB.B );
+        SHAPE_LINE_CHAIN bypass ( aA.A, ip_a, ip_b, aB.B );
+
+
+        //PNS_ROUTER::GetInstance()->DisplayDebugLine(lc, 4, 10000);
+
+  //          printf("ia %d %d iB %d %d\n", ip_a.x, ip_a.y, ip_b.x, ip_b.y);
+            if( checkRestrictions(aLine, orig, bypass) )
+                d -= step;
+            else {
+                if(i == 0)
+                    break;
+                d += step;
+            }
+
+            step /= 2;
+            i++;
+    //        printf("step %d d %d\n", step, d);
+    }
+
+  
+    return 0; //repl.Length();
+}
+
+bool PNS_OPTIMIZER::pullAcuteAndRight( PNS_LINE *aLine, const SEG& aA, const SEG& aB, SHAPE_LINE_CHAIN& aResult )
+{
+    DIRECTION_45 dirA (aA), dirB(aB);
+    SEG r1, r2, r;
+    bool found = false;
+    
+ //   printf("Dir %s - %s\n", dirA.Format().c_str(), dirB.Format().c_str());
+
+    DIRECTION_45 guide_dir;
+    if(dirA.Angle(dirB) == DIRECTION_45::ANG_RIGHT)
+    {
+        guide_dir = dirA.Left();
+        if(!guide_dir.IsObtuse(dirB))
+            guide_dir = dirA.Right();
+    
+        if(pullIterate(aLine, aA, aB, guide_dir.ToVector(), r) >= 0)
+            found = true;
+    } else if (dirA.Angle(dirB) == DIRECTION_45::ANG_ACUTE) {
+        
+        guide_dir = dirA.Left();
+        if(guide_dir.Angle(dirB) != DIRECTION_45::ANG_RIGHT)
+            guide_dir = dirA.Right();
+
+        if(pullIterate(aLine, aA, aB, guide_dir.ToVector(), r1) >= 0)
+            found = true;
+
+        guide_dir = dirB.Right();
+        if(guide_dir.Angle(dirA) != DIRECTION_45::ANG_RIGHT)
+            guide_dir = dirB.Left();
+
+        if(pullIterate(aLine, aA, aB, guide_dir.ToVector(), r2) >= 0)
+            found = true;
+        r = r1.Length() > r2.Length() ? r1 : r2;
+    }
+
+    if(!found)
+        return false;
+
+    aResult.Clear();
+    aResult.Append(aA.A);
+    aResult.Append(r.A);
+    aResult.Append(r.B);
+    aResult.Append(aB.B);
+    
+    return true;
+}
+
 
 
 bool PNS_OPTIMIZER::mergeStep( PNS_LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step )
@@ -438,6 +597,8 @@ bool PNS_OPTIMIZER::mergeStep( PNS_LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, 
 
         SHAPE_LINE_CHAIN path[2];
         SHAPE_LINE_CHAIN* picked = NULL;
+        const SHAPE_LINE_CHAIN oldPath = aCurrentPath.Slice(n, n + step + 1);
+
         int cost[2];
 
         for( int i = 0; i < 2; i++ )
@@ -447,12 +608,13 @@ bool PNS_OPTIMIZER::mergeStep( PNS_LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, 
             cost[i] = INT_MAX;
 
 
+
             if( n == 0 && orig_start != DIRECTION_45( bypass.CSegment( 0 ) ) )
                 postureMatch = false;
             else if( n == n_segs - step && orig_end != DIRECTION_45( bypass.CSegment( -1 ) ) )
                 postureMatch = false;
 
-            if( (postureMatch || !m_keepPostures) && !checkColliding( aLine, bypass ) )
+            if( (postureMatch || !m_keepPostures) && !checkRestrictions(aLine, oldPath, bypass ) )
             {
                 path[i] = aCurrentPath;
                 path[i].Replace( s1.Index(), s2.Index(), bypass );
@@ -688,8 +850,9 @@ int PNS_OPTIMIZER::smartPadsSingle( PNS_LINE* aLine, PNS_ITEM* aPad, bool aEnd, 
         PNS_LINE tmp( *aLine, vp.second );
         int cost = PNS_COST_ESTIMATOR::CornerCost( vp.second );
         int len = vp.second.Length();
+//bool PNS_OPTIMIZER::checkRestrictions ( PNS_LINE *aLine, aLine->CLine(),  const SHAPE_LINE_CHAIN& aOldPath, const SHAPE_LINE_CHAIN& aNewPath )
 
-        if( !checkColliding( &tmp ) )
+        if( !checkRestrictions( aLine, aLine->CLine(), vp.second ) )
         {
             if( cost < min_cost || ( cost == min_cost && len < min_len ) )
             {
@@ -782,7 +945,7 @@ bool PNS_OPTIMIZER::fanoutCleanup( PNS_LINE* aLine )
         for(int i = 0; i < 2; i++ )
         {
             SHAPE_LINE_CHAIN l2 = DIRECTION_45().BuildInitialTrace( p_start, p_end, i );
-            PNS_ROUTER::GetInstance()->DisplayDebugLine( l2, 4, 10000 );
+            //PNS_ROUTER::GetInstance()->DisplayDebugLine( l2, 4, 10000 );
             PNS_LINE repl;
             repl = PNS_LINE( *aLine, l2 );
 
@@ -795,4 +958,136 @@ bool PNS_OPTIMIZER::fanoutCleanup( PNS_LINE* aLine )
     }
 
     return false;
+}
+
+void PNS_OPTIMIZER::RestrictSegment ( const SEG& aSeg )
+{
+    m_restrictedSegment = aSeg;
+}
+
+bool PNS_OPTIMIZER::checkRestrictions ( PNS_LINE *aLine, const SHAPE_LINE_CHAIN& aOldPath, const SHAPE_LINE_CHAIN& aNewPath )
+{
+    bool found = false;
+
+    /* check for collisions first */
+
+    PNS_LINE collCheck( *aLine, aNewPath );
+
+    if(checkColliding( &collCheck ) )
+        return true;
+    
+    if(!m_restrictedSegment)
+        return false;
+
+    
+    for(int i = 0; i < aOldPath.SegmentCount(); i++)
+    {
+        const SEG &s = aOldPath.CSegment(i);
+
+        if (s.Length() > aLine->Width() && s.Overlaps(*m_restrictedSegment))
+        {
+            SHAPE_LINE_CHAIN lc ( s.A, s.B );
+//            PNS_ROUTER::GetInstance()->DisplayDebugLine( lc, 4, 30000 );
+
+            found = true;
+            break;
+        }
+    }
+
+    if(!found)
+        return false;
+
+    for(int i = 0; i < aNewPath.SegmentCount(); i++)
+    {
+        if( aNewPath.CSegment(i).Overlaps( *m_restrictedSegment ))
+        {
+            //PNS_ROUTER::GetInstance()->DisplayDebugLine( aNewPath, 6, 40000 );
+            return false;
+        }
+    }
+
+    return true;
+
+}
+
+bool PNS_OPTIMIZER::pullOutwards( PNS_LINE* aLine )
+{
+    SHAPE_LINE_CHAIN line = aLine->CLine();
+    bool found;
+    int sc;
+    int iterLimit = aLine->SegmentCount() * 3 + 1;
+    do {
+        found = false;
+        sc = line.SegmentCount() - 1;
+        for(int i = 0; i < line.SegmentCount() - 1; i++)
+        {
+            const SEG& s1 = line.CSegment(i);
+            const SEG& s2 = line.CSegment(i + 1);
+            
+            if(i < sc - 1)
+            {
+                const SEG& s3 = line.CSegment(i+2);
+                if(DIRECTION_45::Angle(s1, s3) == DIRECTION_45::ANG_RIGHT)
+                {
+                    SHAPE_LINE_CHAIN bypass;
+            
+                    if(pullAcuteAndRight(aLine, s1, s3, bypass))
+                    {
+                        printf("w-shape\n");    
+//                        PNS_ROUTER::GetInstance()->DisplayDebugLine(bypass, 2, 10000);
+                        
+                        if((double)bypass.Length() < (double)line.Slice(i, i+3).Length() * 0.999)
+                        {
+                            line.Replace(i, i + 3, bypass);
+                            line.Simplify();
+ 
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                }
+            }
+
+            SHAPE_LINE_CHAIN bypass;
+            
+            if(pullAcuteAndRight(aLine, s1, s2, bypass))
+            {
+                line.Replace(i, i + 2, bypass);
+                line.Simplify();
+ 
+               found = true;
+                break;
+            }
+
+               
+        }
+        iterLimit--;
+    } while(found && iterLimit > 0);
+
+#if 0
+    for(int i = 0; i < line.SegmentCount(); i++)
+    {
+  //      printf("Seg%d C %d\n", i, line.CSegment(i).Length());
+    }
+    
+    for(int i = 0; i < line.SegmentCount()-1; i++)
+    {
+    //    printf("Ang%d: ", i);
+        switch(DIRECTION_45(line.CSegment(i)).Angle(DIRECTION_45(line.CSegment(i+1))))
+        {
+            case DIRECTION_45::ANG_RIGHT: printf("right\n"); break;
+            case DIRECTION_45::ANG_ACUTE: printf("acute\n"); break;
+            case DIRECTION_45::ANG_STRAIGHT: printf("full\n"); break;
+            case DIRECTION_45::ANG_HALF_FULL: printf("half/full\n"); break;
+            case DIRECTION_45::ANG_OBTUSE: printf("obtuse\n"); break;
+        }
+    }
+#endif
+
+    aLine->SetShape(line);
+    
+    
+
+    return true;
 }

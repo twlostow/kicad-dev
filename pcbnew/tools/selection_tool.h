@@ -291,9 +291,11 @@ private:
      * @param aTypes is the list of searched/preferred types.
      * @return Pointer to the preferred item, if there is only one entry of given type or NULL
      * if there are more entries or no entries at all.
-     */
-    BOARD_ITEM* prefer( GENERAL_COLLECTOR& aCollector, const KICAD_T aTypes[] ) const;
 
+     * fixme: doc
+     */
+    void filterSelectionCandidates( GENERAL_COLLECTOR& aCollector ) const;
+    
     /**
      * Function generateMenu()
      * Creates a copy of context menu that is filtered by menu conditions and displayed to

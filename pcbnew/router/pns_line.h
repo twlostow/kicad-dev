@@ -243,8 +243,8 @@ public:
     virtual void Unmark ();
     virtual int Marker() const;
     
-    void DragSegment( const VECTOR2I& aP, int aIndex, int aSnappingThreshold = 0 );
-    void DragCorner( const VECTOR2I& aP, int aIndex, int aSnappingThreshold = 0 );
+    SEG DragSegment( const VECTOR2I& aP, int aIndex, int aSnappingThreshold = 0 );
+    SEG DragCorner( const VECTOR2I& aP, int aIndex, int aSnappingThreshold = 0 );
 
     void SetRank( int aRank );
     int Rank() const;

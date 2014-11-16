@@ -232,6 +232,8 @@ public:
         paintListener = aPaintListener;
     }
 
+    virtual void OverrideColor ( bool aOverride, const COLOR4D& aColor );
+
     ///< Parameters passed to the GLU tesselator
     typedef struct
     {

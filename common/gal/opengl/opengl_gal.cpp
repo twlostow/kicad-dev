@@ -672,7 +672,7 @@ void OPENGL_GAL::DrawGroup( int aGroupNumber )
 
 void OPENGL_GAL::ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColor )
 {
-    cachedManager.ChangeItemColor( *groups[aGroupNumber], aNewColor );
+    //cachedManager.ChangeItemColor( *groups[aGroupNumber], aNewColor );
 }
 
 
@@ -1016,6 +1016,12 @@ unsigned int OPENGL_GAL::getNewGroupNumber()
     return groupCounter++;
 }
 
+void OPENGL_GAL::OverrideColor ( bool aOverride, const COLOR4D& aColor )
+{
+    cachedManager.OverrideColor(aOverride, aColor);
+    nonCachedManager.OverrideColor(aOverride, aColor);
+    overlayManager.OverrideColor(aOverride, aColor);
+}
 
 // -------------------------------------
 // Callback functions for the tesselator
@@ -1073,3 +1079,4 @@ void InitTesselatorCallbacks( GLUtesselator* aTesselator )
     gluTessCallback( aTesselator, GLU_TESS_EDGE_FLAG,    ( void (CALLBACK*)() )EdgeCallback );
     gluTessCallback( aTesselator, GLU_TESS_ERROR,        ( void (CALLBACK*)() )ErrorCallback );
 }
+

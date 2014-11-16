@@ -30,6 +30,7 @@
 #ifndef GPU_MANAGER_H_
 #define GPU_MANAGER_H_
 
+#include <gal/color4d.h>
 #include <gal/opengl/vertex_common.h>
 #include <boost/scoped_array.hpp>
 
@@ -86,6 +87,8 @@ public:
      */
     virtual void SetShader( SHADER& aShader );
 
+    void OverrideColor ( bool aOverride, const COLOR4D& aColor );
+
 protected:
     GPU_MANAGER( VERTEX_CONTAINER* aContainer );
 
@@ -100,6 +103,9 @@ protected:
 
     ///> Location of shader attributes (for glVertexAttribPointer)
     int m_shaderAttrib;
+
+    int m_paramColorOverride;
+    int m_paramColorOverrideValue;
 };
 
 

@@ -103,6 +103,13 @@ public:
     ///> Enables/disabled smoothing segments during dragging.
     void SetSmoothDraggedSegments( bool aSmooth ) { m_smoothDraggedSegments = aSmooth; }
 
+    ///> Returns true if optimization of segments durign dragging is enabled.    
+    bool OptimizeDraggedSegments() const { return m_optimizeDraggedSegments; }
+
+    ///> Enables/disabled optmization of segments during dragging.
+    void SetOptimizeDraggedSegments( bool aOptimize ) { m_optimizeDraggedSegments = aOptimize; }
+
+
     ///> Returns true if jumping over unmovable obstacles is on.
     bool JumpOverObstacles() const { return m_jumpOverObstacles; }
 
@@ -122,6 +129,7 @@ public:
     int WalkaroundIterationLimit() const { return m_walkaroundIterationLimit; };
     TIME_LIMIT WalkaroundTimeLimit() const;
 
+    int OptimizerFlags() const;
 
 private:
     bool m_shoveVias;
@@ -133,6 +141,7 @@ private:
     bool m_jumpOverObstacles;
     bool m_smoothDraggedSegments;
     bool m_canViolateDRC;
+    bool m_optimizeDraggedSegments;
 
     PNS_MODE m_routingMode;
     PNS_OPTIMIZATION_EFFORT m_optimizerEffort;

@@ -253,7 +253,7 @@ public:
      * @param aItem is the item to change.
      * @param aColor is the new color to be applied.
      */
-    void ChangeItemColor( const VERTEX_ITEM& aItem, const COLOR4D& aColor ) const;
+    //void ChangeItemColor( const VERTEX_ITEM& aItem, const COLOR4D& aColor ) const;
 
     /**
      * Function ChangeItemDepth()
@@ -311,6 +311,8 @@ public:
      */
     void EndDrawing() const;
 
+    void OverrideColor ( bool aOverride, const COLOR4D& aColor );
+    
 protected:
     /**
      * Function putVertex()

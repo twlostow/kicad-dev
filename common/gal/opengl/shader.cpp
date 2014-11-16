@@ -135,17 +135,21 @@ int SHADER::AddParameter( const std::string& aParameterName )
 }
 
 
-void SHADER::SetParameter( int parameterNumber, float value ) const
-{
-    glUniform1f( parameterLocation[parameterNumber], value );
-}
-
 
 void SHADER::SetParameter( int parameterNumber, int value ) const
 {
     glUniform1i( parameterLocation[parameterNumber], value );
 }
 
+void SHADER::SetParameter( int parameterNumber, float value ) const
+{
+    glUniform1f( parameterLocation[parameterNumber], value );
+}
+
+void SHADER::SetParameter( int parameterNumber, const COLOR4D& value ) const
+{
+    glUniform4f( parameterLocation[parameterNumber], value.r, value.g, value.b, value.a );
+}
 
 int SHADER::GetAttribute( std::string aAttributeName ) const
 {

@@ -158,10 +158,8 @@ const COLOR4D& PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer
     if( item )
     {
         if( item->IsSelected() )
-        {
             return m_layerColorsSel[aLayer];
-        }
-
+        
         // Try to obtain the netcode for the item
         if( const BOARD_CONNECTED_ITEM* conItem = dyn_cast<const BOARD_CONNECTED_ITEM*> ( item ) )
             netCode = conItem->GetNetCode();
@@ -438,7 +436,7 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
     double      m, n;
     double      orientation = aPad->GetOrientation();
     wxString buffer;
-
+    
     // Draw description layer
     if( IsNetnameLayer( aLayer ) )
     {
@@ -774,6 +772,12 @@ void PCB_PAINTER::draw( const TEXTE_PCB* aText, int aLayer )
     VECTOR2D position( aText->GetTextPosition().x, aText->GetTextPosition().y );
     double   orientation = aText->GetOrientation() * M_PI / 1800.0;
 
+	if ( aLayer == ITEM_GAL_LAYER ( ANCHOR_VISIBLE ) )
+	{
+		drawAnchor (aText, position);
+		return;
+	}
+
     if( m_pcbSettings.m_sketchMode[aLayer] )
     {
         // Outline mode
@@ -795,13 +799,24 @@ void PCB_PAINTER::draw( const TEXTE_PCB* aText, int aLayer )
 
 void PCB_PAINTER::draw( const TEXTE_MODULE* aText, int aLayer )
 {
+    int l_id = aText->GetLayer();
+
     wxString shownText( aText->GetShownText() );
     if( shownText.Length() == 0 )
         return;
 
-    const COLOR4D& color = m_pcbSettings.GetColor( aText, aLayer );
+    if( !aText->IsVisible() )
+        l_id = ITEM_GAL_LAYER ( MOD_TEXT_INVISIBLE );
+    
+    const COLOR4D& color = m_pcbSettings.GetColor( aText, l_id );
     VECTOR2D position( aText->GetTextPosition().x, aText->GetTextPosition().y );
     double   orientation = aText->GetDrawRotation() * M_PI / 1800.0;
+
+	if ( aLayer == ITEM_GAL_LAYER ( ANCHOR_VISIBLE ) )
+	{
+		drawAnchor (aText, position);
+		return;
+	}
 
     if( m_pcbSettings.m_sketchMode[aLayer] )
     {
@@ -821,24 +836,27 @@ void PCB_PAINTER::draw( const TEXTE_MODULE* aText, int aLayer )
     m_gal->StrokeText( shownText, position, orientation );
 }
 
+void PCB_PAINTER::drawAnchor( const BOARD_ITEM* aItem, const VECTOR2D& aCenter )
+{
+    const COLOR4D color = m_pcbSettings.GetColor( aItem, ITEM_GAL_LAYER( ANCHOR_VISIBLE ) );
+
+    // Draw anchor
+    m_gal->SetStrokeColor( color );
+    m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
+
+    // Keep the size constant, not related to the scale
+    double anchorSize = 5.0 / m_gal->GetWorldScale();
+
+    //VECTOR2D center = aModule->GetPosition();
+    m_gal->DrawLine( aCenter - VECTOR2D( anchorSize, 0 ), aCenter + VECTOR2D( anchorSize, 0 ) );
+    m_gal->DrawLine( aCenter - VECTOR2D( 0, anchorSize ), aCenter + VECTOR2D( 0, anchorSize ) );
+}
 
 void PCB_PAINTER::draw( const MODULE* aModule, int aLayer )
 {
-    if( aLayer == ITEM_GAL_LAYER( ANCHOR_VISIBLE ) )
-    {
-        const COLOR4D color = m_pcbSettings.GetColor( aModule, ITEM_GAL_LAYER( ANCHOR_VISIBLE ) );
-
-        // Draw anchor
-        m_gal->SetStrokeColor( color );
-        m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
-
-        // Keep the size constant, not related to the scale
-        double anchorSize = 5.0 / m_gal->GetWorldScale();
-
-        VECTOR2D center = aModule->GetPosition();
-        m_gal->DrawLine( center - VECTOR2D( anchorSize, 0 ), center + VECTOR2D( anchorSize, 0 ) );
-        m_gal->DrawLine( center - VECTOR2D( 0, anchorSize ), center + VECTOR2D( 0, anchorSize ) );
-    }
+    
+	if ( aLayer == ITEM_GAL_LAYER ( ANCHOR_VISIBLE ) )
+		drawAnchor( aModule, aModule->GetPosition() );
 }
 
 

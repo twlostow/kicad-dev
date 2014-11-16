@@ -49,6 +49,12 @@ public:
 
     ~TEXTE_PCB();
 
+    static inline bool ClassOf( const EDA_ITEM *aItem )
+    {
+        return aItem && PCB_TEXT_T == aItem->Type();
+    }
+
+
     virtual const wxPoint& GetPosition() const
     {
         return m_Pos;
@@ -134,6 +140,11 @@ public:
     const EDA_RECT GetBoundingBox() const;
 
     EDA_ITEM* Clone() const;
+
+    void UpdateVisibility();
+
+/// @copydoc VIEW_ITEM::ViewGetLayers()
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
 
 #if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); }    // override

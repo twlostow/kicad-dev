@@ -55,7 +55,8 @@ GPU_MANAGER* GPU_MANAGER::MakeManager( VERTEX_CONTAINER* aContainer )
 
 
 GPU_MANAGER::GPU_MANAGER( VERTEX_CONTAINER* aContainer ) :
-    m_isDrawing( false ), m_container( aContainer ), m_shader( NULL )
+    m_isDrawing( false ), m_container( aContainer ), m_shader( NULL ),
+    m_paramColorOverride(-1), m_paramColorOverrideValue (-1)
 {
 }
 
@@ -64,6 +65,20 @@ GPU_MANAGER::~GPU_MANAGER()
 {
 }
 
+
+void GPU_MANAGER::OverrideColor ( bool aOverride, const COLOR4D& aColor )
+{
+    if(m_shader)
+    {
+        if(m_paramColorOverride < 0)
+            m_paramColorOverride = m_shader->AddParameter ("attrColorOverride");
+        if(m_paramColorOverrideValue < 0)
+            m_paramColorOverrideValue = m_shader->AddParameter ("attrColorOverrideValue");
+
+        m_shader->SetParameter(m_paramColorOverride, aOverride ? 1.0f : 0.0f);
+        m_shader->SetParameter(m_paramColorOverrideValue, aColor);
+    }
+}
 
 void GPU_MANAGER::SetShader( SHADER& aShader )
 {
@@ -215,13 +230,14 @@ void GPU_CACHED_MANAGER::uploadToGpu()
     if( glGetError() != GL_NO_ERROR )
         DisplayError( NULL, wxT( "Error during data upload to the GPU memory" ) );
 
+    printf("gpu[%p]:%d verts\n", this, bufferSize);
+
 #ifdef PROFILE
     prof_end( &totalTime );
 
     wxLogDebug( wxT( "Uploading %d vertices to GPU / %.1f ms" ), bufferSize, totalTime.msecs() );
 #endif /* PROFILE */
 }
-
 
 // Noncached manager
 GPU_NONCACHED_MANAGER::GPU_NONCACHED_MANAGER( VERTEX_CONTAINER* aContainer ) :

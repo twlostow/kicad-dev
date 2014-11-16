@@ -374,12 +374,13 @@ struct VIEW::updateItemsColor
     bool operator()( VIEW_ITEM* aItem )
     {
         // Obtain the color that should be used for coloring the item
+        #if 0
         const COLOR4D color = painter->GetSettings()->GetColor( aItem, layer );
         int group = aItem->getGroup( layer );
 
         if( group >= 0 )
             gal->ChangeGroupColor( group, color );
-
+        #endif
         return true;
     }
 
@@ -395,12 +396,16 @@ void VIEW::UpdateLayerColor( int aLayer )
     if( !IsCached( aLayer ) )
         return;
 
+    #if 0
+    printf("UpdLColor\n");
+
     BOX2I r;
 
     r.SetMaximum();
 
     updateItemsColor visitor( aLayer, m_painter, m_gal );
     m_layers[aLayer].items->Query( r, visitor );
+    #endif
     MarkTargetDirty( m_layers[aLayer].target );
 }
 
@@ -410,7 +415,7 @@ void VIEW::UpdateAllLayersColor()
     BOX2I r;
 
     r.SetMaximum();
-
+    //printf("UpdALColor\n");
     for( LAYER_MAP_ITER i = m_layers.begin(); i != m_layers.end(); ++i )
     {
         VIEW_LAYER* l = &( ( *i ).second );
@@ -419,8 +424,10 @@ void VIEW::UpdateAllLayersColor()
         if( !IsCached( l->id ) )
             continue;
 
+        #if 0
         updateItemsColor visitor( l->id, m_painter, m_gal );
         l->items->Query( r, visitor );
+        #endif
     }
 
     MarkDirty();
@@ -564,8 +571,7 @@ struct VIEW::drawItem
     bool operator()( VIEW_ITEM* aItem )
     {
         // Conditions that have te be fulfilled for an item to be drawn
-        bool drawCondition = aItem->ViewIsVisible() &&
-                             aItem->ViewGetLOD( layer ) < view->m_scale;
+        bool drawCondition = aItem->isRenderable() && aItem->ViewGetLOD( layer ) < view->m_scale;
         if( !drawCondition )
             return true;
 
@@ -831,8 +837,13 @@ void VIEW::invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags )
         {
             if( aUpdateFlags & ( VIEW_ITEM::GEOMETRY | VIEW_ITEM::LAYERS ) )
                 updateItemGeometry( aItem, layerId );
+ #if 0
             else if( aUpdateFlags & VIEW_ITEM::COLOR )
+            {
+                printf("call UpdColor\n");
                 updateItemColor( aItem, layerId );
+            }
+#endif            
         }
 
         // Mark those layers as dirty, so the VIEW will be refreshed
@@ -860,16 +871,19 @@ void VIEW::sortLayers()
 
 void VIEW::updateItemColor( VIEW_ITEM* aItem, int aLayer )
 {
+#if 0
     wxASSERT( (unsigned) aLayer < m_layers.size() );
     wxASSERT( IsCached( aLayer ) );
 
     // Obtain the color that should be used for coloring the item on the specific layerId
     const COLOR4D color = m_painter->GetSettings()->GetColor( aItem, aLayer );
+    printf("UpdItemColor\n");
     int group = aItem->getGroup( aLayer );
 
     // Change the color, only if it has group assigned
     if( group >= 0 )
         m_gal->ChangeGroupColor( group, color );
+#endif
 }
 
 

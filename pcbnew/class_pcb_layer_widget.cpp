@@ -42,6 +42,7 @@
 #include <macros.h>
 
 #include <class_board.h>
+#include <class_module.h>
 #include <class_pcb_layer_widget.h>
 
 #include <pcbnew.h>
@@ -411,6 +412,7 @@ void PCB_LAYER_WIDGET::OnLayerVisible( int aLayer, bool isVisible, bool isFinal 
     if( galCanvas )
     {
         KIGFX::VIEW* view = galCanvas->GetView();
+        printf("OnLayerVisible %d %d\n", aLayer, isVisible?1:0);
         view->SetLayerVisible( aLayer, isVisible );
         view->RecacheAllItems( true );
     }
@@ -442,8 +444,12 @@ void PCB_LAYER_WIDGET::OnRenderEnable( int aId, bool isEnabled )
             galCanvas->GetGAL()->SetGridVisibility( myframe->IsGridVisible() );
             galCanvas->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
         }
-        else
+        else {
+             
+            brd->UpdateVisibility();
+            
             galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), isEnabled );
+        }
     }
 
     if( galCanvas && myframe->IsGalCanvasActive() )

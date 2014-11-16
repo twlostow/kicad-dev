@@ -29,6 +29,8 @@
 #ifndef SHADER_H_
 #define SHADER_H_
 
+#include <gal/color4d.h>
+
 #include <GL/glew.h>
 
 #include <string>
@@ -153,6 +155,7 @@ public:
      */
     void SetParameter( int aParameterNumber, float aValue ) const;
     void SetParameter( int aParameterNumber, int aValue ) const;
+    void SetParameter( int aParameterNumber, const COLOR4D& aValue ) const;
 
     /**
      * @brief Gets an attribute location.

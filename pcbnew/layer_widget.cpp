@@ -160,7 +160,7 @@ static wxString makeColorTxt( EDA_COLOR_T aColor )
 /**
  * Function shrinkFont
  * reduces the size of the wxFont associated with \a aControl
- */
+     */
 static void shrinkFont( wxWindow* aControl, int aPointSize )
 {
     wxFont font = aControl->GetFont();

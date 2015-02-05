@@ -285,7 +285,6 @@ public:
      */
     void Delete( BOARD_ITEM* aBoardItem )
     {
-        notify( aBoardItem, ITEM_REMOVED );
         // developers should run DEBUG versions and fix such calls with NULL
         wxASSERT( aBoardItem );
 

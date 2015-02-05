@@ -67,7 +67,7 @@ enum STROKE_T
  * found in Pcbnew or other programs that use class BOARD and its contents.
  * The corresponding class in Eeschema is SCH_ITEM.
  */
-class BOARD_ITEM : public EDA_ITEM, public OBSERVABLE
+class BOARD_ITEM : public EDA_ITEM
 {
     // These are made private here so they may not be used.
     // Instead everything derived from BOARD_ITEM is handled via DLIST<>'s

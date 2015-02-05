@@ -29,8 +29,6 @@
 #include <tool/tool_interactive.h>
 #include <view/view_group.h>
 
-#include "tool_settings.h"
-
 class BOARD_ITEM;
 class SELECTION_TOOL;
 
@@ -161,38 +159,13 @@ private:
     template <class T> T* uniqueSelected()
     {
         const SELECTION& selection = m_selectionTool->GetSelection();
-     
+
         if(selection.items.GetCount() > 1)
             return NULL;
 
         BOARD_ITEM *item = selection.Item<BOARD_ITEM>( 0 );
         return dyn_cast<T*> (item);
     }
-};
-
-class EDIT_TOOL_SETTINGS : public TOOL_SETTINGS
-{
-public:
-    enum DRAG_SNAP_MODE {
-        DRAG_SNAP_ORIGIN = 0,
-        DRAG_SNAP_NEAREST_FEATURE = 1,
-        DRAG_SNAP_FIRST_PAD = 2
-    };
-
-    EDIT_TOOL_SETTINGS();
-    ~EDIT_TOOL_SETTINGS();
-
-    UTF8 GetToolName () const;
-
-    bool Parse ( const PROPERTIES *aProperties );
-    void Serialize ( PROPERTIES *aProperties, TOOL_SETTINGS_SCOPE aScope ) const;
-
-    DRAG_SNAP_MODE DragSnapMode() const { return m_dragSnapMode; };
-    void SetDragSnapMode ( DRAG_SNAP_MODE aMode ) { m_dragSnapMode = aMode; }
-
-private:
-    DRAG_SNAP_MODE m_dragSnapMode;
-
 };
 
 #endif

@@ -285,6 +285,7 @@ public:
      */
     void Delete( BOARD_ITEM* aBoardItem )
     {
+        notify( aBoardItem, ITEM_REMOVED );
         // developers should run DEBUG versions and fix such calls with NULL
         wxASSERT( aBoardItem );
 
@@ -735,7 +736,7 @@ public:
      * sets the number of unconnected nets in the current rats nest to \a aCount.
      *
      * @param aCount is the number of unconneceted nets in the current rats nest.
-     */
+         */
     void SetUnconnectedNetCount( unsigned aCount ) { m_unconnectedNetCount = aCount; }
 
     /**

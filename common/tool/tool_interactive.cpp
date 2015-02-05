@@ -69,3 +69,4 @@ void TOOL_INTERACTIVE::SetContextMenu( CONTEXT_MENU* aMenu, CONTEXT_MENU_TRIGGER
     aMenu->setTool( this );
     m_toolMgr->ScheduleContextMenu( this, aMenu, aTrigger );
 }
+

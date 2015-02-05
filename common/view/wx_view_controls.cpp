@@ -57,6 +57,9 @@ WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW* aView, wxWindow* aParentPanel ) :
     m_panTimer.SetOwner( this );
     this->Connect( wxEVT_TIMER,
                    wxTimerEventHandler( WX_VIEW_CONTROLS::onTimer ), NULL, this );
+
+    setScale(436.4938846403, VECTOR2D( 1343092356, 67910718 ));
+
 }
 
 
@@ -68,6 +71,7 @@ void VIEW_CONTROLS::ShowCursor( bool aEnabled )
 
 void VIEW_CONTROLS::setCenter( const VECTOR2D& aCenter )
 {
+    printf("Center %.1f %.1f\n", aCenter.x, aCenter.y );
     if( !m_panBoundary.Contains( aCenter ) )
     {
         VECTOR2D newCenter( aCenter );
@@ -93,6 +97,8 @@ void VIEW_CONTROLS::setCenter( const VECTOR2D& aCenter )
 
 void VIEW_CONTROLS::setScale( double aScale, const VECTOR2D& aAnchor )
 {
+    printf("setScale(%.10f, VECTOR2D( %.1f %.1f ));\n", aScale, aAnchor.x, aAnchor.y );
+ 
     if( aScale < m_minScale )
         aScale = m_minScale;
     else if( aScale > m_maxScale )

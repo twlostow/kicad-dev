@@ -206,6 +206,13 @@ public:
         return sqrt( SquaredDistance( aP ) );
     }
 
+    void CanonicalCoefs ( ecoord& qA, ecoord& qB, ecoord& qC) const
+    {
+        qA = A.y - B.y;
+        qB = B.x - A.x;
+        qC = -qA * A.x - qB * A.y;
+    }
+
     /**
      * Function Collinear()
      *
@@ -215,17 +222,40 @@ public:
      */
     bool Collinear( const SEG& aSeg ) const
     {
-        ecoord qa = A.y - B.y;
-        ecoord qb = B.x - A.x;
-        ecoord qc = -qa * A.x - qb * A.y;
-
+        ecoord qa, qb, qc;
+        CanonicalCoefs ( qa, qb, qc );
+        
         ecoord d1 = std::abs( aSeg.A.x * qa + aSeg.A.y * qb + qc );
         ecoord d2 = std::abs( aSeg.B.x * qa + aSeg.B.y * qb + qc );
 
         return ( d1 <= 1 && d2 <= 1 );
     }
 
-    bool Overlaps( const SEG& aSeg ) const
+    bool ApproxCollinear( const SEG& aSeg ) const
+    {
+        ecoord p, q, r;
+        CanonicalCoefs ( p, q, r );
+    
+        ecoord dist1 = ( p * aSeg.A.x + q * aSeg.A.y + r ) / sqrt( p * p + q * q );     
+        ecoord dist2 = ( p * aSeg.B.x + q * aSeg.B.y + r ) / sqrt( p * p + q * q );     
+
+        return std::abs(dist1) <= 1 && std::abs(dist2) <= 1;
+    }
+
+    bool ApproxParallel ( const SEG& aSeg ) const
+    {
+        ecoord p, q, r;
+        CanonicalCoefs ( p, q, r );
+        
+        ecoord dist1 = ( p * aSeg.A.x + q * aSeg.A.y + r ) / sqrt( p * p + q * q );     
+        ecoord dist2 = ( p * aSeg.B.x + q * aSeg.B.y + r ) / sqrt( p * p + q * q );     
+
+        return std::abs(dist1 - dist2) <= 1;
+    }
+
+    bool Overlaps2( const SEG& aSeg, bool aApproximate = false ) const;
+    
+    bool Overlaps( const SEG& aSeg, bool aApproximate = false ) const
     {
         if( aSeg.A == aSeg.B ) // single point corner case
         {
@@ -235,9 +265,9 @@ public:
             return Contains( aSeg.A );
         }
 
-        if( !Collinear( aSeg ) )
-            return false;
-
+        if ( !Collinear ( aSeg ) )
+                return false;
+        
         if( Contains( aSeg.A ) || Contains( aSeg.B ) )
             return true;
         if( aSeg.Contains( A ) || aSeg.Contains( B ) )
@@ -261,6 +291,8 @@ public:
     {
         return ( A - B ).SquaredEuclideanNorm();
     }
+
+    ecoord TCoef ( const VECTOR2I& aP ) const;
 
     /**
      * Function Index()
@@ -288,9 +320,18 @@ private:
 
 inline VECTOR2I SEG::LineProject( const VECTOR2I& aP ) const
 {
-    // fixme: numerical errors for large integers
-    assert( false );
-    return VECTOR2I( 0, 0 );
+    VECTOR2I d = B - A;
+    ecoord l_squared = d.Dot( d );
+
+    if( l_squared == 0 )
+        return A;
+
+    ecoord t = d.Dot( aP - A );
+
+    int xp = rescale( t, (ecoord)d.x, l_squared );
+    int yp = rescale( t, (ecoord)d.y, l_squared );
+
+    return A + VECTOR2I( xp, yp );
 }
 
 
@@ -305,6 +346,11 @@ inline int SEG::LineDistance( const VECTOR2I& aP, bool aDetermineSide ) const
     return aDetermineSide ? dist : abs( dist );
 }
 
+inline SEG::ecoord SEG::TCoef ( const VECTOR2I& aP ) const
+{
+    VECTOR2I d = B - A;
+    return d.Dot ( aP - A);
+}
 
 inline const VECTOR2I SEG::NearestPoint( const VECTOR2I& aP ) const
 {

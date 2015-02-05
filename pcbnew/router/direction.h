@@ -73,7 +73,7 @@ public:
      */
     DIRECTION_45( const VECTOR2I& aVec )
     {
-        construct( aVec );
+        construct_( aVec );
     }
 
     /**
@@ -82,7 +82,7 @@ public:
      */
     DIRECTION_45( const SEG& aSeg )
     {
-        construct( aSeg.B - aSeg.A );
+        construct_( aSeg.B - aSeg.A );
     }
 
     /**
@@ -316,7 +316,7 @@ private:
      * Calculates the direction from a vector. If the vector's angle is not a multiple of 45
      * degrees, the direction is rounded to the nearest octant.
      * @param aVec our vector     */
-    void construct( const VECTOR2I& aVec )
+    void construct_( const VECTOR2I& aVec )
     {
         m_dir = UNDEFINED;
 

@@ -58,6 +58,7 @@ public:
         JOINT   = 4,
         SEGMENT = 8,
         VIA     = 16,
+        DIFF_PAIR = 32,
         ANY     = 0xff
     };
 

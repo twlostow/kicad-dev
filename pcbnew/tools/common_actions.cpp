@@ -475,6 +475,9 @@ boost::optional<TOOL_EVENT> COMMON_ACTIONS::TranslateLegacyId( int aId )
     case ID_TUNE_SINGLE_TRACK_LEN_BUTT:
         return COMMON_ACTIONS::routerActivateTuneSingleTrace.MakeEvent();
     
+    case ID_TUNE_DIFF_PAIR_LEN_BUTT:
+        return COMMON_ACTIONS::routerActivateTuneDiffPair.MakeEvent();
+    
     case ID_PCB_ZONES_BUTT:
         return COMMON_ACTIONS::drawZone.MakeEvent();
 

@@ -24,6 +24,7 @@
 #include <geometry/shape_rect.h>
 
 #include "pns_line.h"
+#include "pns_diff_pair.h"
 #include "pns_node.h"
 #include "pns_optimizer.h"
 #include "pns_utils.h"
@@ -782,7 +783,6 @@ bool PNS_OPTIMIZER::fanoutCleanup( PNS_LINE* aLine )
         for(int i = 0; i < 2; i++ )
         {
             SHAPE_LINE_CHAIN l2 = DIRECTION_45().BuildInitialTrace( p_start, p_end, i );
-            PNS_ROUTER::GetInstance()->DisplayDebugLine( l2, 4, 10000 );
             PNS_LINE repl;
             repl = PNS_LINE( *aLine, l2 );
 
@@ -795,4 +795,210 @@ bool PNS_OPTIMIZER::fanoutCleanup( PNS_LINE* aLine )
     }
 
     return false;
+}
+
+int findCoupledVertices ( const VECTOR2I& aVertex, const SEG& aOrigSeg, const SHAPE_LINE_CHAIN& aCoupled, PNS_DIFF_PAIR *aPair, int *aIndices )
+{
+    int count = 0; 
+    for ( int i = 0; i < aCoupled.SegmentCount(); i++ )
+    {
+        SEG s = aCoupled.CSegment(i);
+        VECTOR2I projOverCoupled = s.LineProject ( aVertex );
+        
+
+        if( s.ApproxParallel ( aOrigSeg ) )
+        {
+            int64_t dist = ( projOverCoupled - aVertex ).EuclideanNorm() - aPair->Width();
+                
+            if( aPair->GapConstraint().Matches(dist) )
+            {
+               *aIndices++ = i;
+               count++;
+            }
+        }
+    }
+    
+    return count;
+}
+
+bool verifyDpBypass ( PNS_NODE *aNode, PNS_DIFF_PAIR *aPair, bool aRefIsP, const SHAPE_LINE_CHAIN& aNewRef, const SHAPE_LINE_CHAIN& aNewCoupled )
+{
+    PNS_LINE refLine ( aRefIsP ? aPair->PLine() : aPair->NLine(), aNewRef );
+    PNS_LINE coupledLine ( aRefIsP ? aPair->NLine() : aPair->PLine(), aNewCoupled );
+    
+    if ( aNode->CheckColliding( &refLine, &coupledLine, PNS_ITEM::ANY, aPair->Gap() - 10 ) )
+        return false;
+
+    if ( aNode->CheckColliding ( &refLine ) )
+        return false;
+
+    if ( aNode->CheckColliding ( &coupledLine ) )
+        return false;
+
+    return true;
+}
+
+bool coupledBypass ( PNS_NODE *aNode, PNS_DIFF_PAIR *aPair, bool aRefIsP, const SHAPE_LINE_CHAIN& aRef, const SHAPE_LINE_CHAIN& aRefBypass, const SHAPE_LINE_CHAIN& aCoupled, SHAPE_LINE_CHAIN& aNewCoupled )
+{
+    int vStartIdx[1024]; // fixme: possible overflow
+
+    int nStarts = findCoupledVertices  ( aRefBypass.CPoint(0), aRefBypass.CSegment(0), aCoupled, aPair, vStartIdx );
+    DIRECTION_45 dir( aRefBypass.CSegment(0) );
+    
+    int64_t bestLength = -1;
+    bool found = false;
+    SHAPE_LINE_CHAIN bestBypass;
+    int si, ei;
+
+    for(int i=0; i< nStarts ;i++)
+        for ( int j = 1; j < aCoupled.PointCount() - 1; j++)
+        {
+            int delta = std::abs ( vStartIdx[i] - j );
+            if(delta > 1)
+            {
+                const VECTOR2I& vs = aCoupled.CPoint( vStartIdx[i] );
+                SHAPE_LINE_CHAIN bypass = dir.BuildInitialTrace( vs, aCoupled.CPoint(j), dir.IsDiagonal() );
+
+                int64_t coupledLength = aPair->CoupledLength ( aRef, bypass );
+            
+                SHAPE_LINE_CHAIN newCoupled = aCoupled;
+
+                si = vStartIdx[i];
+                ei = j;
+                
+                if(si < ei)
+                    newCoupled.Replace( si, ei, bypass );
+                else
+                    newCoupled.Replace( ei, si, bypass.Reverse() );
+
+                if(coupledLength > bestLength && verifyDpBypass ( aNode, aPair, aRefIsP, aRef, newCoupled) )
+                {
+                    bestBypass = newCoupled;
+                    bestLength = coupledLength;                
+                    found = true;
+                }
+            }
+        }
+
+
+    if(found)
+        aNewCoupled = bestBypass;
+
+    return found;
+}
+
+bool checkDpColliding ( PNS_NODE *aNode, PNS_DIFF_PAIR *aPair, bool aIsP, const SHAPE_LINE_CHAIN& aPath )
+{
+    PNS_LINE tmp ( aIsP ? aPair->PLine() : aPair->NLine(), aPath );
+
+    return aNode->CheckColliding( &tmp );
+}
+
+
+bool PNS_OPTIMIZER::mergeDpStep( PNS_DIFF_PAIR *aPair, bool aTryP, int step )
+{
+    int n = 1;
+    
+    SHAPE_LINE_CHAIN currentPath  = aTryP ? aPair->CP() : aPair->CN();
+    SHAPE_LINE_CHAIN coupledPath  = aTryP ? aPair->CN() : aPair->CP();
+
+    int n_segs = currentPath.SegmentCount() - 1;
+
+    int64_t clenPre = aPair->CoupledLength ( currentPath, coupledPath );
+    int64_t budget = clenPre / 10; // fixme: come up with somethig more intelligent here...
+
+    while( n < n_segs - step )
+    {
+        const SEG s1    = currentPath.CSegment( n );
+        const SEG s2    = currentPath.CSegment( n + step );
+
+        DIRECTION_45 dir1 (s1);
+        DIRECTION_45 dir2 (s2);
+
+        if( dir1.IsObtuse(dir2 ) )
+        {
+            SHAPE_LINE_CHAIN bypass = DIRECTION_45().BuildInitialTrace( s1.A, s2.B, dir1.IsDiagonal() );
+            SHAPE_LINE_CHAIN newRef;
+            SHAPE_LINE_CHAIN newCoup;
+            int64_t deltaCoupled = -1, deltaUni = -1;
+                        
+
+            newRef = currentPath;
+            newRef.Replace( s1.Index(), s2.Index(), bypass );
+
+            deltaUni = aPair->CoupledLength ( newRef, coupledPath ) - clenPre + budget;
+
+            if ( coupledBypass ( m_world, aPair, aTryP, newRef, bypass, coupledPath, newCoup ) )
+            {
+                deltaCoupled = aPair->CoupledLength ( newRef, newCoup ) - clenPre + budget;
+
+                if(deltaCoupled >= 0)
+                {
+                    newRef.Simplify();
+                    newCoup.Simplify();
+
+                    aPair->SetShape ( newRef, newCoup, !aTryP );
+                    return true;
+                }
+            }
+            else if( deltaUni >= 0 &&  verifyDpBypass ( m_world, aPair, aTryP, newRef, coupledPath ) )
+            {
+                newRef.Simplify();
+                coupledPath.Simplify();
+
+                aPair->SetShape ( newRef, coupledPath, !aTryP );
+                return true;
+            }
+        }
+        
+        n++;
+    }
+
+    return false;   
+}
+
+bool PNS_OPTIMIZER::mergeDpSegments( PNS_DIFF_PAIR *aPair )
+{
+    int step_p = aPair->CP().SegmentCount() - 2;
+    int step_n = aPair->CN().SegmentCount() - 2;
+
+    while( 1 )
+    {
+        int n_segs_p = aPair->CP().SegmentCount();
+        int n_segs_n = aPair->CN().SegmentCount();
+        
+        int max_step_p = n_segs_p - 2;
+        int max_step_n = n_segs_n - 2;
+
+        if( step_p > max_step_p )
+            step_p = max_step_p;
+
+        if( step_n > max_step_n )
+            step_n = max_step_n;
+
+        if( step_p < 1 && step_n < 1)
+            break;
+
+        bool found_anything_p = false;
+        bool found_anything_n = false;
+
+        if(step_p > 1)
+            found_anything_p = mergeDpStep( aPair, true, step_p );
+
+        if(step_n > 1)
+            found_anything_n = mergeDpStep( aPair, false, step_n );
+        
+        if( !found_anything_n && !found_anything_p )
+        {
+            step_n--;
+            step_p--;
+        }
+    }
+}
+
+bool PNS_OPTIMIZER::Optimize( PNS_DIFF_PAIR* aPair )
+{
+
+
+    return mergeDpSegments ( aPair );
 }

@@ -743,7 +743,7 @@ public:
      * sets the number of unconnected nets in the current rats nest to \a aCount.
      *
      * @param aCount is the number of unconneceted nets in the current rats nest.
-     */
+         */
     void SetUnconnectedNetCount( unsigned aCount ) { m_unconnectedNetCount = aCount; }
 
     /**

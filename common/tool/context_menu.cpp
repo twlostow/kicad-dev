@@ -284,3 +284,5 @@ void CONTEXT_MENU::copyItem( const wxMenuItem* aSource, wxMenuItem* aDest ) cons
     if( aSource->GetKind() == wxITEM_NORMAL )
         aDest->SetBitmap( aSource->GetBitmap() );
 }
+
+

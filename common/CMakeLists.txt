@@ -204,9 +204,8 @@ set( COMMON_SRCS
     wildcards_and_files_ext.cpp
     worksheet.cpp
     wxwineda.cpp
-    wxunittext.cpp
-    wx_unit_input.cpp
-    xnode.cpp
+	wx_unit_binder.cpp
+    wx_status_popup.cpp    xnode.cpp
     zoom.cpp
     )
 

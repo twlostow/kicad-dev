@@ -68,16 +68,8 @@
 
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
-
-#include <tools/selection_tool.h>
-#include <router/router_tool.h>
-#include <tools/edit_tool.h>
-#include <tools/drawing_tool.h>
-#include <tools/point_editor.h>
-#include <tools/pcbnew_control.h>
-#include <tools/pcb_editor_control.h>
-#include <tools/placement_tool.h>
 #include <tools/common_actions.h>
+
 
 #include <scripting/python_console_frame.h>
 
@@ -534,6 +526,7 @@ bool PCB_EDIT_FRAME::isAutoSaveRequired() const
     return GetScreen()->IsSave();
 }
 
+void registerAllTools ( TOOL_MANAGER *aToolManager );
 
 void PCB_EDIT_FRAME::setupTools()
 {
@@ -543,15 +536,9 @@ void PCB_EDIT_FRAME::setupTools()
                                    GetGalCanvas()->GetViewControls(), this );
     m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
+    registerAllTools ( m_toolManager );
     // Register tools
-    m_toolManager->RegisterTool( new SELECTION_TOOL );
-    m_toolManager->RegisterTool( new ROUTER_TOOL );
-    m_toolManager->RegisterTool( new EDIT_TOOL );
-    m_toolManager->RegisterTool( new DRAWING_TOOL );
-    m_toolManager->RegisterTool( new POINT_EDITOR );
-    m_toolManager->RegisterTool( new PCBNEW_CONTROL );
-    m_toolManager->RegisterTool( new PCB_EDITOR_CONTROL );
-    m_toolManager->RegisterTool( new PLACEMENT_TOOL );
+   
     m_toolManager->ResetTools( TOOL_BASE::RUN );
 
     // Run the selection tool, it is supposed to be always active

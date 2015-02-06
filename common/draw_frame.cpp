@@ -1023,9 +1023,16 @@ void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
         if( !IsGalCanvasActive() )
         {
             // Set up viewport
-            double zoom = 1.0 / ( zoomFactor * m_canvas->GetZoom() );
-            view->SetScale( zoom );
-            view->SetCenter( VECTOR2D( m_canvas->GetScreenCenterLogicalPosition() ) );
+            //double zoom = 1.0 / ( zoomFactor * m_canvas->GetZoom() );
+            //view->SetScale( zoom );
+            //view->SetCenter( VECTOR2D( m_canvas->GetScreenCenterLogicalPosition() ) );
+
+
+            //view->SetScale(660.4301368996, 
+                view->SetCenter ( VECTOR2D( 133561636.5, 68987772.5 ) );
+
+  //          view->SetCenter (  );
+    //         view->SetScale(436.4938846403, VECTOR2D ( 1343092356, 67910718 ));
         }
 
         // Set up grid settings

@@ -35,6 +35,7 @@ bool SEG::PointCloserThan( const VECTOR2I& aP, int aDist ) const
 {
     VECTOR2I d = B - A;
     ecoord dist_sq = (ecoord) aDist * aDist;
+    ecoord dist_sq_thr = (ecoord) (aDist + 1) * (aDist + 1);
 
     SEG::ecoord l_squared = d.Dot( d );
     SEG::ecoord t = d.Dot( aP - A );
@@ -57,9 +58,10 @@ bool SEG::PointCloserThan( const VECTOR2I& aP, int aDist ) const
 
         if( ca && cb )
             num >>= 1;
-
-        if( num > ( dist_sq + 100 ) )
+        
+        if( num > (dist_sq + 100) )
             return false;
+        
         else if( num < ( dist_sq - 100 ) )
             return true;
     }
@@ -154,4 +156,13 @@ bool SEG::Collide( const SEG& aSeg, int aClearance ) const
 bool SEG::Contains( const VECTOR2I& aP ) const
 {
     return PointCloserThan( aP, 1 );
+}
+
+bool SEG::Overlaps2( const SEG& aSeg, bool aApproximate ) const
+{
+    if( ccw( A, aSeg.A, aSeg.B ) != ccw( B, aSeg.A, aSeg.B ) &&
+            ccw( A, B, aSeg.A ) != ccw( A, B, aSeg.B ) )
+        return true;
+
+    return false;
 }

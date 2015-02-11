@@ -31,6 +31,14 @@ class PNS_ROUTER;
 class PNS_ITEM;
 class PNS_NODE;
 
+/**
+ * Class PNS_PLACEMENT_ALGO
+ *
+ * Abstract class for a P&S placement/dragging algorithm. 
+ * All subtools (drag, single/diff pair routing and meandering)
+ * are derived from it.
+ */
+
 class PNS_PLACEMENT_ALGO : public PNS_ALGO_BASE
 {
 public:
@@ -100,14 +108,14 @@ public:
     /**
      * Function Traces()
      *
-     * Returns the complete routed line, as a single-member PNS_ITEMSET.
+     * Returns all routed/tuned traces.
      */
     virtual const PNS_ITEMSET Traces() = 0;
 
     /**
      * Function CurrentEnd()
      *
-     * Returns the current end of the line being placed. It may not be equal
+     * Returns the current end of the line being placed/tuned. It may not be equal
      * to the cursor position due to collisions.
      */
     virtual const VECTOR2I& CurrentEnd() const = 0;
@@ -129,7 +137,7 @@ public:
     /**
      * Function CurrentNode()
      *
-     * Returns the most recent world state.
+     * Returns the most recent board state.
      */
     virtual PNS_NODE* CurrentNode( bool aLoopsRemoved = false ) const = 0;
 
@@ -138,7 +146,10 @@ public:
      *
      * Toggles the current posture (straight/diagonal) of the trace head.
      */
-    virtual void FlipPosture() {};
+    virtual void FlipPosture() 
+    {
+
+    }
 
     /**
      * Function UpdateSizes()
@@ -147,24 +158,32 @@ public:
      * a settings class. Used to dynamically change these parameters as
      * the track is routed.
      */
-    virtual void UpdateSizes( const PNS_SIZES_SETTINGS& aSizes ) {};
+    virtual void UpdateSizes( const PNS_SIZES_SETTINGS& aSizes )
+    {
+
+    }
 
     /**
      * Function SetOrthoMode()
      * 
      * Forces the router to place a straight 90/45 degree trace (with the end
      * as near to the cursor as possible) instead of a standard 135 degree
-     * two-segment bend
+     * two-segment bend.
      */
-    virtual void SetOrthoMode ( bool aOrthoMode ) {};
+    virtual void SetOrthoMode ( bool aOrthoMode )
+    {
+
+    }
 
     /**
      * Function GetModifiedNets
      *
-     * Returns all nets of the currently routed trace(s)
+     * Returns the net codes of all currently routed trace(s)
      */
-    virtual void GetModifiedNets( std::vector<int> &aNets ) const {};
+    virtual void GetModifiedNets( std::vector<int> &aNets ) const 
+    {
 
+    }
 };
 
 #endif

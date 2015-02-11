@@ -41,9 +41,8 @@ class PNS_ROUTER_BASE;
 /**
  * Class PNS_MEANDER_PLACER
  *
- * Single track length-matching/meandering tool.
+ * Single track length matching/meandering tool.
  */
-
 class PNS_MEANDER_PLACER : public PNS_MEANDER_PLACER_BASE
 {
 public:
@@ -51,71 +50,42 @@ public:
     PNS_MEANDER_PLACER( PNS_ROUTER* aRouter );
     ~PNS_MEANDER_PLACER();
 
-    /**
-     * Function Start()
-     * 
-     * Starts routing a single track at point aP, taking item aStartItem as anchor
-     * (unless NULL).
-     */
-    bool Start ( const VECTOR2I& aP, PNS_ITEM* aStartItem );
+    /// @copydoc PNS_PLACEMENT_ALGO::Start()
+    bool Start( const VECTOR2I& aP, PNS_ITEM* aStartItem );
 
-    /**
-     * Function Move()
-     * 
-     * Moves the end of the currently routed trace to the point aP, taking 
-     * aEndItem as anchor (if not NULL).
-     * (unless NULL).
-     */
+    /// @copydoc PNS_PLACEMENT_ALGO::Move()
     bool Move( const VECTOR2I& aP, PNS_ITEM* aEndItem );
 
-    /**
-     * Function FixRoute()
-     * 
-     * Commits the currently routed track to the parent node, taking
-     * aP as the final end point and aEndItem as the final anchor (if provided).
-     * @return true, if route has been commited. May return false if the routing
-     * result is violating design rules - in such case, the track is only committed
-     * if Settings.CanViolateDRC() is on.
-     */
+    /// @copydoc PNS_PLACEMENT_ALGO::FixRoute()
     bool FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem );
-    
-    const PNS_LINE Trace() const;
 
-    /**
-     * Function CurrentNode()
-     *
-     * Returns the most recent world state.
-     */
+    /// @copydoc PNS_PLACEMENT_ALGO::CurrentNode()
     PNS_NODE* CurrentNode( bool aLoopsRemoved = false ) const;
     
+    /// @copydoc PNS_PLACEMENT_ALGO::Traces()
     const PNS_ITEMSET Traces();
 
+    /// @copydoc PNS_PLACEMENT_ALGO::CurrentEnd()
     const VECTOR2I& CurrentEnd() const;
     
+    /// @copydoc PNS_PLACEMENT_ALGO::CurrentNet()
     int CurrentNet() const;
+    
+    /// @copydoc PNS_PLACEMENT_ALGO::CurrentLayer()
     int CurrentLayer() const;
 
-    int totalLength();
-
+    /// @copydoc PNS_MEANDER_PLACER_BASE::TuningInfo()
     const wxString TuningInfo() const;
+
+    /// @copydoc PNS_MEANDER_PLACER_BASE::TuningStatus()
     TUNING_STATUS TuningStatus() const;
 
-    bool checkFit ( PNS_MEANDER_SHAPE* aShape );
+    /// @copydoc PNS_MEANDER_PLACER_BASE::CheckFit()
+    bool CheckFit ( PNS_MEANDER_SHAPE* aShape );
 
 private:
-    friend class PNS_MEANDER_SHAPE;
     
-    void meanderSegment ( const SEG& aBase );
-
-//    TUNING_STATUS tuneLineLength ( SHAPE_LINE_CHAIN & aPre, SHAPE_LINE_CHAIN& aTuned, SHAPE_LINE_CHAIN& aPost );
     TUNING_STATUS tuneLineLength ( SHAPE_LINE_CHAIN& aTuned, int aElongation );
-
-
-
-//    void addMeander ( PNS_MEANDER *aM );
-//    void addCorner ( const VECTOR2I& aP );
-
-    void splitAdjacentSegments( PNS_NODE* aNode, PNS_ITEM* aSeg, const VECTOR2I& aP );
 
     void setWorld ( PNS_NODE* aWorld );
     void release();

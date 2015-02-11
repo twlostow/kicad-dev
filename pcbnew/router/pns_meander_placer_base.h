@@ -40,40 +40,115 @@ class PNS_ROUTER_BASE;
 /**
  * Class PNS_MEANDER_PLACER_BASE
  *
- * Base class for Single trace & Differenial pair meandrators ;)
+ * Base class for Single trace & Differenial pair meandering tools, as
+ * both of them share a lot of code.
  */
-
 class PNS_MEANDER_PLACER_BASE : public PNS_PLACEMENT_ALGO
 {
 public:
+    ///> Result of the length tuning operation
     enum TUNING_STATUS {
         TOO_SHORT = 0,
         TOO_LONG,
         TUNED
     };
 
-    PNS_MEANDER_PLACER_BASE ( PNS_ROUTER* aRouter );
-    virtual ~PNS_MEANDER_PLACER_BASE ();
+    PNS_MEANDER_PLACER_BASE( PNS_ROUTER* aRouter );
+    virtual ~PNS_MEANDER_PLACER_BASE( );
 
-    virtual const wxString TuningInfo() const = 0;
-    virtual TUNING_STATUS TuningStatus() const = 0;
+    /**
+     * Function TuningInfo()
+     *
+     * Returns a string describing the status and length of the
+     * tuned traces.
+     */
+    virtual const wxString TuningInfo( ) const = 0;
+    
+    /**
+     * Function TuningStatus()
+     *
+     * Returns the tuning status (too short, too long, etc.)
+     * of the trace(s) being tuned.
+     */
+    virtual TUNING_STATUS TuningStatus( ) const = 0;
 
-    virtual void AmplitudeStep ( int aSign );
-    virtual void SpacingStep ( int aSign );
+    /**
+     * Function AmplitudeStep()
+     *
+     * Increases/decreases the current meandering amplitude by one step.
+     * @param aSign direction (negative = decrease, positive = increase).
+     */
+    virtual void AmplitudeStep( int aSign );
+    
+    /**
+     * Function SpacingStep()
+     *
+     * Increases/decreases the current meandering spcing by one step.
+     * @param aSign direction (negative = decrease, positive = increase).
+     */
+    virtual void SpacingStep( int aSign );
 
+    /**
+     * Function MeanderSettings()
+     *
+     * Returns the current meandering configuration.
+     * @return the settings
+     */
     const PNS_MEANDER_SETTINGS& MeanderSettings() const 
     {
         return m_settings;
     }
 
+    /**
+     * Function UpdateSettings()
+     *
+     * Sets the current meandering configuration.
+     * @param aSettings the settings
+     */
     virtual void UpdateSettings( const PNS_MEANDER_SETTINGS& aSettings);
+  
+    /**
+     * Function CheckFit()
+     *
+     * Checks if it's ok to place the shape aShape (i.e.
+     * if it doesn't cause DRC violations or collide with
+     * other meanders).
+     * @param aShape the shape to check
+     * @return true if the shape fits
+     */
+    virtual bool CheckFit ( PNS_MEANDER_SHAPE* aShape )
+    { 
+        return false;
+    }
 
-    virtual bool checkFit ( PNS_MEANDER_SHAPE* aShape ) { return false; };
-    
 protected:
+    
+    /**
+     * Function cutTunedLine()
+     * 
+     * Extracts the part of a track to be meandered, depending on the
+     * starting point and the cursor position.
+     * @param aOrigin the original line
+     * @param aTuneStart point where we start meandering (start click coorinates)
+     * @param aCursorPos current cursor position
+     * @param aPre part before the beginning of meanders
+     * @param aTuned part to be meandered
+     * @param aPost part after the end of meanders
+     */
+    void cutTunedLine(  const SHAPE_LINE_CHAIN& aOrigin,
+                        const VECTOR2I& aTuneStart,
+                        const VECTOR2I& aCursorPos,
+                        SHAPE_LINE_CHAIN& aPre,
+                        SHAPE_LINE_CHAIN& aTuned,
+                        SHAPE_LINE_CHAIN& aPost );
 
+
+    ///> width of the meandered trace(s)
     int m_currentWidth;
+    ///> meandering settings
     PNS_MEANDER_SETTINGS m_settings;    
+    ///> current end point
+    VECTOR2I m_currentEnd;
 };
 
 #endif    // __PNS_MEANDER_PLACER_BASE_H

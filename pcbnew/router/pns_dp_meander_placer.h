@@ -102,7 +102,7 @@ public:
     const wxString TuningInfo() const;
     TUNING_STATUS TuningStatus() const;
 
-    bool checkFit ( PNS_MEANDER_SHAPE* aShape );
+    bool CheckFit ( PNS_MEANDER_SHAPE* aShape );
 
     
 private:
@@ -117,7 +117,7 @@ private:
 //    void addMeander ( PNS_MEANDER *aM );
 //    void addCorner ( const VECTOR2I& aP );
 
-    void splitAdjacentSegments( PNS_NODE* aNode, PNS_ITEM* aSeg, const VECTOR2I& aP );
+    const SEG baselineSegment ( const PNS_DIFF_PAIR::COUPLED_SEGMENTS& aCoupledSegs );
 
     void setWorld ( PNS_NODE* aWorld );
     void release();

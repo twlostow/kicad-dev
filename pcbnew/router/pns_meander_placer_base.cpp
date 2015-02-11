@@ -22,34 +22,64 @@
 #include "pns_meander.h"
 #include "pns_meander_placer_base.h"
 
-PNS_MEANDER_PLACER_BASE::PNS_MEANDER_PLACER_BASE ( PNS_ROUTER* aRouter ) :
-        PNS_PLACEMENT_ALGO ( aRouter )
+PNS_MEANDER_PLACER_BASE::PNS_MEANDER_PLACER_BASE( PNS_ROUTER* aRouter ) :
+        PNS_PLACEMENT_ALGO( aRouter )
 {
 
 };
 
-PNS_MEANDER_PLACER_BASE::~PNS_MEANDER_PLACER_BASE () 
+PNS_MEANDER_PLACER_BASE::~PNS_MEANDER_PLACER_BASE( ) 
 {
 
 };
 
-void PNS_MEANDER_PLACER_BASE::AmplitudeStep ( int aSign )
+void PNS_MEANDER_PLACER_BASE::AmplitudeStep( int aSign )
 {
     int a = m_settings.m_maxAmplitude + aSign * m_settings.m_step;
-    a = std::max(a,  m_settings.m_minAmplitude );
+    a = std::max( a,  m_settings.m_minAmplitude );
         
     m_settings.m_maxAmplitude = a;
 }
 
-void PNS_MEANDER_PLACER_BASE::SpacingStep ( int aSign )
+void PNS_MEANDER_PLACER_BASE::SpacingStep( int aSign )
 {
     int s = m_settings.m_spacing + aSign * m_settings.m_step;
-    s = std::max(s, 2 * m_currentWidth);
+    s = std::max( s, 2 * m_currentWidth );
         
     m_settings.m_spacing = s;
 }
 
-void PNS_MEANDER_PLACER_BASE::UpdateSettings( const PNS_MEANDER_SETTINGS& aSettings)
+void PNS_MEANDER_PLACER_BASE::UpdateSettings( const PNS_MEANDER_SETTINGS& aSettings )
 {
     m_settings = aSettings;
+}
+
+void PNS_MEANDER_PLACER_BASE::cutTunedLine( const SHAPE_LINE_CHAIN& aOrigin,
+                                            const VECTOR2I& aTuneStart,
+                                            const VECTOR2I& aCursorPos,
+                                            SHAPE_LINE_CHAIN& aPre,
+                                            SHAPE_LINE_CHAIN& aTuned,
+                                            SHAPE_LINE_CHAIN& aPost )
+{
+    VECTOR2I n = aOrigin.NearestPoint( aCursorPos );
+    VECTOR2I m = aOrigin.NearestPoint( aTuneStart );
+
+    SHAPE_LINE_CHAIN l( aOrigin );
+    l.Split( n );
+    l.Split( m );
+
+    int i_start = l.Find( m );
+    int i_end = l.Find( n );
+
+    if( i_start > i_end )
+    {
+        l = l.Reverse( );
+        i_start = l.Find( m );
+        i_end = l.Find( n );
+    }
+
+    aPre = l.Slice( 0, i_start );
+    aPost = l.Slice( i_end, -1 );    
+    aTuned = l.Slice( i_start, i_end );
+    aTuned.Simplify( );
 }

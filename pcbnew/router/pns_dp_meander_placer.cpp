@@ -144,7 +144,7 @@ int PNS_DP_MEANDER_PLACER::origPathLength () const
     return std::max(totalP, totalN);
 }
 
-const SEG baselineSegment ( const PNS_DIFF_PAIR::COUPLED_SEGMENTS& aCoupledSegs )
+const SEG PNS_DP_MEANDER_PLACER::baselineSegment ( const PNS_DIFF_PAIR::COUPLED_SEGMENTS& aCoupledSegs )
 {
     const VECTOR2I a( ( aCoupledSegs.coupledP.A + aCoupledSegs.coupledN.A ) / 2 );
     const VECTOR2I b( ( aCoupledSegs.coupledP.B + aCoupledSegs.coupledN.B ) / 2 );
@@ -225,39 +225,6 @@ PNS_MEANDER_PLACER_BASE::TUNING_STATUS PNS_DP_MEANDER_PLACER::tuneLineLength ( P
     return TUNED;
 }
 
-void cutTunedLine (   const SHAPE_LINE_CHAIN& aOrigin,
-                      const VECTOR2I& aTuneStart,
-                      const VECTOR2I& aCursorPos,
-                      SHAPE_LINE_CHAIN& aPre,
-                      SHAPE_LINE_CHAIN& aTuned,
-                      SHAPE_LINE_CHAIN& aPost )
-{
-    VECTOR2I n = aOrigin.NearestPoint(aCursorPos);
-    VECTOR2I m = aOrigin.NearestPoint(aTuneStart);
-
-    //DrawDebugPoint ( m, 4 );
-    //DrawDebugPoint ( n, 5 );
-
-
-    SHAPE_LINE_CHAIN l ( aOrigin );
-    l.Split ( n );
-    l.Split ( m );
-
-    int i_start = l.Find ( m );
-    int i_end = l.Find ( n );
-
-    if( i_start > i_end )
-    {
-        l = l.Reverse();
-        i_start = l.Find ( m );
-        i_end = l.Find ( n );
-    }
-
-    aPre = l.Slice (0, i_start );
-    aPost = l.Slice ( i_end, -1 );    
-    aTuned = l.Slice ( i_start, i_end );
-    aTuned.Simplify();
-}
 
 
 bool pairOrientation( const PNS_DIFF_PAIR::COUPLED_SEGMENTS& aPair ) 
@@ -421,7 +388,7 @@ bool PNS_DP_MEANDER_PLACER::FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     return true;
 }
         
-bool PNS_DP_MEANDER_PLACER::checkFit ( PNS_MEANDER_SHAPE *aShape )
+bool PNS_DP_MEANDER_PLACER::CheckFit ( PNS_MEANDER_SHAPE *aShape )
 {
     PNS_LINE l1 ( m_originPair.PLine(), aShape->CLine(0) );
     PNS_LINE l2 ( m_originPair.NLine(), aShape->CLine(1) );

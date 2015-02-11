@@ -43,4 +43,4 @@ set( PCBNEW_PNS_SRCS
     length_tuner_tool.cpp
 )
 
-add_library( pnsrouter STATIC ${PCBNEW_PNS_SRCS} )
+add_library( pnsrouter SHARED ${PCBNEW_PNS_SRCS} )

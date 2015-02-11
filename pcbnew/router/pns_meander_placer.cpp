@@ -1,7 +1,7 @@
 /*
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
- * Copyright (C) 2013-2014 CERN
+ * Copyright (C) 2013-2015 CERN
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -19,7 +19,6 @@
  */
 
 #include <boost/foreach.hpp>
-#include <boost/optional.hpp>
 
 #include <base_units.h> // God forgive me doing this...
 #include <colors.h>
@@ -32,8 +31,6 @@
 #include "pns_meander_placer.h"
 #include "pns_router.h"
 
-using boost::optional;
-
 
 PNS_MEANDER_PLACER::PNS_MEANDER_PLACER( PNS_ROUTER* aRouter ) :
     PNS_MEANDER_PLACER_BASE ( aRouter )
@@ -44,55 +41,53 @@ PNS_MEANDER_PLACER::PNS_MEANDER_PLACER( PNS_ROUTER* aRouter ) :
 }
 
 
-PNS_MEANDER_PLACER::~PNS_MEANDER_PLACER()
+PNS_MEANDER_PLACER::~PNS_MEANDER_PLACER( )
 {
  
 }
 
-const PNS_LINE PNS_MEANDER_PLACER::Trace() const
-{
-    return PNS_LINE( *m_originLine, m_finalShape );
-}
-
 PNS_NODE* PNS_MEANDER_PLACER::CurrentNode( bool aLoopsRemoved ) const
 {
-    if(!m_currentNode)
+    if( !m_currentNode )
         return m_world;
+
     return m_currentNode;
 }
 
 bool PNS_MEANDER_PLACER::Start( const VECTOR2I& aP, PNS_ITEM* aStartItem )
 {
     VECTOR2I p;
-    if(!aStartItem || !aStartItem->OfKind ( PNS_ITEM::SEGMENT ))
+
+    if( !aStartItem || !aStartItem->OfKind( PNS_ITEM::SEGMENT ) )
     {
-        Router()->SetFailureReason( _("Please select a track whose length you want to tune.") );
+        Router( )->SetFailureReason( _( "Please select a track whose length you want to tune." ) );
         return false;
     }
 
-    m_initialSegment = static_cast<PNS_SEGMENT *>(aStartItem);
+    m_initialSegment = static_cast<PNS_SEGMENT *>( aStartItem );
 
-    p = m_initialSegment->Seg().NearestPoint( aP );
+    p = m_initialSegment->Seg( ).NearestPoint( aP );
 
     m_originLine = NULL;
-    m_currentNode=NULL;
-    m_currentStart  = p;
+    m_currentNode = NULL;
+    m_currentStart = p;
 
-    m_world = Router()->GetWorld()->Branch();
+    m_world = Router( )->GetWorld( )->Branch( );
     m_originLine = m_world->AssembleLine( m_initialSegment );
 
-    PNS_TOPOLOGY topo ( m_world );
-    m_tunedPath = topo.AssembleTrivialPath ( m_initialSegment );
+    PNS_TOPOLOGY topo( m_world );
+    m_tunedPath = topo.AssembleTrivialPath( m_initialSegment );
 
-    m_world->Remove ( m_originLine );
+    m_world->Remove( m_originLine );
     
-    m_currentWidth = m_originLine->Width();
+    m_currentWidth = m_originLine->Width( );
+    m_currentEnd = VECTOR2I( 0, 0 );
     
     return true;
 }
 
 
-void PNS_MEANDER_PLACER::release()
+void PNS_MEANDER_PLACER::release( )
 {
     #if 0
     BOOST_FOREACH(PNS_MEANDER *m, m_meanders)
@@ -104,21 +99,21 @@ void PNS_MEANDER_PLACER::release()
     #endif
 }
 
-int PNS_MEANDER_PLACER::origPathLength () const 
+int PNS_MEANDER_PLACER::origPathLength( ) const 
 {
     int total = 0;
-    BOOST_FOREACH ( const PNS_ITEM *item, m_tunedPath.CItems() )
+    BOOST_FOREACH( const PNS_ITEM *item, m_tunedPath.CItems( ) )
     {
-        if ( item->OfKind (PNS_ITEM::LINE))
+        if( const PNS_LINE *l = dyn_cast<const PNS_LINE *>( item ) )
         {
-            total += static_cast <const PNS_LINE *> (item) -> CLine().Length();
+            total += l->CLine( ).Length( );
         }
     }
 
     return total;
 }
 
-PNS_MEANDER_PLACER::TUNING_STATUS PNS_MEANDER_PLACER::tuneLineLength ( SHAPE_LINE_CHAIN& aTuned, int aElongation )
+PNS_MEANDER_PLACER::TUNING_STATUS PNS_MEANDER_PLACER::tuneLineLength( SHAPE_LINE_CHAIN& aTuned, int aElongation )
 {
     m_result = PNS_MEANDERED_LINE (this, false);
     m_result.SetWidth ( m_originLine->Width() );
@@ -219,9 +214,9 @@ bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     if(m_currentNode)
         delete m_currentNode;
 
-    m_currentNode = m_world->Branch();
+    m_currentNode = m_world->Branch( );
     
-    VECTOR2I n = m_originLine->CLine().NearestPoint(aP);
+    VECTOR2I n = m_originLine->CLine( ).NearestPoint( aP );
 
     SHAPE_LINE_CHAIN l ( m_originLine->CLine() ), l2;
     l.Split ( n );
@@ -285,21 +280,21 @@ bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 
 bool PNS_MEANDER_PLACER::FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 {
-    m_currentTrace = PNS_LINE(*m_originLine, m_finalShape);  
+    m_currentTrace = PNS_LINE( *m_originLine, m_finalShape );  
     m_currentNode->Add ( &m_currentTrace );
 
-    Router()->CommitRouting( m_currentNode );
+    Router( )->CommitRouting( m_currentNode );
     return true;
 }
         
-bool PNS_MEANDER_PLACER::checkFit ( PNS_MEANDER_SHAPE *aShape )
+bool PNS_MEANDER_PLACER::CheckFit( PNS_MEANDER_SHAPE *aShape )
 {
-    PNS_LINE l ( *m_originLine, aShape->CLine(0) );
+    PNS_LINE l( *m_originLine, aShape->CLine( 0 ) );
     
     if( m_currentNode->CheckColliding( &l ) )
         return false;
 
-    int w = aShape->Width();
+    int w = aShape->Width( );
     int clearance = w + m_settings.m_spacing;
 
     return m_result.CheckSelfIntersections( aShape, clearance );
@@ -308,43 +303,43 @@ bool PNS_MEANDER_PLACER::checkFit ( PNS_MEANDER_SHAPE *aShape )
   
 const PNS_ITEMSET PNS_MEANDER_PLACER::Traces()
 {
-    m_currentTrace = PNS_LINE(*m_originLine, m_finalShape);
+    m_currentTrace = PNS_LINE( *m_originLine, m_finalShape );
     return PNS_ITEMSET( &m_currentTrace );
 }
 
 const VECTOR2I& PNS_MEANDER_PLACER::CurrentEnd() const
 {
-    return VECTOR2I (0, 0); // fixme!
+    return m_currentEnd;
 }
     
 int PNS_MEANDER_PLACER::CurrentNet() const
 {
-    return m_initialSegment->Net();
+    return m_initialSegment->Net( );
 }
 
 int PNS_MEANDER_PLACER::CurrentLayer() const
 {
-    return m_initialSegment->Layers().Start();
+    return m_initialSegment->Layers( ).Start( );
 }
 
 
-const wxString PNS_MEANDER_PLACER::TuningInfo() const
+const wxString PNS_MEANDER_PLACER::TuningInfo( ) const
 {
     wxString status;
 
-    switch (m_lastStatus)
+    switch ( m_lastStatus )
     {
         case TOO_LONG:
-            status = _("Too long: ");
+            status = _( "Too long: " );
             break;
         case TOO_SHORT:
-            status = _("Too short: ");
+            status = _(" Too short: " );
             break;
         case TUNED:
-            status = _("Tuned: ");
+            status = _(" Tuned: " );
             break;
         default:
-            return _("?");
+            return _( "?" );
     }
 
     status += LengthDoubleToString( (double) m_lastLength, false );
@@ -354,7 +349,7 @@ const wxString PNS_MEANDER_PLACER::TuningInfo() const
     return status;
 }
 
-PNS_MEANDER_PLACER::TUNING_STATUS PNS_MEANDER_PLACER::TuningStatus() const
+PNS_MEANDER_PLACER::TUNING_STATUS PNS_MEANDER_PLACER::TuningStatus( ) const
 {
     return m_lastStatus;
 }

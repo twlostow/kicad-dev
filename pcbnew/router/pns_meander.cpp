@@ -416,7 +416,7 @@ bool PNS_MEANDER_SHAPE::Fit ( PNS_MEANDER_TYPE aType, const SEG& aSeg, const VEC
             
         updateBaseSegment(); //m_clippedBaseSeg = SEG( aP, m_baseSeg.LineProject( m_shapes[0].CPoint(-1) ) );
      
-        if( m_placer->checkFit ( this ) )
+        if( m_placer->CheckFit ( this ) )
             return true;
     }
 

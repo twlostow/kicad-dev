@@ -47,7 +47,6 @@ const PNS_MEANDER_SETTINGS& PNS_MEANDERED_LINE::Settings() const
 
 void PNS_MEANDERED_LINE::MeanderSegment ( const SEG &aBase, int aBaseIndex )
 {
- 
     double base_len = aBase.Length();
     double thr = (double) Settings().m_spacing;
 
@@ -169,18 +168,40 @@ void PNS_MEANDERED_LINE::MeanderSegment ( const SEG &aBase, int aBaseIndex )
 
 int PNS_MEANDER_SHAPE::CornerRadius ( ) const
 {
-    return (int64_t) Settings().m_spacing * Settings().m_cornerRadiusPercentage / 200;
+    int cr = (int64_t) Settings().m_spacing * Settings().m_cornerRadiusPercentage / 200;
+
+    return cr;
+
+    #if 0
+    int minAmpl = m_amplitude - m_baselineOffset + m_width / 2;
+    int minSpacing = Settings().m_spacing - m_baselineOffset + m_width;
+
+    if (cr > minSpacing / 2)    
+        cr = minSpacing / 2;
+
+    if (cr > minAmpl / 2)
+        cr = minAmpl / 2;
+
+
+    return cr;
+    #endif
 }
 
 
 SHAPE_LINE_CHAIN PNS_MEANDER_SHAPE::circleQuad ( VECTOR2D aP, VECTOR2D aDir, bool side )
 {
-    VECTOR2D dir_u (aDir);
-    VECTOR2D dir_v (aDir.Perpendicular());
-
     SHAPE_LINE_CHAIN lc;
 
-    const int ArcSegments = 6;
+    if( aDir.EuclideanNorm( ) == 0.0f )
+    {
+        lc.Append ( aP );
+        return lc;
+    }
+    
+    VECTOR2D dir_u (aDir);
+    VECTOR2D dir_v (aDir.Perpendicular());
+    
+    const int ArcSegments = Settings().m_cornerArcSegments;
 
     for(int i = ArcSegments - 1; i >= 0; i--)
     {
@@ -388,7 +409,7 @@ bool PNS_MEANDER_SHAPE::Fit ( PNS_MEANDER_TYPE aType, const SEG& aSeg, const VEC
             m_dual = m1.m_dual;
             m_baseSeg = m1.m_baseSeg;
             m_baseIndex = m1.m_baseIndex;
-            updateBaseSegment (); //m_clippedBaseSeg = SEG( aP, m_baseSeg.LineProject( m1.CLine(0).CPoint(-1) ) );
+            updateBaseSegment ();
             m_baselineOffset = m1.m_baselineOffset;
             return true;
         } else
@@ -398,7 +419,6 @@ bool PNS_MEANDER_SHAPE::Fit ( PNS_MEANDER_TYPE aType, const SEG& aSeg, const VEC
 
     for(int ampl = st.m_maxAmplitude; ampl >= st.m_minAmplitude; ampl -= st.m_step)
     {
-
         if (m_dual)
         {
             m_shapes[0] = genMeanderShape ( aP, aSeg.B - aSeg.A, aSide, aType, ampl, m_baselineOffset );
@@ -407,14 +427,13 @@ bool PNS_MEANDER_SHAPE::Fit ( PNS_MEANDER_TYPE aType, const SEG& aSeg, const VEC
             m_shapes[0] = genMeanderShape ( aP, aSeg.B - aSeg.A, aSide, aType, ampl, 0);
         }
 
-        //m_dual = false;
         m_type = aType;
         m_baseSeg =aSeg;
         m_p0 = aP;
         m_side = aSide;
         m_amplitude = ampl;
             
-        updateBaseSegment(); //m_clippedBaseSeg = SEG( aP, m_baseSeg.LineProject( m_shapes[0].CPoint(-1) ) );
+        updateBaseSegment();
      
         if( m_placer->CheckFit ( this ) )
             return true;

@@ -110,8 +110,6 @@ private:
     
     void meanderSegment ( const SEG& aBase );
 
-//    TUNING_STATUS tuneLineLength ( SHAPE_LINE_CHAIN & aPre, SHAPE_LINE_CHAIN& aTuned, SHAPE_LINE_CHAIN& aPost );
-    TUNING_STATUS tuneLineLength ( PNS_MEANDERED_LINE& aTuned, int aElongation );
 
     
 //    void addMeander ( PNS_MEANDER *aM );

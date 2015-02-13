@@ -37,7 +37,7 @@ public:
         m_trackWidth( 155000 ),
         m_diffPairWidth( 125000 ),
         m_diffPairGap( 180000 ),
-        m_diffPairViaGap ( 180000 ),
+    m_diffPairViaGap ( 180000 ),
         m_viaDiameter( 600000 ),
         m_viaDrill( 250000 ),
         m_diffPairViaGapSameAsTraceGap ( true ),

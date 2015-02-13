@@ -83,3 +83,85 @@ void PNS_MEANDER_PLACER_BASE::cutTunedLine( const SHAPE_LINE_CHAIN& aOrigin,
     aTuned = l.Slice( i_start, i_end );
     aTuned.Simplify( );
 }
+
+void PNS_MEANDER_PLACER_BASE::tuneLineLength( PNS_MEANDERED_LINE& aTuned, int aElongation )
+{
+    int remaining = aElongation; 
+    bool finished = false;
+
+    BOOST_FOREACH(PNS_MEANDER_SHAPE *m, aTuned.Meanders())
+    {
+        if(m->Type() != MT_CORNER )
+        {
+            if(remaining >= 0)
+                remaining -= m->MaxTunableLength() - m->BaselineLength();
+
+            if(remaining < 0)
+            {
+                if(!finished)
+                    {
+                        PNS_MEANDER_TYPE newType;
+
+                        if ( m->Type() == MT_START || m->Type() == MT_SINGLE)
+                            newType = MT_SINGLE;
+                        else
+                            newType = MT_FINISH;
+
+                        m->SetType ( newType );
+                        m->Recalculate( );
+                        
+                        finished = true;
+                    } else {
+                        m->MakeEmpty();
+                    }
+            }
+        }
+    }
+
+    remaining = aElongation;
+    int meanderCount = 0;
+
+    BOOST_FOREACH(PNS_MEANDER_SHAPE *m, aTuned.Meanders())
+    {
+        if( m->Type() != MT_CORNER && m->Type() != MT_EMPTY )
+        {
+            if(remaining >= 0)
+            {
+                remaining -= m->MaxTunableLength() - m->BaselineLength();
+                meanderCount ++;
+            }
+        }
+    }
+
+    int balance = 0;
+
+    if( meanderCount )
+        balance = -remaining / meanderCount;
+    
+    if (balance >= 0)
+    {
+        BOOST_FOREACH(PNS_MEANDER_SHAPE *m, aTuned.Meanders())
+        {
+            if(m->Type() != MT_CORNER && m->Type() != MT_EMPTY)
+            {
+                m->Resize ( std::max( m->Amplitude() - balance / 2, m_settings.m_minAmplitude ) );
+            }
+        }
+        
+    }
+}
+
+const PNS_MEANDER_SETTINGS& PNS_MEANDER_PLACER_BASE::MeanderSettings( ) const
+{
+    return m_settings;
+}
+
+int PNS_MEANDER_PLACER_BASE::compareWithTollerance ( int aValue, int aExpected, int aTollerance ) const
+{
+    if( aValue < aExpected - aTollerance )
+        return -1;
+    else if( aValue > aExpected + aTollerance )
+        return 1;
+    else
+        return 0;
+}

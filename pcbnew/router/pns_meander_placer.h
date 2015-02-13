@@ -85,11 +85,9 @@ public:
 
 private:
     
-    TUNING_STATUS tuneLineLength ( SHAPE_LINE_CHAIN& aTuned, int aElongation );
-
+    
     void setWorld ( PNS_NODE* aWorld );
-    void release();
-
+    
     int origPathLength () const;
 
     ///> pointer to world to search colliding items

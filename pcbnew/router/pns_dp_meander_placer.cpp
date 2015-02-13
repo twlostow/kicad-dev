@@ -153,6 +153,7 @@ const SEG PNS_DP_MEANDER_PLACER::baselineSegment ( const PNS_DIFF_PAIR::COUPLED_
 }
 
 
+#if 0
 PNS_MEANDER_PLACER_BASE::TUNING_STATUS PNS_DP_MEANDER_PLACER::tuneLineLength ( PNS_MEANDERED_LINE& aTuned, int aElongation )
 {
     int remaining = aElongation; 
@@ -224,6 +225,7 @@ PNS_MEANDER_PLACER_BASE::TUNING_STATUS PNS_DP_MEANDER_PLACER::tuneLineLength ( P
     }
     return TUNED;
 }
+#endif
 
 
 
@@ -312,8 +314,6 @@ bool PNS_DP_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 
     m_lastStatus = TUNED;
 
-
-
     if (dpLen > m_settings.m_targetLength)
     {
         m_lastStatus = TOO_LONG;
@@ -321,10 +321,7 @@ bool PNS_DP_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     } else {
 
         m_lastLength = dpLen - std::max ( tunedP.Length(), tunedN.Length() );
-        m_lastStatus = tuneLineLength(m_result, m_settings.m_targetLength - dpLen );
-        //m_lastLength += tuned.Length(); 
-
-     //   Router()->DisplayDebugLine ( l2, 4, 10000 );
+        tuneLineLength(m_result, m_settings.m_targetLength - dpLen );
     }
 
     if (m_lastStatus != TOO_LONG)
@@ -343,21 +340,16 @@ bool PNS_DP_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 
         m_lastLength += std::max ( tunedP.Length(), tunedN.Length() );
         
-        int delta = m_lastLength - m_settings.m_targetLength;
+        int comp = compareWithTollerance( m_lastLength - m_settings.m_targetLength, 0, m_settings.m_lengthTollerance );
 
-        if( delta > 1000000) // fixme: make tuning accurate!
+        if( comp > 0 )
             m_lastStatus = TOO_LONG;
-        else if (delta < -1000000)
+        else if( comp < 0 )
             m_lastStatus = TOO_SHORT;
         else
             m_lastStatus = TUNED;
 
-
     }
-
-
-    //Router()->DisplayDebugLine ( tunedP, 4, 10000 );
-    //Router()->DisplayDebugLine ( tunedN, 5, 10000 );
 
     m_finalShapeP.Clear( );
     m_finalShapeP.Append( preP );

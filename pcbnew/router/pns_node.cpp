@@ -1166,13 +1166,13 @@ void PNS_NODE::AllItemsInNet( int aNet, std::set<PNS_ITEM*>& aItems )
 }
 
 
-void PNS_NODE::ClearRanks()
+void PNS_NODE::ClearRanks( int aMarkerMask )
 {
-        for( PNS_INDEX::ITEM_SET::iterator i = m_index->begin(); i != m_index->end(); ++i )
-        {
-            (*i)->SetRank( -1 );
-            (*i)->Mark( 0 );
-        }
+    for( PNS_INDEX::ITEM_SET::iterator i = m_index->begin(); i != m_index->end(); ++i )
+    {
+        (*i)->SetRank( -1 );
+        (*i)->Mark( (*i)->Marker() & (~aMarkerMask) );
+    }
 }
 
 

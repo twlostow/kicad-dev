@@ -87,18 +87,6 @@ bool PNS_MEANDER_PLACER::Start( const VECTOR2I& aP, PNS_ITEM* aStartItem )
 }
 
 
-void PNS_MEANDER_PLACER::release( )
-{
-    #if 0
-    BOOST_FOREACH(PNS_MEANDER *m, m_meanders)
-    {
-        delete m;
-    }
-
-    m_meanders.clear();
-    #endif
-}
-
 int PNS_MEANDER_PLACER::origPathLength( ) const 
 {
     int total = 0;
@@ -113,167 +101,81 @@ int PNS_MEANDER_PLACER::origPathLength( ) const
     return total;
 }
 
-PNS_MEANDER_PLACER::TUNING_STATUS PNS_MEANDER_PLACER::tuneLineLength( SHAPE_LINE_CHAIN& aTuned, int aElongation )
-{
-    m_result = PNS_MEANDERED_LINE (this, false);
-    m_result.SetWidth ( m_originLine->Width() );
-    
-    for ( int i = 0; i < aTuned.SegmentCount(); i++)
-    {
-        m_result.MeanderSegment( aTuned.CSegment(i) );
-    }
-
-    int origLength = aTuned.Length();
-
-    int remaining = aElongation;
-    bool finished = false;
-
-    BOOST_FOREACH(PNS_MEANDER_SHAPE *m, m_result.Meanders())
-    {
-
-        if(m->Type() != MT_CORNER )
-        {
-
-            if(remaining >= 0)
-                remaining -= m->MaxTunableLength() - m->BaselineLength();
-
-            if(remaining < 0)
-            {
-                if(!finished)
-                    {
-                        PNS_MEANDER_TYPE newType;
-
-                        if ( m->Type() == MT_START || m->Type() == MT_SINGLE)
-                            newType = MT_SINGLE;
-                        else
-                            newType = MT_FINISH;
-
-                        m->SetType ( newType );
-                        m->Recalculate( );
-                        
-                        finished = true;
-                    } else {
-                        m->MakeEmpty();
-                    }
-            }
-        }
-    }
-
-    remaining = aElongation;
-    int meanderCount = 0;
-
-    BOOST_FOREACH(PNS_MEANDER_SHAPE *m, m_result.Meanders())
-    {
-        if( m->Type() != MT_CORNER && m->Type() != MT_EMPTY )
-        {
-            if(remaining >= 0)
-            {
-                remaining -= m->MaxTunableLength() - m->BaselineLength();
-                meanderCount ++;
-            }
-        }
-    }
-
-    int balance = 0;
-
-
-    if( meanderCount )
-        balance = -remaining / meanderCount;
-    
-    if (balance >= 0)
-    {
-        BOOST_FOREACH(PNS_MEANDER_SHAPE *m, m_result.Meanders())
-        {
-            if(m->Type() != MT_CORNER && m->Type() != MT_EMPTY)
-            {
-     //           int pre = m->MaxTunableLength();
-                m->Resize ( std::max( m->Amplitude() - balance / 2, m_settings.m_minAmplitude ) );
-            }
-        }
-        
-    }
-
-    aTuned.Clear();
-
-    BOOST_FOREACH(PNS_MEANDER_SHAPE *m, m_result.Meanders())
-    {
-        if( m->Type() != MT_EMPTY )
-            aTuned.Append ( m->CLine(0) );
-    }
-
-    int tunedLength = aTuned.Length();
-
-    if (tunedLength < origLength + aElongation)
-        return TOO_SHORT;
-
-    return TUNED;
-}
-
 bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 {
+    SHAPE_LINE_CHAIN pre, tuned, post;
+
     if(m_currentNode)
         delete m_currentNode;
 
     m_currentNode = m_world->Branch( );
+
+    cutTunedLine ( m_originLine->CLine( ), m_currentStart, aP, pre, tuned, post );
+
+    m_result = PNS_MEANDERED_LINE( this, true );
+    m_result.SetWidth( m_originLine->Width() );
+    m_result.SetBaselineOffset( 0 );
     
-    VECTOR2I n = m_originLine->CLine( ).NearestPoint( aP );
-
-    SHAPE_LINE_CHAIN l ( m_originLine->CLine() ), l2;
-    l.Split ( n );
-    l.Split ( m_currentStart );
-
-    int i_start = l.Find ( m_currentStart );
-    int i_end = l.Find ( n );
-
-    
-    if( i_start > i_end )
+    for( int i = 0; i < tuned.SegmentCount(); i++ )
     {
-        l = l.Reverse();
-        i_start = l.Find ( m_currentStart );
-        i_end = l.Find ( n );
+        const SEG s = tuned.CSegment( i );
+        m_result.AddCorner( s.A );
+        m_result.MeanderSegment( s );
+        m_result.AddCorner( s.B );
     }
-
     
-    l2 = l.Slice ( i_start, i_end );
+    int lineLen = origPathLength( );
 
-    release();
-
-    m_result.Clear();
-
-    SHAPE_LINE_CHAIN pre = l.Slice (0, i_start );
-    SHAPE_LINE_CHAIN post = l.Slice ( i_end, -1 );
-
-    int lineLen = origPathLength();
-
+    m_lastLength = lineLen;
     m_lastStatus = TUNED;
 
-    if (lineLen > m_settings.m_targetLength)
+    if( compareWithTollerance ( lineLen, m_settings.m_targetLength, m_settings.m_lengthTollerance ) > 0 )
     {
         m_lastStatus = TOO_LONG;
-        m_lastLength = lineLen;
     } else {
-
-        m_lastLength = lineLen - l2.Length();
-        m_lastStatus = tuneLineLength(l2, m_settings.m_targetLength - lineLen ); //pre, l2, post);
-        m_lastLength += l2.Length(); 
-
-     //   Router()->DisplayDebugLine ( l2, 4, 10000 );
+        m_lastLength = lineLen - tuned.Length( );
+        tuneLineLength( m_result, m_settings.m_targetLength - lineLen ); 
     }
 
-    BOOST_FOREACH ( const PNS_ITEM *item, m_tunedPath.CItems() )
+    BOOST_FOREACH ( const PNS_ITEM *item, m_tunedPath.CItems( ) )
     {
-        if ( item->OfKind (PNS_ITEM::LINE))
+        if ( const PNS_LINE *l = dyn_cast<const PNS_LINE *>( item ) )
         {
-            Router()->DisplayDebugLine ( static_cast <const PNS_LINE *> (item) -> CLine(), 5, 10000 );
+            Router( )->DisplayDebugLine( l->CLine( ), 5, 10000 );
         }
     }
 
+    if (m_lastStatus != TOO_LONG)
+    {
+        tuned.Clear( );
+
+        BOOST_FOREACH ( PNS_MEANDER_SHAPE *m, m_result.Meanders() )
+        {
+            if( m->Type() != MT_EMPTY )
+            {
+                tuned.Append ( m->CLine(0) );
+            }            
+        }
+
+        m_lastLength += tuned.Length( ); 
+
+        int comp = compareWithTollerance( m_lastLength - m_settings.m_targetLength, 0, m_settings.m_lengthTollerance );
+
+        if( comp > 0 )
+            m_lastStatus = TOO_LONG;
+        else if( comp < 0 )
+            m_lastStatus = TOO_SHORT;
+        else
+            m_lastStatus = TUNED;
+
+    }
 
 	m_finalShape.Clear( );
     m_finalShape.Append( pre );
-    m_finalShape.Append( l2 );
+    m_finalShape.Append( tuned );
     m_finalShape.Append( post );
-    m_finalShape.Simplify();
+    m_finalShape.Simplify( );
+
     return true;
 }
 

@@ -65,13 +65,15 @@ public:
 
     PNS_MEANDER_SETTINGS ()
     {
-        m_minAmplitude = 500000;
+        m_minAmplitude = 100000;
         m_maxAmplitude = 1000000;
         m_step = 50000;
         m_spacing = 500000;
-        m_targetLength = 85000000;
+        m_targetLength = 30000000;
         m_cornerType = ROUND;
         m_cornerRadiusPercentage = 100;
+        m_lengthTollerance = 100000;
+        m_cornerArcSegments = 8;
     }
     
     int m_minAmplitude;
@@ -84,6 +86,8 @@ public:
     
     CornerType m_cornerType;
     int m_cornerRadiusPercentage;
+    int m_lengthTollerance;
+    int m_cornerArcSegments;
 };
 
 class PNS_MEANDERED_LINE;
@@ -194,6 +198,8 @@ class PNS_MEANDER_SHAPE
         bool m_side;
         SHAPE_LINE_CHAIN m_shapes[2];
         int m_baseIndex;
+        VECTOR2I m_currentDir;
+        VECTOR2I m_currentPos;
 
 
 

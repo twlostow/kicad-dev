@@ -245,6 +245,8 @@ PNS_ITEM* PNS_ROUTER::syncTrack( TRACK* aTrack )
     PNS_SEGMENT* s =
         new PNS_SEGMENT( SEG( aTrack->GetStart(), aTrack->GetEnd() ), aTrack->GetNetCode() );
 
+    if( aTrack->GetFlags( ) & DP_COUPLED )
+        s->Mark ( MK_DP_COUPLED );
     s->SetWidth( aTrack->GetWidth() );
     s->SetLayers( PNS_LAYERSET( aTrack->GetLayer() ) );
     s->SetParent( aTrack );

@@ -361,7 +361,7 @@ public:
 
     void AllItemsInNet( int aNet, std::set<PNS_ITEM*>& aItems );
 
-    void ClearRanks();
+    void ClearRanks( int aMarkerMask = MK_HEAD | MK_VIOLATION );
 
     int FindByMarker( int aMarker, PNS_ITEMSET& aItems );
     int RemoveByMarker( int aMarker );

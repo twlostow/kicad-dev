@@ -454,6 +454,13 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     setupTools();
 
     Zoom_Automatique( true );
+    GetGalCanvas()->SwitchBackend( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
+    UseGalCanvas( true );
+
+    int open_ctl;
+    wxString fileName = "/home/twl/Kicad-dev/tests/dp.kicad_pcb";
+
+    OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
 }
 
 

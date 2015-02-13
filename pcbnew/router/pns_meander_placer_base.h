@@ -94,12 +94,9 @@ public:
      * Returns the current meandering configuration.
      * @return the settings
      */
-    const PNS_MEANDER_SETTINGS& MeanderSettings() const 
-    {
-        return m_settings;
-    }
-
-    /**
+    virtual const PNS_MEANDER_SETTINGS& MeanderSettings() const;
+    
+    /*
      * Function UpdateSettings()
      *
      * Sets the current meandering configuration.
@@ -120,6 +117,8 @@ public:
     { 
         return false;
     }
+
+
 
 protected:
     
@@ -142,6 +141,20 @@ protected:
                         SHAPE_LINE_CHAIN& aTuned,
                         SHAPE_LINE_CHAIN& aPost );
 
+    /**
+     * Function tuneLineLength()
+     *
+     * Takes a set of meanders in aTuned and tunes their length to 
+     * extend the original line length by aElongation.
+     */
+    void tuneLineLength( PNS_MEANDERED_LINE& aTuned, int aElongation );
+
+    /**
+     * Function compareWithTollerance()
+     *
+     * Compares aValue against aExpected with given tollerance.
+     */
+    int compareWithTollerance ( int aValue, int aExpected, int aTollerance = 0 ) const;
 
     ///> width of the meandered trace(s)
     int m_currentWidth;

@@ -112,7 +112,7 @@ bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 
     cutTunedLine ( m_originLine->CLine( ), m_currentStart, aP, pre, tuned, post );
 
-    m_result = PNS_MEANDERED_LINE( this, true );
+    m_result = PNS_MEANDERED_LINE( this, false );
     m_result.SetWidth( m_originLine->Width() );
     m_result.SetBaselineOffset( 0 );
     

@@ -120,6 +120,13 @@ public:
         m_effortLevel = aEffort;
     }
 
+
+    void SetRestrictArea( const BOX2I& aArea )
+    {
+        m_restrictArea = aArea;
+        m_restrictAreaActive = true;
+    }
+
 private:
     static const int MaxCachedItems = 256;
 
@@ -165,6 +172,9 @@ private:
     int m_collisionKindMask;
     int m_effortLevel;
     bool m_keepPostures;
+
+    BOX2I m_restrictArea;
+    bool m_restrictAreaActive;
 };
 
 #endif

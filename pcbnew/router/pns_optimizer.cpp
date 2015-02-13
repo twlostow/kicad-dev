@@ -122,6 +122,7 @@ PNS_OPTIMIZER::PNS_OPTIMIZER( PNS_NODE* aWorld ) :
     m_world( aWorld ), m_collisionKindMask( PNS_ITEM::ANY ), m_effortLevel( MERGE_SEGMENTS )
 {
     // m_cache = new SHAPE_INDEX_LIST<PNS_ITEM*>();
+    m_restrictAreaActive = false;
 }
 
 

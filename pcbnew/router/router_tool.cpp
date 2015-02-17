@@ -288,7 +288,7 @@ void ROUTER_TOOL::getNetclassDimensions( int aNetCode, int& aWidth,
     aViaDrill = netClass->GetViaDrill();
 }
 
-void ROUTER_TOOL::handleCommonEvents( TOOL_EVENT& aEvent )
+void ROUTER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
 {
 #ifdef DEBUG
     if( aEvent.IsKeyPressed() )
@@ -559,7 +559,7 @@ void ROUTER_TOOL::performRouting()
     finishInteractive ( saveUndoBuffer );
 }
 
-int ROUTER_TOOL::DpDimensionsDialog( TOOL_EVENT& aEvent )
+int ROUTER_TOOL::DpDimensionsDialog( const TOOL_EVENT& aEvent )
 {
     Activate();
 
@@ -575,7 +575,7 @@ int ROUTER_TOOL::DpDimensionsDialog( TOOL_EVENT& aEvent )
     return 0;
 }
 
-int ROUTER_TOOL::SettingsDialog( TOOL_EVENT& aEvent )
+int ROUTER_TOOL::SettingsDialog( const TOOL_EVENT& aEvent )
 {
     Activate();
 
@@ -589,13 +589,13 @@ int ROUTER_TOOL::SettingsDialog( TOOL_EVENT& aEvent )
 }
 
 
-int ROUTER_TOOL::RouteSingleTrace( TOOL_EVENT& aEvent )
+int ROUTER_TOOL::RouteSingleTrace( const TOOL_EVENT& aEvent )
 {
     m_frame->SetToolID( ID_TRACK_BUTT, wxCURSOR_PENCIL, _( "Route Track" ) );
     return mainLoop( PNS_MODE_ROUTE_SINGLE );
 }
 
-int ROUTER_TOOL::RouteDiffPair( TOOL_EVENT& aEvent )
+int ROUTER_TOOL::RouteDiffPair( const TOOL_EVENT& aEvent )
 {
     m_frame->SetToolID( ID_TRACK_BUTT, wxCURSOR_PENCIL, _( "Router Differential Pair" ) );
     return mainLoop( PNS_MODE_ROUTE_DIFF_PAIR );
@@ -723,7 +723,7 @@ void ROUTER_TOOL::performDragging()
     highlightNet( false );
 }
 
-int ROUTER_TOOL::InlineDrag ( TOOL_EVENT& aEvent )
+int ROUTER_TOOL::InlineDrag ( const TOOL_EVENT& aEvent )
 {
     return 0;
 }

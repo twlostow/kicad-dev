@@ -35,16 +35,16 @@ public:
 
     void Reset( RESET_REASON aReason );
 
-    int TuneSingleTrace ( TOOL_EVENT& aEvent );
-    int TuneDiffPair ( TOOL_EVENT& aEvent );
-    int TuneDiffPairSkew ( TOOL_EVENT& aEvent );
-    int ClearMeanders ( TOOL_EVENT& aEvent );
+    int TuneSingleTrace ( const TOOL_EVENT& aEvent );
+    int TuneDiffPair ( const TOOL_EVENT& aEvent );
+    int TuneDiffPairSkew ( const TOOL_EVENT& aEvent );
+    int ClearMeanders ( const TOOL_EVENT& aEvent );
 
 private:
 
     void performTuning( );
     int mainLoop( PNS_ROUTER_MODE aMode );
-    void handleCommonEvents( TOOL_EVENT& evt );
+    void handleCommonEvents( const TOOL_EVENT& evt );
 
     PNS_MEANDER_SETTINGS m_savedMeanderSettings;
 };

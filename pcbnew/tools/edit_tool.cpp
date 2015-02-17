@@ -48,7 +48,8 @@
 #include "grid_helper.h"
 
 EDIT_TOOL::EDIT_TOOL() :
-    TOOL_INTERACTIVE( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ), m_editModules( false )
+    TOOL_INTERACTIVE( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ),
+    m_dragging( false ), m_editModules( false ), m_updateFlag( KIGFX::VIEW_ITEM::NONE )
 {
 }
 
@@ -56,6 +57,7 @@ EDIT_TOOL::EDIT_TOOL() :
 void EDIT_TOOL::Reset( RESET_REASON aReason )
 {
     m_dragging = false;
+    m_updateFlag = KIGFX::VIEW_ITEM::NONE;
 }
 
 
@@ -105,7 +107,7 @@ bool EDIT_TOOL::invokeInlineRouter()
     return false;
 }
 
-int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
+int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
 
@@ -302,7 +304,7 @@ int EDIT_TOOL::Main( TOOL_EVENT& aEvent )
 }
 
 
-int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
+int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
     PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
@@ -355,7 +357,7 @@ int EDIT_TOOL::Properties( TOOL_EVENT& aEvent )
 }
 
 
-int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
+int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
     PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
@@ -409,7 +411,7 @@ int EDIT_TOOL::Rotate( TOOL_EVENT& aEvent )
 }
 
 
-int EDIT_TOOL::Flip( TOOL_EVENT& aEvent )
+int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
     PCB_BASE_FRAME* editFrame = getEditFrame<PCB_BASE_FRAME>();
@@ -463,7 +465,7 @@ int EDIT_TOOL::Flip( TOOL_EVENT& aEvent )
 }
 
 
-int EDIT_TOOL::Remove( TOOL_EVENT& aEvent )
+int EDIT_TOOL::Remove( const TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
 
@@ -705,7 +707,7 @@ void EDIT_TOOL::processChanges( const PICKED_ITEMS_LIST* aList )
     }
 }
 
-int EDIT_TOOL::editFootprintInFpEditor( TOOL_EVENT& aEvent )
+int EDIT_TOOL::editFootprintInFpEditor( const TOOL_EVENT& aEvent )
 {
     MODULE *mod = uniqueSelected <MODULE> ();
     

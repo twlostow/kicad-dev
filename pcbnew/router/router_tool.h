@@ -32,12 +32,12 @@ public:
 
     void Reset( RESET_REASON aReason );
 
-    int RouteSingleTrace ( TOOL_EVENT& aEvent );
-    int RouteDiffPair ( TOOL_EVENT& aEvent );
-    int InlineDrag ( TOOL_EVENT& aEvent );
+    int RouteSingleTrace ( const TOOL_EVENT& aEvent );
+    int RouteDiffPair ( const TOOL_EVENT& aEvent );
+    int InlineDrag ( const TOOL_EVENT& aEvent );
 
-    int DpDimensionsDialog ( TOOL_EVENT& aEvent );
-    int SettingsDialog ( TOOL_EVENT& aEvent );
+    int DpDimensionsDialog ( const TOOL_EVENT& aEvent );
+    int SettingsDialog ( const TOOL_EVENT& aEvent );
 
 private:
 
@@ -49,7 +49,7 @@ private:
     void performDragging();
 
     void getNetclassDimensions( int aNetCode, int& aWidth, int& aViaDiameter, int& aViaDrill );
-    void handleCommonEvents( TOOL_EVENT& evt );
+    void handleCommonEvents( const TOOL_EVENT& evt );
 
     int getStartLayer( const PNS_ITEM* aItem );
     void switchLayerOnViaPlacement();

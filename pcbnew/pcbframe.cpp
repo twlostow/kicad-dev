@@ -112,6 +112,7 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
 
     EVT_MENU( ID_APPEND_FILE, PCB_EDIT_FRAME::Files_io )
     EVT_MENU( ID_SAVE_BOARD_AS, PCB_EDIT_FRAME::Files_io )
+    EVT_MENU( ID_COPY_BOARD_AS, PCB_EDIT_FRAME::Files_io )
     EVT_MENU_RANGE( wxID_FILE1, wxID_FILE9, PCB_EDIT_FRAME::OnFileHistory )
 
     EVT_MENU( ID_GEN_PLOT, PCB_EDIT_FRAME::ToPlotter )
@@ -454,13 +455,6 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     setupTools();
 
     Zoom_Automatique( true );
-    GetGalCanvas()->SwitchBackend( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
-    UseGalCanvas( true );
-
-    int open_ctl;
-    wxString fileName = "/home/twl/Kicad-dev/tests/dp.kicad_pcb";
-
-    OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
 }
 
 
@@ -687,24 +681,26 @@ void PCB_EDIT_FRAME::UseGalCanvas( bool aEnable )
 void PCB_EDIT_FRAME::SwitchCanvas( wxCommandEvent& aEvent )
 {
     int id = aEvent.GetId();
+    bool use_gal = false;
 
     switch( id )
     {
     case ID_MENU_CANVAS_DEFAULT:
-        Compile_Ratsnest( NULL, true );
-        UseGalCanvas( false );
         break;
 
     case ID_MENU_CANVAS_CAIRO:
-        GetGalCanvas()->SwitchBackend( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
-        UseGalCanvas( true );
+        use_gal = GetGalCanvas()->SwitchBackend( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
         break;
 
     case ID_MENU_CANVAS_OPENGL:
-        GetGalCanvas()->SwitchBackend( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
-        UseGalCanvas( true );
+        use_gal = GetGalCanvas()->SwitchBackend( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
         break;
     }
+
+    if( !use_gal )
+        Compile_Ratsnest( NULL, true );
+
+    UseGalCanvas( use_gal );
 }
 
 

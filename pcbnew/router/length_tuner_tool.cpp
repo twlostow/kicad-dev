@@ -116,7 +116,7 @@ void LENGTH_TUNER_TOOL::Reset( RESET_REASON aReason )
 }
 
 
-void LENGTH_TUNER_TOOL::handleCommonEvents( TOOL_EVENT& aEvent )
+void LENGTH_TUNER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
 {
     if( aEvent.IsAction( &ACT_RouterOptions ) )
     {
@@ -247,19 +247,19 @@ void LENGTH_TUNER_TOOL::performTuning()
 
 }
 
-int LENGTH_TUNER_TOOL::TuneSingleTrace ( TOOL_EVENT& aEvent )
+int LENGTH_TUNER_TOOL::TuneSingleTrace ( const TOOL_EVENT& aEvent )
 {
     m_frame->SetToolID( ID_TRACK_BUTT, wxCURSOR_PENCIL, _( "Tune Trace Length" ) );
     return mainLoop( PNS_MODE_TUNE_SINGLE );
 }
 
-int LENGTH_TUNER_TOOL::TuneDiffPair ( TOOL_EVENT& aEvent )
+int LENGTH_TUNER_TOOL::TuneDiffPair ( const TOOL_EVENT& aEvent )
 {
     m_frame->SetToolID( ID_TRACK_BUTT, wxCURSOR_PENCIL, _( "Tune Diff Pair Length" ) );
     return mainLoop( PNS_MODE_TUNE_DIFF_PAIR );
 }
 
-int LENGTH_TUNER_TOOL::TuneDiffPairSkew ( TOOL_EVENT& aEvent )
+int LENGTH_TUNER_TOOL::TuneDiffPairSkew ( const TOOL_EVENT& aEvent )
 {
     m_frame->SetToolID( ID_TRACK_BUTT, wxCURSOR_PENCIL, _( "Tune Diff Pair Skew" ) );
     return mainLoop( PNS_MODE_TUNE_DIFF_PAIR_SKEW );

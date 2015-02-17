@@ -57,9 +57,6 @@
 
 SELECTION_TOOL::SELECTION_TOOL() :
         TOOL_INTERACTIVE( "pcbnew.InteractiveSelection" ),
-        SelectedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.InteractiveSelection.selected" ),
-        UnselectedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.InteractiveSelection.deselected" ),
-        ClearedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.InteractiveSelection.cleared" ),
         m_frame( NULL ), m_additive( false ), m_multiple( false ),
         m_editModules( false ), m_locked( true )
 {
@@ -99,7 +96,7 @@ void SELECTION_TOOL::Reset( RESET_REASON aReason )
 }
 
 
-int SELECTION_TOOL::Main( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     // Main loop: keep receiving events
     while( OPT_TOOL_EVENT evt = Wait() )
@@ -196,7 +193,7 @@ int SELECTION_TOOL::Main( TOOL_EVENT& aEvent )
             findMove( *evt );
         }
 
-		else if( evt->IsAction( &COMMON_ACTIONS::selectItem ) )
+        else if( evt->IsAction( &COMMON_ACTIONS::selectItem ) )
         {
             SelectItem( *evt );
         }
@@ -243,8 +240,7 @@ void SELECTION_TOOL::toggleSelection( BOARD_ITEM* aItem )
         unselect( aItem );
 
         // Inform other potentially interested tools
-        TOOL_EVENT unselectEvent( UnselectedEvent );
-        m_toolMgr->ProcessEvent( unselectEvent );
+        m_toolMgr->ProcessEvent( UnselectedEvent );
     }
     else
     {
@@ -257,8 +253,7 @@ void SELECTION_TOOL::toggleSelection( BOARD_ITEM* aItem )
             select( aItem );
 
             // Inform other potentially interested tools
-            TOOL_EVENT selectEvent( SelectedEvent );
-            m_toolMgr->ProcessEvent( selectEvent );
+            m_toolMgr->ProcessEvent( SelectedEvent );
         }
     }
 }
@@ -391,8 +386,7 @@ bool SELECTION_TOOL::selectMultiple()
             if( !m_selection.Empty() )
             {
                 // Inform other potentially interested tools
-                TOOL_EVENT selectEvent( SelectedEvent );
-                m_toolMgr->ProcessEvent( selectEvent );
+                m_toolMgr->ProcessEvent( SelectedEvent );
             }
 
             break;  // Stop waiting for events
@@ -466,7 +460,7 @@ SELECTION_LOCK_FLAGS SELECTION_TOOL::CheckLock()
     return SELECTION_UNLOCKED;
 }
 
-int SELECTION_TOOL::CursorSelection( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::CursorSelection( const TOOL_EVENT& aEvent )
 {
     selectCursor( getView()->ToWorld( getViewControls()->GetMousePosition() ) );
     setTransitions();
@@ -475,7 +469,7 @@ int SELECTION_TOOL::CursorSelection( TOOL_EVENT& aEvent )
 }
 
 
-int SELECTION_TOOL::ClearSelection( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::ClearSelection( const TOOL_EVENT& aEvent )
 {
     clearSelection();
     setTransitions();
@@ -483,7 +477,7 @@ int SELECTION_TOOL::ClearSelection( TOOL_EVENT& aEvent )
     return 0;
 }
 
-int SELECTION_TOOL::SelectItem( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::SelectItem( const TOOL_EVENT& aEvent )
 {
     // Check if there is an item to be selected
     BOARD_ITEM* item = static_cast<BOARD_ITEM*>( aEvent.Parameter() );
@@ -493,8 +487,7 @@ int SELECTION_TOOL::SelectItem( TOOL_EVENT& aEvent )
         select( item );
 
         // Inform other potentially interested tools
-        TOOL_EVENT select( SelectedEvent );
-        m_toolMgr->ProcessEvent( select );
+        m_toolMgr->ProcessEvent( SelectedEvent );
     }
 
     setTransitions();
@@ -502,7 +495,7 @@ int SELECTION_TOOL::SelectItem( TOOL_EVENT& aEvent )
     return 0;
 }
 
-int SELECTION_TOOL::UnselectItem( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::UnselectItem( const TOOL_EVENT& aEvent )
 {
     // Check if there is an item to be selected
     BOARD_ITEM* item = static_cast<BOARD_ITEM*>( aEvent.Parameter() );
@@ -512,8 +505,7 @@ int SELECTION_TOOL::UnselectItem( TOOL_EVENT& aEvent )
         unselect( item );
 
         // Inform other potentially interested tools
-        TOOL_EVENT unselect( UnselectedEvent );
-        m_toolMgr->ProcessEvent( unselect );
+        m_toolMgr->ProcessEvent( UnselectedEvent );
     }
 
     setTransitions();
@@ -531,15 +523,14 @@ void SELECTION_TOOL::findCallback( BOARD_ITEM* aItem )
         select( aItem );
 
         // Inform other potentially interested tools
-        TOOL_EVENT selectEvent( SelectedEvent );
-        m_toolMgr->ProcessEvent( selectEvent );
+        m_toolMgr->ProcessEvent( SelectedEvent );
     }
 
     m_frame->GetGalCanvas()->ForceRefresh();
 }
 
 
-int SELECTION_TOOL::find( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::find( const TOOL_EVENT& aEvent )
 {
     DIALOG_FIND dlg( m_frame );
     dlg.EnableWarp( false );
@@ -551,7 +542,7 @@ int SELECTION_TOOL::find( TOOL_EVENT& aEvent )
 }
 
 
-int SELECTION_TOOL::findMove( TOOL_EVENT& aEvent )
+int SELECTION_TOOL::findMove( const TOOL_EVENT& aEvent )
 {
     MODULE* module = m_frame->GetModuleByName();
 
@@ -585,14 +576,12 @@ void SELECTION_TOOL::clearSelection()
         item->ViewUpdate ( KIGFX::VIEW_ITEM::GEOMETRY ) ;
     }
     m_selection.clear();
-    m_selection.group->Clear();
 
     m_frame->SetCurItem( NULL );
     m_locked = true;
 
     // Inform other potentially interested tools
-    TOOL_EVENT clearEvent( ClearedEvent );
-    m_toolMgr->ProcessEvent( clearEvent );
+    m_toolMgr->ProcessEvent( ClearedEvent );
 }
 
 
@@ -750,16 +739,13 @@ bool SELECTION_TOOL::selectable( const BOARD_ITEM* aItem ) const
 
         break;
 
-  case PCB_MODULE_TEXT_T:
+    case PCB_MODULE_TEXT_T:
         if( m_multiple && !m_editModules )
             return false;
-
         return aItem->ViewIsVisible() && board->IsLayerVisible( aItem->GetLayer() );
 
     // These are not selectable
     case PCB_MODULE_EDGE_T:
-        return m_editModules;
-    
     case PCB_PAD_T:
     {
         if( m_multiple && !m_editModules )
@@ -771,6 +757,7 @@ bool SELECTION_TOOL::selectable( const BOARD_ITEM* aItem ) const
 
         break;
     }
+
     case NOT_USED:
     case TYPE_NOT_INIT:
         return false;
@@ -842,8 +829,7 @@ void SELECTION_TOOL::unselect( BOARD_ITEM* aItem )
     }
 
     // Inform other potentially interested tools
-    TOOL_EVENT unselected( UnselectedEvent );
-    m_toolMgr->ProcessEvent( unselected );
+    m_toolMgr->ProcessEvent( UnselectedEvent );
 }
 
 
@@ -1209,6 +1195,7 @@ bool SELECTION_TOOL::SanitizeSelection()
 
     return true;
 }
+
 void SELECTION_TOOL::generateMenu()
 {
     // Create a copy of the master context menu
@@ -1236,3 +1223,9 @@ void SELECTION::clear()
     items.ClearItemsList();
     group->Clear();
 }
+
+
+
+const TOOL_EVENT SELECTION_TOOL::SelectedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.InteractiveSelection.selected" );
+const TOOL_EVENT SELECTION_TOOL::UnselectedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.InteractiveSelection.unselected" );
+const TOOL_EVENT SELECTION_TOOL::ClearedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.InteractiveSelection.cleared" );

@@ -112,7 +112,7 @@ void LENGTH_TUNER_TOOL::Reset( RESET_REASON aReason )
     
     Go( &LENGTH_TUNER_TOOL::TuneSingleTrace, COMMON_ACTIONS::routerActivateTuneSingleTrace.MakeEvent() );
     Go( &LENGTH_TUNER_TOOL::TuneDiffPair, COMMON_ACTIONS::routerActivateTuneDiffPair.MakeEvent() );
-    Go( &LENGTH_TUNER_TOOL::TuneDiffPairSkew, COMMON_ACTIONS::routerActivateTuneDiffPair.MakeEvent() );
+    Go( &LENGTH_TUNER_TOOL::TuneDiffPairSkew, COMMON_ACTIONS::routerActivateTuneDiffPairSkew.MakeEvent() );
 }
 
 
@@ -262,7 +262,7 @@ int LENGTH_TUNER_TOOL::TuneDiffPair ( TOOL_EVENT& aEvent )
 int LENGTH_TUNER_TOOL::TuneDiffPairSkew ( TOOL_EVENT& aEvent )
 {
     m_frame->SetToolID( ID_TRACK_BUTT, wxCURSOR_PENCIL, _( "Tune Diff Pair Skew" ) );
-    return mainLoop( PNS_MODE_TUNE_SKEW );
+    return mainLoop( PNS_MODE_TUNE_DIFF_PAIR_SKEW );
 }
     
 

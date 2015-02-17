@@ -414,7 +414,7 @@ const PNS_ITEMSET PNS_DP_MEANDER_PLACER::Traces()
 
 const VECTOR2I& PNS_DP_MEANDER_PLACER::CurrentEnd() const
 {
-    return VECTOR2I (0, 0); // fixme!
+    return m_currentEnd;
 }
     
 int PNS_DP_MEANDER_PLACER::CurrentNet() const

@@ -399,6 +399,13 @@ TOOL_ACTION COMMON_ACTIONS::routerActivateDiffPair( "pcbnew.InteractiveRouter.Di
         AS_GLOBAL, '6',
         "Run push & shove router (differential pairs)", "Run push & shove router (differential pairs)", AF_ACTIVATE );
 
+TOOL_ACTION COMMON_ACTIONS::routerActivateSettingsDialog( "pcbnew.InteractiveRouter.SettingsDialog",
+        AS_GLOBAL, 0,
+        "Open Interactive Router settings", "Open Interactive Router settings", AF_ACTIVATE );
+
+TOOL_ACTION COMMON_ACTIONS::routerActivateDpDimensionsDialog( "pcbnew.InteractiveRouter.DpDimensionsDialog",
+        AS_GLOBAL, 0,
+        "Open Differential Pair Dimension settings", "Open Differential Pair Dimension settings", AF_ACTIVATE );
 
 TOOL_ACTION COMMON_ACTIONS::routerActivateTuneSingleTrace( "pcbnew.LengthTuner.TuneSingleTrack",
         AS_GLOBAL, '7',
@@ -481,6 +488,12 @@ boost::optional<TOOL_EVENT> COMMON_ACTIONS::TranslateLegacyId( int aId )
     case ID_TUNE_DIFF_PAIR_SKEW_BUTT:
         return COMMON_ACTIONS::routerActivateTuneDiffPairSkew.MakeEvent();
     
+    case ID_MENU_INTERACTIVE_ROUTER_SETTINGS:
+        return COMMON_ACTIONS::routerActivateSettingsDialog.MakeEvent();
+
+    case ID_MENU_DIFF_PAIR_DIMENSIONS:
+        return COMMON_ACTIONS::routerActivateDpDimensionsDialog.MakeEvent();
+
     case ID_PCB_ZONES_BUTT:
         return COMMON_ACTIONS::drawZone.MakeEvent();
 

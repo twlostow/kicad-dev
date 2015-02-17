@@ -36,6 +36,9 @@ public:
     int RouteDiffPair ( TOOL_EVENT& aEvent );
     int InlineDrag ( TOOL_EVENT& aEvent );
 
+    int DpDimensionsDialog ( TOOL_EVENT& aEvent );
+    int SettingsDialog ( TOOL_EVENT& aEvent );
+
 private:
 
     int mainLoop( PNS_ROUTER_MODE aMode );

@@ -251,6 +251,9 @@ void ROUTER_TOOL::Reset( RESET_REASON aReason )
     
     Go( &ROUTER_TOOL::RouteSingleTrace, COMMON_ACTIONS::routerActivateSingle.MakeEvent() );
     Go( &ROUTER_TOOL::RouteDiffPair, COMMON_ACTIONS::routerActivateDiffPair.MakeEvent() );
+    Go( &ROUTER_TOOL::DpDimensionsDialog, COMMON_ACTIONS::routerActivateDpDimensionsDialog.MakeEvent() );
+    Go( &ROUTER_TOOL::SettingsDialog, COMMON_ACTIONS::routerActivateSettingsDialog.MakeEvent() );
+       
 }
 
 int ROUTER_TOOL::getDefaultWidth( int aNetCode )
@@ -555,6 +558,36 @@ void ROUTER_TOOL::performRouting()
 
     finishInteractive ( saveUndoBuffer );
 }
+
+int ROUTER_TOOL::DpDimensionsDialog( TOOL_EVENT& aEvent )
+{
+    Activate();
+
+    PNS_SIZES_SETTINGS sizes = m_router->Sizes();
+    DIALOG_PNS_DIFF_PAIR_DIMENSIONS settingsDlg( m_frame, sizes );
+
+    if( settingsDlg.ShowModal() )
+    {
+        m_router->UpdateSizes( sizes );
+        m_savedSizes = sizes;
+    }   
+
+    return 0;
+}
+
+int ROUTER_TOOL::SettingsDialog( TOOL_EVENT& aEvent )
+{
+    Activate();
+
+    DIALOG_PNS_SETTINGS settingsDlg( m_frame, m_router->Settings() );
+
+    if( settingsDlg.ShowModal() )
+    {
+        m_savedSettings = m_router->Settings();
+    }
+    return 0;
+}
+
 
 int ROUTER_TOOL::RouteSingleTrace( TOOL_EVENT& aEvent )
 {

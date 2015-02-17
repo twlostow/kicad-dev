@@ -23,7 +23,7 @@
 
 PNS_ROUTING_SETTINGS::PNS_ROUTING_SETTINGS()
 {
-    m_routingMode = RM_Shove;
+    m_routingMode = RM_Walkaround;
     m_optimizerEffort = OE_MEDIUM;
     m_removeLoops = true;
     m_smartPads = true;

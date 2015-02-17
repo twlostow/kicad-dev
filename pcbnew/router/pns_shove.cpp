@@ -23,8 +23,6 @@
 
 #include <boost/foreach.hpp>
 
-//#define PNS_DEBUG
-
 #include "trace.h"
 #include "range.h"
 
@@ -319,11 +317,10 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::onCollidingSegment( PNS_LINE* aCurrent, PNS_S
     {
         if( shovedLine->Marker() & MK_HEAD )
         {
-            
             if( m_multiLineMode )
                 return SH_INCOMPLETE;
             
-            m_headModified = true;
+            m_newHead = *shovedLine;
         }
 
         sanityCheck( obstacleLine, shovedLine );
@@ -363,7 +360,7 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::onCollidingLine( PNS_LINE* aCurrent, PNS_LINE
             if (m_multiLineMode)
                 return SH_INCOMPLETE;
 
-            m_headModified = true;
+            m_newHead = *shovedLine;
         }
 
         sanityCheck( aObstacle, shovedLine );
@@ -436,7 +433,6 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::onCollidingSolid( PNS_LINE* aCurrent, PNS_SOL
     if( walkaround.Route( *aCurrent, *walkaroundLine, false ) != PNS_WALKAROUND::DONE )
         return SH_INCOMPLETE;
 
-    
     walkaroundLine->ClearSegmentLinks();
     walkaroundLine->Unmark();
     walkaroundLine->Line().Simplify();
@@ -451,7 +447,7 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::onCollidingSolid( PNS_LINE* aCurrent, PNS_SOL
         if(m_multiLineMode)        
             return SH_INCOMPLETE;
 
-        m_headModified = true;
+        m_newHead = *walkaroundLine;
     }
 
     replaceItems ( aCurrent, walkaroundLine );
@@ -485,7 +481,7 @@ bool PNS_SHOVE::reduceSpringback( const PNS_ITEMSET& aHeadSet )
 
             delete spTag.m_node;
             m_nodeStack.pop_back();
-        }
+            }
         else
            break;
     }
@@ -527,10 +523,21 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::pushVia( PNS_VIA* aVia, const VECTOR2I& aForc
 {
     LINE_PAIR_VEC draggedLines;
     VECTOR2I p0 ( aVia->Pos() );
-    PNS_JOINT* jt = m_currentNode->FindJoint( p0, 1, aVia->Net() );
-    PNS_VIA* pushedVia = aVia->Clone();
+    PNS_JOINT* jt = m_currentNode->FindJoint( p0, aVia );
+    VECTOR2I p0_pushed( p0 + aForce );
 
-    pushedVia->SetPos( p0 + aForce );
+    while (aForce.x != 0 || aForce.y != 0)
+    {
+        PNS_JOINT *jt_next = m_currentNode->FindJoint ( p0_pushed, aVia );
+
+        if(!jt_next)
+            break;
+    
+        p0_pushed += aForce.Resize ( 2 ); // make sure pushed via does not overlap with any existing joint
+    }
+    
+    PNS_VIA* pushedVia = aVia->Clone();
+    pushedVia->SetPos( p0_pushed );
     pushedVia->Mark( aVia->Marker() );
 
     if( aVia->Marker() & MK_HEAD )
@@ -547,9 +554,8 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::pushVia( PNS_VIA* aVia, const VECTOR2I& aForc
 
     BOOST_FOREACH( PNS_ITEM* item, jt->LinkList() )
     {
-        if( item->OfKind( PNS_ITEM::SEGMENT ) )
+        if( PNS_SEGMENT *seg = dyn_cast<PNS_SEGMENT *>( item ) )
         {
-            PNS_SEGMENT* seg = (PNS_SEGMENT*) item;
             LINE_PAIR lp;
             int segIndex;
 
@@ -562,7 +568,7 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::pushVia( PNS_VIA* aVia, const VECTOR2I& aForc
 
             lp.second = clone( lp.first );
             lp.second->ClearSegmentLinks();
-            lp.second->DragCorner( p0 + aForce, lp.second->CLine().Find( p0 ) );
+            lp.second->DragCorner( p0_pushed, lp.second->CLine().Find( p0 ) );
             lp.second->AppendVia ( *pushedVia );
             draggedLines.push_back( lp );
 
@@ -572,13 +578,15 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::pushVia( PNS_VIA* aVia, const VECTOR2I& aForc
         }
     }
 
+    m_draggedViaHeadSet.Add ( pushedVia );
+
     if ( aDryRun )
         return SH_OK;
 
     replaceItems ( aVia, pushedVia );
     
     if( aVia->BelongsTo( m_currentNode ) )
-        delete aVia;
+    	delete aVia;
 
     pushedVia->SetRank( aCurrentRank - 1 );
 
@@ -592,10 +600,11 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::pushVia( PNS_VIA* aVia, const VECTOR2I& aForc
         if( lp.first->Marker() & MK_HEAD )
         {
             lp.second->Mark( MK_HEAD );
-            m_headModified = true;
             
             if ( m_multiLineMode )
                 return SH_INCOMPLETE;
+
+            m_newHead = *lp.second;
         }
 
         unwindStack( lp.first );
@@ -791,11 +800,11 @@ void PNS_SHOVE::pushLine( PNS_LINE* aL )
 {
     if( aL->LinkCount() >= 0 && ( aL->LinkCount() != aL->SegmentCount() ) )
     {
-        //printf("LC: %d SC %d\n", aL->LinkCount(), aL->SegmentCount() );
+        printf("LC: %d SC %d\n", aL->LinkCount(), aL->SegmentCount() );
         for(int i=0;i<aL->SegmentCount();i++)
         {
             SEG s = aL->CLine().CSegment(i);
-          //  printf("s %d: %d %d %d %d\n", i, s.A.x, s.A.y, s.B.x, s.B.y );
+            printf("s %d: %d %d %d %d\n", i, s.A.x, s.A.y, s.B.x, s.B.y );
         }
         assert( false );
     }
@@ -846,9 +855,6 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::shoveIteration( int aIter )
     }
 
     PNS_ITEM* ni = nearest->m_item;
-
-//    if( ( currentLine->Marker() & MK_HEAD ) && ( ni->Marker() & MK_HEAD ) )
-//      printf("Head-to-head collision?\n");
 
     unwindStack( ni );
 
@@ -982,7 +988,6 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::ShoveLines( const PNS_LINE& aCurrentHead )
     m_lineStack.clear();
     m_optimizerQueue.clear();
     m_newHead = OPT_LINE();
-    m_headModified = false;
     m_logger.Clear();
 
     PNS_ITEMSET headSet( clone( &aCurrentHead ) );
@@ -1012,49 +1017,13 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::ShoveLines( const PNS_LINE& aCurrentHead )
         m_logger.Log( headVia, 0, "head-via" );
     }
 
-    //printf("HeadEndsPV %d\n", head->EndsWithVia());
     pushLine( head );
     st = shoveMainLoop();
     runOptimizer( m_currentNode, head );
 
-    if( m_headModified && st == SH_OK ) // fixme: rewrite
+    if( m_newHead && st == SH_OK )
     {
         st = SH_HEAD_MODIFIED;
-        
-        PNS_JOINT* jtStart = m_currentNode->FindJoint( aCurrentHead.CPoint(0), aCurrentHead.Layer(), aCurrentHead.Net() );
-
-        PNS_ITEMSET mk = jtStart->Links();
-        mk.FilterKinds( PNS_ITEM::SEGMENT ).FilterMarker (MK_HEAD);
-
-        if (mk.Size() > 1)
-        {
-            //printf("weird\n");
-            BOOST_FOREACH( PNS_ITEM *item, mk.Items() )
-            {
-                //printf("Kind %d\n", item->Kind());
-                PNS_SEGMENT *seg = static_cast<PNS_SEGMENT*> ( item );
-                //printf("SEG: %d %d %d %d l %d n %d\n", seg->Seg().A.x,  seg->Seg().A.y,  seg->Seg().B.x, seg->Seg().B.y, seg->Layers().Start(), seg->Net() );
-            }
-//            assert(false);
-        }
-
-        PNS_LINE *nh = m_currentNode->AssembleLine ( static_cast<PNS_SEGMENT*> (mk[0]) );
-
-        if ( aCurrentHead.EndsWithVia() )
-        {
-            PNS_JOINT* jtEnd = m_currentNode->FindJoint( nh->CPoint(-1), aCurrentHead.Layer(), aCurrentHead.Net() );
-            PNS_ITEMSET mk = jtEnd->Links().FilterKinds( PNS_ITEM::VIA ).FilterMarker (MK_HEAD);
-
-            assert ( mk.Size() == 1);
-
-            nh->AppendVia ( *static_cast<PNS_VIA*>(mk[0]));
-
-
-        }
-
-        m_newHead = *nh;
-        delete nh;
-
     }
 
     m_currentNode->RemoveByMarker( MK_HEAD );
@@ -1304,6 +1273,3 @@ void PNS_SHOVE::SetInitialLine( PNS_LINE* aInitial )
     m_root = m_root->Branch();
     m_root->Remove( aInitial );
 }
-
-
-

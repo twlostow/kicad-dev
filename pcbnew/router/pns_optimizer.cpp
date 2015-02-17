@@ -254,6 +254,7 @@ class LINE_RESTRICTIONS
         std::vector<RVERTEX> m_rs;
 };
 
+// fixme: use later
 int LINE_RESTRICTIONS::allowedAngles ( PNS_NODE *aWorld, const PNS_LINE *aLine, const VECTOR2I& aP, bool aFirst )
 {
     PNS_JOINT* jt = aWorld->FindJoint( aP , aLine );
@@ -297,6 +298,7 @@ int LINE_RESTRICTIONS::allowedAngles ( PNS_NODE *aWorld, const PNS_LINE *aLine, 
     }
 
     DrawDebugDirs ( aP, outputMask, 3 );
+    return 0xff;
 }
 
 
@@ -1146,6 +1148,7 @@ bool PNS_OPTIMIZER::mergeDpSegments( PNS_DIFF_PAIR *aPair )
             step_p--;
         }
     }
+    return true;
 }
 
 bool PNS_OPTIMIZER::Optimize( PNS_DIFF_PAIR* aPair )

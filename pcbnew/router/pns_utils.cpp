@@ -137,6 +137,22 @@ void DrawDebugSeg ( SEG s, int color )
     PNS_ROUTER::GetInstance()->DisplayDebugLine ( l, color, 10000 );
 }
 
+void DrawDebugDirs ( VECTOR2D p, int mask, int color )
+{
+    BOX2I b ( p - VECTOR2I ( 10000, 10000 ), VECTOR2I ( 20000, 20000 ) );
+
+    DrawDebugBox ( b, color );
+    for (int i = 0; i < 8; i++)
+    {
+        if ( (1<<i) & mask )
+        {
+            VECTOR2I v = DIRECTION_45((DIRECTION_45::Directions)i).ToVector() * 100000;
+            DrawDebugSeg ( SEG (p, p+v), color );
+
+        }
+
+    }
+}
 
 
 OPT_BOX2I ChangedArea ( const PNS_ITEM *aItemA, const PNS_ITEM *aItemB )

@@ -309,6 +309,11 @@ public:
         }        
     }
 
+    int Mask() const
+    {
+        return 1 << ( (int) m_dir );
+    }
+
 private:
 
     /**

@@ -126,8 +126,6 @@ private:
     void pushLine( PNS_LINE* aL );
     void popLine();
 
-    const RANGE<int> findShovedVertexRange( PNS_LINE* aL );
-
     PNS_LINE* assembleLine( const PNS_SEGMENT* aSeg, int* aIndex = NULL );
 
     void replaceItems ( PNS_ITEM *aOld, PNS_ITEM *aNew );

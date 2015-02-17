@@ -44,6 +44,7 @@ SHAPE_RECT ApproximateSegmentAsRect( const SHAPE_SEGMENT& aSeg );
 void DrawDebugPoint ( VECTOR2I p, int color );
 void DrawDebugBox ( BOX2I b, int color );
 void DrawDebugSeg ( SEG s, int color );
+void DrawDebugDirs ( VECTOR2D p, int mask, int color );
 
 OPT_BOX2I ChangedArea ( const PNS_ITEM *aItemA, const PNS_ITEM *aItemB );
 

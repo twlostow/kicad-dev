@@ -23,6 +23,7 @@
 #define __LENGTH_TUNER_TOOL_H
 
 #include "pns_tool_base.h"
+#include "pns_meander.h"
 
 class PNS_TUNE_STATUS_POPUP;
 
@@ -44,6 +45,8 @@ private:
     void performTuning( );
     int mainLoop( PNS_ROUTER_MODE aMode );
     void handleCommonEvents( TOOL_EVENT& evt );
+
+    PNS_MEANDER_SETTINGS m_savedMeanderSettings;
 };
 
 #endif

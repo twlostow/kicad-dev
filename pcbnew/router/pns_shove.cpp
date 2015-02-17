@@ -433,12 +433,10 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::onCollidingSolid( PNS_LINE* aCurrent, PNS_SOL
         walkaround.SetSingleDirection( true );
     }
 
-    //printf("pre-v %d\n", aCurrent->EndsWithVia());
     if( walkaround.Route( *aCurrent, *walkaroundLine, false ) != PNS_WALKAROUND::DONE )
         return SH_INCOMPLETE;
 
-    //printf("post-v %d\n", walkaroundLine->EndsWithVia());
-
+    
     walkaroundLine->ClearSegmentLinks();
     walkaroundLine->Unmark();
     walkaroundLine->Line().Simplify();
@@ -534,8 +532,6 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::pushVia( PNS_VIA* aVia, const VECTOR2I& aForc
 
     pushedVia->SetPos( p0 + aForce );
     pushedVia->Mark( aVia->Marker() );
-
-    //printf("Push orig: %d %d forced: %d %d force: %d %d\n", p0.x, p0.y, p0.x + aForce.x, p0.y +aForce.y, aForce.x, aForce.y );
 
     if( aVia->Marker() & MK_HEAD )
     {
@@ -851,8 +847,8 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::shoveIteration( int aIter )
 
     PNS_ITEM* ni = nearest->m_item;
 
-    if( ( currentLine->Marker() & MK_HEAD ) && ( ni->Marker() & MK_HEAD ) )
-        printf("Head-to-head collision?\n");
+//    if( ( currentLine->Marker() & MK_HEAD ) && ( ni->Marker() & MK_HEAD ) )
+//      printf("Head-to-head collision?\n");
 
     unwindStack( ni );
 
@@ -976,10 +972,6 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::ShoveLines( const PNS_LINE& aCurrentHead )
 
     m_multiLineMode = false;
     
-    //printf("CurEndsWithVia %d\n", aCurrentHead.EndsWithVia());
-
-    Router()->DisplayDebugLine ( aCurrentHead.CLine(), 3, 10000 );
-
     // empty head? nothing to shove...
     if( !aCurrentHead.SegmentCount() )
         return SH_INCOMPLETE;
@@ -1218,22 +1210,39 @@ PNS_SHOVE::SHOVE_STATUS PNS_SHOVE::ShoveDraggingVia( PNS_VIA* aVia, const VECTOR
 void PNS_SHOVE::runOptimizer( PNS_NODE* aNode, PNS_LINE* aHead )
 {
     PNS_OPTIMIZER optimizer( aNode );
-    int optFlags = 0, n_passes = 0, extend = 0;
+    int optFlags = 0, n_passes = 0;
 
     PNS_OPTIMIZATION_EFFORT effort = Settings().OptimizerEffort();
+
+    OPT_BOX2I area = totalAffectedArea();
+
+    int maxWidth = 0;
+
+    for( std::vector<PNS_LINE*>::iterator i = m_optimizerQueue.begin();
+             i != m_optimizerQueue.end(); ++i )
+    {
+        maxWidth = std::max ( (*i)->Width(), maxWidth );
+    }
+
+    if(area)
+    {
+        area->Inflate ( 10 * maxWidth );
+    }
 
     switch( effort )
     {
     case OE_LOW:
         optFlags = PNS_OPTIMIZER::MERGE_OBTUSE;
         n_passes = 1;
-        extend = 0;
         break;
 
     case OE_MEDIUM:
-        optFlags = PNS_OPTIMIZER::MERGE_OBTUSE;
+        optFlags = PNS_OPTIMIZER::MERGE_SEGMENTS;
+        
+        if( area )
+            optimizer.SetRestrictArea ( *area );
+
         n_passes = 2;
-        extend = 1;
         break;
 
     case OE_FULL:
@@ -1245,11 +1254,7 @@ void PNS_SHOVE::runOptimizer( PNS_NODE* aNode, PNS_LINE* aHead )
         break;
     }
 
-    OPT_BOX2I area = totalAffectedArea();
-
-    if(area)
-        DrawDebugBox( *area, 5 );
-
+ 
     if( Settings().SmartPads() )
         optFlags |= PNS_OPTIMIZER::SMART_PADS ;
 
@@ -1267,18 +1272,6 @@ void PNS_SHOVE::runOptimizer( PNS_NODE* aNode, PNS_LINE* aHead )
 
             if( !( line -> Marker() & MK_HEAD ) )
             {
-                if( effort == OE_MEDIUM || effort == OE_LOW )
-                {
-                    RANGE<int> r = findShovedVertexRange( line );
-
-                    if( r.Defined() )
-                    {
-                        int start_v = std::max( 0, r.MinV() - extend );
-                        int end_v = std::min( line->PointCount() - 1 , r.MaxV()  + extend );
-                        line->ClipVertexRange( start_v, end_v );
-                    }
-                }
-
                 PNS_LINE optimized;
 
                 if( optimizer.Optimize( line, &optimized ) )
@@ -1291,48 +1284,6 @@ void PNS_SHOVE::runOptimizer( PNS_NODE* aNode, PNS_LINE* aHead )
         }
     }
 }
-
-
-const RANGE<int> PNS_SHOVE::findShovedVertexRange( PNS_LINE* aL )
-{
-    RANGE<int> r;
-
-    for( int i = 0; i < aL->SegmentCount(); i++ )
-    {
-        PNS_SEGMENT* s = (*aL->LinkedSegments())[i];
-        PNS_JOINT* jt = m_root->FindJoint( s->Seg().A, s->Layer(), s->Net() );
-        bool found = false;
-
-        if( jt )
-        {
-            BOOST_FOREACH( PNS_ITEM* item, jt->LinkList() )
-            {
-                if( item->OfKind( PNS_ITEM::SEGMENT ) )
-                {
-                    PNS_SEGMENT* s_old = (PNS_SEGMENT*) item;
-
-                    if( s_old->Net() == s->Net() &&
-                        s_old->Layer() == s->Layer() &&
-                        s_old->Seg().A == s->Seg().A &&
-                        s_old->Seg().B == s->Seg().B )
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if( !found )
-        {
-            r.Grow( i );
-            r.Grow( i + 1 );
-        }
-    }
-
-    return r;
-}
-
 
 PNS_NODE* PNS_SHOVE::CurrentNode()
 {

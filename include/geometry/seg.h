@@ -309,6 +309,11 @@ public:
 
     bool PointCloserThan( const VECTOR2I& aP, int aDist ) const;
 
+    void Reverse()
+    {
+        std::swap ( A, B );
+    }
+
 //    friend std::ostream& operator<<( std::ostream& stream, const SEG& aSeg );
 private:
     bool ccw( const VECTOR2I& aA, const VECTOR2I& aB, const VECTOR2I &aC ) const;

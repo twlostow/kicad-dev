@@ -817,8 +817,6 @@ bool PNS_ROUTER::FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem )
             break;
     }
 
-    printf("Fixroute: rv %d\n", rv ? 1: 0);
-
     if( rv )
        StopRouting();
 

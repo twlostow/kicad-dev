@@ -335,7 +335,7 @@ public:
      * Searches for a joint at a given position, linked to given item.
      * @return the joint, if found, otherwise empty
      */
-    PNS_JOINT* FindJoint( const VECTOR2I& aPos, PNS_ITEM* aItem )
+    PNS_JOINT* FindJoint( const VECTOR2I& aPos, const PNS_ITEM* aItem )
     {
         return FindJoint( aPos, aItem->Layers().Start(), aItem->Net() );
     }

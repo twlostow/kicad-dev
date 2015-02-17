@@ -770,7 +770,7 @@ void PNS_NODE::followLine( PNS_SEGMENT* aCurrent, bool aScanDirection, int& aPos
 
 PNS_LINE* PNS_NODE::AssembleLine( PNS_SEGMENT* aSeg, int* aOriginSegmentIndex)
 {
-    const int MaxVerts = 1024;
+    const int MaxVerts = 1024 * 16;
 
     VECTOR2I corners[MaxVerts + 1];
     PNS_SEGMENT* segs[MaxVerts + 1];

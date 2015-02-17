@@ -111,8 +111,6 @@ public:
         return (vias == 1 && segs == 2);
     }
 
-
-
     ///> Links the joint to a given board item (when it's added to the PNS_NODE)
     void Link( PNS_ITEM* aItem )
     {

@@ -224,6 +224,152 @@ void PNS_OPTIMIZER::ClearCache( bool aStaticOnly  )
     }
 }
 
+class LINE_RESTRICTIONS 
+{
+    public:
+        LINE_RESTRICTIONS( ) {};
+        ~LINE_RESTRICTIONS( ) {};
+
+        void Build( PNS_NODE *aWorld, PNS_LINE *aOriginLine, const SHAPE_LINE_CHAIN& aLine, const BOX2I& aRestrictedArea, bool aRestrictedAreaEnable );
+        bool Check ( int aVertex1, int aVertex2, const SHAPE_LINE_CHAIN& aReplacement );
+        void Dump();
+
+
+    private:
+        int allowedAngles ( PNS_NODE *aWorld, const PNS_LINE *aLine, const VECTOR2I& aP, bool aFirst );
+
+        struct RVERTEX
+        {
+            RVERTEX ( bool aRestricted,  int aAllowedAngles ) : 
+                restricted ( aRestricted ),
+                allowedAngles  ( aAllowedAngles ) 
+            {
+
+            }
+
+            bool restricted;
+            int allowedAngles;
+        };
+
+        std::vector<RVERTEX> m_rs;
+};
+
+int LINE_RESTRICTIONS::allowedAngles ( PNS_NODE *aWorld, const PNS_LINE *aLine, const VECTOR2I& aP, bool aFirst )
+{
+    PNS_JOINT* jt = aWorld->FindJoint( aP , aLine );
+
+    if( !jt )
+        return 0xff;
+
+    
+    DIRECTION_45 dirs [8];
+
+    int n_dirs = 0;
+
+    BOOST_FOREACH ( const PNS_ITEM *item, jt->Links().CItems() )
+    {
+        if (item->OfKind (PNS_ITEM::VIA) || item->OfKind (PNS_ITEM::SOLID))
+            return 0xff;
+        else if ( const PNS_SEGMENT *seg = dyn_cast<const PNS_SEGMENT*> ( item ) )
+        {
+            SEG s = seg->Seg();
+            if (s.A != aP)
+                s.Reverse();
+
+            if (n_dirs < 8)
+                dirs [ n_dirs++ ] = aFirst ? DIRECTION_45 ( s ) : DIRECTION_45 ( s ).Opposite();
+        }
+    }
+
+
+
+    const int angleMask = DIRECTION_45::ANG_OBTUSE | DIRECTION_45::ANG_HALF_FULL | DIRECTION_45::ANG_STRAIGHT;
+    int outputMask = 0xff;
+    
+    for (int d = 0; d < 8; d ++)
+    {
+        DIRECTION_45 refDir( (DIRECTION_45::Directions) d );
+        for (int i = 0; i < n_dirs; i++ )
+        {
+            if (! (refDir.Angle(dirs [ i ] ) & angleMask) )
+                outputMask &= ~refDir.Mask();
+        }
+    }
+
+    DrawDebugDirs ( aP, outputMask, 3 );
+}
+
+
+void LINE_RESTRICTIONS::Build( PNS_NODE *aWorld, PNS_LINE *aOriginLine, const SHAPE_LINE_CHAIN& aLine, const BOX2I& aRestrictedArea, bool aRestrictedAreaEnable )
+{
+    const SHAPE_LINE_CHAIN& l = aLine;
+    VECTOR2I v_prev;
+    int n = l.PointCount( );
+
+    m_rs.reserve( n );
+
+    for (int i = 0; i < n; i++)
+    {
+        const VECTOR2I &v = l.CPoint(i), v_next;
+        RVERTEX r ( false, 0xff );
+
+        if ( aRestrictedAreaEnable )
+        {
+            bool exiting = ( i > 0 && aRestrictedArea.Contains( v_prev ) && !aRestrictedArea.Contains(v) );
+            bool entering = false;        
+
+            if( i != l.PointCount() - 1)
+            {
+                const VECTOR2I& v_next = l.CPoint(i + 1);
+                entering = ( !aRestrictedArea.Contains( v ) && aRestrictedArea.Contains( v_next ) );
+            }
+
+            if(entering)
+            {
+                const SEG& sp = l.CSegment(i);
+                r.allowedAngles = DIRECTION_45(sp).Mask();
+            } else if (exiting) {
+                const SEG& sp = l.CSegment(i - 1);
+                r.allowedAngles = DIRECTION_45(sp).Mask();
+            } else {
+                r.allowedAngles = (! aRestrictedArea.Contains ( v ) ) ? 0 : 0xff;
+                r.restricted = r.allowedAngles ? false : true;
+            }
+        }
+        v_prev = v;
+        m_rs.push_back(r);
+    }
+}
+
+void LINE_RESTRICTIONS::Dump()
+{
+}
+
+bool LINE_RESTRICTIONS::Check ( int aVertex1, int aVertex2, const SHAPE_LINE_CHAIN& aReplacement )
+{
+    if( m_rs.empty( ) )
+        return true;
+    
+    for(int i = aVertex1; i <= aVertex2; i++)
+        if ( m_rs[i].restricted )
+            return false;
+
+    const RVERTEX& v1 = m_rs[ aVertex1 ];
+    const RVERTEX& v2 = m_rs[ aVertex2 ];
+
+    int m1 = DIRECTION_45( aReplacement.CSegment( 0 ) ).Mask();
+    int m2;
+    if (aReplacement.SegmentCount() == 1)
+        m2 = m1;
+    else
+        m2 = DIRECTION_45 ( aReplacement.CSegment( 1 ) ).Mask();
+
+
+    return  ((v1.allowedAngles & m1) != 0) &&
+            ((v2.allowedAngles & m2) != 0);
+}
+
+
 
 bool PNS_OPTIMIZER::checkColliding( PNS_ITEM* aItem, bool aUpdateCache )
 {
@@ -393,7 +539,7 @@ bool PNS_OPTIMIZER::mergeFull( PNS_LINE* aLine )
 }
 
 
-bool PNS_OPTIMIZER::Optimize( PNS_LINE* aLine, PNS_LINE* aResult )//, int aStartVertex, int aEndVertex )
+bool PNS_OPTIMIZER::Optimize( PNS_LINE* aLine, PNS_LINE* aResult )
 {
     if( !aResult )
         aResult = aLine;
@@ -427,11 +573,15 @@ bool PNS_OPTIMIZER::mergeStep( PNS_LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, 
 
     int cost_orig = PNS_COST_ESTIMATOR::CornerCost( aCurrentPath );
 
+    LINE_RESTRICTIONS restr;
+
     if( aLine->SegmentCount() < 4 )
         return false;
 
     DIRECTION_45 orig_start( aLine->CSegment( 0 ) );
     DIRECTION_45 orig_end( aLine->CSegment( -1 ) );
+
+    restr.Build( m_world, aLine, aCurrentPath, m_restrictArea, m_restrictAreaActive );
 
     while( n < n_segs - step )
     {
@@ -448,13 +598,14 @@ bool PNS_OPTIMIZER::mergeStep( PNS_LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, 
             SHAPE_LINE_CHAIN bypass = DIRECTION_45().BuildInitialTrace( s1.A, s2.B, i );
             cost[i] = INT_MAX;
 
+            bool restrictionsOK = restr.Check ( n, n + step + 1, bypass );
 
             if( n == 0 && orig_start != DIRECTION_45( bypass.CSegment( 0 ) ) )
                 postureMatch = false;
             else if( n == n_segs - step && orig_end != DIRECTION_45( bypass.CSegment( -1 ) ) )
                 postureMatch = false;
 
-            if( (postureMatch || !m_keepPostures) && !checkColliding( aLine, bypass ) )
+            if( restrictionsOK && (postureMatch || !m_keepPostures) && !checkColliding( aLine, bypass ) )
             {
                 path[i] = aCurrentPath;
                 path[i].Replace( s1.Index(), s2.Index(), bypass );

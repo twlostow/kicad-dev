@@ -142,8 +142,9 @@ void LENGTH_TUNER_TOOL::handleCommonEvents( TOOL_EVENT& aEvent )
         {
             placer->UpdateSettings ( settings );
         }
-    }
 
+        m_savedMeanderSettings = placer->MeanderSettings( );
+    }
 }
 
 void LENGTH_TUNER_TOOL::performTuning()
@@ -173,6 +174,9 @@ void LENGTH_TUNER_TOOL::performTuning()
 
     PNS_MEANDER_PLACER *placer = static_cast <PNS_MEANDER_PLACER *> ( m_router->Placer() );
     VECTOR2I end;
+
+    placer->UpdateSettings( m_savedMeanderSettings );
+
 
     while( OPT_TOOL_EVENT evt = Wait() )
     {
@@ -240,6 +244,7 @@ void LENGTH_TUNER_TOOL::performTuning()
     m_ctls->SetAutoPan( false );
     m_ctls->ForceCursorPosition( false );
     highlightNet( false );
+
 }
 
 int LENGTH_TUNER_TOOL::TuneSingleTrace ( TOOL_EVENT& aEvent )

@@ -103,6 +103,11 @@ int PNS_MEANDER_PLACER::origPathLength( ) const
 
 bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 {
+    return doMove ( aP, aEndItem, m_settings.m_targetLength );
+}
+
+bool PNS_MEANDER_PLACER::doMove( const VECTOR2I& aP, PNS_ITEM* aEndItem, int aTargetLength )
+{
     SHAPE_LINE_CHAIN pre, tuned, post;
 
     if(m_currentNode)
@@ -129,12 +134,12 @@ bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
     m_lastLength = lineLen;
     m_lastStatus = TUNED;
 
-    if( compareWithTollerance ( lineLen, m_settings.m_targetLength, m_settings.m_lengthTollerance ) > 0 )
+    if( compareWithTollerance ( lineLen, aTargetLength, m_settings.m_lengthTollerance ) > 0 )
     {
         m_lastStatus = TOO_LONG;
     } else {
         m_lastLength = lineLen - tuned.Length( );
-        tuneLineLength( m_result, m_settings.m_targetLength - lineLen ); 
+        tuneLineLength( m_result, aTargetLength - lineLen ); 
     }
 
     BOOST_FOREACH ( const PNS_ITEM *item, m_tunedPath.CItems( ) )
@@ -159,7 +164,7 @@ bool PNS_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 
         m_lastLength += tuned.Length( ); 
 
-        int comp = compareWithTollerance( m_lastLength - m_settings.m_targetLength, 0, m_settings.m_lengthTollerance );
+        int comp = compareWithTollerance( m_lastLength - aTargetLength, 0, m_settings.m_lengthTollerance );
 
         if( comp > 0 )
             m_lastStatus = TOO_LONG;

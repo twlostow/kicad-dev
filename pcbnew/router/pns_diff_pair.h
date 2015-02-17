@@ -57,14 +57,43 @@ public:
         m_hasEntryLines = false;
     }
 
-    ~PNS_DP_GATEWAY () {};
+    ~PNS_DP_GATEWAY ()
+    {
 
-    bool IsDiagonal() const { return m_isDiagonal; }
+    }
+
+    /**
+     * Function IsDiagonal()
+     *
+     * @return true, if the gateway anchors lie on a diagonal line
+     */
+    
+    bool IsDiagonal() const
+    {
+        return m_isDiagonal; 
+    }
+
     const VECTOR2I& AnchorP () const { return m_anchorP; }
     const VECTOR2I& AnchorN () const { return m_anchorN; }
+    
+    /**
+     * Function AllowedAngles()
+     *
+     * @return a mask of 45-degree entry directoins allowed for the
+     * gateway.
+    */
     int AllowedAngles () const { return m_allowedEntryAngles; }
-    int Priority() const { return m_priority; }
 
+    /**
+     * Function Priority()
+     *
+     * @return priority/score value for gateway matching
+     */
+    int Priority() const 
+    { 
+        return m_priority;
+    }
+    
     void SetPriority(int aPriority) 
     {
         m_priority = aPriority;

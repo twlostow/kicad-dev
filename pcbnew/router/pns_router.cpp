@@ -46,7 +46,9 @@
 #include "pns_dragger.h"
 #include "pns_diff_pair_placer.h"
 #include "pns_meander_placer.h"
+#include "pns_meander_skew_placer.h"
 #include "pns_dp_meander_placer.h"
+
 
 
 #include <router/router_preview_item.h>
@@ -486,7 +488,6 @@ bool PNS_ROUTER::StartDragging( const VECTOR2I& aP, PNS_ITEM* aStartItem )
 
 bool PNS_ROUTER::StartRouting( const VECTOR2I& aP, PNS_ITEM* aStartItem, int aLayer )
 {
-    printf("RTmode %d\n", m_mode);
     switch (m_mode)
     {
         case PNS_MODE_ROUTE_SINGLE:
@@ -500,6 +501,9 @@ bool PNS_ROUTER::StartRouting( const VECTOR2I& aP, PNS_ITEM* aStartItem, int aLa
             break;
         case PNS_MODE_TUNE_DIFF_PAIR:
             m_placer = new PNS_DP_MEANDER_PLACER( this );
+            break;
+        case PNS_MODE_TUNE_DIFF_PAIR_SKEW:
+            m_placer = new PNS_MEANDER_SKEW_PLACER( this );
             break;
         
         default:
@@ -873,8 +877,6 @@ void PNS_ROUTER::FlipPosture()
 
 void PNS_ROUTER::SwitchLayer( int aLayer )
 {
-    printf("SwitchLayer: %d\n", aLayer);
-
     switch( m_state )
     {
         case ROUTE_TRACK:

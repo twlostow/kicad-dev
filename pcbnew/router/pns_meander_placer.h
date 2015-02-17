@@ -48,16 +48,16 @@ class PNS_MEANDER_PLACER : public PNS_MEANDER_PLACER_BASE
 public:
 
     PNS_MEANDER_PLACER( PNS_ROUTER* aRouter );
-    ~PNS_MEANDER_PLACER();
+    virtual ~PNS_MEANDER_PLACER();
 
     /// @copydoc PNS_PLACEMENT_ALGO::Start()
-    bool Start( const VECTOR2I& aP, PNS_ITEM* aStartItem );
+    virtual bool Start( const VECTOR2I& aP, PNS_ITEM* aStartItem );
 
     /// @copydoc PNS_PLACEMENT_ALGO::Move()
-    bool Move( const VECTOR2I& aP, PNS_ITEM* aEndItem );
+    virtual bool Move( const VECTOR2I& aP, PNS_ITEM* aEndItem );
 
     /// @copydoc PNS_PLACEMENT_ALGO::FixRoute()
-    bool FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem );
+    virtual bool FixRoute( const VECTOR2I& aP, PNS_ITEM* aEndItem );
 
     /// @copydoc PNS_PLACEMENT_ALGO::CurrentNode()
     PNS_NODE* CurrentNode( bool aLoopsRemoved = false ) const;
@@ -75,20 +75,21 @@ public:
     int CurrentLayer() const;
 
     /// @copydoc PNS_MEANDER_PLACER_BASE::TuningInfo()
-    const wxString TuningInfo() const;
+    virtual const wxString TuningInfo() const;
 
     /// @copydoc PNS_MEANDER_PLACER_BASE::TuningStatus()
-    TUNING_STATUS TuningStatus() const;
+    virtual TUNING_STATUS TuningStatus() const;
 
     /// @copydoc PNS_MEANDER_PLACER_BASE::CheckFit()
     bool CheckFit ( PNS_MEANDER_SHAPE* aShape );
 
-private:
+protected:
     
-    
+    bool doMove( const VECTOR2I& aP, PNS_ITEM* aEndItem, int aTargetLength );
+
     void setWorld ( PNS_NODE* aWorld );
     
-    int origPathLength () const;
+    virtual int origPathLength () const;
 
     ///> pointer to world to search colliding items
     PNS_NODE* m_world;

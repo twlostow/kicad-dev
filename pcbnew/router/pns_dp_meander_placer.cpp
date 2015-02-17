@@ -314,7 +314,7 @@ bool PNS_DP_MEANDER_PLACER::Move( const VECTOR2I& aP, PNS_ITEM* aEndItem )
 
     m_lastStatus = TUNED;
 
-    if (dpLen > m_settings.m_targetLength)
+    if (dpLen - m_settings.m_targetLength > m_settings.m_lengthTollerance)
     {
         m_lastStatus = TOO_LONG;
         m_lastLength = dpLen;

@@ -67,6 +67,7 @@ public:
     {
         m_segmentRefs = NULL;
         m_hasVia = false;
+        m_width = 0;
     }
 
     PNS_LINE( const PNS_LINE& aOther ) ;

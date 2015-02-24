@@ -511,7 +511,10 @@ void PNS_NODE::addLine( PNS_LINE* aLine, bool aAllowRedundant )
                 psegR =  findRedundantSegment( pseg );
 
             if( psegR )
+            {
                 aLine->LinkSegment( psegR );
+                delete pseg;
+            }
             else
             {
                 pseg->SetOwner( this );

@@ -983,7 +983,7 @@ void PNS_LINE_PLACER::removeLoops( PNS_NODE* aNode, PNS_LINE* aLatest )
 
 void PNS_LINE_PLACER::simplifyNewLine( PNS_NODE* aNode, PNS_SEGMENT* aLatest )
 {
-    PNS_LINE* l = aNode->AssembleLine( aLatest );
+    std::auto_ptr<PNS_LINE> l ( aNode->AssembleLine( aLatest ) );
     SHAPE_LINE_CHAIN simplified ( l->CLine() );
 
     simplified.Simplify();
@@ -991,7 +991,7 @@ void PNS_LINE_PLACER::simplifyNewLine( PNS_NODE* aNode, PNS_SEGMENT* aLatest )
     if( simplified.PointCount() != l->PointCount() )
     {
         std::auto_ptr<PNS_LINE> lnew ( l->Clone() );
-        aNode -> Remove( l );
+        aNode -> Remove( l.get() );
         lnew->SetShape( simplified );
         aNode -> Add( lnew.get() );
     }

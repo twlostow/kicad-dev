@@ -29,6 +29,14 @@ PNS_DRAGGER::PNS_DRAGGER( PNS_ROUTER* aRouter ) :
 {
     m_world = NULL;
     m_shove = NULL;
+    m_lastNode = NULL;
+    m_mode = SEGMENT;
+    m_draggedLine = NULL;
+    m_draggedVia = NULL;
+    m_draggedSegmentIndex = 0;
+    m_dragStatus = false;
+    m_currentMode = RM_Shove;
+    m_initialVia = NULL;
 }
 
 

@@ -340,34 +340,6 @@ private:
             dir = dir + 8;
             
         m_dir = (Directions) dir;
-
-        return;
-
-        if( aVec.y < 0 )
-        {
-            if( aVec.x > 0 )
-                m_dir = NE;
-            else if( aVec.x < 0 )
-                m_dir = NW;
-            else
-                m_dir = N;
-        }
-        else if( aVec.y == 0 )
-        {
-            if( aVec.x > 0 )
-                m_dir = E;
-            else
-                m_dir = W;
-        }
-        else    // aVec.y>0
-        {
-            if( aVec.x > 0 )
-                m_dir = SE;
-            else if( aVec.x < 0 )
-                m_dir = SW;
-            else
-                m_dir = S;
-        }
     }
     
     ///> our actual direction

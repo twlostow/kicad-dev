@@ -225,32 +225,7 @@ void PNS_OPTIMIZER::ClearCache( bool aStaticOnly  )
 
 bool PNS_OPTIMIZER::checkColliding( PNS_ITEM* aItem, bool aUpdateCache )
 {
-    CACHE_VISITOR v( aItem, m_world, m_collisionKindMask );
-
     return m_world->CheckColliding( aItem );
-
-    // something is wrong with the cache, need to investigate.
-    m_cache.Query( aItem->Shape(), m_world->GetMaxClearance(), v, false );
-
-    if( !v.m_collidingItem )
-    {
-        PNS_NODE::OPT_OBSTACLE obs = m_world->CheckColliding( aItem );
-
-        if( obs )
-        {
-            if( aUpdateCache )
-                cacheAdd( obs->m_item );
-
-            return true;
-        }
-    }
-    else
-    {
-        m_cacheTags[v.m_collidingItem].m_hits++;
-        return true;
-    }
-
-    return false;
 }
 
 

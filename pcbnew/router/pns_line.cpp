@@ -564,18 +564,10 @@ void PNS_LINE::DragSegment ( const VECTOR2I& aP, int aIndex, int aSnappingThresh
     s_next = path.CSegment( index + 1 );
     dragged = path.CSegment( index );
 
-    bool lockEndpointA = true;
-    bool lockEndpointB = true;
-
     if( aIndex == 0 )
     {
-        if( !lockEndpointA )
-            guideA[0] = guideA[1] = SEG( dragged.A, dragged.A + drag_dir.Right().Right().ToVector() );
-        else
-        {
-            guideA[0] = SEG( dragged.A, dragged.A + drag_dir.Right().ToVector() );
-            guideA[1] = SEG( dragged.A, dragged.A + drag_dir.Left().ToVector() );
-        }
+        guideA[0] = SEG( dragged.A, dragged.A + drag_dir.Right().ToVector() );
+        guideA[1] = SEG( dragged.A, dragged.A + drag_dir.Left().ToVector() );
     }
     else
     {
@@ -590,13 +582,8 @@ void PNS_LINE::DragSegment ( const VECTOR2I& aP, int aIndex, int aSnappingThresh
 
     if( aIndex == m_line.SegmentCount() - 1 )
     {
-        if( !lockEndpointB )
-            guideB[0] = guideB[1] = SEG( dragged.B, dragged.B + drag_dir.Right().Right().ToVector() );
-        else
-        {
-            guideB[0] = SEG( dragged.B, dragged.B + drag_dir.Right().ToVector() );
-            guideB[1] = SEG( dragged.B, dragged.B + drag_dir.Left().ToVector() );
-        }
+        guideB[0] = SEG( dragged.B, dragged.B + drag_dir.Right().ToVector() );
+        guideB[1] = SEG( dragged.B, dragged.B + drag_dir.Left().ToVector() );
     }
     else
     {
@@ -665,11 +652,6 @@ void PNS_LINE::DragSegment ( const VECTOR2I& aP, int aIndex, int aSnappingThresh
             }
         }
     }
-
-    if( !lockEndpointA && aIndex == 0 )
-        best.Remove( 0, 0 );
-    if( !lockEndpointB && aIndex == m_line.SegmentCount() - 1 )
-        best.Remove( -1, -1 );
 
     if( m_line.PointCount() == 1 )
         m_line = best;

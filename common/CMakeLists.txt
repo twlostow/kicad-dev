@@ -205,7 +205,6 @@ set( COMMON_SRCS
     worksheet.cpp
     wxwineda.cpp
     wxunittext.cpp
-    wx_unit_input.cpp
     xnode.cpp
     zoom.cpp
     )

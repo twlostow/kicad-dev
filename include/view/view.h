@@ -28,6 +28,7 @@
 #include <vector>
 #include <set>
 #include <boost/unordered/unordered_map.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <math/box2.h>
 #include <gal/definitions.h>
@@ -39,6 +40,7 @@ class GAL;
 class VIEW_ITEM;
 class VIEW_GROUP;
 class VIEW_RTREE;
+class VIEW_OVERLAY;
 
 /**
  * Class VIEW.
@@ -529,6 +531,8 @@ public:
     void UpdateItems();
 
     const BOX2I CalculateExtents() ;
+
+    boost::shared_ptr<VIEW_OVERLAY> MakeOverlay( );
 
     static const int VIEW_MAX_LAYERS = 256;      ///< maximum number of layers that may be shown
 

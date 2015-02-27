@@ -86,6 +86,8 @@ public:
     // Drawing methods
     // ---------------
 
+    virtual void TestLine ( double x1, double y1, double x2, double y2 );
+
     /// @copydoc GAL::BeginDrawing()
     virtual void BeginDrawing();
 
@@ -166,6 +168,8 @@ public:
 
     /// @copydoc GAL::EndGroup()
     virtual void EndGroup();
+
+    virtual int CurrentGroup();
 
     /// @copydoc GAL::DrawGroup()
     virtual void DrawGroup( int aGroupNumber );
@@ -258,8 +262,14 @@ private:
     wxEvtHandler*           mouseListener;
     wxEvtHandler*           paintListener;
 
+    struct GROUP_ENTRY
+    {
+        boost::shared_ptr<VERTEX_ITEM> vItem;
+        VERTEX_MANAGER *owner;
+    };
+
     // Vertex buffer objects related fields
-    typedef std::map< unsigned int, boost::shared_ptr<VERTEX_ITEM> > GROUPS_MAP;
+    typedef std::map< unsigned int, GROUP_ENTRY> GROUPS_MAP;
     GROUPS_MAP              groups;                 ///< Stores informations about VBO objects (groups)
     unsigned int            groupCounter;           ///< Counter used for generating keys for groups
     VERTEX_MANAGER*         currentManager;         ///< Currently used VERTEX_MANAGER (for storing VERTEX_ITEMs)
@@ -279,6 +289,7 @@ private:
     // Internal flags
     bool                    isFramebufferInitialized;   ///< Are the framebuffers initialized?
     bool                    isGrouping;                 ///< Was a group started?
+    int                     currentGroupNumber;
 
     // Polygon tesselation
     /// The tessellator

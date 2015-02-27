@@ -38,7 +38,7 @@
 
 namespace KIGFX
 {
-class GAL;
+class GAL_API_BASE;
 
 typedef std::deque< std::deque<VECTOR2D> > GLYPH;
 typedef std::vector<GLYPH>                 GLYPH_LIST;
@@ -52,7 +52,7 @@ class STROKE_FONT
 {
 public:
     /// Constructor
-    STROKE_FONT( GAL* aGal );
+    STROKE_FONT( GAL_API_BASE* aGal );
 
     /**
      * @brief Load the new stroke font.
@@ -137,13 +137,13 @@ public:
      * Changes Graphics Abstraction Layer used for drawing items for a new one.
      * @param aGal is the new GAL instance.
      */
-    void SetGAL( GAL* aGal )
+    void SetGAL( GAL_API_BASE* aGal )
     {
         m_gal = aGal;
     }
 
 private:
-    GAL*                m_gal;                                    ///< Pointer to the GAL
+    GAL_API_BASE*       m_gal;                                    ///< Pointer to the GAL
     GLYPH_LIST          m_glyphs;                                 ///< Glyph list
     std::vector<BOX2D>  m_glyphBoundingBoxes;                     ///< Bounding boxes of the glyphs
     VECTOR2D            m_glyphSize;                              ///< Size of the glyphs

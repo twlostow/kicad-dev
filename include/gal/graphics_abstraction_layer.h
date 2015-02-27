@@ -50,7 +50,7 @@ enum GRID_STYLE
 };
 
 /**
- * @brief Class GAL is the abstract interface for drawing on a 2D-surface.
+ * @brief Class GAL_API_BASE is the abstract interface for drawing on a 2D-surface.
  *
  * The functions are optimized for drawing shapes of an EDA-program such as KiCad. Most methods
  * are abstract and need to be implemented by a lower layer, for example by a cairo or OpenGL implementation.
@@ -59,31 +59,12 @@ enum GRID_STYLE
  * for drawing purposes these are transformed to screen units with this layer. So zooming is handled here as well.
  *
  */
-class GAL
+class GAL_API_BASE 
 {
 public:
-    // Constructor / Destructor
-    GAL();
-    virtual ~GAL();
+    GAL_API_BASE();
+    virtual ~GAL_API_BASE();
 
-    // ---------------
-    // Drawing methods
-    // ---------------
-
-    /// @brief Begin the drawing, needs to be called for every new frame.
-    virtual void BeginDrawing() = 0;
-
-    /// @brief End the drawing, needs to be called for every new frame.
-    virtual void EndDrawing() = 0;
-
-    /**
-     * @brief Draw a line.
-     *
-     * Start and end points are defined as 2D-Vectors.
-     *
-     * @param aStartPoint   is the start point of the line.
-     * @param aEndPoint     is the end point of the line.
-     */
     virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) = 0;
 
     /**
@@ -149,34 +130,9 @@ public:
     virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
                             const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) = 0;
 
-    // --------------
-    // Screen methods
-    // --------------
 
-    /// @brief Resizes the canvas.
-    virtual void ResizeScreen( int aWidth, int aHeight ) = 0;
-
-    /// @brief Shows/hides the GAL canvas
-    virtual bool Show( bool aShow ) = 0;
-
-    /// @brief Returns GAL canvas size in pixels
-    const VECTOR2I& GetScreenPixelSize() const
-    {
-        return screenSize;
-    }
-
-    /// @brief Force all remaining objects to be drawn.
-    virtual void Flush() = 0;
-
-    /**
-     * @brief Clear the screen.
-     * @param aColor is the color used for clearing.
-     */
-    virtual void ClearScreen( const COLOR4D& aColor ) = 0;
-
-    // -----------------
-    // Attribute setting
-    // -----------------
+    virtual void TestLine ( double x0, double y0, double x1, double y1 );
+    
 
     /**
      * @brief Enable/disable fill.
@@ -248,18 +204,6 @@ public:
         return lineWidth;
     }
 
-    /**
-     * @brief Set the depth of the layer (position on the z-axis)
-     *
-     * @param aLayerDepth the layer depth for the objects.
-     */
-    inline virtual void SetLayerDepth( double aLayerDepth )
-    {
-        assert( aLayerDepth <= depthRange.y );
-        assert( aLayerDepth >= depthRange.x );
-
-        layerDepth = aLayerDepth;
-    }
 
     // ----
     // Text
@@ -357,6 +301,124 @@ public:
 
     /// @brief Restore the context.
     virtual void Restore() = 0;
+    
+protected:
+    STROKE_FONT strokeFont;
+
+    double             lineWidth;              ///< The line width
+
+    bool               isFillEnabled;          ///< Is filling of graphic objects enabled ?
+    bool               isStrokeEnabled;        ///< Are the outlines stroked ?
+
+    COLOR4D            fillColor;              ///< The fill color
+    COLOR4D            strokeColor;            ///< The color of the outlines
+
+};
+
+/**
+ * @brief Class GAL is the abstract interface for drawing on a 2D-surface.
+ *
+ * The functions are optimized for drawing shapes of an EDA-program such as KiCad. Most methods
+ * are abstract and need to be implemented by a lower layer, for example by a cairo or OpenGL implementation.
+ * <br>
+ * Almost all methods use world coordinates as arguments. The board design is defined in world space units;
+ * for drawing purposes these are transformed to screen units with this layer. So zooming is handled here as well.
+ *
+ */
+class GAL : public GAL_API_BASE
+{
+public:
+    // Constructor / Destructor
+    GAL();
+    virtual ~GAL();
+
+    // ---------------
+    // Drawing methods
+    // ---------------
+
+    /// @brief Begin the drawing, needs to be called for every new frame.
+    virtual void BeginDrawing() = 0;
+
+    /// @brief End the drawing, needs to be called for every new frame.
+    virtual void EndDrawing() = 0;
+
+    // --------------
+    // Screen methods
+    // --------------
+
+    /// @brief Resizes the canvas.
+    virtual void ResizeScreen( int aWidth, int aHeight ) = 0;
+
+    /// @brief Shows/hides the GAL canvas
+    virtual bool Show( bool aShow ) = 0;
+
+    /// @brief Returns GAL canvas size in pixels
+    const VECTOR2I& GetScreenPixelSize() const
+    {
+        return screenSize;
+    }
+
+    /// @brief Force all remaining objects to be drawn.
+    virtual void Flush() = 0;
+
+    /**
+     * @brief Clear the screen.
+     * @param aColor is the color used for clearing.
+     */
+    virtual void ClearScreen( const COLOR4D& aColor ) = 0;
+
+
+    /**
+     * @brief Set the depth of the layer (position on the z-axis)
+     *
+     * @param aLayerDepth the layer depth for the objects.
+     */
+    inline virtual void SetLayerDepth( double aLayerDepth )
+    {
+        assert( aLayerDepth <= depthRange.y );
+        assert( aLayerDepth >= depthRange.x );
+
+        layerDepth = aLayerDepth;
+    }
+
+
+    // --------------
+    // Transformation
+    // --------------
+
+    /**
+     * @brief Transform the context.
+     *
+     * @param aTransformation is the ransformation matrix.
+     */
+    virtual void Transform( const MATRIX3x3D& aTransformation ) = 0;
+
+    /**
+     * @brief Rotate the context.
+     *
+     * @param aAngle is the rotation angle in radians.
+     */
+    virtual void Rotate( double aAngle ) = 0;
+
+    /**
+     * @brief Translate the context.
+     *
+     * @param aTranslation is the translation vector.
+     */
+    virtual void Translate( const VECTOR2D& aTranslation ) = 0;
+
+    /**
+     * @brief Scale the context.
+     *
+     * @param aScale is the scale factor for the x- and y-axis.
+     */
+    virtual void Scale( const VECTOR2D& aScale ) = 0;
+
+    /// @brief Save the context.
+    virtual void Save() = 0;
+
+    /// @brief Restore the context.
+    virtual void Restore() = 0;
 
     // --------------------------------------------
     // Group methods
@@ -374,6 +436,8 @@ public:
 
     /// @brief End the group.
     virtual void EndGroup() = 0;
+
+    virtual int CurrentGroup();
 
     /**
      * @brief Draw the stored group.
@@ -856,14 +920,6 @@ protected:
     double             flipX;                  ///< Flag for X axis flipping
     double             flipY;                  ///< Flag for Y axis flipping
 
-    double             lineWidth;              ///< The line width
-
-    bool               isFillEnabled;          ///< Is filling of graphic objects enabled ?
-    bool               isStrokeEnabled;        ///< Are the outlines stroked ?
-
-    COLOR4D            fillColor;              ///< The fill color
-    COLOR4D            strokeColor;            ///< The color of the outlines
-
     double             layerDepth;             ///< The actual layer depth
     VECTOR2D           depthRange;             ///< Range of the depth
 
@@ -885,9 +941,6 @@ protected:
     COLOR4D            cursorColor;            ///< Cursor color
     unsigned int       cursorSize;             ///< Size of the cursor in pixels
     VECTOR2D           cursorPosition;         ///< Current cursor position (world coordinates)
-
-    /// Instance of object that stores information about how to draw texts
-    STROKE_FONT        strokeFont;
 
     /// Compute the scaling factor for the world->screen matrix
     inline void ComputeWorldScale()

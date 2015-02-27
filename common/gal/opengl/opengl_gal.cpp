@@ -629,9 +629,19 @@ int OPENGL_GAL::BeginGroup()
 {
     isGrouping = true;
 
-    boost::shared_ptr<VERTEX_ITEM> newItem( new VERTEX_ITEM( cachedManager ) );
+    
+
+    boost::shared_ptr<VERTEX_ITEM> newItem( new VERTEX_ITEM( *currentManager ) );
     int groupNumber = getNewGroupNumber();
-    groups.insert( std::make_pair( groupNumber, newItem ) );
+    
+    GROUP_ENTRY gent;
+
+    gent.vItem = newItem;
+    gent.owner = currentManager;
+
+    groups.insert( std::make_pair( groupNumber, gent ) );
+
+    currentGroupNumber = groupNumber;
 
     return groupNumber;
 }
@@ -639,26 +649,36 @@ int OPENGL_GAL::BeginGroup()
 
 void OPENGL_GAL::EndGroup()
 {
-    cachedManager.FinishItem();
+    currentManager->FinishItem();
     isGrouping = false;
 }
 
+int OPENGL_GAL::CurrentGroup()
+{
+    if(!isGrouping)
+        return -1;
+
+    return currentGroupNumber;
+}
 
 void OPENGL_GAL::DrawGroup( int aGroupNumber )
 {
-    cachedManager.DrawItem( *groups[aGroupNumber] );
+    GROUP_ENTRY& gent = groups[aGroupNumber];
+    gent.owner->DrawItem( *gent.vItem );
 }
 
 
 void OPENGL_GAL::ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColor )
 {
-    cachedManager.ChangeItemColor( *groups[aGroupNumber], aNewColor );
+    GROUP_ENTRY& gent = groups[aGroupNumber];
+    gent.owner->ChangeItemColor( *gent.vItem, aNewColor );
 }
 
 
 void OPENGL_GAL::ChangeGroupDepth( int aGroupNumber, int aDepth )
 {
-    cachedManager.ChangeItemDepth( *groups[aGroupNumber], aDepth );
+    GROUP_ENTRY& gent = groups[aGroupNumber];
+    gent.owner->ChangeItemDepth( *gent.vItem, aDepth );
 }
 
 
@@ -1035,4 +1055,67 @@ void InitTesselatorCallbacks( GLUtesselator* aTesselator )
     gluTessCallback( aTesselator, GLU_TESS_COMBINE_DATA, ( void (CALLBACK*)() )CombineCallback );
     gluTessCallback( aTesselator, GLU_TESS_EDGE_FLAG,    ( void (CALLBACK*)() )EdgeCallback );
     gluTessCallback( aTesselator, GLU_TESS_ERROR,        ( void (CALLBACK*)() )ErrorCallback );
+}
+
+void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
+{
+    double t=0.05; double R=0.768;
+    double C=0.0;
+
+    //determine angle of the line to horizontal
+    double tx=0,ty=0, Rx=0,Ry=0;
+    double ALW=0.01;
+    double dx=x2-x1;
+    double dy=y2-y1;
+    if ( std::abs(dx) < ALW) {
+        //vertical
+        tx = 0.5; ty = 0.0;
+        Rx = 0.0; Ry = 0.0;
+    } else if ( std::abs(dy) < ALW) {
+        //horizontal
+        tx = 0.0; ty = 0.5;
+        Rx = 0.0; Ry = 0.0;
+    } else {
+        double m=dy/dx;
+        if ( m>-0.4142 && m<=0.4142) {
+            // -22.5< angle <= 22.5, approximate to 0 (degree)
+            tx=t*0.1; ty=t;
+            Rx=R*0.6; Ry=R;
+        } else if ( m>0.4142 && m<=2.4142) {
+            // 22.5< angle <= 67.5, approximate to 45 (degree)
+            tx=t*-0.7071; ty=t*0.7071;
+            Rx=R*-0.7071; Ry=R*0.7071;
+        } else if ( m>2.4142 || m<=-2.4142) {
+            // 67.5 < angle <=112.5, approximate to 90 (degree)
+            tx=t; ty=t*0.1;
+            Rx=R; Ry=R*0.6;
+        } else if ( m>-2.4142 && m<-0.4142) {
+            // 112.5 < angle < 157.5, approximate to 135 (degree)
+            tx=t*0.7071; ty=t*0.7071;
+            Rx=R*0.7071; Ry=R*0.7071;
+        }
+    }
+    
+    #if 0
+    //draw the line by triangle strip
+glBegin(GL_TRIANGLE_STRIP);
+    if ( !alphablend) {glColor3f( 1,1,1);} else {glColor4f( C,C,C, 0);}
+    
+    glVertex2f( x1-tx-Rx, y1-ty-Ry); //fading edge
+    glVertex2f( x2-tx-Rx, y2-ty-Ry);
+    
+    glColor3f( C,C,C);  
+    
+    glVertex2f( x1-tx,y1-ty); //core
+    glVertex2f( x2-tx,y2-ty);
+    glVertex2f( x1+tx,y1+ty);
+    glVertex2f( x2+tx,y2+ty);
+    
+    if ( !alphablend) {glColor3f( 1,1,1);} else {glColor4f( C,C,C, 0);}
+    glVertex2f( x1+tx+Rx, y1+ty+Ry); //fading edge
+    glVertex2f( x2+tx+Rx, y2+ty+Ry);
+glEnd();
+#endif
+
+
 }

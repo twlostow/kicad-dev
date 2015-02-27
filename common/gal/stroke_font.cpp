@@ -36,7 +36,7 @@ const double STROKE_FONT::OVERBAR_HEIGHT = 0.45;
 const double STROKE_FONT::BOLD_FACTOR = 1.3;
 const double STROKE_FONT::HERSHEY_SCALE = 1.0 / 21.0;
 
-STROKE_FONT::STROKE_FONT( GAL* aGal ) :
+STROKE_FONT::STROKE_FONT( GAL_API_BASE* aGal ) :
     m_gal( aGal ),
     m_bold( false ),
     m_italic( false ),

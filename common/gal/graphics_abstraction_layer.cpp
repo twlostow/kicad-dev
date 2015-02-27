@@ -35,22 +35,31 @@ using namespace KIGFX;
 const double GAL::METRIC_UNIT_LENGTH = 1e9;
 
 
-GAL::GAL() :
+GAL_API_BASE::GAL_API_BASE() :
     strokeFont( this )
 {
-    // Set the default values for the internal variables
     SetIsFill( false );
     SetIsStroke( true );
     SetFillColor( COLOR4D( 0.0, 0.0, 0.0, 0.0 ) );
     SetStrokeColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
+    SetLineWidth( 1.0 );
+
+    strokeFont.LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );  
+}
+
+GAL_API_BASE::~GAL_API_BASE()
+{
+
+}
+GAL::GAL()
+{
+    // Set the default values for the internal variables
     SetLookAtPoint( VECTOR2D( 0, 0 ) );
     SetZoomFactor( 1.0 );
     SetWorldUnitLength( 1.0 / METRIC_UNIT_LENGTH * 2.54 );   // 1 inch in nanometers
     SetScreenDPI( 106 );                                     // Display resolution setting
     SetDepthRange( VECTOR2D( GAL::MIN_DEPTH, GAL::MAX_DEPTH ) );
-    SetLayerDepth( 0.0 );
     SetFlip( false, false );
-    SetLineWidth( 1.0 );
     ComputeWorldScale();
 
     // Set grid defaults
@@ -74,7 +83,7 @@ GAL::~GAL()
 }
 
 
-void GAL::SetTextAttributes( const EDA_TEXT* aText )
+void GAL_API_BASE::SetTextAttributes( const EDA_TEXT* aText )
 {
     strokeFont.SetGlyphSize( VECTOR2D( aText->GetSize() ) );
     strokeFont.SetHorizontalJustify( aText->GetHorizJustify() );

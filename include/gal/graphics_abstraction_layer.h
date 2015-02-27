@@ -50,7 +50,7 @@ enum GRID_STYLE
 };
 
 /**
- * @brief Class GAL is the abstract interface for drawing on a 2D-surface.
+ * @brief Class GAL_API_BASE is the abstract interface for drawing on a 2D-surface.
  *
  * The functions are optimized for drawing shapes of an EDA-program such as KiCad. Most methods
  * are abstract and need to be implemented by a lower layer, for example by a cairo or OpenGL implementation.
@@ -59,35 +59,13 @@ enum GRID_STYLE
  * for drawing purposes these are transformed to screen units with this layer. So zooming is handled here as well.
  *
  */
-class GAL
+class GAL_API_BASE 
 {
 public:
-    // Constructor / Destructor
-    GAL();
-    virtual ~GAL();
+    GAL_API_BASE();
+    virtual ~GAL_API_BASE();
 
-   /// @brief Returns the initalization status for the canvas.
-    virtual bool IsInitialized() const { return true; }
-
-    // ---------------
-    // Drawing methods
-    // ---------------
-
-    /// @brief Begin the drawing, needs to be called for every new frame.
-    virtual void BeginDrawing() {};
-
-    /// @brief End the drawing, needs to be called for every new frame.
-    virtual void EndDrawing() {};
-
-    /**
-     * @brief Draw a line.
-     *
-     * Start and end points are defined as 2D-Vectors.
-     *
-     * @param aStartPoint   is the start point of the line.
-     * @param aEndPoint     is the end point of the line.
-     */
-    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
+    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) = 0;
 
     /**
      * @brief Draw a rounded segment.
@@ -98,14 +76,14 @@ public:
      * @param aEndPoint     is the end point of the segment.
      * @param aWidth        is a width of the segment
      */
-    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth ) {};
+    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth ) = 0;
 
     /**
      * @brief Draw a polyline
      *
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
-    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList ) {};
+    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList ) = 0;
 
     /**
      * @brief Draw a circle using world coordinates.
@@ -113,7 +91,7 @@ public:
      * @param aCenterPoint is the center point of the circle.
      * @param aRadius is the radius of the circle.
      */
-    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) {};
+    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) = 0;
 
     /**
      * @brief Draw an arc.
@@ -124,7 +102,7 @@ public:
      * @param aEndAngle     is the end angle of the arc.
      */
     virtual void
-    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle ) {};
+    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle ) = 0;
 
     /**
      * @brief Draw a rectangle.
@@ -132,14 +110,14 @@ public:
      * @param aStartPoint   is the start point of the rectangle.
      * @param aEndPoint     is the end point of the rectangle.
      */
-    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
+    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) = 0;
 
     /**
      * @brief Draw a polygon.
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) {};
+    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) = 0;
 
     /**
      * @brief Draw a cubic bezier spline.
@@ -150,36 +128,11 @@ public:
      * @param endPoint      is the end point of the spline.
      */
     virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
-                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) {};
+                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) = 0;
 
-    // --------------
-    // Screen methods
-    // --------------
 
-    /// @brief Resizes the canvas.
-    virtual void ResizeScreen( int aWidth, int aHeight ) {};
-
-    /// @brief Shows/hides the GAL canvas
-    virtual bool Show( bool aShow ) { return true; };
-
-    /// @brief Returns GAL canvas size in pixels
-    const VECTOR2I& GetScreenPixelSize() const
-    {
-        return screenSize;
-    }
-
-    /// @brief Force all remaining objects to be drawn.
-    virtual void Flush() {};
-
-    /**
-     * @brief Clear the screen.
-     * @param aColor is the color used for clearing.
-     */
-    virtual void ClearScreen( const COLOR4D& aColor ) {};
-
-    // -----------------
-    // Attribute setting
-    // -----------------
+    virtual void TestLine ( double x0, double y0, double x1, double y1 );
+    
 
     /**
      * @brief Enable/disable fill.
@@ -251,18 +204,6 @@ public:
         return lineWidth;
     }
 
-    /**
-     * @brief Set the depth of the layer (position on the z-axis)
-     *
-     * @param aLayerDepth the layer depth for the objects.
-     */
-    inline virtual void SetLayerDepth( double aLayerDepth )
-    {
-        assert( aLayerDepth <= depthRange.y );
-        assert( aLayerDepth >= depthRange.x );
-
-        layerDepth = aLayerDepth;
-    }
 
     // ----
     // Text
@@ -322,6 +263,200 @@ public:
     {
         strokeFont.SetVerticalJustify( aVerticalJustify );
     }
+
+    // --------------
+    // Transformation
+    // --------------
+
+    /**
+     * @brief Transform the context.
+     *
+     * @param aTransformation is the ransformation matrix.
+     */
+    virtual void Transform( const MATRIX3x3D& aTransformation ) = 0;
+
+    /**
+     * @brief Rotate the context.
+     *
+     * @param aAngle is the rotation angle in radians.
+     */
+    virtual void Rotate( double aAngle ) = 0;
+
+    /**
+     * @brief Translate the context.
+     *
+     * @param aTranslation is the translation vector.
+     */
+    virtual void Translate( const VECTOR2D& aTranslation ) = 0;
+
+    /**
+     * @brief Scale the context.
+     *
+     * @param aScale is the scale factor for the x- and y-axis.
+     */
+    virtual void Scale( const VECTOR2D& aScale ) = 0;
+
+    /// @brief Save the context.
+    virtual void Save() = 0;
+
+    /// @brief Restore the context.
+    virtual void Restore() = 0;
+    
+protected:
+    STROKE_FONT strokeFont;
+
+    double             lineWidth;              ///< The line width
+
+    bool               isFillEnabled;          ///< Is filling of graphic objects enabled ?
+    bool               isStrokeEnabled;        ///< Are the outlines stroked ?
+
+    COLOR4D            fillColor;              ///< The fill color
+    COLOR4D            strokeColor;            ///< The color of the outlines
+
+};
+
+/**
+ * @brief Class GAL is the abstract interface for drawing on a 2D-surface.
+ *
+ * The functions are optimized for drawing shapes of an EDA-program such as KiCad. Most methods
+ * are abstract and need to be implemented by a lower layer, for example by a cairo or OpenGL implementation.
+ * <br>
+ * Almost all methods use world coordinates as arguments. The board design is defined in world space units;
+ * for drawing purposes these are transformed to screen units with this layer. So zooming is handled here as well.
+ *
+ */
+class GAL : public GAL_API_BASE
+{
+public:
+    // Constructor / Destructor
+    GAL();
+    virtual ~GAL();
+
+   /// @brief Returns the initalization status for the canvas.
+    virtual bool IsInitialized() const { return true; }
+
+    // ---------------
+    // Drawing methods
+    // ---------------
+
+    /// @brief Begin the drawing, needs to be called for every new frame.
+    virtual void BeginDrawing() {};
+
+    /// @brief End the drawing, needs to be called for every new frame.
+    virtual void EndDrawing() {};
+
+    /**
+     * @brief Draw a line.
+     *
+     * Start and end points are defined as 2D-Vectors.
+     *
+     * @param aStartPoint   is the start point of the line.
+     * @param aEndPoint     is the end point of the line.
+     */
+    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint );
+
+    /**
+     * @brief Draw a rounded segment.
+     *
+     * Start and end points are defined as 2D-Vectors.
+     *
+     * @param aStartPoint   is the start point of the segment.
+     * @param aEndPoint     is the end point of the segment.
+     * @param aWidth        is a width of the segment
+     */
+    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth );
+
+    /**
+     * @brief Draw a polyline
+     *
+     * @param aPointList is a list of 2D-Vectors containing the polyline points.
+     */
+    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList );
+
+    /**
+     * @brief Draw a circle using world coordinates.
+     *
+     * @param aCenterPoint is the center point of the circle.
+     * @param aRadius is the radius of the circle.
+     */
+    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius );
+
+    /**
+     * @brief Draw an arc.
+     *
+     * @param aCenterPoint  is the center point of the arc.
+     * @param aRadius       is the arc radius.
+     * @param aStartAngle   is the start angle of the arc.
+     * @param aEndAngle     is the end angle of the arc.
+     */
+    virtual void
+    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle );
+
+    /**
+     * @brief Draw a rectangle.
+     *
+     * @param aStartPoint   is the start point of the rectangle.
+     * @param aEndPoint     is the end point of the rectangle.
+     */
+    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint );
+
+    /**
+     * @brief Draw a polygon.
+     *
+     * @param aPointList is the list of the polygon points.
+     */
+    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList );
+
+    /**
+     * @brief Draw a cubic bezier spline.
+     *
+     * @param startPoint    is the start point of the spline.
+     * @param controlPointA is the first control point.
+     * @param controlPointB is the second control point.
+     * @param endPoint      is the end point of the spline.
+     */
+    virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
+                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint );
+
+    // --------------
+    // Screen methods
+    // --------------
+
+    /// @brief Resizes the canvas.
+    virtual void ResizeScreen( int aWidth, int aHeight ) {};
+
+    /// @brief Shows/hides the GAL canvas
+    virtual bool Show( bool aShow ) { return true; };
+
+    /// @brief Returns GAL canvas size in pixels
+    const VECTOR2I& GetScreenPixelSize() const
+    {
+        return screenSize;
+    }
+
+    /// @brief Force all remaining objects to be drawn.
+    virtual void Flush() {};
+
+    /**
+     * @brief Clear the screen.
+     * @param aColor is the color used for clearing.
+     */
+    virtual void ClearScreen( const COLOR4D& aColor ) {};
+
+
+    /**
+     * @brief Set the depth of the layer (position on the z-axis)
+     *
+     * @param aLayerDepth the layer depth for the objects.
+     */
+    inline virtual void SetLayerDepth( double aLayerDepth )
+    {
+        assert( aLayerDepth <= depthRange.y );
+        assert( aLayerDepth >= depthRange.x );
+
+        layerDepth = aLayerDepth;
+    }
+
 
     // --------------
     // Transformation
@@ -584,33 +719,33 @@ public:
     /**
      * @brief Save the screen contents.
      */
-    virtual void SaveScreen() {};
+    virtual void SaveScreen() = 0;
 
     /**
      * @brief Restore the screen contents.
      */
-    virtual void RestoreScreen() {};
+    virtual void RestoreScreen() = 0;
 
     /**
      * @brief Sets the target for rendering.
      *
      * @param aTarget is the new target for rendering.
      */
-    virtual void SetTarget( RENDER_TARGET aTarget ) {};
+    virtual void SetTarget( RENDER_TARGET aTarget ) = 0;
 
     /**
      * @brief Gets the currently used target for rendering.
      *
      * @return The current rendering target.
      */
-    virtual RENDER_TARGET GetTarget() const { return TARGET_CACHED; };
+    virtual RENDER_TARGET GetTarget() const = 0;
 
     /**
      * @brief Clears the target for rendering.
      *
      * @param aTarget is the target to be cleared.
      */
-    virtual void ClearTarget( RENDER_TARGET aTarget ) {};
+    virtual void ClearTarget( RENDER_TARGET aTarget ) = 0;
 
     // -------------
     // Grid methods
@@ -637,6 +772,16 @@ public:
 
         gridOffset = VECTOR2D( (long) gridOrigin.x % (long) gridSize.x,
                                (long) gridOrigin.y % (long) gridSize.y );
+    }
+
+    /**
+     * @brief Sets the screen size of the grid origin marker
+     *
+     * @param aSize is the radius of the origin marker, in pixels.
+     */
+    inline void SetGridOriginMarkerSize( int aSize )
+    {
+        gridOriginMarkerSize = aSize;
     }
 
     /**
@@ -829,6 +974,9 @@ public:
         depthStack.pop();
     }
 
+    /// Depth level on which the grid is drawn
+    static const int GRID_DEPTH = 1024;
+
     static const double METRIC_UNIT_LENGTH;
 
 protected:
@@ -845,14 +993,6 @@ protected:
     double             worldScale;             ///< The scale factor world->screen
     double             flipX;                  ///< Flag for X axis flipping
     double             flipY;                  ///< Flag for Y axis flipping
-
-    double             lineWidth;              ///< The line width
-
-    bool               isFillEnabled;          ///< Is filling of graphic objects enabled ?
-    bool               isStrokeEnabled;        ///< Are the outlines stroked ?
-
-    COLOR4D            fillColor;              ///< The fill color
-    COLOR4D            strokeColor;            ///< The color of the outlines
 
     double             layerDepth;             ///< The actual layer depth
     VECTOR2D           depthRange;             ///< Range of the depth
@@ -874,9 +1014,6 @@ protected:
     COLOR4D            cursorColor;            ///< Cursor color
     unsigned int       cursorSize;             ///< Size of the cursor in pixels
     VECTOR2D           cursorPosition;         ///< Current cursor position (world coordinates)
-
-    /// Instance of object that stores information about how to draw texts
-    STROKE_FONT        strokeFont;
 
     /// Compute the scaling factor for the world->screen matrix
     inline void ComputeWorldScale()

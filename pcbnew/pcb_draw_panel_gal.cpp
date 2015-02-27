@@ -101,6 +101,9 @@ PCB_DRAW_PANEL_GAL::PCB_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
                                         GalType aGalType ) :
 EDA_DRAW_PANEL_GAL( aParentWindow, aWindowId, aPosition, aSize, aGalType )
 {
+    m_painter = new KIGFX::PCB_PAINTER( m_gal );
+    m_view->SetPainter( m_painter );
+
     m_worksheet = NULL;
     m_ratsnest = NULL;
 

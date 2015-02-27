@@ -64,12 +64,8 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
     SwitchBackend( aGalType );
     SetBackgroundStyle( wxBG_STYLE_CUSTOM );
 
-    m_painter = new KIGFX::PCB_PAINTER( m_gal );
-
     m_view = new KIGFX::VIEW( true );
-    m_view->SetPainter( m_painter );
     m_view->SetGAL( m_gal );
-
     m_viewControls = new KIGFX::WX_VIEW_CONTROLS( m_view, this );
 
     Connect( wxEVT_SIZE, wxSizeEventHandler( EDA_DRAW_PANEL_GAL::onSize ), NULL, this );
@@ -94,6 +90,8 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
     m_pendingRefresh = false;
     m_drawing = false;
     Connect( wxEVT_TIMER, wxTimerEventHandler( EDA_DRAW_PANEL_GAL::onRefreshTimer ), NULL, this );
+
+
 }
 
 
@@ -123,9 +121,15 @@ void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 
     m_drawing = true;
 
-    m_view->UpdateItems();
     m_gal->BeginDrawing();
-    m_gal->ClearScreen( m_painter->GetSettings()->GetBackgroundColor() );
+    m_view->UpdateItems();
+
+    KIGFX::COLOR4D bkgd;
+
+    if( m_painter )
+        bkgd = m_painter->GetSettings()->GetBackgroundColor();
+
+    m_gal->ClearScreen( bkgd );
 
     if( m_view->IsDirty() )
     {

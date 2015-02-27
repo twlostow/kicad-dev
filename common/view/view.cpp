@@ -30,6 +30,7 @@
 #include <view/view.h>
 #include <view/view_group.h>
 #include <view/view_rtree.h>
+#include <view/view_overlay.h>
 #include <gal/definitions.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <painter.h>
@@ -118,7 +119,7 @@ void VIEW::Remove( VIEW_ITEM* aItem )
         std::vector<VIEW_ITEM*>::iterator item = std::find( m_needsUpdate.begin(),
                                                             m_needsUpdate.end(), aItem );
 
-        if( item != m_needsUpdate.end() )
+       if( item != m_needsUpdate.end() )
         {
             m_needsUpdate.erase( item );
             aItem->clearUpdateFlags();
@@ -643,7 +644,7 @@ void VIEW::draw( VIEW_ITEM* aItem, int aLayer, bool aImmediate )
     else
     {
         // Immediate mode
-        if( !m_painter->Draw( aItem, aLayer ) )
+        if( !m_painter || !m_painter->Draw( aItem, aLayer ) )
             aItem->ViewDraw( aLayer, m_gal );  // Alternative drawing method
     }
 }
@@ -750,6 +751,7 @@ void VIEW::Clear()
     }
 
     m_gal->ClearCache();
+    m_needsUpdate.clear();
 }
 
 
@@ -919,7 +921,7 @@ void VIEW::updateItemGeometry( VIEW_ITEM* aItem, int aLayer )
     group = m_gal->BeginGroup();
     aItem->setGroup( aLayer, group );
 
-    if( !m_painter->Draw( static_cast<EDA_ITEM*>( aItem ), aLayer ) )
+    if( !m_painter || !m_painter->Draw( static_cast<EDA_ITEM*>( aItem ), aLayer ) )
         aItem->ViewDraw( aLayer, m_gal ); // Alternative drawing method
 
     m_gal->EndGroup();
@@ -1068,7 +1070,7 @@ struct VIEW::extentsVisitor
 };
 
 
-const BOX2I VIEW::CalculateExtents()
+const BOX2I VIEW::CalculateExtents() 
 {
     extentsVisitor v;
     BOX2I fullScene;
@@ -1078,9 +1080,17 @@ const BOX2I VIEW::CalculateExtents()
     {
         l->items->Query( fullScene, v );
     }
-
+    
     return v.extents;
 }
 
-
 const int VIEW::TOP_LAYER_MODIFIER = -VIEW_MAX_LAYERS;
+
+boost::shared_ptr<VIEW_OVERLAY> VIEW::MakeOverlay( )
+{
+    boost::shared_ptr<VIEW_OVERLAY> ovl( new VIEW_OVERLAY () );
+
+    Add( ovl.get() );
+
+    return ovl;
+}

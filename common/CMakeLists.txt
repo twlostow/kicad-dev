@@ -255,6 +255,7 @@ set( COMMON_SRCS
     view/view.cpp
     view/view_item.cpp
     view/view_group.cpp
+    view/view_overlay.cpp
 
     math/math_util.cpp
 

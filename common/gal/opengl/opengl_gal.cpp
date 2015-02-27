@@ -121,7 +121,7 @@ OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
 
     gluTessProperty( tesselator, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_POSITIVE );
 
-    currentManager = &nonCachedManager;
+    currentManager = &cachedManager;
 }
 
 
@@ -162,7 +162,7 @@ void OPENGL_GAL::BeginDrawing()
 
     // Enable the depth buffer
     glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LESS );
+	glDepthFunc( GL_LESS );
 
     // Setup blending, required for transparent objects
     glEnable( GL_BLEND );

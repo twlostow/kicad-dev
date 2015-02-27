@@ -86,6 +86,12 @@ option( USE_OSX_DEPS_BUILDER
     "Build dependencies from source instead of dependencies installed on system. OSX only. (default OFF)."
     )
 
+option( BUILD_TEST_PROGRAMS
+    "Build test programs for various classes. (default OFF)."
+    )
+
+mark_as_advanced( BUILD_TEST_PROGRAMS )
+
 # WARNING: KiCad developers strongly advise you to build Boost with supplied patches,
 # as it is known to work with KiCad.  Other versions may contain bugs that may result
 # in KiCad errors.
@@ -775,6 +781,9 @@ add_subdirectory( tools )
 add_subdirectory( utils )
 add_subdirectory( qa )
 
+if( BUILD_TEST_PROGRAMS )
+add_subdirectory( tests )
+endif()
 #add_subdirectory( new )
 
 

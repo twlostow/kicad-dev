@@ -126,8 +126,9 @@ GAL_TEST_FRAME::GAL_TEST_FRAME(wxFrame *frame, const wxString& title, const wxPo
         VECTOR2D p0 =  center;
         VECTOR2D p1 =  p;
         
-        m_ovl->DrawLine (p0, p1 );
-
+//        m_ovl->DrawLine (p0, p1 );
+    
+        m_ovl->TestLine (p0.x, p0.y, p1.x, p1.y);
         printf("%.0f %.0f %.0f %.0f\n", p0.x, p0.y, p1.x ,p1.y);
     
 

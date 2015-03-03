@@ -28,8 +28,9 @@
 
 // Shader types
 const float SHADER_LINE                 = 1.0f;
-const float SHADER_FILLED_CIRCLE        = 2.0f;
 const float SHADER_STROKED_CIRCLE       = 3.0f;
+const float SHADER_FILLED_CIRCLE        = 2.0f;
+const float SHADER_PIXEL_LINE           = 4.0f;
 
 // Minimum line width
 const float MIN_WIDTH = 1.0f;

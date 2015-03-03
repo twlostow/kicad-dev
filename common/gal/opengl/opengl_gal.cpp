@@ -1060,7 +1060,7 @@ void InitTesselatorCallbacks( GLUtesselator* aTesselator )
 void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
 {
     double t=0.05; double R=0.768;
-    double C=0.0;
+    double C=1.0;
 
     //determine angle of the line to horizontal
     double tx=0,ty=0, Rx=0,Ry=0;
@@ -1095,11 +1095,35 @@ void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
             Rx=R*0.7071; Ry=R*0.7071;
         }
     }
+
+    VECTOR2D p0 ( x1-tx-Rx, y1-ty-Ry );
+    VECTOR2D p1 ( x2-tx-Rx, y2-ty-Ry );
+    VECTOR2D p2 ( x1-tx,y1-ty); //core
+    VECTOR2D p3 ( x2-tx,y2-ty); //core
+
+    fprintf(stderr, "TestL\n");
+
+    currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+
+    currentManager->Shader( SHADER_PIXEL_LINE, -tx - Rx, -ty - Ry, 0 );
+    currentManager->Vertex( x1, y1, layerDepth );    // v0
+    currentManager->Shader( SHADER_PIXEL_LINE, -tx - Rx, -ty - Ry, 0 );
+    currentManager->Vertex( x2, y2, layerDepth );    // v0
+    currentManager->Shader( SHADER_PIXEL_LINE, -tx, -ty, 0 );
+    currentManager->Vertex( x1, y1, layerDepth );    // v0
     
-    #if 0
+    //DrawLine(p0, p1);
+
+/*    currentManager->Vertex( x2, y2, layerDepth );    // v0
+    currentManager->Vertex( x1, y1, layerDepth );    // v0
+    currentManager->Vertex( x2, y2, layerDepth );    // v0 */
+
+        
     //draw the line by triangle strip
+#if 0
 glBegin(GL_TRIANGLE_STRIP);
-    if ( !alphablend) {glColor3f( 1,1,1);} else {glColor4f( C,C,C, 0);}
+    
+    glColor4f( C,C,C, 0);
     
     glVertex2f( x1-tx-Rx, y1-ty-Ry); //fading edge
     glVertex2f( x2-tx-Rx, y2-ty-Ry);
@@ -1111,7 +1135,7 @@ glBegin(GL_TRIANGLE_STRIP);
     glVertex2f( x1+tx,y1+ty);
     glVertex2f( x2+tx,y2+ty);
     
-    if ( !alphablend) {glColor3f( 1,1,1);} else {glColor4f( C,C,C, 0);}
+    glColor4f( C,C,C, 0);
     glVertex2f( x1+tx+Rx, y1+ty+Ry); //fading edge
     glVertex2f( x2+tx+Rx, y2+ty+Ry);
 glEnd();

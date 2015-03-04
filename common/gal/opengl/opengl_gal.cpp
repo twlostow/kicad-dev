@@ -73,7 +73,7 @@ OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
 
     if( !shader.LoadBuiltinShader( 1, SHADER_TYPE_FRAGMENT ) )
         throw std::runtime_error( "Cannot compile fragment shader!" );
-
+    
     if( !shader.Link() )
         throw std::runtime_error( "Cannot link the shaders!" );
 
@@ -161,8 +161,8 @@ void OPENGL_GAL::BeginDrawing()
     glDisable( GL_TEXTURE_2D );
 
     // Enable the depth buffer
-    glEnable( GL_DEPTH_TEST );
-	glDepthFunc( GL_LESS );
+    glDisable( GL_DEPTH_TEST );
+	//glDepthFunc( GL_LESS );
 
     // Setup blending, required for transparent objects
     glEnable( GL_BLEND );
@@ -198,6 +198,7 @@ void OPENGL_GAL::BeginDrawing()
     cachedManager.BeginDrawing();
     nonCachedManager.BeginDrawing();
     overlayManager.BeginDrawing();
+    shader.SetParameter( "pxSize", 2.0 / screenSize.x, 2.0 / screenSize.y );
 }
 
 
@@ -710,6 +711,9 @@ void OPENGL_GAL::RestoreScreen()
 
 void OPENGL_GAL::SetTarget( RENDER_TARGET aTarget )
 {
+
+    if(currentTarget != aTarget)
+        printf("ChangeTarget %d\n", aTarget);
     switch( aTarget )
     {
     default:
@@ -1057,9 +1061,26 @@ void InitTesselatorCallbacks( GLUtesselator* aTesselator )
     gluTessCallback( aTesselator, GLU_TESS_ERROR,        ( void (CALLBACK*)() )ErrorCallback );
 }
 
+    const float SHADER_PIXEL_LINE_R0        = 4.0f;
+    const float SHADER_PIXEL_LINE_R1        = 5.0f;
+    const float SHADER_PIXEL_LINE_R2        = 6.0f;
+    const float SHADER_PIXEL_LINE_R3        = 7.0f;
+
+void OPENGL_GAL::ltri (  int index, VECTOR2D v1, VECTOR2D v2, VECTOR2D v3, double dx, double dy )
+{
+    currentManager->Shader( SHADER_PIXEL_LINE_R0, (double) index, dx, dy );
+    currentManager->Vertex( v1.x, v1.y, layerDepth );    
+    currentManager->Shader( SHADER_PIXEL_LINE_R0, (double) index + 1, dx, dy );
+    currentManager->Vertex( v2.x, v2.y, layerDepth );    
+    currentManager->Shader( SHADER_PIXEL_LINE_R0, (double) index + 2, dx, dy );
+    currentManager->Vertex( v3.x, v3.y, layerDepth );    
+}
+
 void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
 {
-    double t=0.05; double R=0.768;
+//    double t=0.05; double R=0.768;
+
+#if 0
     double C=1.0;
 
     //determine angle of the line to horizontal
@@ -1067,16 +1088,19 @@ void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
     double ALW=0.01;
     double dx=x2-x1;
     double dy=y2-y1;
+    double m;
     if ( std::abs(dx) < ALW) {
         //vertical
         tx = 0.5; ty = 0.0;
         Rx = 0.0; Ry = 0.0;
+        m = 100.0;
     } else if ( std::abs(dy) < ALW) {
         //horizontal
         tx = 0.0; ty = 0.5;
         Rx = 0.0; Ry = 0.0;
+        m = 101.0;
     } else {
-        double m=dy/dx;
+        m=dy/dx;
         if ( m>-0.4142 && m<=0.4142) {
             // -22.5< angle <= 22.5, approximate to 0 (degree)
             tx=t*0.1; ty=t;
@@ -1096,50 +1120,116 @@ void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
         }
     }
 
+
     VECTOR2D p0 ( x1-tx-Rx, y1-ty-Ry );
     VECTOR2D p1 ( x2-tx-Rx, y2-ty-Ry );
     VECTOR2D p2 ( x1-tx,y1-ty); //core
     VECTOR2D p3 ( x2-tx,y2-ty); //core
 
-    fprintf(stderr, "TestL\n");
-
-    currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
-
-    currentManager->Shader( SHADER_PIXEL_LINE, -tx - Rx, -ty - Ry, 0 );
-    currentManager->Vertex( x1, y1, layerDepth );    // v0
-    currentManager->Shader( SHADER_PIXEL_LINE, -tx - Rx, -ty - Ry, 0 );
-    currentManager->Vertex( x2, y2, layerDepth );    // v0
-    currentManager->Shader( SHADER_PIXEL_LINE, -tx, -ty, 0 );
-    currentManager->Vertex( x1, y1, layerDepth );    // v0
     
+
+    float vdx = tx+Rx;
+    float vdy = ty+Ry;
+
+//    printf("tx %.10f ty %.10f Rx %.10f Ry %.10f vdx %.10f vdy %.10f\n", tx, ty, Rx, Ry, vdx, vdy);
+
+
+    
+    double r = sqrt( vdx * vdx + vdy * vdy );
+    double tt = sqrt (tx *tx + ty * ty);
+
+    printf(" t %.3f r %.3f\n", tt, r );
+
+    double ratio = tt / r;
+
+    #if 0
+    currentManager->Shader( SHADER_PIXEL_LINE_R0, -vdx, -vdy, ratio );
+    currentManager->Vertex( x1, y1, layerDepth );    // v0
+    currentManager->Shader( SHADER_PIXEL_LINE_R0, -vdx, -vdy, ratio );
+    currentManager->Vertex( x2, y2, layerDepth );    // v0
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, vdx, vdy, ratio );
+    currentManager->Vertex( x2, y2, layerDepth );    // v0
+
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, vdx, vdy, ratio );
+    currentManager->Vertex( x2, y2, layerDepth );    // v0
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, vdx, vdy, ratio );
+    currentManager->Vertex( x1, y1, layerDepth );    // v0
+    currentManager->Shader( SHADER_PIXEL_LINE_R0, -vdx, -vdy, ratio );
+    currentManager->Vertex( x1, y1, layerDepth );    // v0
+    #endif
+
     //DrawLine(p0, p1);
 
 /*    currentManager->Vertex( x2, y2, layerDepth );    // v0
     currentManager->Vertex( x1, y1, layerDepth );    // v0
     currentManager->Vertex( x2, y2, layerDepth );    // v0 */
 
-        
-    //draw the line by triangle strip
-#if 0
-glBegin(GL_TRIANGLE_STRIP);
-    
-    glColor4f( C,C,C, 0);
-    
-    glVertex2f( x1-tx-Rx, y1-ty-Ry); //fading edge
-    glVertex2f( x2-tx-Rx, y2-ty-Ry);
-    
-    glColor3f( C,C,C);  
-    
-    glVertex2f( x1-tx,y1-ty); //core
-    glVertex2f( x2-tx,y2-ty);
-    glVertex2f( x1+tx,y1+ty);
-    glVertex2f( x2+tx,y2+ty);
-    
-    glColor4f( C,C,C, 0);
-    glVertex2f( x1+tx+Rx, y1+ty+Ry); //fading edge
-    glVertex2f( x2+tx+Rx, y2+ty+Ry);
-glEnd();
-#endif
 
+    //draw the line by triangle strip
+#endif
+    currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+
+    VECTOR2D a (x1, y1);
+    VECTOR2D b (x2, y2);
+
+    double dx=y1-y2;
+    double dy=x2-x1;
+    double L = sqrt(dx*dx+dy*dy);
+    dx /= L;
+    dy /= L;
+
+    for(int i = 0; i < 6; i+=2 )
+    {
+        ltri ( i, a, b, a, dx, dy );
+        ltri ( i + 1, b, a, b, dx, dy );
+    }
+}
+
+
+void OPENGL_GAL::TestLine2 ( double x1, double y1, double x2, double y2 )
+{
+
+    VECTOR2D a (x1, y1);
+    VECTOR2D b (x2, y2);
+
+    double dx=y1-y2;
+    double dy=x2-x1;
+    double L = sqrt(dx*dx+dy*dy);
+    dx /= L;
+    dy /= L;
+
+    float f = 0.6;
+    float t=0.05;
+    float R=0.768;
+   
+    t=0.05+f*0.33; R = 0.768 + 0.312 * f;
+    
+    float cx=-dy / 2.0;
+    float cy=dx / 2.0;  
+    
+    float tx=t*dx; 
+    float ty=t*dy;
+    float Rx=R*dx; 
+    float Ry=R*dy;
+
+    float ratio = 0.0;
+
+    ratio = t / (R + t);
+
+    currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, -ratio, -tx-Rx-cx, -ty-Ry-cy );
+    currentManager->Vertex( x1, y1, layerDepth );    
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, -ratio, -tx-Rx+cx, -ty-Ry+cy );
+    currentManager->Vertex( x2, y2, layerDepth );    
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, ratio, tx+Rx-cx, ty+Ry-cy );
+    currentManager->Vertex( x1, y1, layerDepth );    
+
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, -ratio, -tx-Rx+cx, -ty-Ry+cy );
+    currentManager->Vertex( x2, y2, layerDepth );    
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, ratio, tx+Rx-cx, ty+Ry-cy );
+    currentManager->Vertex( x1, y1, layerDepth );    
+    currentManager->Shader( SHADER_PIXEL_LINE_R1, ratio, tx+Rx+cx, ty+Ry+cy );
+    currentManager->Vertex( x2, y2, layerDepth );    
 
 }

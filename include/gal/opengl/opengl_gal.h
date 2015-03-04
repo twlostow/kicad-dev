@@ -87,6 +87,7 @@ public:
     // ---------------
 
     virtual void TestLine ( double x1, double y1, double x2, double y2 );
+    virtual void TestLine2 ( double x1, double y1, double x2, double y2 );
 
     /// @copydoc GAL::BeginDrawing()
     virtual void BeginDrawing();
@@ -290,6 +291,7 @@ private:
     bool                    isFramebufferInitialized;   ///< Are the framebuffers initialized?
     bool                    isGrouping;                 ///< Was a group started?
     int                     currentGroupNumber;
+    GLint psizeLoc;
 
     // Polygon tesselation
     /// The tessellator
@@ -365,6 +367,8 @@ private:
      * @return An unique group number that is not used by any other group.
      */
     unsigned int getNewGroupNumber();
+    void ltri (  int index, VECTOR2D v1, VECTOR2D v2, VECTOR2D v3, double dx, double dy );
+
 };
 } // namespace KIGFX
 

@@ -49,16 +49,6 @@ enum GRID_STYLE
     GRID_STYLE_DOTS     ///< Use dots for the grid
 };
 
-/**
- * @brief Class GAL_API_BASE is the abstract interface for drawing on a 2D-surface.
- *
- * The functions are optimized for drawing shapes of an EDA-program such as KiCad. Most methods
- * are abstract and need to be implemented by a lower layer, for example by a cairo or OpenGL implementation.
- * <br>
- * Almost all methods use world coordinates as arguments. The board design is defined in world space units;
- * for drawing purposes these are transformed to screen units with this layer. So zooming is handled here as well.
- *
- */
 class GAL_API_BASE 
 {
 public:
@@ -131,8 +121,9 @@ public:
                             const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) = 0;
 
 
-    virtual void TestLine ( double x0, double y0, double x1, double y1 );
-    
+    virtual void TestLine ( double x1, double y1, double x2, double y2 );
+    virtual void TestLine2 ( double x1, double y1, double x2, double y2 );
+
 
     /**
      * @brief Enable/disable fill.

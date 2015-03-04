@@ -266,3 +266,8 @@ void GAL_API_BASE::TestLine ( double x1, double y1, double x2, double y2 )
 {
 
 }
+
+void GAL_API_BASE::TestLine2 ( double x1, double y1, double x2, double y2 )
+{
+
+}

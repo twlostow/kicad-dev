@@ -127,13 +127,30 @@ int SHADER::AddParameter( const std::string& aParameterName )
     if( location != -1 )
         parameterLocation.push_back( location );
 
-    return location;
+    return parameterLocation.size() - 1;
 }
 
 
 void SHADER::SetParameter( int parameterNumber, float value ) const
 {
     glUniform1f( parameterLocation[parameterNumber], value );
+}
+
+void SHADER::SetParameter( int parameterNumber, float value1, float value2 ) const
+{
+    glUniform2f( parameterLocation[parameterNumber], value1, value2 );
+}
+
+
+void SHADER::SetParameter( std::string aParameterName, float value1, float value2 )
+{
+    GLint location = glGetUniformLocation( programNumber, aParameterName.c_str() );
+
+    GLint current;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &current);
+    glUseProgram(programNumber);
+    glUniform2f( location, value1, value2 );
+    glUseProgram(current);
 }
 
 

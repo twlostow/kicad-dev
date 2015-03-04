@@ -30,7 +30,10 @@
 const float SHADER_LINE                 = 1.0f;
 const float SHADER_STROKED_CIRCLE       = 3.0f;
 const float SHADER_FILLED_CIRCLE        = 2.0f;
-const float SHADER_PIXEL_LINE           = 4.0f;
+const float SHADER_PIXEL_LINE_R0        = 4.0f;
+const float SHADER_PIXEL_LINE_R1        = 5.0f;
+const float SHADER_PIXEL_LINE_R2        = 6.0f;
+const float SHADER_PIXEL_LINE_R3        = 7.0f;
 
 // Minimum line width
 const float MIN_WIDTH = 1.0f;
@@ -38,6 +41,66 @@ const float MIN_WIDTH = 1.0f;
 attribute vec4 attrShaderParams;
 varying vec4 shaderParams;
 varying vec2 circleCoords;
+
+
+uniform vec2 pxSize;
+
+void aaLine()
+{
+    float f = 0.4;
+    float t=0.05;
+    float R=0.768;
+    
+    //t=0.05; R=0.48+0.32*f;
+    
+    t=0.05+f*0.33; R = 0.768 + 0.312 * f;
+    
+    float index = attrShaderParams[1];
+    float dx = attrShaderParams[2];
+    float dy = attrShaderParams[3];
+
+    
+    float cx=-dy / 2.0;
+    float cy=dx / 2.0;  
+    
+    float tx=t*dx; 
+    float ty=t*dy;
+    float Rx=R*dx; 
+    float Ry=R*dy;
+
+    vec3 delta;
+
+    
+    if ( index == 0.0)
+        delta = vec3 ( -tx-Rx-cx, -ty-Ry-cy, 0.0);
+    else if ( index == 1.0)
+        delta = vec3 ( -tx-Rx+cx, -ty-Ry+cy, 0.0);
+    else if ( index == 2.0)
+        delta = vec3 ( -tx-cx,-ty-cy, 1.0);
+    else if ( index == 3.0)
+         delta = vec3 ( -tx+cx,-ty+cy, 1.0);
+    else if ( index == 4.0)
+        delta = vec3 ( tx-cx,ty-cy, 1.0);
+    else if ( index == 5.0)
+        delta = vec3 ( tx+cx,ty+cy, 1.0);
+    else if ( index == 6.0)
+        delta = vec3 ( tx+Rx-cx, ty+Ry-cy, 0.0);
+    else if ( index == 7.0)
+        delta = vec3 ( tx+Rx+cx, ty+Ry+cy, 0.0);
+
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex + vec4 ( pxSize.x * delta.x, pxSize.y * delta.y, 0.0, 0.0);
+    gl_TexCoord[0].xy = vec2 ( 0.0, delta.z );
+}
+
+void aaLine2()
+{
+    
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex + vec4 ( pxSize.x * shaderParams[2], pxSize.y  * shaderParams[3], 0.0, 0.0);
+    float ratio = shaderParams[1];
+    
+    gl_TexCoord[0].xy = vec2 ( 0.0, ratio < 0 ? -1.0 : 1.0 );
+
+}
 
 void main()
 {
@@ -88,6 +151,14 @@ void main()
             shaderParams[3] = shaderParams[3] / ( worldScale * lineWidth );
 
         gl_Position = ftransform();
+    } else if ( shaderParams [0] == SHADER_PIXEL_LINE_R0 )
+    {
+        aaLine();
+
+    }else if ( shaderParams [0] == SHADER_PIXEL_LINE_R1 )
+    {
+        aaLine2();
+
     }
     else
     {

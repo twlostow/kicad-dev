@@ -114,10 +114,16 @@ GAL_TEST_FRAME::GAL_TEST_FRAME(wxFrame *frame, const wxString& title, const wxPo
     view->SetCenter (VECTOR2D (0, 0));
     view->SetScale ( 1.0 );
 
+    
     m_ovl = m_galPanel->GetView()->MakeOverlay();
 
+    //m_galPanel->GetGAL()->SetTarget( KIGFX::TARGET_OVERLAY );
+    
+    printf("DrawOverlay:\n");
     m_ovl->Begin();
     
+
+    double dist = 30000000;
     for (double angle = 0; angle < 360.0; angle += 5.0)
     {
         VECTOR2D center (0, 0);
@@ -127,17 +133,18 @@ GAL_TEST_FRAME::GAL_TEST_FRAME(wxFrame *frame, const wxString& title, const wxPo
         VECTOR2D p1 =  p;
         
 //        m_ovl->DrawLine (p0, p1 );
-    
-        m_ovl->TestLine (p0.x, p0.y, p1.x, p1.y);
-        printf("%.0f %.0f %.0f %.0f\n", p0.x, p0.y, p1.x ,p1.y);
-    
+        
+        m_ovl->SetStrokeColor ( KIGFX::COLOR4D ( (double) (random() % 100) / 100.0, (double) (random() % 100) / 100.0, (double) (random() % 100) / 100.0, 1.0) );
+        m_ovl->TestLine (p0.x - dist, p0.y, p1.x - dist, p1.y);
+        m_ovl->TestLine2 (p0.x + dist, p0.y, p1.x + dist, p1.y);
+
 
 
      //   printf("DrawL %.1f\n", angle);
         
     }
     m_ovl->End();
-
+    printf("DrawOverlayDone:\n");
 
 }
 

@@ -131,6 +131,11 @@ public:
 		m_gal->TestLine (x1, y1, x2, y2);
 	}
 
+void TestLine2 ( double x1, double y1, double x2, double y2 )
+	{
+		m_gal->TestLine2 (x1, y1, x2, y2);
+	}
+
 private:
 	void viewAssign( VIEW* aView );
     void updateGroups();

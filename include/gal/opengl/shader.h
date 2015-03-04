@@ -153,6 +153,9 @@ public:
      */
     void SetParameter( int aParameterNumber, float aValue ) const;
     void SetParameter( int aParameterNumber, int aValue ) const;
+    void SetParameter( int parameterNumber, float value1, float value2 ) const;
+    void SetParameter( std::string aParameterName, float value1, float value2 );
+
 
     /**
      * @brief Gets an attribute location.

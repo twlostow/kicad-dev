@@ -39,6 +39,7 @@
 #include <class_zone.h>
 #include <class_netinfo.h>
 #include <legacy_ratsnest.h>
+#include <pad_index.h>
 
 // Constructor and destructor
 NETINFO_LIST::NETINFO_LIST( BOARD* aParent ) : m_Parent( aParent )
@@ -62,7 +63,7 @@ void NETINFO_LIST::clear()
     for( it = m_netNames.begin(), itEnd = m_netNames.end(); it != itEnd; ++it )
         delete it->second;
 
-    m_PadsFullList.clear();
+//    m_m_PadsFullList.clear(); FIXME is it needed?
     m_netNames.clear();
     m_netCodes.clear();
     m_newNetCode = 0;
@@ -104,10 +105,6 @@ void NETINFO_LIST::AppendNet( NETINFO_ITEM* aNewElement )
  * and expects to have a nets list sorted by an alphabetic case sensitive sort
  */
 
-static bool padlistSortByNetnames( const D_PAD* a, const D_PAD* b )
-{
-    return ( a->GetNetname().Cmp( b->GetNetname() ) ) < 0;
-}
 
 
 /**
@@ -124,41 +121,18 @@ static bool padlistSortByNetnames( const D_PAD* a, const D_PAD* b )
  */
 void NETINFO_LIST::buildListOfNets()
 {
-    D_PAD*          pad;
-    int             nodes_count = 0;
-
     // Build the PAD list, sorted by net
-    buildPadsFullList();
+    PAD_INDEX& padIndex = m_Parent->GetPadIndex();
+    padIndex.Rebuild();
 
     // Restore the initial state of NETINFO_ITEMs
     for( NETINFO_LIST::iterator net( begin() ), netEnd( end() ); net != netEnd; ++net )
         net->Clear();
 
-    // Assign pads to appropriate NETINFO_ITEMs
-    for( unsigned ii = 0; ii < m_PadsFullList.size(); ii++ )
-    {
-        pad = m_PadsFullList[ii];
 
-        if( pad->GetNetCode() == NETINFO_LIST::UNCONNECTED ) // pad not connected
-            continue;
-
-        // Add pad to the appropriate list of pads
-        NETINFO_ITEM* net = pad->GetNet();
-        // it should not be possible for BOARD_CONNECTED_ITEM to return NULL as a result of GetNet()
-        wxASSERT( net );
-
-        if( net )
-            net->m_PadInNetList.push_back( pad );
-
-        ++nodes_count;
-    }
-
-    m_Parent->SetNodeCount( nodes_count );
-
+    m_Parent->SetNodeCount( padIndex.GetNodeCount() );
     m_Parent->SynchronizeNetsAndNetClasses( );
-
     m_Parent->SetStatusBits( NET_CODES_OK );
-
     m_Parent->SetAreasNetCodesFromNetNames();
 }
 
@@ -176,44 +150,6 @@ void NETINFO_LIST::Show() const
 }
 #endif
 
-void NETINFO_LIST::buildPadsFullList()
-{
-    /*
-     * initialize:
-     *   m_Pads (list of pads)
-     * set m_Status_Pcb = LISTE_PAD_OK;
-     * also clear legacy FullRatsnest that could have bad data
-     *   (legacy Full Ratsnest uses pointer to pads)
-     * Be aware NETINFO_ITEM* BOARD::FindNet( const wxString& aNetname )
-     * when search a net by its net name does a binary search
-     * and expects to have a nets list sorted by an alphabetic case sensitive sort
-     * So do not change the sort function used here
-     */
-
-    if( m_Parent->GetStatus() & LISTE_PAD_OK )
-        return;
-
-    // empty the old list
-    m_PadsFullList.clear();
-    m_Parent->GetLegacyRatsnest()->ClearFull();
-
-    // Clear variables used in ratsnest computation
-    for( MODULE* module = m_Parent->m_Modules;  module;  module = module->Next() )
-    {
-        for( D_PAD* pad = module->Pads();  pad;  pad = pad->Next() )
-        {
-            m_PadsFullList.push_back( pad );
-
-            pad->SetSubRatsnest( 0 );
-            pad->SetParent( module );
-        }
-    }
-
-    // Sort pad list per net
-    sort( m_PadsFullList.begin(), m_PadsFullList.end(), padlistSortByNetnames );
-
-    m_Parent->SetStatus ( LISTE_PAD_OK );
-}
 
 
 int NETINFO_LIST::getFreeNetCode()

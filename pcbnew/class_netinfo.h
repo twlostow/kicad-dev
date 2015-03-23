@@ -39,18 +39,11 @@
 #include <boost/unordered_map.hpp>
 #include <hashtables.h>
 
-
-class wxDC;
-class wxPoint;
-class LINE_READER;
-class EDA_DRAW_PANEL;
-class EDA_DRAW_FRAME;
 class NETINFO_ITEM;
 class D_PAD;
 class BOARD;
 class BOARD_ITEM;
 class MSG_PANEL_ITEM;
-
 
 class NETINFO_MAPPING
 {
@@ -160,6 +153,8 @@ public:
         return m_netMapping.size();
     }
 
+    
+
 private:
     ///> Board for which mapping is prepared
     const BOARD* m_board;
@@ -226,36 +221,7 @@ public:
      */
     void AppendNet( NETINFO_ITEM* aNewElement );
 
-    /**
-     * Function GetPadCount
-     * @return the number of pads in board
-     */
-    unsigned GetPadCount() const  { return m_PadsFullList.size(); }
-
-    /**
-     * Function GetPads
-     * returns a list of all the pads.  The returned list is not
-     * sorted and contains pointers to PADS, but those pointers do not convey
-     * ownership of the respective PADs.
-     * @return std::vector<D_PAD*>& - a full list of pads
-    std::vector<D_PAD*>& GetPads()
-    {
-        return m_PadsFullList;
-    }
-     */
-
-    /**
-     * Function GetPad
-     * @return the pad idx from m_PadsFullList
-     */
-    D_PAD* GetPad( unsigned aIdx ) const
-    {
-        if( aIdx < m_PadsFullList.size() )
-            return m_PadsFullList[aIdx];
-        else
-            return NULL;
-    }
-
+    
     ///> Constant that holds the "unconnected net" number (typically 0)
     ///> all items "connected" to this net are actually not connected items
     static const int UNCONNECTED;
@@ -337,6 +303,12 @@ public:
     }
 #endif
 
+    BOARD *GetParent() const
+    {
+        return m_Parent;
+    }
+
+
 private:
     /**
      * Function DeleteData
@@ -351,17 +323,7 @@ private:
      */
     void buildListOfNets();
 
-    /**
-     * Function buildPadsFullList
-     * creates the pad list, and initializes:
-     *   m_Pads (list of pads)
-     * set m_Status_Pcb = LISTE_PAD_OK;
-     * and clear for all pads in list the m_SubRatsnest member;
-     * clear PCB's full ratnsest
-     */
-    void buildPadsFullList();
-
-    /**
+     /**
      * Function getFreeNetCode
      * returns the first available net code that is not used by any other net.
      */
@@ -371,9 +333,6 @@ private:
 
     NETNAMES_MAP m_netNames;                    ///< map for a fast look up by net names
     NETCODES_MAP m_netCodes;                    ///< map for a fast look up by net codes
-
-    std::vector<D_PAD*> m_PadsFullList;         ///< contains all pads, sorted by pad's netname.
-                                                ///< can be used in ratsnest calculations.
 
     int m_newNetCode;                           ///< possible value for new net code assignment
 };
@@ -400,11 +359,9 @@ private:
                                 // item of the net classes list
     NETCLASSPTR m_NetClass;
 
-    BOARD_ITEM* m_parent;       ///< The parent board item object the net belongs to.
+    BOARD* m_parent;            ///< The parent board the net belongs to.
 
 public:
-    std::vector<D_PAD*> m_PadInNetList;    ///< List of pads connected to this net
-
     unsigned m_RatsnestStartIdx;       /* Starting point of ratsnests of this
                                         * net (included) in a general buffer of
                                         * ratsnest (a vector<RATSNEST_ITEM*>
@@ -413,7 +370,7 @@ public:
     unsigned m_RatsnestEndIdx;         // Ending point of ratsnests of this net
                                        // (excluded) in this buffer
 
-    NETINFO_ITEM( BOARD_ITEM* aParent, const wxString& aNetName = wxEmptyString, int aNetCode = -1 );
+    NETINFO_ITEM( BOARD* aParent, const wxString& aNetName = wxEmptyString, int aNetCode = -1 );
     ~NETINFO_ITEM();
 
     /**
@@ -524,24 +481,10 @@ public:
 #endif
 
     /**
-     * Function Draw
-     * @todo we actually could show a NET, simply show all the tracks and
-     *       a pads or net name on pad and vias
-     */
-    void Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE aDrawMode,
-               const wxPoint& offset );
-
-    /**
      * Function GetNet
      * @return int - the netcode
      */
     int GetNet() const { return m_NetCode; }
-
-    /**
-     * Function GetNodesCount
-     * @return int - number of nodes in the net
-     */
-    int GetNodesCount() const { return m_PadInNetList.size(); }
 
     /**
      * Function GetNetname
@@ -570,14 +513,18 @@ public:
      */
     void Clear()
     {
-        m_PadInNetList.clear();
-
         m_RatsnestStartIdx  = 0;     // Starting point of ratsnests of this net in a
                                      // general buffer of ratsnest
         m_RatsnestEndIdx    = 0;     // Ending point of ratsnests of this net
 
         SetClass( NETCLASSPTR() );
     }
+
+    BOARD *GetParent() const
+    {
+        return m_parent;
+    }
+
 };
 
 

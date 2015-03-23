@@ -45,6 +45,7 @@
 #include <class_module.h>
 #include <class_track.h>
 #include <class_edge_mod.h>
+#include <pad_index.h>
 
 
 static bool CreateHeaderInfoData( FILE* aFile, PCB_EDIT_FRAME* frame );
@@ -393,11 +394,10 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
     fputs( "$PADS\n", aFile );
 
     // Enumerate and sort the pads
-    if( aPcb->GetPadCount() > 0 )
+    if( aPcb->GetPadIndex().Size() > 0 )
     {
-        pads = aPcb->GetPads();
-        qsort( &pads[0], aPcb->GetPadCount(), sizeof( D_PAD* ),
-               PadListSortByShape );
+        pads = aPcb->GetPadIndex().AllPads();
+        qsort( &pads[0], pads.size(), sizeof( D_PAD* ), PadListSortByShape );
     }
 
     // The same for vias

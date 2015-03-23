@@ -49,7 +49,7 @@
 /* class NETINFO_ITEM: handle data relative to a given net */
 /*********************************************************/
 
-NETINFO_ITEM::NETINFO_ITEM( BOARD_ITEM* aParent, const wxString& aNetName, int aNetCode ) :
+NETINFO_ITEM::NETINFO_ITEM( BOARD* aParent, const wxString& aNetName, int aNetCode ) :
     m_NetCode( aNetCode ), m_Netname( aNetName ), m_ShortNetname( m_Netname.AfterLast( '/' ) )
 {
     m_parent   = aParent;
@@ -66,16 +66,6 @@ NETINFO_ITEM::~NETINFO_ITEM()
     // m_NetClass is not owned by me.
 }
 
-
-/**
- * Function Draw (TODO)
- */
-void NETINFO_ITEM::Draw( EDA_DRAW_PANEL* panel,
-                         wxDC*           DC,
-                         GR_DRAWMODE     aDrawMode,
-                         const wxPoint&  aOffset )
-{
-}
 
 
 void NETINFO_ITEM::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )

@@ -38,7 +38,8 @@
 // Helper classes to handle connection points
 #include <connect.h>
 #include <legacy_ratsnest.h>
-
+#include <pad_index.h>
+ 
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb );
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode );
 
@@ -730,13 +731,12 @@ void CONNECTIONS::Propagate_SubNets()
  */
 void PCB_BASE_FRAME::TestConnections()
 {
+    PAD_INDEX& pads = m_Pcb->GetPadIndex();
     // Clear the cluster identifier for all pads
-    for( unsigned i = 0;  i< m_Pcb->GetPadCount();  ++i )
+    for( unsigned i = 0;  i < pads.Size();  ++i )
     {
-        D_PAD* pad = m_Pcb->GetPad(i);
-
-        pad->SetZoneSubNet( 0 );
-        pad->SetSubNet( 0 );
+        pads[i]->SetZoneSubNet( 0 );
+        pads[i]->SetSubNet( 0 );
     }
 
     m_Pcb->Test_Connections_To_Copper_Areas();
@@ -792,11 +792,11 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
 
     // Clear the cluster identifier (subnet) of pads for this net
     // Pads are grouped by netcode (and in netname alphabetic order)
-    for( unsigned i = 0; i < m_Pcb->GetPadCount(); ++i )
+    for( unsigned i = 0; i < m_Pcb->GetPadIndex().Size(); ++i )
     {
-        D_PAD* pad = m_Pcb->GetPad(i);
+        D_PAD* pad = m_Pcb->GetPadIndex().GetPad(i);
 
-        if( m_Pcb->GetPad(i)->GetNetCode() == aNetCode )
+        if( pad->GetNetCode() == aNetCode )
             pad->SetSubNet( 0 );
     }
 
@@ -874,7 +874,7 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
     }
 
     // If no pad, reset pointers and netcode, and do nothing else
-    if( m_Pcb->GetPadCount() == 0 )
+    if( m_Pcb->GetPadIndex().Size() == 0 )
         return;
 
     CONNECTIONS connections( m_Pcb );

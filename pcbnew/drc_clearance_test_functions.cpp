@@ -45,6 +45,8 @@
 #include <class_marker_pcb.h>
 #include <math_for_graphics.h>
 #include <polygon_test_point_inside.h>
+#include <pad_index.h>
+
 
 
 /* compare 2 trapezoids (can be rectangle) and return true if distance > aDist
@@ -283,9 +285,10 @@ bool DRC::doTrackDrc( TRACK* aRefSeg, TRACK* aStart, bool testPads )
     // Compute the min distance to pads
     if( testPads )
     {
-        for( unsigned ii = 0;  ii<m_pcb->GetPadCount();  ++ii )
+        PAD_INDEX& padIndex = m_pcb->GetPadIndex();
+        for( unsigned ii = 0; ii < padIndex.Size(); ++ii )
         {
-            D_PAD* pad = m_pcb->GetPad( ii );
+            D_PAD* pad = padIndex[ ii ];
 
             /* No problem if pads are on an other layer,
              * But if a drill hole exists	(a pad on a single layer can have a hole!)

@@ -45,6 +45,8 @@
 #include <class_pcb_text.h>
 
 #include <legacy_ratsnest.h>
+#include <pad_index.h>
+
 
 MATRIX_ROUTING_HEAD::MATRIX_ROUTING_HEAD()
 {
@@ -213,10 +215,12 @@ void PlaceCells( BOARD* aPcb, int net_code, int flag )
     marge     = clearance + (trackWidth / 2);
     via_marge = clearance + (viaSize / 2);
 
+    PAD_INDEX& pads =  aPcb->GetPadIndex();
+    
     // Place PADS on matrix routing:
-    for( unsigned i = 0; i < aPcb->GetPadCount(); ++i )
+    for( unsigned i = 0; i < pads.Size(); ++i )
     {
-        D_PAD* pad = aPcb->GetPad( i );
+        D_PAD* pad = pads[i];
 
         if( net_code != pad->GetNetCode() || (flag & FORCE_PADS) )
         {

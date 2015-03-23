@@ -41,6 +41,8 @@
 #include <zones.h>
 #include <polygon_test_point_inside.h>
 
+#include <pad_index.h>
+
 static bool CmpZoneSubnetValue( const BOARD_CONNECTED_ITEM* a, const BOARD_CONNECTED_ITEM* b );
 
 void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode );
@@ -137,11 +139,13 @@ void BOARD::Test_Connections_To_Copper_Areas( int aNetcode )
             oldnetcode = netcode;
             candidates.clear();
 
-            // Build the list of pads candidates connected to the net:
-            candidates.reserve( net->m_PadInNetList.size() );
+            PAD_INDEX::PADS& netPads = m_padIndex->AllPadsInNet( net );
 
-            for( unsigned ii = 0; ii < net->m_PadInNetList.size(); ii++ )
-                candidates.push_back( net->m_PadInNetList[ii] );
+            // Build the list of pads candidates connected to the net:
+            candidates.reserve( netPads.size() );
+
+            for( unsigned ii = 0; ii < netPads.size(); ii++ )
+                candidates.push_back( netPads[ii] );
 
             // Build the list of track candidates connected to the net:
             TRACK* track = m_Track.GetFirst()->GetStartNetCode( netcode );
@@ -320,9 +324,12 @@ void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode )
     // Build the list of pads candidates connected to the net:
     NETINFO_ITEM* net = aPcb->FindNet( aNetcode );
     wxASSERT( net );
-    Candidates.reserve( net->m_PadInNetList.size() );
-    for( unsigned ii = 0; ii < net->m_PadInNetList.size(); ii++ )
-        Candidates.push_back( net->m_PadInNetList[ii] );
+    
+    PAD_INDEX::PADS& netPads = aPcb->GetPadIndex().AllPadsInNet( net );
+
+    Candidates.reserve( netPads.size() );
+    for( unsigned ii = 0; ii < netPads.size(); ii++ )
+        Candidates.push_back( netPads[ii] );
 
     // Build the list of track candidates connected to the net:
     TRACK* track;

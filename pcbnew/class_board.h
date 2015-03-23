@@ -57,6 +57,7 @@ class NETLIST;
 class REPORTER;
 class RN_DATA;
 class LEGACY_RATSNEST;
+class PAD_INDEX;
 
 namespace KIGFX
 {
@@ -214,6 +215,9 @@ private:
 
     /// Ratsnest information (legacy algorithm)
     LEGACY_RATSNEST         *m_legacyRatsnest;
+
+    /// Index of all pads in the board, sorted by net name
+    PAD_INDEX               *m_padIndex;
 
     /// Flags used in ratsnest calculation and update.
     int m_pcbStatus;
@@ -767,35 +771,17 @@ public:
      * @param aCount is the number of unconneceted nets in the current rats nest.
      */
     void SetUnconnectedNetCount( unsigned aCount ) { m_unconnectedNetCount = aCount; }
-
+   
     /**
-     * Function GetPadCount
-     * @return the number of pads in board
+     * Function GetPadIndex
+     * returns an index of all the pads by value.  The returned list is 
+     * sorted and contains pointers to D_PADS, but those pointers do not convey
+     * ownership of the respective D_PADs.
+     * @return PAD_INDEX - a full list of pads
      */
-    unsigned GetPadCount() const
+    PAD_INDEX& GetPadIndex()
     {
-        return m_NetInfo.GetPadCount();
-    }
-
-    /**
-     * Function GetPad
-     * @return D_PAD* - at the \a aIndex from m_NetInfo
-     */
-    D_PAD* GetPad( unsigned aIndex ) const
-    {
-        return m_NetInfo.GetPad( aIndex );
-    }
-
-    /**
-     * Function GetPads
-     * returns a list of all the pads by value.  The returned list is not
-     * sorted and contains pointers to PADS, but those pointers do not convey
-     * ownership of the respective PADs.
-     * @return std::vector<D_PAD*> - a full list of pads
-     */
-    std::vector<D_PAD*> GetPads()
-    {
-        return m_NetInfo.m_PadsFullList;
+        return *m_padIndex;
     }
 
     void BuildListOfNets()

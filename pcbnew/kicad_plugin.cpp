@@ -45,6 +45,7 @@
 #include <zones.h>
 #include <kicad_plugin.h>
 #include <pcb_parser.h>
+#include <pad_index.h>
 
 #include <wx/dir.h>
 #include <wx/filename.h>
@@ -68,9 +69,10 @@ void filterNetClass( const BOARD& aBoard, NETCLASS& aNetClass )
     for( NETCLASS::const_iterator it = aNetClass.begin(); it != aNetClass.end(); )
     {
         NETINFO_ITEM* netinfo = aBoard.FindNet( *it );
+        int nc = const_cast<BOARD&> (aBoard).GetPadIndex().CountNodesInNet ( netinfo );
 
-        if( netinfo && netinfo->GetNodesCount() <= 0 ) // hopefully there are no nets with negative
-            aNetClass.Remove( it++ );                  // node count, but you never know..
+        if( nc == 0 ) 
+            aNetClass.Remove( it++ ); 
         else
             ++it;
     }

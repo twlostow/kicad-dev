@@ -50,6 +50,7 @@
 #include <wx/progdlg.h>
 
 #include <legacy_ratsnest.h>
+#include <pad_index.h>
 
 void DRC::ShowDialog()
 {
@@ -584,8 +585,8 @@ void DRC::testZones()
         // a netcode < 0 or > 0 and no pad in net  is a error or strange
         // perhaps a "dead" net, which happens when all pads in this net were removed
         // Remark: a netcode < 0 should not happen (this is more a bug somewhere)
-        int pads_in_net = (test_area->GetNetCode() > 0) ?
-                            test_area->GetNet()->GetNodesCount() : 1;
+
+        int pads_in_net = netcode > 0 ? m_pcb->GetPadIndex().CountNodesInNet( netcode ) : 1;
 
         if( ( netcode < 0 ) || pads_in_net == 0 )
         {
@@ -658,7 +659,7 @@ void DRC::testKeepoutAreas()
 void DRC::testTexts()
 {
     std::vector<wxPoint> textShape;      // a buffer to store the text shape (set of segments)
-    std::vector<D_PAD*> padList = m_pcb->GetPads();
+    PAD_INDEX& padIndex = m_pcb->GetPadIndex();
 
     // Test text areas for vias, tracks and pads inside text areas
     for( BOARD_ITEM* item = m_pcb->m_Drawings; item; item = item->Next() )
@@ -734,9 +735,9 @@ void DRC::testTexts()
         }
 
         // Test pads
-        for( unsigned ii = 0; ii < padList.size(); ii++ )
+        for( unsigned ii = 0; ii < padIndex.Size(); ii++ )
         {
-            D_PAD* pad = padList[ii];
+            D_PAD* pad = padIndex[ii];
 
             if( ! pad->IsOnLayer( item->GetLayer() ) )
                     continue;

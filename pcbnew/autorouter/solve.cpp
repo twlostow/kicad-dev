@@ -42,6 +42,7 @@
 
 #include <class_board.h>
 #include <class_track.h>
+#include <pad_index.h>
 
 #include <pcbnew.h>
 #include <protos.h>
@@ -522,11 +523,9 @@ static int Autoroute_One_Track( PCB_EDIT_FRAME* pcbframe,
 
     // Regenerates the remaining barriers (which may encroach on the
     // placement bits precedent)
-    i = pcbframe->GetBoard()->GetPadCount();
-
-    for( unsigned ii = 0; ii < pcbframe->GetBoard()->GetPadCount(); ii++ )
+    for( unsigned ii = 0; ii < pcbframe->GetBoard()->GetPadIndex().Size(); ii++ )
     {
-        D_PAD* ptr = pcbframe->GetBoard()->GetPad( ii );
+        D_PAD* ptr = pcbframe->GetBoard()->GetPadIndex().GetPad(ii);
 
         if( ( pt_cur_ch->m_PadStart != ptr ) && ( pt_cur_ch->m_PadEnd != ptr ) )
         {

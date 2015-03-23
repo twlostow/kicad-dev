@@ -23,8 +23,8 @@
  */
 
 /**
- * @file ratsnest.cpp
- * @brief Ratsnets functions.
+ * @file legacy_ratsnest.cpp
+ * @brief Ratsnet functions.
  */
 
 #include <fctsys.h>
@@ -42,10 +42,8 @@
 #include <pcbnew.h>
 
 #include <minimun_spanning_tree.h>
-
 #include <legacy_ratsnest.h>
-
-
+#include <pad_index.h>
 
 /* Sort function used by  QSORT
  *  Sort pads by net code
@@ -187,9 +185,10 @@ void LEGACY_RATSNEST::SetVisible ( bool aIsVisible )
     }
 }
 
-void LEGACY_RATSNEST::ClearFull()
+void LEGACY_RATSNEST::Clear()
 {
     m_FullRatsnest.clear();
+    m_LocalRatsnest.clear();
 }
 
 
@@ -266,9 +265,11 @@ void LEGACY_RATSNEST::BuildRatsnestForModule( MODULE* aModule )
                 return;
             }
 
-            for( unsigned jj = 0; jj < net->m_PadInNetList.size(); jj++ )
+            PAD_INDEX::PADS& netPads = m_board->GetPadIndex().AllPadsInNet( net );
+
+            for( unsigned jj = 0; jj < netPads.size(); jj++ )
             {
-                pad_externe = net->m_PadInNetList[jj];
+                pad_externe = netPads[jj];
 
                 if( pad_externe->GetParent() == aModule )
                     continue;
@@ -471,7 +472,7 @@ void PCB_BASE_FRAME::Compile_Ratsnest( wxDC* aDC, bool aDisplayStatus )
 
     if( aDisplayStatus )
     {
-        msg.Printf( wxT( " %d" ), m_Pcb->GetPadCount() );
+        msg.Printf( wxT( " %d" ), m_Pcb->GetPadIndex().Size() );
         AppendMsgPanel( wxT( "Pads" ), msg, RED );
         msg.Printf( wxT( " %d" ), m_Pcb->GetNetCount() );
         AppendMsgPanel( wxT( "Nets" ), msg, CYAN );
@@ -519,23 +520,23 @@ void PCB_BASE_FRAME::Compile_Ratsnest( wxDC* aDC, bool aDisplayStatus )
  */
 void LEGACY_RATSNEST::BuildBoardRatsnest()
 {
-    D_PAD* pad;
     int    noconn;
     
     m_board->SetUnconnectedNetCount( 0 );
     m_FullRatsnest.clear();
 
-    if( m_board->GetPadCount() == 0 )
+    PAD_INDEX& pads = m_board->GetPadIndex();
+
+    if( pads.Size() == 0 )
         return;
 
     // Created pad list and the net_codes if needed
     if( (m_board->GetStatus( ) & NET_CODES_OK) == 0 )
         m_board->BuildListOfNets();
 
-    for( unsigned ii = 0; ii < m_board->GetPadCount(); ++ii )
+    for( unsigned ii = 0; ii < pads.Size(); ++ii )
     {
-        pad = m_board->GetPad( ii );
-        pad->SetSubRatsnest( 0 );
+        pads[ii]->SetSubRatsnest( 0 );
     }
 
     if( m_board->GetNodesCount() == 0 )
@@ -559,7 +560,7 @@ void LEGACY_RATSNEST::BuildBoardRatsnest()
         }
 
         net->m_RatsnestStartIdx = m_board->GetRatsnestsCount();
-        min_spanning_tree.MSP_Init( &net->m_PadInNetList );
+        min_spanning_tree.MSP_Init( &m_board->GetPadIndex().AllPadsInNet( net ) );
         min_spanning_tree.BuildTree();
         min_spanning_tree.AddTreeToRatsnest( &m_FullRatsnest );
         net->m_RatsnestEndIdx = m_board->GetRatsnestsCount();
@@ -630,12 +631,14 @@ static int testLinksBetweenBlocks( NETINFO_ITEM*          aNetinfo,
     if( min_id > subratsnest_id )
         EXCHG( min_id, subratsnest_id );
 
+    PAD_INDEX::PADS& netPads = aNetinfo->GetParent()->GetPadIndex().AllPadsInNet( aNetinfo );
+
     // Merge the 2 blocks in one sub ratsnest:
-    for( unsigned ii = 0; ii < aNetinfo->m_PadInNetList.size(); ii++ )
+    for( unsigned ii = 0; ii < netPads.size(); ii++ )
     {
-        if( aNetinfo->m_PadInNetList[ii]->GetSubRatsnest() == subratsnest_id )
+        if( netPads[ii]->GetSubRatsnest() == subratsnest_id )
         {
-            aNetinfo->m_PadInNetList[ii]->SetSubRatsnest( min_id );
+            netPads[ii]->SetSubRatsnest( min_id );
         }
     }
 
@@ -726,7 +729,7 @@ void LEGACY_RATSNEST::TestForActiveLinksInRatsnest( int aNetCode )
     D_PAD*         pad;
     NETINFO_ITEM*  net;
 
-    if( m_board->GetPadCount() == 0 )
+    if( m_board->GetPadIndex().Size() == 0 )
         return;
 
     if( (m_board->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
@@ -744,9 +747,12 @@ void LEGACY_RATSNEST::TestForActiveLinksInRatsnest( int aNetCode )
 
         // Create subratsnests id from subnets created by existing tracks:
         int subratsnest = 0;
-        for( unsigned ip = 0; ip < net->m_PadInNetList.size(); ip++ )
+        
+        PAD_INDEX::PADS& netPads = m_board->GetPadIndex().AllPadsInNet( net );
+
+        for( unsigned ip = 0; ip < netPads.size(); ip++ )
         {
-            pad = net->m_PadInNetList[ip];
+            pad = netPads[ip];
             int subnet = pad->GetSubNet();
             pad->SetSubRatsnest( subnet );
             subratsnest = std::max( subratsnest, subnet );
@@ -942,9 +948,11 @@ void PCB_BASE_FRAME::BuildAirWiresTargetsList( BOARD_CONNECTED_ITEM* aItemRef,
 
         // Create a list of pads candidates ( pads not already connected to the
         // current track ):
-        for( unsigned ii = 0; ii < net->m_PadInNetList.size(); ii++ )
+        PAD_INDEX::PADS& netPads = m_Pcb->GetPadIndex().AllPadsInNet( net );
+
+        for( unsigned ii = 0; ii < netPads.size(); ii++ )
         {
-            D_PAD* pad = net->m_PadInNetList[ii];
+            D_PAD* pad = netPads[ii];
 
             if( pad == aItemRef )
                 continue;

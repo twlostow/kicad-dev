@@ -32,6 +32,7 @@
 
 #include <limits.h>
 #include <algorithm>
+#include <cstdio>
 
 #include <fctsys.h>
 #include <common.h>
@@ -45,10 +46,12 @@
 #include <ratsnest_viewitem.h>
 #include <worksheet_viewitem.h>
 #include <legacy_ratsnest.h>
+#include <pad_index.h>
 
 #include <pcbnew.h>
 #include <colors_selection.h>
 #include <collectors.h>
+
 
 #include <class_board.h>
 #include <class_module.h>
@@ -85,6 +88,7 @@ BOARD::BOARD() :
                                             // zone contour currently in progress
 
     m_legacyRatsnest = new LEGACY_RATSNEST ( this );
+    m_padIndex = new PAD_INDEX ( this );
     BuildListOfNets();                      // prepare pad and netlist containers.
 
     for( LAYER_NUM layer = 0; layer < LAYER_ID_COUNT; ++layer )
@@ -123,7 +127,8 @@ BOARD::~BOARD()
 
     delete m_ratsnest;
     delete m_legacyRatsnest;
-    
+    delete m_padIndex;
+
     DeleteMARKERs();
     DeleteZONEOutlines();
 
@@ -315,8 +320,6 @@ bool BOARD::SetLayerDescr( LAYER_ID aIndex, const LAYER& aLayer )
 
     return false;
 }
-
-#include <stdio.h>
 
 const LAYER_ID BOARD::GetLayerID(wxString aLayerName) const
 {
@@ -920,7 +923,7 @@ void BOARD::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
             trackSegmentsCount++;
     }
 
-    txt.Printf( wxT( "%d" ), GetPadCount() );
+    txt.Printf( wxT( "%d" ), m_padIndex->Size() );
     aList.push_back( MSG_PANEL_ITEM( _( "Pads" ), txt, DARKGREEN ) );
 
     txt.Printf( wxT( "%d" ), viasCount );
@@ -1304,15 +1307,20 @@ MODULE* BOARD::FindModule( const wxString& aRefOrTimeStamp, bool aSearchByTimeSt
 // Sort nets by decreasing pad count. For same pad count, sort by alphabetic names
 static bool sortNetsByNodes( const NETINFO_ITEM* a, const NETINFO_ITEM* b )
 {
-    if( b->GetNodesCount() == a->GetNodesCount() )
+    // fixme: move to PAD_INDEX
+    int aCount = a->GetParent()->GetPadIndex().CountNodesInNet( a );
+    int bCount = a->GetParent()->GetPadIndex().CountNodesInNet( b );
+
+       if( bCount == aCount )
         return a->GetNetname() < b->GetNetname();
 
-    return b->GetNodesCount() < a->GetNodesCount();
+    return bCount < aCount;
 }
 
 // Sort nets by alphabetic names
 static bool sortNetsByNames( const NETINFO_ITEM* a, const NETINFO_ITEM* b )
 {
+    // fixme: move to PAD_INDEX
     return a->GetNetname() < b->GetNetname();
 }
 
@@ -1495,9 +1503,9 @@ D_PAD* BOARD::GetPad( TRACK* aTrace, ENDPOINT_T aEndPoint )
 
 D_PAD* BOARD::GetPadFast( const wxPoint& aPosition, LSET aLayerMask )
 {
-    for( unsigned i=0; i<GetPadCount();  ++i )
+    for( unsigned i=0; i<m_padIndex->Size();  ++i )
     {
-        D_PAD* pad = m_NetInfo.GetPad(i);
+        D_PAD* pad = m_padIndex->GetPad(i);
 
         if( pad->GetPosition() != aPosition )
             continue;
@@ -1622,16 +1630,17 @@ void BOARD::GetSortedPadListByXthenYCoord( std::vector<D_PAD*>& aVector, int aNe
 {
     if( aNetCode < 0 )
     {
-        aVector.insert( aVector.end(), m_NetInfo.m_PadsFullList.begin(),
-                        m_NetInfo.m_PadsFullList.end() );
+        aVector.insert( aVector.end(), 
+                        m_padIndex->AllPads().begin(),
+                        m_padIndex->AllPads().end() );
     }
     else
     {
         const NETINFO_ITEM* net = m_NetInfo.GetNetItem( aNetCode );
         if( net )
         {
-            aVector.insert( aVector.end(), net->m_PadInNetList.begin(),
-                            net->m_PadInNetList.end() );
+            PAD_INDEX::PADS& pads = m_padIndex->AllPadsInNet( net );
+            aVector.insert( aVector.end(), pads.begin(), pads.end() );
         }
     }
 
@@ -2467,7 +2476,7 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
     // We need the pad list, for next tests.
     // padlist is the list of pads, sorted by netname.
     BuildListOfNets();
-    std::vector<D_PAD*> padlist = GetPads();
+    PAD_INDEX& padIndex = GetPadIndex();
 
     // If needed, remove the single pad nets:
     if( aDeleteSinglePadNets && !aNetlist.IsDryRun() )
@@ -2477,9 +2486,9 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
         D_PAD*      pad = NULL;
         D_PAD*      previouspad = NULL;
 
-        for( unsigned ii = 0; ii < padlist.size(); ii++ )
+        for( unsigned ii = 0; ii < padIndex.Size(); ii++ )
         {
-            pad = padlist[ii];
+            pad = padIndex[ii];
 
             if( pad->GetNetname().IsEmpty() )
                 continue;
@@ -2585,7 +2594,9 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
             if( !zone->IsOnCopperLayer() || zone->GetIsKeepout() )
                 continue;
 
-            if( zone->GetNet()->GetNodesCount() == 0 )
+            int nc = m_padIndex->CountNodesInNet( zone->GetNet() );
+
+            if( nc == 0 )
             {
                 msg.Printf( _( "* Warning: copper zone (net name '%s'): net has no pad*\n" ),
                            GetChars( zone->GetNet()->GetNetname() ) );

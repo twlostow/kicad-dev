@@ -43,7 +43,6 @@
 #include <class_zone_settings.h>
 #include <pcb_plot_params.h>
 
-
 class PCB_BASE_FRAME;
 class PCB_EDIT_FRAME;
 class PICKED_ITEMS_LIST;
@@ -57,6 +56,7 @@ class MSG_PANEL_ITEM;
 class NETLIST;
 class REPORTER;
 class RN_DATA;
+class LEGACY_RATSNEST;
 
 namespace KIGFX
 {
@@ -212,6 +212,12 @@ private:
     /// Number of unconnected nets in the current rats nest.
     int                     m_unconnectedNetCount;
 
+    /// Ratsnest information (legacy algorithm)
+    LEGACY_RATSNEST         *m_legacyRatsnest;
+
+    /// Flags used in ratsnest calculation and update.
+    int m_pcbStatus;
+
     /**
      * Function chainMarkedSegments
      * is used by MarkTrace() to set the BUSY flag of connected segments of the trace
@@ -233,20 +239,12 @@ public:
 
     const wxString &GetFileName() const { return m_fileName; }
 
-    /// Flags used in ratsnest calculation and update.
-    int m_Status_Pcb;
-
     DLIST<BOARD_ITEM>           m_Drawings;              // linked list of lines & texts
     DLIST<MODULE>               m_Modules;               // linked list of MODULEs
     DLIST<TRACK>                m_Track;                 // linked list of TRACKs and VIAs
     DLIST<SEGZONE>              m_Zone;                  // linked list of SEGZONEs
 
-    /// Ratsnest list for the BOARD
-    std::vector<RATSNEST_ITEM>  m_FullRatsnest;
-
-    /// Ratsnest list relative to a given footprint (used while moving a footprint).
-    std::vector<RATSNEST_ITEM>  m_LocalRatsnest;
-
+    
     /// zone contour currently in progress
     ZONE_CONTAINER*             m_CurrentZoneContour;
 
@@ -319,6 +317,11 @@ public:
     RN_DATA* GetRatsnest() const
     {
         return m_ratsnest;
+    }
+
+    LEGACY_RATSNEST *GetLegacyRatsnest() const
+    {
+        return m_legacyRatsnest;
     }
 
     /**
@@ -735,11 +738,8 @@ public:
      * Function GetNumRatsnests
      * @return int - The number of rats
      */
-    unsigned GetRatsnestsCount() const
-    {
-        return m_FullRatsnest.size();
-    }
-
+    unsigned GetRatsnestsCount() const;
+    
     /**
      * Function GetNodesCount
      * @return the number of pads members of nets (i.e. with netcode > 0)
@@ -1386,6 +1386,27 @@ public:
      *         aPosition and a pointer to the via are returned.
      */
     TRACK* CreateLockPoint( wxPoint& aPosition, TRACK* aSegment, PICKED_ITEMS_LIST* aList );
+
+    int GetStatus() const
+    {
+        return m_pcbStatus;
+    }    
+
+    void SetStatus( int aNewStatus )
+    {
+        m_pcbStatus = aNewStatus;
+    }
+
+    void ClearStatusBits ( int aMask )
+    {
+        m_pcbStatus &= ~aMask;
+    }
+
+    void SetStatusBits( int aMask )
+    {
+        m_pcbStatus |= aMask;
+    }
+
 };
 
 #endif      // CLASS_BOARD_H_

@@ -219,7 +219,8 @@ int PCB_EDIT_FRAME::BlockCommand( int aKey )
 
 void PCB_EDIT_FRAME::HandleBlockPlace( wxDC* DC )
 {
-    GetBoard()->m_Status_Pcb &= ~DO_NOT_SHOW_GENERAL_RASTNEST;
+    
+    GetBoard()->ClearStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
 
     if( !m_canvas->IsMouseCaptured() )
     {
@@ -370,7 +371,7 @@ bool PCB_EDIT_FRAME::HandleBlockEnd( wxDC* DC )
 
     if( ! nextcmd )
     {
-        GetBoard()->m_Status_Pcb |= DO_NOT_SHOW_GENERAL_RASTNEST;
+        GetBoard()->SetStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
         GetScreen()->ClearBlockCommand();
         m_canvas->EndMouseCapture( GetToolId(), m_canvas->GetCurrentCursor(), wxEmptyString,
                                    false );
@@ -531,7 +532,7 @@ static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset 
         switch( item->Type() )
         {
         case PCB_MODULE_T:
-            frame->GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+            frame->GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
             ((MODULE*) item)->DrawOutlinesWhenMoving( aPanel, aDC, g_Offset_Module );
             break;
 
@@ -622,7 +623,7 @@ void PCB_EDIT_FRAME::Block_Delete()
             MODULE* module = (MODULE*) item;
             module->ClearFlags();
             module->UnLink();
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
         }
         break;
 
@@ -685,13 +686,13 @@ void PCB_EDIT_FRAME::Block_Rotate()
         {
         case PCB_MODULE_T:
             ( (MODULE*) item )->ClearFlags();
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
             break;
 
         // Move and rotate the track segments
         case PCB_TRACE_T:       // a track segment (segment on a copper layer)
         case PCB_VIA_T:         // a via (like track segment on a copper layer)
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
             break;
 
         case PCB_ZONE_AREA_T:
@@ -755,13 +756,13 @@ void PCB_EDIT_FRAME::Block_Flip()
         {
         case PCB_MODULE_T:
             item->ClearFlags();
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
             break;
 
         // Move and rotate the track segments
         case PCB_TRACE_T:       // a track segment (segment on a copper layer)
         case PCB_VIA_T:         // a via (like track segment on a copper layer)
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
             break;
 
         case PCB_ZONE_AREA_T:
@@ -809,14 +810,14 @@ void PCB_EDIT_FRAME::Block_Move()
         switch( item->Type() )
         {
         case PCB_MODULE_T:
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
             item->ClearFlags();
             break;
 
         // Move track segments
         case PCB_TRACE_T:       // a track segment (segment on a copper layer)
         case PCB_VIA_T:         // a via (like a track segment on a copper layer)
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
             break;
 
         case PCB_ZONE_AREA_T:
@@ -866,7 +867,7 @@ void PCB_EDIT_FRAME::Block_Duplicate()
         newitem = (BOARD_ITEM*)item->Clone();
 
         if( item->Type() == PCB_MODULE_T )
-            m_Pcb->m_Status_Pcb = 0;
+            m_Pcb->SetStatus( 0 );
 
         m_Pcb->Add( newitem );
 

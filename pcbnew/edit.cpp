@@ -60,6 +60,7 @@
 #include <tool/tool_manager.h>
 #include <tools/common_actions.h>
 
+#include <legacy_ratsnest.h>
 // Handles the selection of command events.
 void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 {
@@ -654,7 +655,7 @@ void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
         SetCurItem( NULL );        // CurItem might be deleted by this command, clear the pointer
         TestConnections();
-        TestForActiveLinksInRatsnest( 0 );   // Recalculate the active ratsnest, i.e. the unconnected links
+        GetBoard()->GetLegacyRatsnest()->TestForActiveLinksInRatsnest( 0 );   // Recalculate the active ratsnest, i.e. the unconnected links
         OnModify();
         SetMsgPanel( GetBoard() );
         m_canvas->Refresh();
@@ -1428,7 +1429,7 @@ void PCB_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
         else
             SetToolID( id, wxCURSOR_QUESTION_ARROW, _( "Add tracks" ) );
 
-        if( (GetBoard()->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK) == 0 )
+        if( (GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
         {
             Compile_Ratsnest( &dc, true );
         }
@@ -1501,7 +1502,7 @@ void PCB_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
     case ID_PCB_SHOW_1_RATSNEST_BUTT:
         SetToolID( id, wxCURSOR_HAND, _( "Select rats nest" ) );
 
-        if( ( GetBoard()->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK ) == 0 )
+        if( ( GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
             Compile_Ratsnest( &dc, true );
 
         break;

@@ -108,7 +108,7 @@ void PCB_EDIT_FRAME::OnPlaceOrRouteFootprints( wxCommandEvent& event )
     if( GetBoard()->IsElementVisible(RATSNEST_VISIBLE) )
         DrawGeneralRatsnest( &dc );
 
-    GetBoard()->m_Status_Pcb |= DO_NOT_SHOW_GENERAL_RASTNEST;
+    GetBoard()->SetStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
 
     switch( id )
     {
@@ -168,7 +168,7 @@ void PCB_EDIT_FRAME::OnPlaceOrRouteFootprints( wxCommandEvent& event )
         break;
     }
 
-    GetBoard()->m_Status_Pcb &= ~DO_NOT_SHOW_GENERAL_RASTNEST;
+    GetBoard()->ClearStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
     Compile_Ratsnest( &dc, true );
 }
 

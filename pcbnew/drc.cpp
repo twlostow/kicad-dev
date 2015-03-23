@@ -49,6 +49,7 @@
 #include <dialog_drc.h>
 #include <wx/progdlg.h>
 
+#include <legacy_ratsnest.h>
 
 void DRC::ShowDialog()
 {
@@ -173,7 +174,7 @@ int DRC::Drc( ZONE_CONTAINER* aArea, int aCornerIndex )
 void DRC::RunTests( wxTextCtrl* aMessages )
 {
     // Ensure ratsnest is up to date:
-    if( (m_pcb->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK) == 0 )
+    if( (m_pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
     {
         if( aMessages )
         {
@@ -528,7 +529,7 @@ void DRC::testTracks( bool aShowProgressBar )
 
 void DRC::testUnconnected()
 {
-    if( (m_pcb->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK) == 0 )
+if( (m_pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
     {
         wxClientDC dc( m_mainWindow->GetCanvas() );
         m_mainWindow->Compile_Ratsnest( &dc, true );
@@ -541,7 +542,7 @@ void DRC::testUnconnected()
 
     for( unsigned ii = 0; ii < m_pcb->GetRatsnestsCount();  ++ii )
     {
-        RATSNEST_ITEM& rat = m_pcb->m_FullRatsnest[ii];
+        LEGACY_RATSNEST_ITEM& rat = m_pcb->GetLegacyRatsnest()->GetItem(ii);
 
         if( (rat.m_Status & CH_ACTIF) == 0 )
             continue;

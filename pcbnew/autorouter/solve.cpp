@@ -48,6 +48,7 @@
 #include <autorout.h>
 #include <cell.h>
 
+#include <legacy_ratsnest.h>
 
 static int Autoroute_One_Track( PCB_EDIT_FRAME* pcbframe,
                                 wxDC*           DC,
@@ -56,7 +57,7 @@ static int Autoroute_One_Track( PCB_EDIT_FRAME* pcbframe,
                                 int             col_source,
                                 int             row_target,
                                 int             col_target,
-                                RATSNEST_ITEM*  pt_rat );
+                                LEGACY_RATSNEST_ITEM*  pt_rat );
 
 static int Retrace( PCB_EDIT_FRAME* pcbframe,
                     wxDC*           DC,
@@ -80,7 +81,7 @@ static void AddNewTrace( PCB_EDIT_FRAME* pcbframe, wxDC* DC );
 static int            segm_oX, segm_oY;
 static int            segm_fX, segm_fY; /* Origin and position of the current
                                          * trace segment. */
-static RATSNEST_ITEM* pt_cur_ch;
+static LEGACY_RATSNEST_ITEM* pt_cur_ch;
 static int            s_Clearance;  // Clearance value used in autorouter
 
 static PICKED_ITEMS_LIST s_ItemsListPicker;
@@ -403,7 +404,7 @@ static int Autoroute_One_Track( PCB_EDIT_FRAME* pcbframe,
                                 int             col_source,
                                 int             row_target,
                                 int             col_target,
-                                RATSNEST_ITEM*  pt_rat )
+                                LEGACY_RATSNEST_ITEM*  pt_rat )
 {
     int          r, c, side, d, apx_dist, nr, nc;
     int          result, skip;

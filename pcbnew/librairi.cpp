@@ -283,7 +283,7 @@ MODULE* FOOTPRINT_EDIT_FRAME::Import_Module()
     if( IsGalCanvasActive() )
         module->SetPosition( wxPoint( 0, 0 ) );
 
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus ( 0 );
     GetBoard()->BuildListOfNets();
     updateView();
 

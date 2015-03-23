@@ -115,7 +115,7 @@ void PCB_EDIT_FRAME::ImportSpecctraSession( wxCommandEvent& event )
     }
 
     OnModify();
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus( 0 );
 
     /* At this point we should call Compile_Ratsnest()
      * but this could be time consumming.

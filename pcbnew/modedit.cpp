@@ -481,7 +481,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             newmodule->ClearFlags();
             GetScreen()->ClrModify();
             pcbframe->SetCurItem( NULL );
-            mainpcb->m_Status_Pcb = 0;
+            mainpcb->SetStatus( 0 );
 
             if( IsGalCanvasActive() )
             {

@@ -725,7 +725,7 @@ bool PCB_EDIT_FRAME::RemoveMisConnectedTracks()
         {
             segment->SetState( FLAG0, false );
             isModified = true;
-            GetBoard()->m_Status_Pcb = 0;
+            GetBoard()->SetStatus( 0 );
             Remove_One_Track( NULL, segment );
 
             // the current segment is deleted,

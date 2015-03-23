@@ -51,6 +51,7 @@
 #include <base_units.h>
 #include <protos.h>
 
+#include <legacy_ratsnest.h>
 
 #define GAIN            16
 #define KEEP_OUT_MARGIN 500
@@ -101,7 +102,7 @@ static int      getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame,
                                            MODULE* aModule, wxDC* aDC );
 
 /*
- * Function compute_Ratsnest_PlaceModule
+* Function compute_Ratsnest_PlaceModule
  * displays the module's ratsnest during displacement, and assess the "cost"
  * of the position.
  *
@@ -403,7 +404,7 @@ end_of_tst:
         Module->CalculateBoundingBox();
     }
 
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus( 0 );
     Compile_Ratsnest( DC, true );
     m_canvas->ReDraw( DC, true );
 }
@@ -627,7 +628,7 @@ int getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame, MODULE* aModule, wxDC* aD
     bool showRats = displ_opts->m_Show_Module_Ratsnest;
     displ_opts->m_Show_Module_Ratsnest = false;
 
-    brd->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+    brd->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
     aFrame->SetMsgPanel( aModule );
 
     LastPosOK = RoutingMatrix.m_BrdBox.GetOrigin();
@@ -716,7 +717,7 @@ int getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame, MODULE* aModule, wxDC* aD
             if( keepOutCost >= 0 )    // i.e. if the module can be put here
             {
                 error = 0;
-                aFrame->build_ratsnest_module( aModule );
+                aFrame->GetBoard()->GetLegacyRatsnest()->BuildRatsnestForModule( aModule );
                 curr_cost   = compute_Ratsnest_PlaceModule( brd );
                 Score       = curr_cost + keepOutCost;
 
@@ -743,8 +744,8 @@ int getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame, MODULE* aModule, wxDC* aD
     // Regeneration of the modified variable.
     CurrPosition = LastPosOK;
 
-    brd->m_Status_Pcb &= ~( RATSNEST_ITEM_LOCAL_OK | LISTE_PAD_OK );
-
+    brd->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK | LISTE_PAD_OK );
+    
     MinCout = min_cost;
     return error;
 }
@@ -906,14 +907,16 @@ double compute_Ratsnest_PlaceModule( BOARD* aBrd )
     wxPoint end;        // end point of a ratsnest
     int     dx, dy;
 
-    if( ( aBrd->m_Status_Pcb & RATSNEST_ITEM_LOCAL_OK ) == 0 )
+    if( ( aBrd->GetStatus() & RATSNEST_ITEM_LOCAL_OK ) == 0 )
         return -1;
 
     curr_cost = 0;
 
-    for( unsigned ii = 0; ii < aBrd->m_LocalRatsnest.size(); ii++ )
+    LEGACY_RATSNEST_ITEMS& localRatsnest = aBrd->GetLegacyRatsnest()->GetLocal();
+    
+    for( unsigned ii = 0; ii < localRatsnest.size(); ii++ )
     {
-        RATSNEST_ITEM* pt_local_rats_nest = &aBrd->m_LocalRatsnest[ii];
+        LEGACY_RATSNEST_ITEM* pt_local_rats_nest = &localRatsnest[ii];
 
         if( ( pt_local_rats_nest->m_Status & LOCAL_RATSNEST_ITEM ) )
             continue; // Skip ratsnest between 2 pads of the current module
@@ -1117,20 +1120,23 @@ static MODULE* PickModule( PCB_EDIT_FRAME* pcbframe, wxDC* DC )
         if( !Module->NeedsPlaced() )
             continue;
 
-        pcbframe->GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+        pcbframe->GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
         pcbframe->SetMsgPanel( Module );
-        pcbframe->build_ratsnest_module( Module );
-
+        
+        LEGACY_RATSNEST *ratsnest = pcbframe->GetBoard()->GetLegacyRatsnest();
+        ratsnest->BuildRatsnestForModule( Module );
+               
+        LEGACY_RATSNEST_ITEMS& localRatsnest = ratsnest->GetLocal();
+    
         // Calculate external ratsnest.
-        for( unsigned ii = 0; ii < pcbframe->GetBoard()->m_LocalRatsnest.size(); ii++ )
+        for( unsigned ii = 0; ii < localRatsnest.size(); ii++ )
         {
-            if( ( pcbframe->GetBoard()->m_LocalRatsnest[ii].m_Status &
-                  LOCAL_RATSNEST_ITEM ) == 0 )
+            if( ( localRatsnest[ii].m_Status & LOCAL_RATSNEST_ITEM ) == 0 )
                 Module->IncrementFlag();
         }
     }
 
-    pcbframe->GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+    pcbframe->GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
 
     sort( moduleList.begin(), moduleList.end(), sortFootprintsByRatsnestSize );
 

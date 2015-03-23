@@ -179,7 +179,7 @@ extern MATRIX_ROUTING_HEAD RoutingMatrix;        /* 2-sided board */
 class PCB_EDIT_FRAME;
 class BOARD;
 class D_PAD;
-class RATSNEST_ITEM;
+class LEGACY_RATSNEST_ITEM;
 class TRACK;
 
 
@@ -224,8 +224,8 @@ void ReSetQueue( int, int, int, int, int, int, int );
 /* WORK.CPP */
 void InitWork();
 void ReInitWork();
-int SetWork( int, int, int , int, int, RATSNEST_ITEM *, int );
-void GetWork( int *, int *, int *, int *, int *, RATSNEST_ITEM ** );
+int SetWork( int, int, int , int, int, LEGACY_RATSNEST_ITEM *, int );
+void GetWork( int *, int *, int *, int *, int *, LEGACY_RATSNEST_ITEM ** );
 void SortWork(); /* order the work items; shortest first */
 
 /* routing_matrix.cpp */

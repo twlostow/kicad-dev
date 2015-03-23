@@ -246,7 +246,7 @@ set( PCBNEW_CLASS_SRCS
     plot_brditems_plotter.cpp
     print_board_functions.cpp
     printout_controler.cpp
-    ratsnest.cpp
+    legacy_ratsnest.cpp
     ratsnest_viewitem.cpp
     specctra_import.cpp
     swap_layers.cpp

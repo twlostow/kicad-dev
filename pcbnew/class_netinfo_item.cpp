@@ -81,8 +81,8 @@ void NETINFO_ITEM::Draw( EDA_DRAW_PANEL* panel,
 void NETINFO_ITEM::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
 {
     wxString  txt;
-    double    lengthnet = 0.0;      // This  is the lenght of tracks on pcb
-    double    lengthPadToDie = 0.0; // this is the lenght of internal ICs connections
+    double    lengthnet = 0.0;      // This  is the length of tracks on pcb
+    double    lengthPadToDie = 0.0; // this is the length of internal ICs connections
 
     aList.push_back( MSG_PANEL_ITEM( _( "Net Name" ), GetNetname(), RED ) );
 
@@ -146,36 +146,3 @@ void NETINFO_ITEM::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
 }
 
 
-/***********************/
-/* class RATSNEST_ITEM */
-/***********************/
-
-RATSNEST_ITEM::RATSNEST_ITEM()
-{
-    m_NetCode  = 0;         // netcode ( = 1.. n ,  0 is the value used for not
-                            // connected items)
-    m_Status   = 0;         // state
-    m_PadStart = NULL;      // pointer to the starting pad
-    m_PadEnd   = NULL;      // pointer to ending pad
-    m_Lenght   = 0;         // length of the line (temporary used in some
-                            // calculations)
-}
-
-
-/**
- * Function Draw
- * Draws a line (a ratsnest) from the starting pad to the ending pad
- */
-void RATSNEST_ITEM::Draw( EDA_DRAW_PANEL* panel,
-                          wxDC*           DC,
-                          GR_DRAWMODE     aDrawMode,
-                          const wxPoint&  aOffset )
-{
-    GRSetDrawMode( DC, aDrawMode );
-
-    EDA_COLOR_T color = g_ColorsSettings.GetItemColor(RATSNEST_VISIBLE);
-
-    GRLine( panel->GetClipBox(), DC,
-            m_PadStart->GetPosition() - aOffset,
-            m_PadEnd->GetPosition() - aOffset, 0, color );
-}

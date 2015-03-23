@@ -40,6 +40,7 @@
 #include <autorout.h>
 #include <cell.h>
 
+#include <legacy_ratsnest.h>
 
 struct CWORK    // a unit of work is a source-target to connect
                 // this is a ratsnest item in the routing matrix world
@@ -48,7 +49,7 @@ struct CWORK    // a unit of work is a source-target to connect
     int             m_FromCol;      // source column
     int             m_ToRow;        // target row
     int             m_ToCol;        // target column
-    RATSNEST_ITEM*  m_Ratsnest;     // Corresponding ratsnest
+    LEGACY_RATSNEST_ITEM*  m_Ratsnest;     // Corresponding ratsnest
     int             m_NetCode;      // m_NetCode
     int             m_ApxDist;      // approximate distance
     int             m_Cost;         // cost for sort by length
@@ -81,7 +82,7 @@ void InitWork()
 int SetWork( int r1, int c1,
              int n_c,
              int r2, int c2,
-             RATSNEST_ITEM* pt_ch, int pri )
+             LEGACY_RATSNEST_ITEM* pt_ch, int pri )
 {
     CWORK item;
     item.m_FromRow    = r1;
@@ -102,7 +103,7 @@ int SetWork( int r1, int c1,
 void GetWork( int* r1, int* c1,
               int* n_c,
               int* r2, int* c2,
-              RATSNEST_ITEM** pt_ch )
+              LEGACY_RATSNEST_ITEM** pt_ch )
 {
     if( Current < WorkList.size() )
     {

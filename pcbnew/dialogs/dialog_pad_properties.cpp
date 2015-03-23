@@ -960,7 +960,7 @@ void DIALOG_PAD_PROPERTIES::PadPropertiesAccept( wxCommandEvent& event )
     EndModal( wxID_OK );
 
     if( rastnestIsChanged )  // The net ratsnest must be recalculated
-        m_board->m_Status_Pcb = 0;
+        m_board->SetStatus( 0 );
 }
 
 

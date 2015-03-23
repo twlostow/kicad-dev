@@ -52,70 +52,6 @@ class BOARD_ITEM;
 class MSG_PANEL_ITEM;
 
 
-/*****************************/
-/* flags for a RATSNEST_ITEM */
-/*****************************/
-#define CH_VISIBLE          1        /* Visible */
-#define CH_UNROUTABLE       2        /* Don't use autorouter. */
-#define CH_ROUTE_REQ        4        /* Must be routed by the autorouter. */
-#define CH_ACTIF            8        /* Not routed. */
-#define LOCAL_RATSNEST_ITEM 0x8000   /* Line between two pads of a single module. */
-
-
-/**
- * Class RATSNEST_ITEM
- * describes a ratsnest line: a straight line connecting 2 pads
- */
-class RATSNEST_ITEM
-{
-private:
-    int m_NetCode;      // netcode ( = 1.. n ,  0 is the value used for not connected items)
-
-public:
-    int    m_Status;    // State: see previous defines (CH_ ...)
-    D_PAD* m_PadStart;  // pointer to the starting pad
-    D_PAD* m_PadEnd;    // pointer to ending pad
-    int    m_Lenght;    // length of the line (used in some calculations)
-
-    RATSNEST_ITEM();
-
-    /**
-     * Function GetNet
-     * @return int - the net code.
-     */
-    int GetNet() const
-    {
-        return m_NetCode;
-    }
-
-    void SetNet( int aNetCode )
-    {
-        m_NetCode = aNetCode;
-    }
-
-    bool IsVisible()
-    {
-        return (m_Status & CH_VISIBLE) != 0;
-    }
-
-    bool IsActive()
-    {
-        return (m_Status & CH_ACTIF) != 0;
-    }
-
-    bool IsLocal()
-    {
-        return (m_Status & LOCAL_RATSNEST_ITEM) != 0;
-    }
-
-    /**
-     * Function Draw
-     */
-    void Draw( EDA_DRAW_PANEL* panel, wxDC* DC, GR_DRAWMODE aDrawMode,
-               const wxPoint& offset );
-};
-
-
 class NETINFO_MAPPING
 {
 public:
@@ -421,7 +357,7 @@ private:
      *   m_Pads (list of pads)
      * set m_Status_Pcb = LISTE_PAD_OK;
      * and clear for all pads in list the m_SubRatsnest member;
-     * clear m_Pcb->m_FullRatsnest
+     * clear PCB's full ratnsest
      */
     void buildPadsFullList();
 

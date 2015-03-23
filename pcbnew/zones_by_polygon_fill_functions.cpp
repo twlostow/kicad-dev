@@ -41,6 +41,8 @@
 #include <pcbnew.h>
 #include <zones.h>
 
+#include <legacy_ratsnest.h>
+
 #define FORMAT_STRING _( "Filling zone %d out of %d (net %s)..." )
 
 
@@ -169,7 +171,7 @@ int PCB_EDIT_FRAME::Fill_All_Zones( wxWindow * aActiveWindow, bool aVerbose )
     TestConnections();
 
     // Recalculate the active ratsnest, i.e. the unconnected links
-    TestForActiveLinksInRatsnest( 0 );
+    GetBoard()->GetLegacyRatsnest()->TestForActiveLinksInRatsnest( 0 );
     if( progressDialog )
         progressDialog->Destroy();
     return errorLevel;

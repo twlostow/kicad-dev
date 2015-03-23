@@ -41,7 +41,7 @@
 
 #include <pcbnew.h>
 #include <drag.h>
-
+#include <legacy_ratsnest.h>
 
 static void MoveFootprint( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
                            const wxPoint& aPosition, bool aErase );
@@ -106,7 +106,7 @@ void PCB_EDIT_FRAME::StartMoveModule( MODULE* aModule, wxDC* aDC,
     s_ModuleInitialCopy->ClearFlags();
 
     SetCurItem( aModule );
-    GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+    GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
     aModule->SetFlags( IS_MOVED );
 
     /* Show ratsnest. */
@@ -134,7 +134,8 @@ void PCB_EDIT_FRAME::StartMoveModule( MODULE* aModule, wxDC* aDC,
         UndrawAndMarkSegmentsToDrag( m_canvas, aDC );
     }
 
-    GetBoard()->m_Status_Pcb |= DO_NOT_SHOW_GENERAL_RASTNEST;
+    GetBoard()->SetStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
+
     m_canvas->SetMouseCapture( MoveFootprint, Abort_MoveOrCopyModule );
     m_canvas->SetAutoPanRequest( true );
 
@@ -159,7 +160,7 @@ void Abort_MoveOrCopyModule( EDA_DRAW_PANEL* Panel, wxDC* DC )
     PCB_EDIT_FRAME*      pcbframe = (PCB_EDIT_FRAME*) Panel->GetParent();
 
     module = (MODULE*) pcbframe->GetScreen()->GetCurItem();
-    pcbframe->GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+    pcbframe->GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
     Panel->SetMouseCapture( NULL, NULL );
 
     if( module )
@@ -191,7 +192,7 @@ void Abort_MoveOrCopyModule( EDA_DRAW_PANEL* Panel, wxDC* DC )
         {
             module->DeleteStructure();
             module = NULL;
-            pcbframe->GetBoard()->m_Status_Pcb = 0;
+            pcbframe->GetBoard()->SetStatus( 0 );
             pcbframe->GetBoard()->BuildListOfNets();
         }
     }
@@ -215,7 +216,7 @@ void Abort_MoveOrCopyModule( EDA_DRAW_PANEL* Panel, wxDC* DC )
     s_PickedList.ClearListAndDeleteItems();
 
     // Display ratsnest is allowed
-    pcbframe->GetBoard()->m_Status_Pcb &= ~DO_NOT_SHOW_GENERAL_RASTNEST;
+    pcbframe->GetBoard()->ClearStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
 
     if( pcbframe->GetBoard()->IsElementVisible( RATSNEST_VISIBLE ) )
         pcbframe->DrawGeneralRatsnest( DC );
@@ -301,7 +302,7 @@ void PCB_EDIT_FRAME::Change_Side_Module( MODULE* Module, wxDC* DC )
 
     if( !Module->IsMoving() ) /* This is a simple flip, no other edition in progress */
     {
-        GetBoard()->m_Status_Pcb &= ~( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );
+        GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );
 
         if( DC )
         {
@@ -350,7 +351,7 @@ void PCB_EDIT_FRAME::Change_Side_Module( MODULE* Module, wxDC* DC )
             DrawSegmentWhileMovingFootprint( m_canvas, DC );
         }
 
-        GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
+        GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
     }
 }
 
@@ -363,7 +364,7 @@ void PCB_BASE_FRAME::PlaceModule( MODULE* aModule, wxDC* aDC, bool aDoNotRecreat
         return;
 
     OnModify();
-    GetBoard()->m_Status_Pcb &= ~( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK);
+    GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );
 
     if( aModule->IsNew() )
     {
@@ -388,7 +389,7 @@ void PCB_BASE_FRAME::PlaceModule( MODULE* aModule, wxDC* aDC, bool aDoNotRecreat
 
     DISPLAY_OPTIONS* displ_opts = (DISPLAY_OPTIONS*)GetDisplayOptions();
 
-    if( displ_opts->m_Show_Module_Ratsnest && ( GetBoard()->m_Status_Pcb & LISTE_PAD_OK ) && aDC )
+    if( displ_opts->m_Show_Module_Ratsnest && ( GetBoard()->GetStatus() & LISTE_PAD_OK ) && aDC )
         TraceModuleRatsNest( aDC );
 
     newpos = GetCrossHairPosition();
@@ -463,7 +464,7 @@ void PCB_BASE_FRAME::Rotate_Module( wxDC* DC, MODULE* module, double angle, bool
         }
     }
 
-    GetBoard()->m_Status_Pcb &= ~( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );
+    GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );    
 
     if( incremental )
         module->SetOrientation( module->GetOrientation() + angle );
@@ -519,7 +520,7 @@ void MODULE::DrawOutlinesWhenMoving( EDA_DRAW_PANEL* panel, wxDC* DC,
     if( displ_opts->m_Show_Module_Ratsnest )
     {
         PCB_BASE_FRAME* frame = (PCB_BASE_FRAME*) panel->GetParent();
-        frame->build_ratsnest_module( this );
+        frame->GetBoard()->GetLegacyRatsnest()->BuildRatsnestForModule ( this );
         frame->TraceModuleRatsNest( DC );
     }
 }

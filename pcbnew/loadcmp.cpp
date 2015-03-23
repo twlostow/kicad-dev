@@ -91,7 +91,7 @@ bool FOOTPRINT_EDIT_FRAME::Load_Module_From_BOARD( MODULE* aModule )
 
     Clear_Pcb( false );
 
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus( 0 );
     newModule = new MODULE( *aModule );
     newModule->SetParent( GetBoard() );
     newModule->SetLink( aModule->GetTimeStamp() );
@@ -289,7 +289,7 @@ MODULE* PCB_BASE_FRAME::LoadModuleFromLibrary( const wxString& aLibrary,
             module->SetPosition( curspos );
 
         module->SetTimeStamp( GetNewTimeStamp() );
-        GetBoard()->m_Status_Pcb = 0;
+        GetBoard()->SetStatus( 0 );
 
         // Put it on FRONT layer,
         // (Can be stored flipped if the lib is an archive built from a board)

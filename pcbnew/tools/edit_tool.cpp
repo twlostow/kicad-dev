@@ -566,7 +566,7 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
         // list of pads is rebuild by BOARD::BuildListOfNets()
 
         // Clear flags to indicate, that the ratsnest, list of nets & pads are not valid anymore
-        board->m_Status_Pcb = 0;
+        board->SetStatus( 0 );
     }
     break;
 
@@ -593,7 +593,7 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
         {
             MODULE* module = static_cast<MODULE*>( aItem->GetParent() );
             module->SetLastEditTime();
-            board->m_Status_Pcb = 0; // it is done in the legacy view
+            board->SetStatus ( 0 );
             aItem->DeleteStructure();
         }
 
@@ -606,7 +606,7 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
         MODULE* module = static_cast<MODULE*>( aItem->GetParent() );
         module->SetLastEditTime();
 
-        board->m_Status_Pcb = 0; // it is done in the legacy view
+        board->SetStatus( 0 );
 
 
         if( !m_editModules )

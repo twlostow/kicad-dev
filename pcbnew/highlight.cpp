@@ -42,6 +42,7 @@
 #include <pcbnew.h>
 #include <collectors.h>
 
+#include <legacy_ratsnest.h>
 
 #define Pad_fill ( Pad_Fill_Item.State == RUN )
 
@@ -188,7 +189,7 @@ void PCB_EDIT_FRAME::HighlightUnconnectedPads( wxDC* DC )
 {
     for( unsigned ii = 0; ii < GetBoard()->GetRatsnestsCount(); ii++ )
     {
-        RATSNEST_ITEM* net = &GetBoard()->m_FullRatsnest[ii];
+        LEGACY_RATSNEST_ITEM* net = &GetBoard()->GetLegacyRatsnest()->GetItem(ii);
 
         if( (net->m_Status & CH_ACTIF) == 0 )
             continue;

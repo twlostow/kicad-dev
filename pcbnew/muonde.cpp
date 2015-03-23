@@ -721,7 +721,7 @@ MODULE* PCB_EDIT_FRAME::Create_MuWaveComponent( int shape_type )
     }
 
     module->CalculateBoundingBox();
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus ( 0 );
     OnModify();
     return module;
 }
@@ -1022,7 +1022,7 @@ MODULE* PCB_EDIT_FRAME::Create_MuWavePolygonShape()
 
     PolyEdges.clear();
     module->CalculateBoundingBox();
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus ( 0 );
     OnModify();
     return module;
 }

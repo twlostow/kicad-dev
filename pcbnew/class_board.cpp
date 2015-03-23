@@ -44,6 +44,7 @@
 #include <ratsnest_data.h>
 #include <ratsnest_viewitem.h>
 #include <worksheet_viewitem.h>
+#include <legacy_ratsnest.h>
 
 #include <pcbnew.h>
 #include <colors_selection.h>
@@ -71,10 +72,11 @@ BOARD::BOARD() :
     m_NetInfo( this ),
     m_paper( PAGE_INFO::A4 )
 {
+
     // we have not loaded a board yet, assume latest until then.
     m_fileFormatVersionAtLoad = LEGACY_BOARD_FILE_VERSION;
 
-    m_Status_Pcb    = 0;                    // Status word: bit 1 = calculate.
+    m_pcbStatus    = 0;                    // Status word: bit 1 = calculate.
     SetColorsSettings( &g_ColorsSettings );
     m_nodeCount     = 0;                    // Number of connected pads.
     m_unconnectedNetCount   = 0;            // Number of unconnected nets.
@@ -82,6 +84,7 @@ BOARD::BOARD() :
     m_CurrentZoneContour = NULL;            // This ZONE_CONTAINER handle the
                                             // zone contour currently in progress
 
+    m_legacyRatsnest = new LEGACY_RATSNEST ( this );
     BuildListOfNets();                      // prepare pad and netlist containers.
 
     for( LAYER_NUM layer = 0; layer < LAYER_ID_COUNT; ++layer )
@@ -119,10 +122,8 @@ BOARD::~BOARD()
     }
 
     delete m_ratsnest;
-
-    m_FullRatsnest.clear();
-    m_LocalRatsnest.clear();
-
+    delete m_legacyRatsnest;
+    
     DeleteMARKERs();
     DeleteZONEOutlines();
 
@@ -554,28 +555,8 @@ void BOARD::SetElementVisibility( int aPCB_VISIBLE, bool isEnabled )
 {
     m_designSettings.SetElementVisibility( aPCB_VISIBLE, isEnabled );
 
-    switch( aPCB_VISIBLE )
-    {
-    case RATSNEST_VISIBLE:
-
-        // we must clear or set the CH_VISIBLE flags to hide/show ratsnest
-        // because we have a tool to show/hide ratsnest relative to a pad or a module
-        // so the hide/show option is a per item selection
-        if( IsElementVisible( RATSNEST_VISIBLE ) )
-        {
-            for( unsigned ii = 0; ii < GetRatsnestsCount(); ii++ )
-                m_FullRatsnest[ii].m_Status |= CH_VISIBLE;
-        }
-        else
-        {
-            for( unsigned ii = 0; ii < GetRatsnestsCount(); ii++ )
-                m_FullRatsnest[ii].m_Status &= ~CH_VISIBLE;
-        }
-        break;
-
-    default:
-        ;
-    }
+    if (aPCB_VISIBLE == RATSNEST_VISIBLE)
+        m_legacyRatsnest->SetVisible ( isEnabled );
 }
 
 
@@ -711,7 +692,7 @@ void BOARD::Add( BOARD_ITEM* aBoardItem, int aControl )
 
         // Because the list of pads has changed, reset the status
         // This indicate the list of pad and nets must be recalculated before use
-        m_Status_Pcb = 0;
+        m_pcbStatus = 0;
         break;
 
     case PCB_MODULE_EDGE_T:
@@ -957,7 +938,7 @@ void BOARD::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     /* These parameters are known only if the full ratsnest is available,
      *  so, display them only if this is the case
      */
-    if( (m_Status_Pcb & NET_CODES_OK) )
+    if( (m_pcbStatus & NET_CODES_OK) )
     {
         txt.Printf( wxT( "%d" ), GetRatsnestsCount() );
         aList.push_back( MSG_PANEL_ITEM( _( "Links" ), txt, DARKGREEN ) );
@@ -2226,7 +2207,7 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
         bestPosition.y = pageSize.GetHeight() / 2;
     }
 
-    m_Status_Pcb = 0;
+    m_pcbStatus = 0;
 
     for( i = 0;  i < aNetlist.GetCount();  i++ )
     {
@@ -2712,3 +2693,9 @@ bool BOARD::GetBoardPolygonOutlines( CPOLYGONS_LIST& aOutlines,
     return dummy.GetBoardPolygonOutlines( this, aOutlines,
                                           aHoles, aErrorText );
 }
+
+unsigned BOARD::GetRatsnestsCount() const
+{
+    return m_legacyRatsnest->GetFull().size();
+}
+    

@@ -44,6 +44,7 @@
 #include <class_edge_mod.h>
 #include <class_pcb_text.h>
 
+#include <legacy_ratsnest.h>
 
 MATRIX_ROUTING_HEAD::MATRIX_ROUTING_HEAD()
 {
@@ -331,19 +332,21 @@ void PlaceCells( BOARD* aPcb, int net_code, int flag )
 
 int Build_Work( BOARD* Pcb )
 {
-    RATSNEST_ITEM*  pt_rats;
+    LEGACY_RATSNEST_ITEM*  pt_rats;
     D_PAD*          pt_pad;
     int             r1, r2, c1, c2, current_net_code;
-    RATSNEST_ITEM*  pt_ch;
+    LEGACY_RATSNEST_ITEM*  pt_ch;
     int             demi_pas = RoutingMatrix.m_GridRouting / 2;
     wxString        msg;
 
     InitWork(); // clear work list
     int cellCount = 0;
 
-    for( unsigned ii = 0; ii < Pcb->GetRatsnestsCount(); ii++ )
+    LEGACY_RATSNEST_ITEMS& fullRatsnest = Pcb->GetLegacyRatsnest()->GetFull();
+
+    for( unsigned ii = 0; ii < fullRatsnest.size(); ii++ )
     {
-        pt_rats = &Pcb->m_FullRatsnest[ii];
+        pt_rats = &fullRatsnest[ii];
 
         /* We consider here only ratsnest that are active ( obviously not yet routed)
          * and routables (that are not yet attempt to be routed and fail

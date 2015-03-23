@@ -46,6 +46,7 @@
 #include <convert_to_biu.h>
 
 #include <autorout.h>
+#include <legacy_ratsnest.h>
 
 
 MATRIX_ROUTING_HEAD RoutingMatrix;     // routing matrix (grid) to route 2-sided boards
@@ -112,13 +113,15 @@ void PCB_EDIT_FRAME::Autoroute( wxDC* DC, int mode )
         break;
     }
 
-    if( (GetBoard()->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK ) == 0 )
+    if( (GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
         Compile_Ratsnest( DC, true );
 
+    LEGACY_RATSNEST_ITEMS& fullRatsnest = GetBoard()->GetLegacyRatsnest()->GetFull();
+
     /* Set the flag on the ratsnest to CH_ROUTE_REQ. */
-    for( unsigned ii = 0; ii < GetBoard()->GetRatsnestsCount(); ii++ )
+    for( unsigned ii = 0; ii < fullRatsnest.size(); ii++ )
     {
-        RATSNEST_ITEM* ptmp = &GetBoard()->m_FullRatsnest[ii];
+        LEGACY_RATSNEST_ITEM* ptmp = &fullRatsnest[ii];
         ptmp->m_Status &= ~CH_ROUTE_REQ;
 
         switch( mode )
@@ -208,12 +211,14 @@ void PCB_EDIT_FRAME::Autoroute( wxDC* DC, int mode )
  */
 void PCB_EDIT_FRAME::Reset_Noroutable( wxDC* DC )
 {
-    if( ( GetBoard()->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK )== 0 )
+    if( ( GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK )== 0 )
         Compile_Ratsnest( DC, true );
 
-    for( unsigned ii = 0; ii < GetBoard()->GetRatsnestsCount(); ii++ )
+    LEGACY_RATSNEST_ITEMS& fullRatsnest = GetBoard()->GetLegacyRatsnest()->GetFull();
+
+    for( unsigned ii = 0; ii < fullRatsnest.size(); ii++ )
     {
-        GetBoard()->m_FullRatsnest[ii].m_Status &= ~CH_UNROUTABLE;
+        fullRatsnest[ii].m_Status &= ~CH_UNROUTABLE;
     }
 }
 

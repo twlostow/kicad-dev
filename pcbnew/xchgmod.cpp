@@ -494,7 +494,7 @@ void PCB_EDIT_FRAME::Exchange_Module( MODULE*            aOldModule,
         aOldModule->DeleteStructure();
     }
 
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus( 0 );
     aNewModule->ClearFlags();
     OnModify();
 }

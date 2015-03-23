@@ -560,7 +560,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         UpdateFileHistory( GetBoard()->GetFileName() );
 
     // Rebuild the new pad list (for drc and ratsnet control ...)
-    GetBoard()->m_Status_Pcb = 0;
+    GetBoard()->SetStatus( 0 );
 
     // Update info shown by the horizontal toolbars
     SetCurrentNetClass( NETCLASS::Default );
@@ -678,7 +678,7 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
         backupFileName = create_backup_file( aFileName );
     }
 
-    GetBoard()->m_Status_Pcb &= ~CONNEXION_OK;
+    GetBoard()->ClearStatusBits( CONNEXION_OK );
 
     GetBoard()->SynchronizeNetsAndNetClasses();
 
@@ -764,7 +764,7 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName )
         return false;
     }
 
-    GetBoard()->m_Status_Pcb &= ~CONNEXION_OK;
+    GetBoard()->ClearStatusBits( CONNEXION_OK );
     GetBoard()->SynchronizeNetsAndNetClasses();
 
     // Select default Netclass before writing file.

@@ -142,7 +142,7 @@ int MODULE_TOOLS::PlacePad( const TOOL_EVENT& aEvent )
             m_frame->OnModify();
             m_frame->SaveCopyInUndoList( module, UR_MODEDIT );
 
-            m_board->m_Status_Pcb = 0;    // I have no clue why, but it is done in the legacy view
+            m_board->SetStatus( 0 );    // I have no clue why, but it is done in the legacy view
             module->SetLastEditTime();
             module->Pads().PushBack( pad );
 
@@ -466,7 +466,7 @@ int MODULE_TOOLS::PasteItems( const TOOL_EVENT& aEvent )
             m_frame->OnModify();
             m_frame->SaveCopyInUndoList( currentModule, UR_MODEDIT );
 
-            m_board->m_Status_Pcb = 0;    // I have no clue why, but it is done in the legacy view
+            m_board->SetStatus( 0 );    // I have no clue why, but it is done in the legacy view
             currentModule->SetLastEditTime();
 
             // MODULE::RunOnChildren is infeasible here: we need to create copies of items, do not

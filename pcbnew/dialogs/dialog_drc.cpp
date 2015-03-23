@@ -143,7 +143,7 @@ void DIALOG_DRC_CONTROL::OnStartdrcClick( wxCommandEvent& event )
     // run all the tests, with no UI at this time.
     m_Messages->Clear();
     wxSafeYield();                          // Allows time slice to refresh the m_Messages window
-    m_tester->m_pcb->m_Status_Pcb = 0;      // Force full connectivity and ratsnest recalculations
+    m_tester->m_pcb->SetStatus( 0 );      // Force full connectivity and ratsnest recalculations
     m_tester->RunTests(m_Messages);
 
 #if wxCHECK_VERSION( 2, 8, 0 )

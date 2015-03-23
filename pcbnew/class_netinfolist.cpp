@@ -38,7 +38,7 @@
 #include <class_track.h>
 #include <class_zone.h>
 #include <class_netinfo.h>
-
+#include <legacy_ratsnest.h>
 
 // Constructor and destructor
 NETINFO_LIST::NETINFO_LIST( BOARD* aParent ) : m_Parent( aParent )
@@ -157,7 +157,7 @@ void NETINFO_LIST::buildListOfNets()
 
     m_Parent->SynchronizeNetsAndNetClasses( );
 
-    m_Parent->m_Status_Pcb |= NET_CODES_OK;
+    m_Parent->SetStatusBits( NET_CODES_OK );
 
     m_Parent->SetAreasNetCodesFromNetNames();
 }
@@ -182,20 +182,20 @@ void NETINFO_LIST::buildPadsFullList()
      * initialize:
      *   m_Pads (list of pads)
      * set m_Status_Pcb = LISTE_PAD_OK;
-     * also clear m_Pcb->m_FullRatsnest that could have bad data
-     *   (m_Pcb->m_FullRatsnest uses pointer to pads)
+     * also clear legacy FullRatsnest that could have bad data
+     *   (legacy Full Ratsnest uses pointer to pads)
      * Be aware NETINFO_ITEM* BOARD::FindNet( const wxString& aNetname )
      * when search a net by its net name does a binary search
      * and expects to have a nets list sorted by an alphabetic case sensitive sort
      * So do not change the sort function used here
      */
 
-    if( m_Parent->m_Status_Pcb & LISTE_PAD_OK )
+    if( m_Parent->GetStatus() & LISTE_PAD_OK )
         return;
 
     // empty the old list
     m_PadsFullList.clear();
-    m_Parent->m_FullRatsnest.clear();
+    m_Parent->GetLegacyRatsnest()->ClearFull();
 
     // Clear variables used in ratsnest computation
     for( MODULE* module = m_Parent->m_Modules;  module;  module = module->Next() )
@@ -212,7 +212,7 @@ void NETINFO_LIST::buildPadsFullList()
     // Sort pad list per net
     sort( m_PadsFullList.begin(), m_PadsFullList.end(), padlistSortByNetnames );
 
-    m_Parent->m_Status_Pcb = LISTE_PAD_OK;
+    m_Parent->SetStatus ( LISTE_PAD_OK );
 }
 
 

@@ -37,6 +37,7 @@
 
 // Helper classes to handle connection points
 #include <connect.h>
+#include <legacy_ratsnest.h>
 
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb );
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode );
@@ -786,7 +787,7 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
     if( aNetCode <= 0 )
         return;
 
-    if( (m_Pcb->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK) == 0 )
+    if( (m_Pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
         Compile_Ratsnest( aDC, true );
 
     // Clear the cluster identifier (subnet) of pads for this net
@@ -822,7 +823,7 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
 
     // rebuild the active ratsnest for this net
     DrawGeneralRatsnest( aDC, aNetCode );
-    TestForActiveLinksInRatsnest( aNetCode );
+    m_Pcb->GetLegacyRatsnest()->TestForActiveLinksInRatsnest( aNetCode );
     DrawGeneralRatsnest( aDC, aNetCode );
 
     // Display results
@@ -834,7 +835,7 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
     {
         for( unsigned ii = net->m_RatsnestStartIdx; ii < net->m_RatsnestEndIdx; ii++ )
         {
-            if( m_Pcb->m_FullRatsnest[ii].IsActive() )
+            if( m_Pcb->GetLegacyRatsnest()->GetItem(ii).IsActive() )
                 net_notconnected_count++;
         }
 

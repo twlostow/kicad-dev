@@ -122,6 +122,8 @@ set( COMMON_ABOUT_DLG_SRCS
     dialogs/dialog_hotkeys_editor_base.cpp
     dialogs/dialog_list_selector_base.cpp
     dialogs/dialog_page_settings_base.cpp
+    dialogs/wx_html_report_panel_base.cpp
+    dialogs/wx_html_report_panel.cpp
     )
 
 set( COMMON_PAGE_LAYOUT_SRCS
@@ -277,6 +279,9 @@ set( PCB_COMMON_SRCS
     ../pcbnew/class_zone.cpp
     ../pcbnew/class_zone_settings.cpp
     ../pcbnew/classpcb.cpp
+    ../pcbnew/minimun_spanning_tree.cpp
+    ../pcbnew/legacy_ratsnest.cpp
+    ../pcbnew/pad_index.cpp
     ../pcbnew/ratsnest_data.cpp
     ../pcbnew/ratsnest_viewitem.cpp
     ../pcbnew/collectors.cpp

@@ -39,7 +39,7 @@
 #include <connect.h>
 #include <legacy_ratsnest.h>
 #include <pad_index.h>
- 
+
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb );
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode );
 
@@ -1001,4 +1001,56 @@ static void RebuildTrackChain( BOARD* pcb )
     // add them back to the list
     for( int i = 0; i < item_count;  ++i )
         pcb->m_Track.PushBack( trackList[i] );
+}
+
+/**
+ * Function Compile_Ratsnest
+ *  Create the entire board ratsnest.
+ *  Must be called after a board change (changes for
+ *  pads, footprints or a read netlist ).
+ * @param aDC = the current device context (can be NULL)
+ * @param aDisplayStatus : if true, display the computation results
+ */
+void PCB_BASE_FRAME::Compile_Ratsnest( wxDC* aDC, bool aDisplayStatus )
+{
+    wxString msg;
+
+    GetBoard()->SetStatus( 0 );   // we want a full ratsnest computation, from the scratch
+    ClearMsgPanel();
+
+    // Rebuild the full pads and net info list
+    RecalculateAllTracksNetcode();
+
+    if( aDisplayStatus )
+    {
+        msg.Printf( wxT( " %d" ), m_Pcb->GetPadIndex().Size() );
+        AppendMsgPanel( wxT( "Pads" ), msg, RED );
+        msg.Printf( wxT( " %d" ), m_Pcb->GetNetCount() );
+        AppendMsgPanel( wxT( "Nets" ), msg, CYAN );
+    }
+
+    /* Compute the full ratsnest
+     *  which can be see like all the possible links or logical connections.
+     *  some of them are active (no track connected) and others are inactive
+     * (when tracks connect pads)
+     *  This full ratsnest is not modified by track editing.
+     *  It changes only when a netlist is read, or footprints are modified
+     */
+    
+    LEGACY_RATSNEST *ratsnest = m_Pcb->GetLegacyRatsnest();
+    ratsnest->BuildBoardRatsnest();
+
+    // Compute the pad connections due to the existing tracks (physical connections)
+    TestConnections();
+
+    /* Compute the active ratsnest, i.e. the unconnected links
+     */
+    ratsnest->TestForActiveLinksInRatsnest( 0 );
+
+    // Redraw the active ratsnest ( if enabled )
+    if( GetBoard()->IsElementVisible(RATSNEST_VISIBLE) && aDC )
+        DrawGeneralRatsnest( aDC, 0 );
+
+    if( aDisplayStatus )
+        SetMsgPanel( m_Pcb );
 }

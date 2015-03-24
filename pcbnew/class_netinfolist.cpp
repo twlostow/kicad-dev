@@ -77,15 +77,15 @@ void NETINFO_LIST::AppendNet( NETINFO_ITEM* aNewElement )
 
     if( sameName != NULL )
     {
-        aNewElement->m_NetCode = sameName->GetNet();
+        aNewElement->SetNetCode ( sameName->GetNet() );
 
         return;
     }
     // be sure that net codes are consecutive
     // negative net code means that it has to be auto assigned
-    else if( ( aNewElement->m_NetCode != (int) m_netCodes.size() ) || ( aNewElement->m_NetCode < 0 ) )
+    else if( ( aNewElement->GetNet() != (int) m_netCodes.size() ) || ( aNewElement->GetNet() < 0 ) )
     {
-        aNewElement->m_NetCode = getFreeNetCode();
+        aNewElement->SetNetCode( getFreeNetCode() );
     }
 
     // net names & codes are supposed to be unique

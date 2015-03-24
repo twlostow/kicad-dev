@@ -76,8 +76,6 @@ LAYER_ID    g_Route_Layer_BOTTOM;
 int         g_MagneticPadOption   = capture_cursor_in_track_tool;
 int         g_MagneticTrackOption = capture_cursor_in_track_tool;
 
-wxPoint     g_Offset_Module;     // module offset used when moving a footprint
-
 /* Name of the document footprint list
  * usually located in share/modules/footprints_doc
  * this is of the responsibility to users to create this file

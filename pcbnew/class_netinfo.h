@@ -34,10 +34,11 @@
 #define __CLASSES_NETINFO__
 
 
-#include <gr_basic.h>
 #include <class_netclass.h>
+#include <class_board_item.h>
 #include <boost/unordered_map.hpp>
 #include <hashtables.h>
+
 
 class NETINFO_ITEM;
 class D_PAD;
@@ -342,10 +343,9 @@ private:
  * Class NETINFO_ITEM
  * handles the data for a net
  */
-class NETINFO_ITEM
+class NETINFO_ITEM : public BOARD_ITEM
 {
-    friend class NETINFO_LIST;
-
+//    friend class NETINFO_LIST;
 private:
     int m_NetCode;              ///< A number equivalent to the net name.
                                 ///< Used for fast comparisons in ratsnest and DRC computations.
@@ -369,9 +369,23 @@ public:
 
     unsigned m_RatsnestEndIdx;         // Ending point of ratsnests of this net
                                        // (excluded) in this buffer
-
     NETINFO_ITEM( BOARD* aParent, const wxString& aNetName = wxEmptyString, int aNetCode = -1 );
     ~NETINFO_ITEM();
+
+    static inline bool ClassOf( const EDA_ITEM* aItem )
+    {
+        return aItem && PCB_T == aItem->Type();
+    }
+
+    wxString GetClass() const
+    {
+        return wxT( "NETINFO_ITEM" );
+    }
+
+    void Show( int nestLevel, std::ostream& os ) const
+    {
+        
+    }
 
     /**
      * Function SetClass
@@ -485,6 +499,8 @@ public:
      * @return int - the netcode
      */
     int GetNet() const { return m_NetCode; }
+
+    void SetNetCode( int aNetCode ) { m_NetCode = aNetCode; }
 
     /**
      * Function GetNetname

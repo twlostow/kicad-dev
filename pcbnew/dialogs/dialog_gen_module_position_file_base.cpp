@@ -1,9 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Apr 10 2012)
+// C++ code generated with wxFormBuilder (version Jun  6 2014)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
+
+#include "wx_html_report_panel.h"
 
 #include "dialog_gen_module_position_file_base.h"
 
@@ -29,6 +31,7 @@ DIALOG_GEN_MODULE_POSITION_BASE::DIALOG_GEN_MODULE_POSITION_BASE( wxWindow* pare
 	bSizerdirBrowse = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_outputDirectoryName = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_outputDirectoryName->SetMaxLength( 0 ); 
 	m_outputDirectoryName->SetToolTip( _("Target directory for plot files. Can be absolute or relative to the board file location.") );
 	m_outputDirectoryName->SetMinSize( wxSize( 350,-1 ) );
 	
@@ -74,16 +77,13 @@ DIALOG_GEN_MODULE_POSITION_BASE::DIALOG_GEN_MODULE_POSITION_BASE( wxWindow* pare
 	
 	m_MainSizer->Add( bSizerOptions, 0, wxEXPAND|wxTOP|wxBOTTOM, 5 );
 	
-	wxStaticBoxSizer* sbSizerMsg;
-	sbSizerMsg = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Messages:") ), wxVERTICAL );
+	wxBoxSizer* bSizer7;
+	bSizer7 = new wxBoxSizer( wxVERTICAL );
 	
-	m_messagesBox = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxTE_MULTILINE|wxTE_READONLY );
-	m_messagesBox->SetMinSize( wxSize( -1,150 ) );
+	m_messagesPanel = new WX_HTML_REPORT_PANEL( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_messagesPanel->SetMinSize( wxSize( 300,150 ) );
 	
-	sbSizerMsg->Add( m_messagesBox, 1, wxEXPAND, 5 );
-	
-	
-	m_MainSizer->Add( sbSizerMsg, 1, wxEXPAND, 5 );
+	bSizer7->Add( m_messagesPanel, 1, wxEXPAND | wxALL, 5 );
 	
 	m_sdbSizerButtons = new wxStdDialogButtonSizer();
 	m_sdbSizerButtonsOK = new wxButton( this, wxID_OK );
@@ -92,7 +92,10 @@ DIALOG_GEN_MODULE_POSITION_BASE::DIALOG_GEN_MODULE_POSITION_BASE( wxWindow* pare
 	m_sdbSizerButtons->AddButton( m_sdbSizerButtonsCancel );
 	m_sdbSizerButtons->Realize();
 	
-	m_MainSizer->Add( m_sdbSizerButtons, 0, wxEXPAND|wxALIGN_RIGHT|wxTOP|wxBOTTOM|wxRIGHT, 5 );
+	bSizer7->Add( m_sdbSizerButtons, 0, wxEXPAND|wxALIGN_RIGHT|wxTOP|wxBOTTOM, 5 );
+	
+	
+	m_MainSizer->Add( bSizer7, 1, wxEXPAND, 5 );
 	
 	
 	this->SetSizer( m_MainSizer );

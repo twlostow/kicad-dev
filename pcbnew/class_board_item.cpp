@@ -31,9 +31,31 @@
 #include <fctsys.h>
 #include <common.h>
 #include <pcbnew.h>
+#include <gr_basic.h>
 
 #include <class_board.h>
 #include <string>
+
+class EDA_DRAW_PANEL;
+class wxDC;
+
+void BOARD_ITEM::Draw( EDA_DRAW_PANEL* panel, wxDC* DC,
+                       GR_DRAWMODE aDrawMode, const wxPoint& offset )
+{
+    wxASSERT( false );
+}
+
+const wxPoint& BOARD_ITEM::GetPosition() const
+{
+    static wxPoint dummy(0, 0);
+    wxASSERT( false );
+    return dummy;
+}
+
+void BOARD_ITEM::SetPosition( const wxPoint& aPos )
+{
+    wxASSERT( false );
+}
 
 wxString BOARD_ITEM::ShowShape( STROKE_T aShape )
 {

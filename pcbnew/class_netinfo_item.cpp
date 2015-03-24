@@ -50,14 +50,16 @@
 /*********************************************************/
 
 NETINFO_ITEM::NETINFO_ITEM( BOARD* aParent, const wxString& aNetName, int aNetCode ) :
-    m_NetCode( aNetCode ), m_Netname( aNetName ), m_ShortNetname( m_Netname.AfterLast( '/' ) )
+    BOARD_ITEM ( aParent, PCB_NETINFO_T ),
+    m_parent ( aParent ),
+    m_NetCode( aNetCode ), 
+    m_Netname( aNetName ), 
+    m_ShortNetname( m_Netname.AfterLast( '/' ) ),
+    m_RatsnestStartIdx( 0 ),
+    m_RatsnestEndIdx ( 0 ),
+    m_NetClassName( NETCLASS::Default )
 {
-    m_parent   = aParent;
-    m_RatsnestStartIdx = 0;     // Starting point of ratsnests of this net in a
-                                // general buffer of ratsnest
-    m_RatsnestEndIdx   = 0;     // Ending point of ratsnests of this net
-
-    m_NetClassName = NETCLASS::Default;
+    
 }
 
 

@@ -593,7 +593,7 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
         {
             MODULE* module = static_cast<MODULE*>( aItem->GetParent() );
             module->SetLastEditTime();
-            board->SetStatus ( 0 );
+            board->SetStatus( 0 );
             aItem->DeleteStructure();
         }
 

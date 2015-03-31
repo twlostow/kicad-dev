@@ -211,7 +211,7 @@ void PCB_EDIT_FRAME::Autoroute( wxDC* DC, int mode )
  */
 void PCB_EDIT_FRAME::Reset_Noroutable( wxDC* DC )
 {
-    if( ( GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK )== 0 )
+    if( ( GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
         Compile_Ratsnest( DC, true );
 
     LEGACY_RATSNEST_ITEMS& fullRatsnest = GetBoard()->GetLegacyRatsnest()->GetFull();

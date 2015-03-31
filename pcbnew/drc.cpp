@@ -175,7 +175,7 @@ int DRC::Drc( ZONE_CONTAINER* aArea, int aCornerIndex )
 void DRC::RunTests( wxTextCtrl* aMessages )
 {
     // Ensure ratsnest is up to date:
-    if( (m_pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
+    if( ( m_pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
     {
         if( aMessages )
         {
@@ -530,7 +530,7 @@ void DRC::testTracks( bool aShowProgressBar )
 
 void DRC::testUnconnected()
 {
-if( (m_pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
+    if( ( m_pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
     {
         wxClientDC dc( m_mainWindow->GetCanvas() );
         m_mainWindow->Compile_Ratsnest( &dc, true );

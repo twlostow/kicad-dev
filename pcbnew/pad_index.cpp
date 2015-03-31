@@ -33,21 +33,23 @@
 
 #include <algorithm>
 
-PAD_INDEX::PAD_INDEX ( BOARD *aBoard ) : 
-	m_board ( aBoard )
+PAD_INDEX::PAD_INDEX( BOARD* aBoard ) :
+    m_board( aBoard )
 {
-	Rebuild();
+    Rebuild();
 }
+
 
 PAD_INDEX::~PAD_INDEX ( )
 {
-
 }
+
 
 static bool padlistSortByNetnames( const D_PAD* a, const D_PAD* b )
 {
     return ( a->GetNetname().Cmp( b->GetNetname() ) ) < 0;
 }
+
 
 void PAD_INDEX::Rebuild ()
 {
@@ -84,13 +86,13 @@ void PAD_INDEX::Rebuild ()
     // Sort pad list per net
     std::sort( m_pads.begin(), m_pads.end(), padlistSortByNetnames );
 
-	m_padsByNet.clear();
-	m_nodeCount = 0;
+    m_padsByNet.clear();
+    m_nodeCount = 0;
 
-	// Assign pads to appropriate map entries
+    // Assign pads to appropriate map entries
     for( unsigned ii = 0; ii < m_pads.size(); ii++ )
     {
-        D_PAD *pad = m_pads[ii];
+        D_PAD* pad = m_pads[ii];
         int netCode = pad->GetNetCode();
         if( netCode == NETINFO_LIST::UNCONNECTED ) // pad not connected
             continue;
@@ -101,32 +103,35 @@ void PAD_INDEX::Rebuild ()
         wxASSERT( net );
 
         if( net )
-        	m_padsByNet[ netCode ].push_back( pad );
-            
+            m_padsByNet[ netCode ].push_back( pad );
+
         m_nodeCount++;
     }
 
     m_board->SetStatus ( LISTE_PAD_OK );
 }
 
-PAD_INDEX::PADS& PAD_INDEX::AllPadsInNet( const NETINFO_ITEM *aNet )
+
+PAD_INDEX::PADS& PAD_INDEX::AllPadsInNet( const NETINFO_ITEM* aNet )
 {
-	return m_padsByNet[ aNet->GetNet() ];
+    return m_padsByNet[ aNet->GetNet() ];
 }
 
-unsigned int PAD_INDEX::CountNodesInNet( const NETINFO_ITEM *aNet )
+
+unsigned int PAD_INDEX::CountNodesInNet( const NETINFO_ITEM* aNet )
 {
-	int netcode = aNet->GetNet();
-	if ( m_padsByNet.find ( netcode ) == m_padsByNet.end() )
-		return 0;
-	else
-		return m_padsByNet[ netcode ].size();	
+    int netcode = aNet->GetNet();
+    if ( m_padsByNet.find ( netcode ) == m_padsByNet.end() )
+        return 0;
+    else
+        return m_padsByNet[ netcode ].size();
 }
+
 
 unsigned int PAD_INDEX::CountNodesInNet( int aNetcode )
 {
-	if ( m_padsByNet.find ( aNetcode ) == m_padsByNet.end() )
-		return 0;
-	else
-		return m_padsByNet[ aNetcode ].size();	
+    if ( m_padsByNet.find ( aNetcode ) == m_padsByNet.end() )
+        return 0;
+    else
+        return m_padsByNet[ aNetcode ].size();
 }

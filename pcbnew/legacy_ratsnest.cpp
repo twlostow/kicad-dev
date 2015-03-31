@@ -47,8 +47,8 @@
 
 wxPoint     g_Offset_Module;     // module offset used when moving a footprint
 
-/* Sort function used by  QSORT
- *  Sort pads by net code
+/* Sort function used by QSORT
+ * Sort pads by net code
  */
 static bool sortByNetcode( const D_PAD* const & ref, const D_PAD* const & item )
 {
@@ -125,13 +125,14 @@ void MIN_SPAN_TREE_PADS::AddTreeToRatsnest( LEGACY_RATSNEST_ITEMS* aRatsnestList
 
         net.SetNet( netcode );
         net.m_Status   = CH_ACTIF | CH_VISIBLE;
-        net.m_Length   = GetDist(ii);
+        net.m_Length   = GetDist( ii );
         net.m_PadStart = padsBuffer[ii];
         net.m_PadEnd   = padsBuffer[ GetWhoTo(ii) ];
 
         aRatsnestList->push_back( net );
     }
 }
+
 
 /* Function GetWeight
  * calculates the weight between 2 items
@@ -157,20 +158,20 @@ int MIN_SPAN_TREE_PADS::GetWeight( int aItem1, int aItem2 )
     return weight + 1;
 }
 
-/* class LEGACY_RATSNEST implementation */
 
-LEGACY_RATSNEST::LEGACY_RATSNEST ( BOARD *aBoard ) :
+/* class LEGACY_RATSNEST implementation */
+LEGACY_RATSNEST::LEGACY_RATSNEST ( BOARD* aBoard ) :
     m_board( aBoard )
 {
-
 }
 
-LEGACY_RATSNEST::~LEGACY_RATSNEST ( )
+
+LEGACY_RATSNEST::~LEGACY_RATSNEST()
 {
-
 }
 
-void LEGACY_RATSNEST::SetVisible ( bool aIsVisible )
+
+void LEGACY_RATSNEST::SetVisible( bool aIsVisible )
 {
     // we must clear or set the CH_VISIBLE flags to hide/show ratsnest
     // because we have a tool to show/hide ratsnest relative to a pad or a module
@@ -186,6 +187,7 @@ void LEGACY_RATSNEST::SetVisible ( bool aIsVisible )
             m_FullRatsnest[ii].m_Status &= ~CH_VISIBLE;
     }
 }
+
 
 void LEGACY_RATSNEST::Clear()
 {
@@ -212,7 +214,7 @@ void LEGACY_RATSNEST::BuildRatsnestForModule( MODULE* aModule )
     wxPoint         pad_pos;            // True pad position according to the
                                         // current footprint position
 
-    if( (m_board->GetStatus() & LISTE_PAD_OK) == 0 )
+    if( ( m_board->GetStatus() & LISTE_PAD_OK ) == 0 )
     {
         m_board->SetStatus( 0 );
         m_board->BuildListOfNets();
@@ -223,7 +225,7 @@ void LEGACY_RATSNEST::BuildRatsnestForModule( MODULE* aModule )
      * footprints which are "connected" to
      *  a pad in the current footprint
      */
-    if( (m_board->GetStatus() & RATSNEST_ITEM_LOCAL_OK) == 0 )
+    if( ( m_board->GetStatus() & RATSNEST_ITEM_LOCAL_OK ) == 0 )
     {
         // Compute the "internal" ratsnest, i.e the links between the current
         // footprint pads
@@ -442,8 +444,6 @@ void LEGACY_RATSNEST_ITEM::Draw( EDA_DRAW_PANEL* panel,
             m_PadEnd->GetPosition() - aOffset, 0, color );
 }
 
-    
-
 
 /* Note about the ratsnest computation:
  * Building the general ratsnest:
@@ -473,7 +473,7 @@ void LEGACY_RATSNEST_ITEM::Draw( EDA_DRAW_PANEL* panel,
 void LEGACY_RATSNEST::BuildBoardRatsnest()
 {
     int    noconn;
-    
+
     m_board->SetUnconnectedNetCount( 0 );
     m_FullRatsnest.clear();
 
@@ -699,7 +699,7 @@ void LEGACY_RATSNEST::TestForActiveLinksInRatsnest( int aNetCode )
 
         // Create subratsnests id from subnets created by existing tracks:
         int subratsnest = 0;
-        
+
         PAD_INDEX::PADS& netPads = m_board->GetPadIndex().AllPadsInNet( net );
 
         for( unsigned ip = 0; ip < netPads.size(); ip++ )

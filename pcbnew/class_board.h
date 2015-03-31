@@ -214,10 +214,10 @@ private:
     int                     m_unconnectedNetCount;
 
     /// Ratsnest information (legacy algorithm)
-    LEGACY_RATSNEST         *m_legacyRatsnest;
+    LEGACY_RATSNEST*        m_legacyRatsnest;
 
     /// Index of all pads in the board, sorted by net name
-    PAD_INDEX               *m_padIndex;
+    PAD_INDEX*              m_padIndex;
 
     /// Flags used in ratsnest calculation and update.
     int m_pcbStatus;
@@ -248,7 +248,7 @@ public:
     DLIST<TRACK>                m_Track;                 // linked list of TRACKs and VIAs
     DLIST<SEGZONE>              m_Zone;                  // linked list of SEGZONEs
 
-    
+
     /// zone contour currently in progress
     ZONE_CONTAINER*             m_CurrentZoneContour;
 
@@ -743,7 +743,7 @@ public:
      * @return int - The number of rats
      */
     unsigned GetRatsnestsCount() const;
-    
+
     /**
      * Function GetNodesCount
      * @return the number of pads members of nets (i.e. with netcode > 0)
@@ -771,10 +771,10 @@ public:
      * @param aCount is the number of unconneceted nets in the current rats nest.
      */
     void SetUnconnectedNetCount( unsigned aCount ) { m_unconnectedNetCount = aCount; }
-   
+
     /**
      * Function GetPadIndex
-     * returns an index of all the pads by value.  The returned list is 
+     * returns an index of all the pads by value.  The returned list is
      * sorted and contains pointers to D_PADS, but those pointers do not convey
      * ownership of the respective D_PADs.
      * @return PAD_INDEX - a full list of pads
@@ -1376,7 +1376,7 @@ public:
     int GetStatus() const
     {
         return m_pcbStatus;
-    }    
+    }
 
     void SetStatus( int aNewStatus )
     {

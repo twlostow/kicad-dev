@@ -78,17 +78,17 @@ public:
 
     bool IsVisible()
     {
-        return (m_Status & CH_VISIBLE) != 0;
+        return( m_Status & CH_VISIBLE ) != 0;
     }
 
     bool IsActive()
     {
-        return (m_Status & CH_ACTIF) != 0;
+        return ( m_Status & CH_ACTIF ) != 0;
     }
 
     bool IsLocal()
     {
-        return (m_Status & LOCAL_RATSNEST_ITEM) != 0;
+        return ( m_Status & LOCAL_RATSNEST_ITEM ) != 0;
     }
 
     /**
@@ -103,42 +103,41 @@ typedef std::vector<LEGACY_RATSNEST_ITEM> LEGACY_RATSNEST_ITEMS;
 class LEGACY_RATSNEST {
 public:
 
-    LEGACY_RATSNEST ( BOARD *aBoard );
-    ~LEGACY_RATSNEST ( );
+    LEGACY_RATSNEST( BOARD* aBoard );
+    ~LEGACY_RATSNEST();
 
-    LEGACY_RATSNEST_ITEM& GetItem ( unsigned int aIndex )
+    LEGACY_RATSNEST_ITEM& GetItem( unsigned int aIndex )
     {
-    	return m_FullRatsnest[aIndex];
+        return m_FullRatsnest[aIndex];
     }
 
-    void SetVisible ( bool aVisible );
+    void SetVisible( bool aVisible );
     void Clear();
-    
+
     void BuildRatsnestForModule( MODULE* aModule );
     void BuildBoardRatsnest();
     void TestForActiveLinksInRatsnest( int aNetCode );
 
 
-	LEGACY_RATSNEST_ITEMS& GetFull()
-	{
-		return m_FullRatsnest;
-	}
+    LEGACY_RATSNEST_ITEMS& GetFull()
+    {
+        return m_FullRatsnest;
+    }
 
-	LEGACY_RATSNEST_ITEMS& GetLocal()
-	{
-		return m_LocalRatsnest;
-	}
+    LEGACY_RATSNEST_ITEMS& GetLocal()
+    {
+        return m_LocalRatsnest;
+    }
 
-private: 
- 
+private:
+
 /// Ratsnest list for the BOARD
     LEGACY_RATSNEST_ITEMS m_FullRatsnest;
 
 /// Ratsnest list relative to a given footprint (used while moving a footprint).
     LEGACY_RATSNEST_ITEMS m_LocalRatsnest;
- 
+
     BOARD* m_board;
  };
- 
 
 #endif

@@ -324,7 +324,7 @@ void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode )
     // Build the list of pads candidates connected to the net:
     NETINFO_ITEM* net = aPcb->FindNet( aNetcode );
     wxASSERT( net );
-    
+
     PAD_INDEX::PADS& netPads = aPcb->GetPadIndex().AllPadsInNet( net );
 
     Candidates.reserve( netPads.size() );

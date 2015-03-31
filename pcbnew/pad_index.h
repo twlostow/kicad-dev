@@ -40,7 +40,7 @@ class NETINFO_ITEM;
 
 /**
  * Class PAD_INDEX
- * 
+ *
  * Holds an index of all pads in the design. The pads are stored in two indices:
  * - global one, sorted by net name
  * - per-net one, storing all pads in a given net.
@@ -49,65 +49,65 @@ class NETINFO_ITEM;
  */
 class PAD_INDEX {
 public:
-	typedef std::vector<D_PAD*> PADS;
+    typedef std::vector<D_PAD*> PADS;
 
-	PAD_INDEX( BOARD *aBoard );
-	~PAD_INDEX( );
+    PAD_INDEX( BOARD* aBoard );
+    ~PAD_INDEX( );
 
-	///> returns a pad at index aIndex in the global table
-	D_PAD *GetPad ( int aIndex ) const
-	{
-	    if( aIndex < (int) m_pads.size() )
-			return m_pads[ aIndex ];
-		else
-			return NULL;
-	}
+    ///> returns a pad at index aIndex in the global table
+    D_PAD *GetPad ( int aIndex ) const
+    {
+        if( aIndex < (int) m_pads.size() )
+            return m_pads[aIndex];
+        else
+            return NULL;
+    }
 
-	///> returns a vector of all pads in all nets
-	PADS& AllPads()
-	{
-		return m_pads;
-	}
+    ///> returns a vector of all pads in all nets
+    PADS& AllPads()
+    {
+        return m_pads;
+    }
 
-	///> returns a vector of all pads belonging to a particular net
-	PADS& AllPadsInNet( int aNetCode ) 
-	{
-		return m_padsByNet[ aNetCode ];
-	}
+    ///> returns a vector of all pads belonging to a particular net
+    PADS& AllPadsInNet( int aNetCode )
+    {
+        return m_padsByNet[aNetCode];
+    }
 
-	///> returns a vector of all pads belonging to a particular net
-	PADS& AllPadsInNet( const NETINFO_ITEM *aNet );
+    ///> returns a vector of all pads belonging to a particular net
+    PADS& AllPadsInNet( const NETINFO_ITEM* aNet );
 
-	///> returns the count of pads in the design
-	unsigned int Size( ) const
-	{
-		return m_pads.size();
-	}
+    ///> returns the count of pads in the design
+    unsigned int Size( ) const
+    {
+        return m_pads.size();
+    }
 
-	///> returns the number of nodes (i.e. connected pads)
-	///> in a given net
-	unsigned int CountNodesInNet( const NETINFO_ITEM *aNet );
-	unsigned int CountNodesInNet( int aNetcode );
-	
-	D_PAD *operator[] ( int aIndex ) const
-	{
-		return GetPad( aIndex );
-	}
+    ///> returns the number of nodes (i.e. connected pads)
+    ///> in a given net
+    unsigned int CountNodesInNet( const NETINFO_ITEM* aNet );
+    unsigned int CountNodesInNet( int aNetcode );
 
-	///> returns the number of nodes (Kicad term for connected pads)
-	int GetNodeCount() const
-	{
-		return m_nodeCount;
-	}
+    D_PAD *operator[] ( int aIndex ) const
+    {
+        return GetPad( aIndex );
+    }
 
-	///> rebuilds pad index from the parent BOARD object
-	void Rebuild( );
+    ///> returns the number of nodes (Kicad term for connected pads)
+    int GetNodeCount() const
+    {
+        return m_nodeCount;
+    }
+
+    ///> rebuilds pad index from the parent BOARD object
+    void Rebuild( );
 
 private:
-	BOARD*				m_board;
-	std::vector<D_PAD*> m_pads;
-	std::map<int, PADS> m_padsByNet;
-	int 				m_nodeCount;
+    BOARD*              m_board;
+    std::vector<D_PAD*> m_pads;
+    std::map<int, PADS> m_padsByNet;
+    int                 m_nodeCount;
 };
 
 

@@ -216,7 +216,7 @@ void PlaceCells( BOARD* aPcb, int net_code, int flag )
     via_marge = clearance + (viaSize / 2);
 
     PAD_INDEX& pads =  aPcb->GetPadIndex();
-    
+
     // Place PADS on matrix routing:
     for( unsigned i = 0; i < pads.Size(); ++i )
     {

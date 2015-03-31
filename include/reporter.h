@@ -50,18 +50,17 @@ class WX_HTML_REPORT_PANEL;
  * <li> stop after the first error </li>
  * </ul>
  * the reporter has 4 severity levels (flags) tagging the messages:
- * - information 
+ * - information
  * - warning
  * - error
  * - action (i.e. indication of changes - add component, change footprint, etc. )
- * They are indicators for the message formatting and displaying code, 
+ * They are indicators for the message formatting and displaying code,
  * filtering is not made here.
  */
 class REPORTER {
 
 public:
-
-	///> Severity of the reported messages. Prov
+    ///> Severity of the reported messages. Prov
     enum SEVERITY {
         UNDEFINED = 0x0,
         INFO = 0x1,
@@ -90,6 +89,7 @@ public:
     REPORTER& operator <<( const char* aText ) { return Report( aText ); }
 };
 
+
 /**
  * Class WX_TEXT_CTRL_REPORTER
  * is wrapper for reporting to a wxTextCtrl object.
@@ -107,6 +107,8 @@ public:
 
     REPORTER& Report( const wxString& aText, SEVERITY aSeverity = UNDEFINED );
 };
+
+
 /**
  * Class WX_STRING_REPROTER
  * is a wrapper for reporting to a wxString object.
@@ -125,6 +127,7 @@ public:
     REPORTER& Report( const wxString& aText, SEVERITY aSeverity = UNDEFINED );
 };
 
+
 /**
  * Class WX_HTML_PANEL_REPORTER
  * is a wrapper for reporting to a wx HTML window
@@ -136,7 +139,7 @@ class WX_HTML_PANEL_REPORTER : public REPORTER
 public:
     WX_HTML_PANEL_REPORTER( WX_HTML_REPORT_PANEL *aPanel ) :
         REPORTER(),
-        m_panel ( aPanel )
+        m_panel( aPanel )
     {
     }
 

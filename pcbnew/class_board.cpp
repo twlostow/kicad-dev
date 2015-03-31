@@ -52,7 +52,6 @@
 #include <colors_selection.h>
 #include <collectors.h>
 
-
 #include <class_board.h>
 #include <class_module.h>
 #include <class_track.h>
@@ -75,11 +74,10 @@ BOARD::BOARD() :
     m_NetInfo( this ),
     m_paper( PAGE_INFO::A4 )
 {
-
     // we have not loaded a board yet, assume latest until then.
     m_fileFormatVersionAtLoad = LEGACY_BOARD_FILE_VERSION;
 
-    m_pcbStatus    = 0;                    // Status word: bit 1 = calculate.
+    m_pcbStatus     = 0;                    // Status word: bit 1 = calculate.
     SetColorsSettings( &g_ColorsSettings );
     m_nodeCount     = 0;                    // Number of connected pads.
     m_unconnectedNetCount   = 0;            // Number of unconnected nets.
@@ -87,8 +85,8 @@ BOARD::BOARD() :
     m_CurrentZoneContour = NULL;            // This ZONE_CONTAINER handle the
                                             // zone contour currently in progress
 
-    m_legacyRatsnest = new LEGACY_RATSNEST ( this );
-    m_padIndex = new PAD_INDEX ( this );
+    m_legacyRatsnest = new LEGACY_RATSNEST( this );
+    m_padIndex = new PAD_INDEX( this );
     BuildListOfNets();                      // prepare pad and netlist containers.
 
     for( LAYER_NUM layer = 0; layer < LAYER_ID_COUNT; ++layer )
@@ -327,7 +325,7 @@ const LAYER_ID BOARD::GetLayerID(wxString aLayerName) const
     // Look for the BOARD specific copper layer names
     for( LAYER_NUM layer = 0; layer < LAYER_ID_COUNT; ++layer )
     {
-        if ( IsCopperLayer( layer ) &&
+        if( IsCopperLayer( layer ) &&
              ( m_Layer[ layer ].m_name == aLayerName) )
         {
             return ToLAYER_ID( layer );
@@ -335,9 +333,9 @@ const LAYER_ID BOARD::GetLayerID(wxString aLayerName) const
     }
 
     // Otherwise fall back to the system standard layer names
-    for ( LAYER_NUM layer = 0; layer < LAYER_ID_COUNT; ++layer )
+    for( LAYER_NUM layer = 0; layer < LAYER_ID_COUNT; ++layer )
     {
-        if ( GetStandardLayerName( ToLAYER_ID( layer ) ) == aLayerName )
+        if( GetStandardLayerName( ToLAYER_ID( layer ) ) == aLayerName )
         {
             return ToLAYER_ID( layer );
         }
@@ -558,8 +556,8 @@ void BOARD::SetElementVisibility( int aPCB_VISIBLE, bool isEnabled )
 {
     m_designSettings.SetElementVisibility( aPCB_VISIBLE, isEnabled );
 
-    if (aPCB_VISIBLE == RATSNEST_VISIBLE)
-        m_legacyRatsnest->SetVisible ( isEnabled );
+    if( aPCB_VISIBLE == RATSNEST_VISIBLE )
+        m_legacyRatsnest->SetVisible( isEnabled );
 }
 
 
@@ -841,7 +839,7 @@ EDA_RECT BOARD::ComputeBoundingBox( bool aBoardEdgesOnly )
     // Check segments, dimensions, texts, and fiducials
     for( BOARD_ITEM* item = m_Drawings;  item;  item = item->Next() )
     {
-        if( aBoardEdgesOnly && (item->Type() != PCB_LINE_T || item->GetLayer() != Edge_Cuts ) )
+        if( aBoardEdgesOnly && ( item->Type() != PCB_LINE_T || item->GetLayer() != Edge_Cuts ) )
             continue;
 
         if( !hasItems )
@@ -941,7 +939,7 @@ void BOARD::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )
     /* These parameters are known only if the full ratsnest is available,
      *  so, display them only if this is the case
      */
-    if( (m_pcbStatus & NET_CODES_OK) )
+    if( ( m_pcbStatus & NET_CODES_OK ) )
     {
         txt.Printf( wxT( "%d" ), GetRatsnestsCount() );
         aList.push_back( MSG_PANEL_ITEM( _( "Links" ), txt, DARKGREEN ) );
@@ -1363,7 +1361,7 @@ void BOARD::RedrawAreasOutlines( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE a
     {
         ZONE_CONTAINER* edge_zone = GetArea( ii );
 
-        if( (aLayer < 0) || ( aLayer == edge_zone->GetLayer() ) )
+        if( ( aLayer < 0 ) || ( aLayer == edge_zone->GetLayer() ) )
             edge_zone->Draw( panel, aDC, aDrawMode );
     }
 }
@@ -1378,7 +1376,7 @@ void BOARD::RedrawFilledAreas( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDr
     {
         ZONE_CONTAINER* edge_zone = GetArea( ii );
 
-        if( (aLayer < 0) || ( aLayer == edge_zone->GetLayer() ) )
+        if( ( aLayer < 0 ) || ( aLayer == edge_zone->GetLayer() ) )
             edge_zone->DrawFilledArea( panel, aDC, aDrawMode );
     }
 }
@@ -1456,9 +1454,9 @@ VIA* BOARD::GetViaByPosition( const wxPoint& aPosition, LAYER_ID aLayer) const
 {
     for( VIA *via = GetFirstVia( m_Track); via; via = GetFirstVia( via->Next() ) )
     {
-        if( (via->GetStart() == aPosition) &&
-                (via->GetState( BUSY | IS_DELETED ) == 0) &&
-                ((aLayer == UNDEFINED_LAYER) || (via->IsOnLayer( aLayer ))) )
+        if( ( via->GetStart() == aPosition) &&
+                ( via->GetState( BUSY | IS_DELETED ) == 0) &&
+                ( ( aLayer == UNDEFINED_LAYER ) || ( via->IsOnLayer( aLayer ) ) ) )
             return via;
     }
 
@@ -1503,9 +1501,9 @@ D_PAD* BOARD::GetPad( TRACK* aTrace, ENDPOINT_T aEndPoint )
 
 D_PAD* BOARD::GetPadFast( const wxPoint& aPosition, LSET aLayerMask )
 {
-    for( unsigned i=0; i<m_padIndex->Size();  ++i )
+    for( unsigned i=0; i<m_padIndex->Size(); ++i )
     {
-        D_PAD* pad = m_padIndex->GetPad(i);
+        D_PAD* pad = m_padIndex->GetPad( i );
 
         if( pad->GetPosition() != aPosition )
             continue;
@@ -1533,7 +1531,7 @@ D_PAD* BOARD::GetPad( std::vector<D_PAD*>& aPadList, const wxPoint& aPosition, L
     {
         // Calculate half size of remaining interval to test.
         // Ensure the computed value is not truncated (too small)
-        if( (delta & 1) && ( delta > 1 ) )
+        if( ( delta & 1 ) && ( delta > 1 ) )
             delta++;
 
         delta /= 2;
@@ -1557,7 +1555,7 @@ D_PAD* BOARD::GetPad( std::vector<D_PAD*>& aPadList, const wxPoint& aPosition, L
                 if( pad->GetPosition() != aPosition )
                     break;
 
-                if( (aLayerMask & pad->GetLayerSet()) != 0 )
+                if( ( aLayerMask & pad->GetLayerSet() ) != 0 )
                     return pad;
             }
             // search previous
@@ -1568,7 +1566,7 @@ D_PAD* BOARD::GetPad( std::vector<D_PAD*>& aPadList, const wxPoint& aPosition, L
                 if( pad->GetPosition() != aPosition )
                     break;
 
-                if( (aLayerMask & pad->GetLayerSet()) != 0 )
+                if( ( aLayerMask & pad->GetLayerSet() ) != 0 )
                     return pad;
             }
 
@@ -1630,7 +1628,7 @@ void BOARD::GetSortedPadListByXthenYCoord( std::vector<D_PAD*>& aVector, int aNe
 {
     if( aNetCode < 0 )
     {
-        aVector.insert( aVector.end(), 
+        aVector.insert( aVector.end(),
                         m_padIndex->AllPads().begin(),
                         m_padIndex->AllPads().end() );
     }
@@ -2074,7 +2072,7 @@ TRACK* BOARD::CreateLockPoint( wxPoint& aPosition, TRACK* aSegment, PICKED_ITEMS
 
     D_PAD * pad = GetPad( newTrack, ENDPOINT_START );
 
-    if ( pad )
+    if( pad )
     {
         newTrack->start = pad;
         newTrack->SetState( BEGIN_ONPAD, true );
@@ -2262,7 +2260,7 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
                 }
             }
 
-            if( !aNetlist.IsDryRun() && (component->GetModule() != NULL) )
+            if( !aNetlist.IsDryRun() && ( component->GetModule() != NULL ) )
             {
                 // Owned by NETLIST, can only copy it.
                 footprint = new MODULE( *component->GetModule() );
@@ -2301,11 +2299,11 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
                                         GetChars( footprint->GetPath() ),
                                         GetChars( component->GetFPID().Format() ) );
 
-                            aReporter->Report( msg, REPORTER::ERROR );                            
+                            aReporter->Report( msg, REPORTER::ERROR );
                         }
                     }
 
-                    if( !aNetlist.IsDryRun() && (component->GetModule() != NULL) )
+                    if( !aNetlist.IsDryRun() && ( component->GetModule() != NULL ) )
                     {
                         wxASSERT( footprint != NULL );
                         MODULE* newFootprint = new MODULE( *component->GetModule() );
@@ -2698,4 +2696,4 @@ unsigned BOARD::GetRatsnestsCount() const
 {
     return m_legacyRatsnest->GetFull().size();
 }
-    
+

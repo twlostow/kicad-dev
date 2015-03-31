@@ -171,7 +171,7 @@ bool IsA( const I& aObject )
 template<class Casted, class From>
 Casted dyn_cast( From aObject )
 {
-    if( remove_pointer<Casted>::type::ClassOf ( aObject ) )
+    if( remove_pointer<Casted>::type::ClassOf( aObject ) )
         return static_cast<Casted>( aObject );
 
     return NULL;

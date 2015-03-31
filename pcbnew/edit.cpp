@@ -61,6 +61,7 @@
 #include <tools/common_actions.h>
 
 #include <legacy_ratsnest.h>
+
 // Handles the selection of command events.
 void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 {
@@ -1429,7 +1430,7 @@ void PCB_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
         else
             SetToolID( id, wxCURSOR_QUESTION_ARROW, _( "Add tracks" ) );
 
-        if( (GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
+        if( ( GetBoard()->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
         {
             Compile_Ratsnest( &dc, true );
         }

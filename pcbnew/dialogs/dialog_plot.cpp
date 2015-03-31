@@ -107,7 +107,7 @@ void DIALOG_PLOT::Init_Dialog()
     // Set units and value for HPGL pen size (this param in in mils).
     AddUnitSymbol( *m_textPenSize, g_UserUnit );
     msg = StringFromValue( g_UserUnit,
-                                 m_plotOpts.GetHPGLPenDiameter() * IU_PER_MILS );
+                           m_plotOpts.GetHPGLPenDiameter() * IU_PER_MILS );
     m_HPGLPenSizeOpt->AppendText( msg );
 
     // Set units and value for HPGL pen overlay (this param in in mils).
@@ -593,7 +593,7 @@ void DIALOG_PLOT::applyPlotSettings()
         msg = StringFromValue( g_UserUnit, tempOptions.GetHPGLPenDiameter() * IU_PER_MILS );
         m_HPGLPenSizeOpt->SetValue( msg );
         msg.Printf( _( "HPGL pen size constrained." ) );
-        reporter.Report ( msg, REPORTER::INFO );
+        reporter.Report( msg, REPORTER::INFO );
     }
 
     // Read HPGL pen overlay (this param is stored in mils)
@@ -606,7 +606,7 @@ void DIALOG_PLOT::applyPlotSettings()
                                      tempOptions.GetHPGLPenOverlay() * IU_PER_MILS );
         m_HPGLPenOverlayOpt->SetValue( msg );
         msg.Printf( _( "HPGL pen overlay constrained." ) );
-        reporter.Report ( msg, REPORTER::INFO );
+        reporter.Report( msg, REPORTER::INFO );
     }
 
     // Default linewidth
@@ -618,7 +618,7 @@ void DIALOG_PLOT::applyPlotSettings()
         msg = StringFromValue( g_UserUnit, tempOptions.GetLineWidth() );
         m_linesWidth->SetValue( msg );
         msg.Printf( _( "Default line width constrained." ) );
-        reporter.Report ( msg, REPORTER::INFO );
+        reporter.Report( msg, REPORTER::INFO );
     }
 
     // X scale
@@ -631,7 +631,7 @@ void DIALOG_PLOT::applyPlotSettings()
         msg.Printf( wxT( "%f" ), m_XScaleAdjust );
         m_fineAdjustXscaleOpt->SetValue( msg );
         msg.Printf( _( "X scale constrained." ) );
-        reporter.Report ( msg, REPORTER::INFO );
+        reporter.Report( msg, REPORTER::INFO );
     }
 
    ConfigBaseWriteDouble( m_config, OPTKEY_PLOT_X_FINESCALE_ADJ, m_XScaleAdjust );
@@ -645,7 +645,7 @@ void DIALOG_PLOT::applyPlotSettings()
         msg.Printf( wxT( "%f" ), m_YScaleAdjust );
         m_fineAdjustYscaleOpt->SetValue( msg );
         msg.Printf( _( "Y scale constrained." ) );
-        reporter.Report ( msg, REPORTER::INFO );
+        reporter.Report( msg, REPORTER::INFO );
     }
 
     ConfigBaseWriteDouble( m_config, OPTKEY_PLOT_Y_FINESCALE_ADJ, m_YScaleAdjust );
@@ -664,7 +664,7 @@ void DIALOG_PLOT::applyPlotSettings()
                     To_User_Unit( g_UserUnit, m_widthAdjustMinValue ),
                     To_User_Unit( g_UserUnit, m_widthAdjustMaxValue ),
                     ( g_UserUnit == INCHES ) ? wxT( "\"" ) : wxT( "mm" ) );
-        reporter.Report ( msg, REPORTER::WARNING );
+        reporter.Report( msg, REPORTER::WARNING );
     }
 
     // Store m_PSWidthAdjust in mm in user config
@@ -812,12 +812,12 @@ void DIALOG_PLOT::Plot( wxCommandEvent& event )
             delete plotter;
 
             msg.Printf( _( "Plot file '%s' created." ), GetChars( fn.GetFullPath() ) );
-            reporter.Report ( msg, REPORTER::ACTION );
+            reporter.Report( msg, REPORTER::ACTION );
         }
-        else 
+        else
         {
             msg.Printf( _( "Unable to create file '%s'." ), GetChars( fn.GetFullPath() ) );
-            reporter.Report ( msg, REPORTER::ERROR );
+            reporter.Report( msg, REPORTER::ERROR );
         }
     }
 

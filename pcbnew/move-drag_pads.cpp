@@ -207,5 +207,5 @@ void PCB_BASE_FRAME::PlacePad( D_PAD* aPad, wxDC* DC )
     OnModify();
     m_canvas->SetMouseCapture( NULL, NULL );
 
-    GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );    
+    GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );
 }

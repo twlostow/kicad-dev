@@ -102,7 +102,7 @@ static int      getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame,
                                            MODULE* aModule, wxDC* aDC );
 
 /*
-* Function compute_Ratsnest_PlaceModule
+ * Function compute_Ratsnest_PlaceModule
  * displays the module's ratsnest during displacement, and assess the "cost"
  * of the position.
  *
@@ -745,7 +745,7 @@ int getOptimalModulePlacement( PCB_EDIT_FRAME* aFrame, MODULE* aModule, wxDC* aD
     CurrPosition = LastPosOK;
 
     brd->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK | LISTE_PAD_OK );
-    
+
     MinCout = min_cost;
     return error;
 }
@@ -913,7 +913,7 @@ double compute_Ratsnest_PlaceModule( BOARD* aBrd )
     curr_cost = 0;
 
     LEGACY_RATSNEST_ITEMS& localRatsnest = aBrd->GetLegacyRatsnest()->GetLocal();
-    
+
     for( unsigned ii = 0; ii < localRatsnest.size(); ii++ )
     {
         LEGACY_RATSNEST_ITEM* pt_local_rats_nest = &localRatsnest[ii];
@@ -1122,12 +1122,12 @@ static MODULE* PickModule( PCB_EDIT_FRAME* pcbframe, wxDC* DC )
 
         pcbframe->GetBoard()->ClearStatusBits( RATSNEST_ITEM_LOCAL_OK );
         pcbframe->SetMsgPanel( Module );
-        
+
         LEGACY_RATSNEST *ratsnest = pcbframe->GetBoard()->GetLegacyRatsnest();
         ratsnest->BuildRatsnestForModule( Module );
-               
+
         LEGACY_RATSNEST_ITEMS& localRatsnest = ratsnest->GetLocal();
-    
+
         // Calculate external ratsnest.
         for( unsigned ii = 0; ii < localRatsnest.size(); ii++ )
         {

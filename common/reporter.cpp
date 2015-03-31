@@ -58,7 +58,7 @@ REPORTER& WX_HTML_PANEL_REPORTER::Report( const wxString& aText, SEVERITY aSever
 {
     wxCHECK_MSG( m_panel != NULL, *this,
                  wxT( "No WX_HTML_REPORT_PANEL object defined in WX_HTML_PANEL_REPORTER." ) );
-    
+
     m_panel->Report ( aText, aSeverity );
     return *this;
 }

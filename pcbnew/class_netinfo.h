@@ -154,7 +154,7 @@ public:
         return m_netMapping.size();
     }
 
-    
+
 
 private:
     ///> Board for which mapping is prepared
@@ -222,7 +222,7 @@ public:
      */
     void AppendNet( NETINFO_ITEM* aNewElement );
 
-    
+
     ///> Constant that holds the "unconnected net" number (typically 0)
     ///> all items "connected" to this net are actually not connected items
     static const int UNCONNECTED;
@@ -304,7 +304,7 @@ public:
     }
 #endif
 
-    BOARD *GetParent() const
+    BOARD* GetParent() const
     {
         return m_Parent;
     }
@@ -324,7 +324,7 @@ private:
      */
     void buildListOfNets();
 
-     /**
+    /**
      * Function getFreeNetCode
      * returns the first available net code that is not used by any other net.
      */
@@ -384,7 +384,7 @@ public:
 
     void Show( int nestLevel, std::ostream& os ) const
     {
-        
+
     }
 
     /**
@@ -536,7 +536,7 @@ public:
         SetClass( NETCLASSPTR() );
     }
 
-    BOARD *GetParent() const
+    BOARD* GetParent() const
     {
         return m_parent;
     }

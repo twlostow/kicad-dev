@@ -787,7 +787,7 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
     if( aNetCode <= 0 )
         return;
 
-    if( (m_Pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK) == 0 )
+    if( ( m_Pcb->GetStatus() & LISTE_RATSNEST_ITEM_OK ) == 0 )
         Compile_Ratsnest( aDC, true );
 
     // Clear the cluster identifier (subnet) of pads for this net
@@ -835,7 +835,7 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
     {
         for( unsigned ii = net->m_RatsnestStartIdx; ii < net->m_RatsnestEndIdx; ii++ )
         {
-            if( m_Pcb->GetLegacyRatsnest()->GetItem(ii).IsActive() )
+            if( m_Pcb->GetLegacyRatsnest()->GetItem( ii ).IsActive() )
                 net_notconnected_count++;
         }
 
@@ -948,7 +948,6 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
 }
 
 
-
 /*
  * Function SortTracksByNetCode used in RebuildTrackChain()
  * to sort track segments by net code.
@@ -961,6 +960,7 @@ static bool SortTracksByNetCode( const TRACK* const & ref, const TRACK* const & 
 
     return ref->GetNetCode() < compare->GetNetCode();
 }
+
 
 /**
  * Helper function RebuildTrackChain
@@ -994,12 +994,12 @@ static void RebuildTrackChain( BOARD* pcb )
     }
 
     // the list is empty now
-    wxASSERT( pcb->m_Track == NULL && pcb->m_Track.GetCount()==0 );
+    wxASSERT( pcb->m_Track == NULL && pcb->m_Track.GetCount() == 0 );
 
     sort( trackList.begin(), trackList.end(), SortTracksByNetCode );
 
     // add them back to the list
-    for( int i = 0; i < item_count;  ++i )
+    for( int i = 0; i < item_count; ++i )
         pcb->m_Track.PushBack( trackList[i] );
 }
 
@@ -1036,8 +1036,8 @@ void PCB_BASE_FRAME::Compile_Ratsnest( wxDC* aDC, bool aDisplayStatus )
      *  This full ratsnest is not modified by track editing.
      *  It changes only when a netlist is read, or footprints are modified
      */
-    
-    LEGACY_RATSNEST *ratsnest = m_Pcb->GetLegacyRatsnest();
+
+    LEGACY_RATSNEST* ratsnest = m_Pcb->GetLegacyRatsnest();
     ratsnest->BuildBoardRatsnest();
 
     // Compute the pad connections due to the existing tracks (physical connections)
@@ -1047,8 +1047,8 @@ void PCB_BASE_FRAME::Compile_Ratsnest( wxDC* aDC, bool aDisplayStatus )
      */
     ratsnest->TestForActiveLinksInRatsnest( 0 );
 
-    // Redraw the active ratsnest ( if enabled )
-    if( GetBoard()->IsElementVisible(RATSNEST_VISIBLE) && aDC )
+    // Redraw the active ratsnest (if enabled )
+    if( GetBoard()->IsElementVisible (RATSNEST_VISIBLE ) && aDC )
         DrawGeneralRatsnest( aDC, 0 );
 
     if( aDisplayStatus )

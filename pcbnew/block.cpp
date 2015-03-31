@@ -219,7 +219,6 @@ int PCB_EDIT_FRAME::BlockCommand( int aKey )
 
 void PCB_EDIT_FRAME::HandleBlockPlace( wxDC* DC )
 {
-    
     GetBoard()->ClearStatusBits( DO_NOT_SHOW_GENERAL_RASTNEST );
 
     if( !m_canvas->IsMouseCaptured() )

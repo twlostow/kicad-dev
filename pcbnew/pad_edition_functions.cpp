@@ -153,7 +153,7 @@ static wxString GetNextPadName( wxString aPadName )
  */
 void PCB_BASE_FRAME::AddPad( MODULE* aModule, bool draw )
 {
-    m_Pcb->SetStatus ( 0 );
+    m_Pcb->SetStatus( 0 );
     aModule->SetLastEditTime();
 
     D_PAD* pad = new D_PAD( aModule );

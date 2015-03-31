@@ -186,14 +186,14 @@ void DIALOG_NETLIST::OnReadNetlistFileClick( wxCommandEvent& event )
     if( !cmpFileName.IsEmpty() )
     {
         msg.Printf( _( "Using component footprint link file \"%s\".\n" ), GetChars( cmpFileName ) );
-        reporter.Report(msg, REPORTER::INFO);
+        reporter.Report( msg, REPORTER::INFO );
     }
 
     if( m_Select_By_Timestamp->GetSelection() == 1 )
     {
         msg.Printf( _( "Using time stamps to select footprints in file \"%s\".\n" ),
                     GetChars( cmpFileName ) );
-        reporter.Report(msg, REPORTER::INFO);    
+        reporter.Report( msg, REPORTER::INFO );
     }
 
     m_parent->ReadPcbNetlist( netlistFileName, cmpFileName, &reporter,

@@ -243,7 +243,7 @@ void PCB_EDIT_FRAME::Show_1_Ratsnest( EDA_ITEM* item, wxDC* DC )
 
             for( unsigned ii = 0; ii < GetBoard()->GetRatsnestsCount(); ii++ )
             {
-                LEGACY_RATSNEST_ITEM* net = &GetBoard()->GetLegacyRatsnest()->GetItem(ii);
+                LEGACY_RATSNEST_ITEM* net = &GetBoard()->GetLegacyRatsnest()->GetItem( ii );
 
                 if( net->GetNet() == pt_pad->GetNetCode() )
                 {
@@ -280,7 +280,7 @@ void PCB_EDIT_FRAME::Show_1_Ratsnest( EDA_ITEM* item, wxDC* DC )
                 {
                     for( unsigned ii = 0; ii < GetBoard()->GetRatsnestsCount(); ii++ )
                     {
-                        LEGACY_RATSNEST_ITEM* net = &GetBoard()->GetLegacyRatsnest()->GetItem(ii);
+                        LEGACY_RATSNEST_ITEM* net = &GetBoard()->GetLegacyRatsnest()->GetItem( ii );
 
                         if( ( net->m_PadStart == pt_pad ) || ( net->m_PadEnd == pt_pad ) )
                         {
@@ -309,7 +309,7 @@ void PCB_EDIT_FRAME::Show_1_Ratsnest( EDA_ITEM* item, wxDC* DC )
 
         for( unsigned ii = 0; ii < GetBoard()->GetRatsnestsCount(); ii++ )
         {
-            LEGACY_RATSNEST_ITEM& net = GetBoard()->GetLegacyRatsnest()->GetItem(ii);
+            LEGACY_RATSNEST_ITEM& net = GetBoard()->GetLegacyRatsnest()->GetItem( ii );
             net.m_Status &= ~CH_VISIBLE;
         }
     }

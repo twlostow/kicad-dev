@@ -464,7 +464,7 @@ void PCB_BASE_FRAME::Rotate_Module( wxDC* DC, MODULE* module, double angle, bool
         }
     }
 
-    GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );    
+    GetBoard()->ClearStatusBits( LISTE_RATSNEST_ITEM_OK | CONNEXION_OK );
 
     if( incremental )
         module->SetOrientation( module->GetOrientation() + angle );

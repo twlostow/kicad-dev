@@ -93,13 +93,13 @@ void DIALOG_PLOT_SCHEMATIC::createSVGFile( bool aPrintAll, bool aPrintFrameRef )
                 {
                     msg.Printf( _( "Cannot create file '%s'.\n" ),
                                 GetChars( plotFileName.GetFullPath() ) );
-                    reporter.Report ( msg, REPORTER::ERROR );
+                    reporter.Report( msg, REPORTER::ERROR );
                 }
                 else
                 {
                     msg.Printf( _( "Plot: '%s' OK.\n" ),
                                     GetChars( plotFileName.GetFullPath() ) );
-                    reporter.Report ( msg, REPORTER::ACTION );
+                    reporter.Report( msg, REPORTER::ACTION );
                 }
 
             }
@@ -107,7 +107,7 @@ void DIALOG_PLOT_SCHEMATIC::createSVGFile( bool aPrintAll, bool aPrintFrameRef )
             {
                 // Cannot plot SVG file
                 msg.Printf( wxT( "SVG Plotter exception: %s" ), GetChars( e.errorText ) );
-                reporter.Report ( msg, REPORTER::ERROR );
+                reporter.Report( msg, REPORTER::ERROR );
 
                 m_parent->SetCurrentSheet( oldsheetpath );
                 m_parent->GetCurrentSheet().UpdateAllScreenReferences();
@@ -137,14 +137,14 @@ void DIALOG_PLOT_SCHEMATIC::createSVGFile( bool aPrintAll, bool aPrintFrameRef )
             {
                 msg.Printf( _( "Plot: '%s' OK.\n" ),
                             GetChars( fn.GetFullPath() ) );
-                reporter.Report ( msg, REPORTER::ACTION );
+                reporter.Report( msg, REPORTER::ACTION );
 
             }
             else    // Error
             {
                 msg.Printf( _( "Unable to create file '%s'.\n" ),
                             GetChars( fn.GetFullPath() ) );
-                reporter.Report ( msg, REPORTER::ERROR );
+                reporter.Report( msg, REPORTER::ERROR );
             }
         }
         catch( const IO_ERROR& e )

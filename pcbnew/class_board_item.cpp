@@ -45,17 +45,20 @@ void BOARD_ITEM::Draw( EDA_DRAW_PANEL* panel, wxDC* DC,
     wxASSERT( false );
 }
 
+
 const wxPoint& BOARD_ITEM::GetPosition() const
 {
-    static wxPoint dummy(0, 0);
+    static wxPoint dummy( 0, 0 );
     wxASSERT( false );
     return dummy;
 }
+
 
 void BOARD_ITEM::SetPosition( const wxPoint& aPos )
 {
     wxASSERT( false );
 }
+
 
 wxString BOARD_ITEM::ShowShape( STROKE_T aShape )
 {

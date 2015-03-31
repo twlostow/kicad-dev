@@ -71,8 +71,8 @@ void filterNetClass( const BOARD& aBoard, NETCLASS& aNetClass )
         NETINFO_ITEM* netinfo = aBoard.FindNet( *it );
         int nc = const_cast<BOARD&> (aBoard).GetPadIndex().CountNodesInNet ( netinfo );
 
-        if( nc == 0 ) 
-            aNetClass.Remove( it++ ); 
+        if( nc == 0 )
+            aNetClass.Remove( it++ );
         else
             ++it;
     }

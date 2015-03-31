@@ -36,59 +36,60 @@
  * dialogs in eeschema and pcbnew. Provides error filtering functionality
  * and saving report files.
  *
- * The messages are reported throuth a REPORTER object 
+ * The messages are reported throuth a REPORTER object
  */
 class WX_HTML_REPORT_PANEL : public WX_HTML_REPORT_PANEL_BASE
 {
-	public:
-		
-		WX_HTML_REPORT_PANEL( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxTAB_TRAVERSAL ); 
-		~WX_HTML_REPORT_PANEL();
+public:
+    WX_HTML_REPORT_PANEL( wxWindow* parent, wxWindowID id = wxID_ANY,
+            const wxPoint& pos = wxDefaultPosition,
+            const wxSize& size = wxSize( 500,300 ), long style = wxTAB_TRAVERSAL );
+    ~WX_HTML_REPORT_PANEL();
 
-		///> returns the reporter object that reports to this panel
-		REPORTER& Reporter();
+    ///> returns the reporter object that reports to this panel
+    REPORTER& Reporter();
 
-		///> reports a string directly.
-		void Report( const wxString& aText, REPORTER::SEVERITY aSeverity );
-		
-		///> clears the report panel
-		void Clear();
+    ///> reports a string directly.
+    void Report( const wxString& aText, REPORTER::SEVERITY aSeverity );
 
-	private:
-		struct REPORT_LINE {
-			REPORTER::SEVERITY severity;
-			wxString message;
-		};
-	
-		typedef std::vector<REPORT_LINE> REPORT_LINES;
+    ///> clears the report panel
+    void Clear();
 
-		wxString generateHtml( const REPORT_LINE& aLine );
-		wxString generatePlainText( const REPORT_LINE& aLine );
+private:
+    struct REPORT_LINE
+    {
+        REPORTER::SEVERITY severity;
+        wxString message;
+    };
 
-		void refreshView();
-		void scrollToBottom();
-		void syncCheckboxes();
-		
-		void onCheckBoxShowAll( wxCommandEvent& event );
-		void onCheckBoxShowWarnings( wxCommandEvent& event );
-		void onCheckBoxShowErrors( wxCommandEvent& event );
-		void onCheckBoxShowInfos( wxCommandEvent& event );
-		void onCheckBoxShowActions( wxCommandEvent& event );
+    typedef std::vector<REPORT_LINE> REPORT_LINES;
 
-		void onBtnSaveToFile( wxCommandEvent& event );
-		
-		///> copy of the report, stored for filtering
-		REPORT_LINES m_report;
+    wxString generateHtml( const REPORT_LINE& aLine );
+    wxString generatePlainText( const REPORT_LINE& aLine );
 
-		///> the reporter
-		WX_HTML_PANEL_REPORTER m_reporter;
+    void refreshView();
+    void scrollToBottom();
+    void syncCheckboxes();
 
-		///> message severities to display (mask)
-		int m_severities;
+    void onCheckBoxShowAll( wxCommandEvent& event );
+    void onCheckBoxShowWarnings( wxCommandEvent& event );
+    void onCheckBoxShowErrors( wxCommandEvent& event );
+    void onCheckBoxShowInfos( wxCommandEvent& event );
+    void onCheckBoxShowActions( wxCommandEvent& event );
 
-		///> show all messages flag (overrides m_severities)
-		bool m_showAll;
+    void onBtnSaveToFile( wxCommandEvent& event );
 
+    ///> copy of the report, stored for filtering
+    REPORT_LINES m_report;
+
+    ///> the reporter
+    WX_HTML_PANEL_REPORTER m_reporter;
+
+    ///> message severities to display (mask)
+    int m_severities;
+
+    ///> show all messages flag (overrides m_severities)
+    bool m_showAll;
 };
 
 #endif //__WX_HTML_REPORT_PANEL_H__

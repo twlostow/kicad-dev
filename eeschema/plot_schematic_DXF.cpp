@@ -92,18 +92,18 @@ void DIALOG_PLOT_SCHEMATIC::CreateDXFFile( bool aPlotAll, bool aPlotFrameRef )
             if( PlotOneSheetDXF( plotFileName.GetFullPath(), screen, plot_offset, 1.0, aPlotFrameRef ) )
             {
                 msg.Printf( _( "Plot: '%s' OK.\n" ), GetChars( plotFileName.GetFullPath() ) );
-                reporter.Report ( msg, REPORTER::ACTION );
+                reporter.Report( msg, REPORTER::ACTION );
             }
             else    // Error
             {
                 msg.Printf( _( "Unable to create file '%s'.\n" ), GetChars( plotFileName.GetFullPath() ) );
-                reporter.Report ( msg, REPORTER::ERROR );
+                reporter.Report( msg, REPORTER::ERROR );
             }
         }
         catch( IO_ERROR& e )
         {
             msg.Printf( wxT( "DXF Plotter exception: %s"), GetChars( e.errorText ) );
-            reporter.Report ( msg, REPORTER::ERROR );
+            reporter.Report( msg, REPORTER::ERROR );
             schframe->SetCurrentSheet( oldsheetpath );
             schframe->GetCurrentSheet().UpdateAllScreenReferences();
             schframe->SetSheetNumberAndCount();

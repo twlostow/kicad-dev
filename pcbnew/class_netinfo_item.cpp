@@ -52,14 +52,14 @@
 NETINFO_ITEM::NETINFO_ITEM( BOARD* aParent, const wxString& aNetName, int aNetCode ) :
     BOARD_ITEM ( aParent, PCB_NETINFO_T ),
     m_parent ( aParent ),
-    m_NetCode( aNetCode ), 
-    m_Netname( aNetName ), 
+    m_NetCode( aNetCode ),
+    m_Netname( aNetName ),
     m_ShortNetname( m_Netname.AfterLast( '/' ) ),
     m_RatsnestStartIdx( 0 ),
     m_RatsnestEndIdx ( 0 ),
     m_NetClassName( NETCLASS::Default )
 {
-    
+
 }
 
 
@@ -67,7 +67,6 @@ NETINFO_ITEM::~NETINFO_ITEM()
 {
     // m_NetClass is not owned by me.
 }
-
 
 
 void NETINFO_ITEM::GetMsgPanelInfo( std::vector< MSG_PANEL_ITEM >& aList )

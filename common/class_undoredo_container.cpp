@@ -30,6 +30,8 @@
 #include <base_struct.h>
 #include <class_undoredo_container.h>
 
+#include <boost/foreach.hpp>
+
 
 ITEM_PICKER::ITEM_PICKER( EDA_ITEM* aItem, UNDO_REDO_T aUndoRedoStatus )
 {
@@ -316,34 +318,48 @@ UNDO_REDO_CONTAINER::UNDO_REDO_CONTAINER()
 
 UNDO_REDO_CONTAINER::~UNDO_REDO_CONTAINER()
 {
-    ClearCommandList();
+    Clear();
 }
 
-
-void UNDO_REDO_CONTAINER::ClearCommandList()
+void UNDO_REDO_CONTAINER::Clear( int aItemCount, bool aFreeItems )
 {
-    for( unsigned ii = 0; ii < m_CommandsList.size(); ii++ )
-        delete m_CommandsList[ii];
+    COMMAND_LIST::iterator i;
+    int n = aItemCount < 0 ? m_commandList.size() : aItemCount;
 
-    m_CommandsList.clear();
-}
-
-
-void UNDO_REDO_CONTAINER::PushCommand( PICKED_ITEMS_LIST* aItem )
-{
-    m_CommandsList.push_back( aItem );
-}
-
-
-PICKED_ITEMS_LIST* UNDO_REDO_CONTAINER::PopCommand()
-{
-    if( m_CommandsList.size() != 0 )
+    for( i = m_commandList.begin(); i != m_commandList.end(); ++i )
     {
-        PICKED_ITEMS_LIST* item = m_CommandsList.back();
-        m_CommandsList.pop_back();
-        return item;
+        if( n == 0 )
+            break;
+
+        if( aFreeItems )
+            i->items->ClearListAndDeleteItems();
+
+        delete i->items;
+
+        n--;
     }
-    return NULL;
+
+    m_commandList.erase ( m_commandList.begin(), i );
+}
+
+void UNDO_REDO_CONTAINER::PushCommand( PICKED_ITEMS_LIST* aItems, const wxString& aDescription )
+{
+    COMMAND cmd;
+
+    cmd.items = aItems;
+    cmd.description = aDescription;
+
+    m_commandList.push_back( cmd );
+}
+
+
+const UNDO_REDO_CONTAINER::COMMAND UNDO_REDO_CONTAINER::PopCommand()
+{
+    COMMAND cmd = m_commandList.back();
+
+    m_commandList.pop_back();
+
+    return cmd;
 }
 
 

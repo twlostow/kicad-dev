@@ -52,6 +52,8 @@
 #include <dialogs/dialog_create_array.h>
 #include <dialogs/dialog_move_exact.h>
 
+#include <board_undo_manager.h>
+
 EDIT_TOOL::EDIT_TOOL() :
     TOOL_INTERACTIVE( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ),
     m_dragging( false ), m_editModules( false ), m_undoInhibit( 0 ),
@@ -369,7 +371,9 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
         // Display properties dialog
         BOARD_ITEM* item = selection.Item<BOARD_ITEM>( 0 );
 
-        std::vector<PICKED_ITEMS_LIST*>& undoList = editFrame->GetScreen()->m_UndoList.m_CommandsList;
+        //std::vector<PICKED_ITEMS_LIST*>& undoList = editFrame->GetScreen()->m_UndoList.m_CommandsList;
+
+        UNDO_REDO_CONTAINER& undoList = editFrame->UndoManager().GetUndoList();
 
         // Some of properties dialogs alter pointers, so we should deselect them
         m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
@@ -377,12 +381,12 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
         item->ClearFlags();
 
         // It is necessary to determine if anything has changed
-        PICKED_ITEMS_LIST* lastChange = undoList.empty() ? NULL : undoList.back();
+        PICKED_ITEMS_LIST* lastChange = undoList.IsEmpty() ? NULL : undoList.GetItems( -1 );
 
         // Display properties dialog
         editFrame->OnEditItemRequest( NULL, item );
 
-        PICKED_ITEMS_LIST* currentChange = undoList.empty() ? NULL : undoList.back();
+        PICKED_ITEMS_LIST* currentChange = undoList.IsEmpty() ? NULL : undoList.GetItems( -1 );
 
         if( lastChange != currentChange )        // Something has changed
         {

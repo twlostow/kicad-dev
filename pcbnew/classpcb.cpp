@@ -190,9 +190,7 @@ PCB_SCREEN::PCB_SCREEN( const wxSize& aPageSizeIU ) :
 
 PCB_SCREEN::~PCB_SCREEN()
 {
-    ClearUndoRedoList();
 }
-
 
 int PCB_SCREEN::MilsToIuScalar()
 {

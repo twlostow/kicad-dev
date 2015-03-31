@@ -60,6 +60,7 @@ class FP_LIB_TABLE;
 class FPID;
 class TOOL_MANAGER;
 class TOOL_DISPATCHER;
+class BOARD_UNDO_MANAGER;
 
 /**
  * class PCB_BASE_FRAME
@@ -79,6 +80,8 @@ public:
 
 
 protected:
+    BOARD_UNDO_MANAGER* m_undoManager;
+
     BOARD*              m_Pcb;
     GENERAL_COLLECTOR*  m_Collector;
 
@@ -659,6 +662,11 @@ public:
     void SetFastGrid2();
 
     void ClearSelection();
+
+    BOARD_UNDO_MANAGER& UndoManager() const
+    {
+        return *m_undoManager;
+    }
 
     DECLARE_EVENT_TABLE()
 };

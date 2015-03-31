@@ -62,6 +62,7 @@
 #include <menus_helpers.h>
 #include <footprint_wizard_frame.h>
 #include <pcbnew_config.h>
+#include <board_undo_manager.h>
 
 #include <boost/bind.hpp>
 
@@ -189,7 +190,7 @@ void FOOTPRINT_EDIT_FRAME::LoadModuleFromBoard( wxCommandEvent& event )
     if( ! Load_Module_From_BOARD( NULL ) )
         return;
 
-    GetScreen()->ClearUndoRedoList();
+    m_undoManager->ClearUndoRedoLists();
     GetScreen()->ClrModify();
 
     if( m_Draw3DFrame )

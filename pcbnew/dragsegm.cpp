@@ -43,6 +43,8 @@
 #include <class_board.h>
 #include <connect.h>
 
+#include <boost/foreach.hpp>
+
 
 /* a list of DRAG_SEGM_PICKER items used to move or drag tracks */
 std::vector<DRAG_SEGM_PICKER> g_DragSegmentList;
@@ -205,9 +207,8 @@ void DRAG_LIST::fillList( CONNECTIONS& aConnections )
         D_PAD * pad = padList[ii];
 
         // store track connected to the pad
-        for( unsigned jj = 0; jj < pad->m_TracksConnected.size(); jj++ )
+        BOOST_FOREACH( TRACK* track, aConnections.ConnectedTracks( pad ) )
         {
-            TRACK * track = pad->m_TracksConnected[jj];
             track->start = NULL;
             track->end = NULL;
             track->SetState( START_ON_PAD|END_ON_PAD|BUSY, false );
@@ -220,9 +221,8 @@ void DRAG_LIST::fillList( CONNECTIONS& aConnections )
         D_PAD * pad = padList[ii];
 
         // store track connected to the pad
-        for( unsigned jj = 0; jj < pad->m_TracksConnected.size(); jj++ )
+        BOOST_FOREACH( TRACK* track, aConnections.ConnectedTracks( pad ) )
         {
-            TRACK * track = pad->m_TracksConnected[jj];
 
             if( pad->HitTest( track->GetStart() ) )
             {

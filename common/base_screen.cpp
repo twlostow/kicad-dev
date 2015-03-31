@@ -42,7 +42,6 @@ wxString BASE_SCREEN::m_PageLayoutDescrFileName;   // the name of the page layou
 BASE_SCREEN::BASE_SCREEN( KICAD_T aType ) :
     EDA_ITEM( aType )
 {
-    m_UndoRedoCountMax = 10;     // undo/Redo command Max depth, 10 is a reasonable value
     m_FirstRedraw      = true;
     m_ScreenNumber     = 1;
     m_NumberOfScreens  = 1;      // Hierarchy: Root: ScreenNumber = 1
@@ -388,50 +387,6 @@ void BASE_SCREEN::setCrossHairPosition( const wxPoint& aPosition, const wxPoint&
     else
         m_crossHairPosition = aPosition;
 }
-
-
-void BASE_SCREEN::ClearUndoRedoList()
-{
-    ClearUndoORRedoList( m_UndoList );
-    ClearUndoORRedoList( m_RedoList );
-}
-
-
-void BASE_SCREEN::PushCommandToUndoList( PICKED_ITEMS_LIST* aNewitem )
-{
-    m_UndoList.PushCommand( aNewitem );
-
-    // Delete the extra items, if count max reached
-    int extraitems = GetUndoCommandCount() - m_UndoRedoCountMax;
-
-    if( extraitems > 0 ) // Delete the extra items
-        ClearUndoORRedoList( m_UndoList, extraitems );
-}
-
-
-void BASE_SCREEN::PushCommandToRedoList( PICKED_ITEMS_LIST* aNewitem )
-{
-    m_RedoList.PushCommand( aNewitem );
-
-    // Delete the extra items, if count max reached
-    int extraitems = GetRedoCommandCount() - m_UndoRedoCountMax;
-
-    if( extraitems > 0 ) // Delete the extra items
-        ClearUndoORRedoList( m_RedoList, extraitems );
-}
-
-
-PICKED_ITEMS_LIST* BASE_SCREEN::PopCommandFromUndoList( )
-{
-    return m_UndoList.PopCommand( );
-}
-
-
-PICKED_ITEMS_LIST* BASE_SCREEN::PopCommandFromRedoList( )
-{
-    return m_RedoList.PopCommand( );
-}
-
 
 #if defined(DEBUG)
 

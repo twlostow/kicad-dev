@@ -168,13 +168,6 @@ void DIALOG_NETLIST::OnReadNetlistFileClick( wxCommandEvent& event )
         cmpFileName = fn.GetFullPath();
     }
 
-    // Give the user a chance to bail out when making changes from a netlist.
-    if( !m_checkDryRun->GetValue() && !m_silentMode
-      && !m_parent->GetBoard()->IsEmpty()
-      && !IsOK( NULL, _( "The changes made by reading the netlist cannot be undone.  Are you "
-                         "sure you want to read the netlist?" ) ) )
-        return;
-
     m_MessageWindow->Clear();
     REPORTER& reporter = m_MessageWindow->Reporter();
 

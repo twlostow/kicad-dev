@@ -310,19 +310,46 @@ public:
 class UNDO_REDO_CONTAINER
 {
 public:
-    std::vector <PICKED_ITEMS_LIST*> m_CommandsList;   // the list of possible undo/redo commands
+    struct COMMAND {
+        PICKED_ITEMS_LIST *items;
+        wxString description;
+    };
 
-public:
+    typedef std::vector<COMMAND> COMMAND_LIST;
 
     UNDO_REDO_CONTAINER();
     ~UNDO_REDO_CONTAINER();
 
-    void PushCommand( PICKED_ITEMS_LIST* aCommand );
+    bool IsEmpty() const
+    {
+        return m_commandList.empty();
+    }
 
-    PICKED_ITEMS_LIST* PopCommand();
+    unsigned int Count() const
+    {
+        return m_commandList.size();
+    }
 
-    void ClearCommandList();
+    void Clear( int aItemCount = -1, bool aFreeItems = false );
+    
+    void PushCommand( PICKED_ITEMS_LIST* aCommand, const wxString& aDescription = wxT("") );
+
+    COMMAND_LIST& CommandList();
+    const COMMAND PopCommand();
+
+    PICKED_ITEMS_LIST *GetItems( int aIndex )
+    {
+        if(aIndex < 0)
+            aIndex += Count();
+
+        return m_commandList[aIndex].items;
+    }
+
+private:
+    
+    COMMAND_LIST m_commandList;
 };
+
 
 
 #endif      // _CLASS_UNDOREDO_CONTAINER_H

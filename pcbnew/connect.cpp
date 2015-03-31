@@ -40,6 +40,8 @@
 #include <legacy_ratsnest.h>
 #include <pad_index.h>
 
+#include <boost/foreach.hpp>
+
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb );
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode );
 
@@ -66,8 +68,8 @@ void CONNECTIONS::BuildPadsList( int aNetcode )
     m_brd->GetSortedPadListByXthenYCoord( m_sortedPads, aNetcode < 0 ? -1 : aNetcode );
 }
 
-/* Explores the list of pads and adds to m_PadsConnected member
- * of each pad pads connected to
+/* Explores the list of pads and adds to connected pads list for
+ * each pad pads
  * Here, connections are due to intersecting pads, not tracks
  */
 void CONNECTIONS::SearchConnectionsPadsToIntersectingPads()
@@ -80,12 +82,12 @@ void CONNECTIONS::SearchConnectionsPadsToIntersectingPads()
     {
         D_PAD* pad = m_sortedPads[ii];
 
-        pad->m_PadsConnected.clear();
+        clearConnections ( pad, true, false );
         candidates.clear();
 
         CollectItemsNearTo( candidates, pad->ShapePos(), pad->GetBoundingRadius() );
 
-        // add pads to pad.m_PadsConnected, if they are connected
+        // add pads to connectivity list (if found to be connected)
         for( unsigned jj = 0; jj < candidates.size(); jj++ )
         {
             CONNECTED_POINT* item = candidates[jj];
@@ -99,18 +101,12 @@ void CONNECTIONS::SearchConnectionsPadsToIntersectingPads()
                 continue;
             if( pad->HitTest( item->GetPoint() ) )
             {
-                pad->m_PadsConnected.push_back( candidate_pad );
+                connect( pad, candidate_pad );
             }
         }
     }
 }
 
-/* Explores the list of pads
- * Adds to m_PadsConnected member of each track the pad(s) connected to
- * Adds to m_TracksConnected member of each pad the track(s) connected to
- * D_PAD::m_TracksConnected is cleared before adding items
- * TRACK::m_PadsConnected is not cleared
- */
 void CONNECTIONS::SearchTracksConnectedToPads( bool add_to_padlist, bool add_to_tracklist)
 {
     std::vector<CONNECTED_POINT*> candidates;
@@ -118,12 +114,12 @@ void CONNECTIONS::SearchTracksConnectedToPads( bool add_to_padlist, bool add_to_
     for( unsigned ii = 0; ii < m_sortedPads.size(); ii++ )
     {
         D_PAD * pad = m_sortedPads[ii];
-        pad->m_TracksConnected.clear();
+        clearConnections( pad, false , true );
         candidates.clear();
 
         CollectItemsNearTo( candidates, pad->GetPosition(), pad->GetBoundingRadius() );
 
-        // add this pad to track.m_PadsConnected, if it is connected
+        // add this pad to the track's connected pad list, if it is connected
         for( unsigned jj = 0; jj < candidates.size(); jj++ )
         {
             CONNECTED_POINT* cp_item = candidates[jj];
@@ -134,10 +130,10 @@ void CONNECTIONS::SearchTracksConnectedToPads( bool add_to_padlist, bool add_to_
             if( pad->HitTest( cp_item->GetPoint() ) )
             {
                 if( add_to_padlist )
-                    cp_item->GetTrack()->m_PadsConnected.push_back( pad );
+                    connect ( cp_item->GetTrack(), pad );
 
                 if( add_to_tracklist )
-                    pad->m_TracksConnected.push_back( cp_item->GetTrack() );
+                    connect( pad, cp_item->GetTrack() );
             }
         }
     }
@@ -302,10 +298,11 @@ void CONNECTIONS::BuildTracksCandidatesList( TRACK* aBegin, TRACK* aEnd)
  * because with this constraint we can make a fast search in track list
  * m_candidates is expected to be populated by the track candidates ends list
  */
-int CONNECTIONS::SearchConnectedTracks( const TRACK* aTrack )
+int CONNECTIONS::SearchConnectedTracks( TRACK* aTrack )
 {
     int count = 0;
-    m_connected.clear();
+    
+    clearConnections ( aTrack );
 
     LSET layerMask = aTrack->GetLayerSet();
 
@@ -336,7 +333,7 @@ int CONNECTIONS::SearchConnectedTracks( const TRACK* aTrack )
                     break;
 
                 if( ( m_candidates[ii].GetTrack()->GetLayerSet() & layerMask ).any() )
-                    m_connected.push_back( m_candidates[ii].GetTrack() );
+                    connect ( aTrack, m_candidates[ii].GetTrack() );
             }
 
             // search before:
@@ -349,8 +346,7 @@ int CONNECTIONS::SearchConnectedTracks( const TRACK* aTrack )
                     break;
 
                 if( ( m_candidates[ii].GetTrack()->GetLayerSet() & layerMask ).any() )
-                    m_connected.push_back( m_candidates[ii].GetTrack() );
-            }
+                    connect ( aTrack, m_candidates[ii].GetTrack() );            }
         }
 #else
 
@@ -377,7 +373,7 @@ int CONNECTIONS::SearchConnectedTracks( const TRACK* aTrack )
             if( dist > dist_max )
                 continue;
 
-            m_connected.push_back( ctrack );
+            connect ( aTrack, ctrack );
         }
 #endif
 
@@ -468,12 +464,9 @@ void CONNECTIONS::Build_CurrNet_SubNets_Connections( TRACK* aFirstTrack, TRACK* 
     {
         // Clear track subnet id (Pads subnets are cleared outside this function)
         curr_track->SetSubNet( 0 );
-        curr_track->m_TracksConnected.clear();
-        curr_track->m_PadsConnected.clear();
-
+        
         // Update connections between tracks:
         SearchConnectedTracks( curr_track );
-        curr_track->m_TracksConnected = m_connected;
 
         if( curr_track == aLastTrack )
             break;
@@ -551,9 +544,9 @@ int CONNECTIONS::Merge_SubNets( int aOldSubNet, int aNewSubNet )
         change_count++;
         curr_track->SetSubNet( aNewSubNet );
 
-        for( unsigned ii = 0; ii < curr_track->m_PadsConnected.size(); ii++ )
+
+        BOOST_FOREACH ( D_PAD *pad, ConnectedPads( curr_track ) )
         {
-            D_PAD * pad = curr_track->m_PadsConnected[ii];
             if( pad->GetSubNet() == aOldSubNet )
             {
                 pad->SetSubNet( curr_track->GetSubNet() );
@@ -592,10 +585,8 @@ void CONNECTIONS::Propagate_SubNets()
     for( ; curr_track != NULL; curr_track = curr_track->Next() )
     {
         // First: handling connections to pads
-        for( unsigned ii = 0; ii < curr_track->m_PadsConnected.size(); ii++ )
+        BOOST_FOREACH ( D_PAD *pad, ConnectedPads( curr_track ) )
         {
-            D_PAD * pad = curr_track->m_PadsConnected[ii];
-
             if( curr_track->GetSubNet() )        // the track segment is already a cluster member
             {
                 if( pad->GetSubNet() > 0 )
@@ -629,10 +620,8 @@ void CONNECTIONS::Propagate_SubNets()
         }
 
         // Test connections between segments
-        for( unsigned ii = 0; ii < curr_track->m_TracksConnected.size(); ii++ )
+        BOOST_FOREACH ( BOARD_CONNECTED_ITEM *track, ConnectedTracks ( curr_track ) )
         {
-            BOARD_CONNECTED_ITEM* track = curr_track->m_TracksConnected[ii];
-
             if( curr_track->GetSubNet() )   // The current track is already a cluster member
             {
                 // The other track is already a cluster member, so we can merge the 2 clusters
@@ -676,10 +665,8 @@ void CONNECTIONS::Propagate_SubNets()
     {
         D_PAD* curr_pad = m_sortedPads[ii];
 
-        for( unsigned jj = 0; jj < curr_pad->m_PadsConnected.size(); jj++ )
+        BOOST_FOREACH ( D_PAD *pad, ConnectedPads( curr_pad ) )
         {
-            D_PAD* pad = curr_pad->m_PadsConnected[jj];
-
             if( curr_pad->GetSubNet() )   // the current pad is already attached to a cluster
             {
                 if( pad->GetSubNet() > 0 )
@@ -864,8 +851,6 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
     // Reset variables and flags used in computation
     for( TRACK* t = m_Pcb->m_Track;  t;  t = t->Next() )
     {
-        t->m_TracksConnected.clear();
-        t->m_PadsConnected.clear();
         t->start = NULL;
         t->end = NULL;
         t->SetState( BUSY | IN_EDIT | BEGIN_ONPAD | END_ONPAD, false );
@@ -888,15 +873,14 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
     // set the track net code to the pad netcode
     for( TRACK* t = m_Pcb->m_Track;  t;  t = t->Next() )
     {
-        if( t->m_PadsConnected.size() )
-            t->SetNetCode( t->m_PadsConnected[0]->GetNetCode() );
+        if( connections.ConnectedPads( t ).size() )
+            t->SetNetCode( connections.ConnectedPads( t ).front()->GetNetCode() );
     }
 
     // Pass 2: build connections between track ends
     for( TRACK* t = m_Pcb->m_Track;  t;  t = t->Next() )
     {
         connections.SearchConnectedTracks( t );
-        connections.GetConnectedTracks( t );
     }
 
     // Propagate net codes from a segment to other connected segments
@@ -914,9 +898,9 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
             if( netcode == 0 )
             {
                 // try to find a connected item having a netcode
-                for( unsigned kk = 0; kk < t->m_TracksConnected.size(); kk++ )
+                BOOST_FOREACH ( TRACK *tk, connections.ConnectedTracks( t ) )
                 {
-                    int altnetcode = t->m_TracksConnected[kk]->GetNetCode();
+                    int altnetcode = tk->GetNetCode();
                     if( altnetcode )
                     {
                         new_pass_request = true;
@@ -929,13 +913,12 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
 
             if( netcode )    // this track has a netcode
             {
-                // propagate this netcode to connected tracks having no netcode
-                for( unsigned kk = 0; kk < t->m_TracksConnected.size(); kk++ )
+                 BOOST_FOREACH ( TRACK *tk, connections.ConnectedTracks( t ) )
                 {
-                    int altnetcode = t->m_TracksConnected[kk]->GetNetCode();
+                    int altnetcode = tk->GetNetCode();
                     if( altnetcode == 0 )
                     {
-                        t->m_TracksConnected[kk]->SetNetCode(netcode);
+                        tk->SetNetCode(netcode);
                         new_pass_request = true;
                     }
                 }
@@ -1053,4 +1036,21 @@ void PCB_BASE_FRAME::Compile_Ratsnest( wxDC* aDC, bool aDisplayStatus )
 
     if( aDisplayStatus )
         SetMsgPanel( m_Pcb );
+}
+
+void CONNECTIONS::clearConnections ( BOARD_CONNECTED_ITEM *aItem, bool aPads, bool aTracks )
+{
+    if (aPads)
+        m_cmap[aItem].pads.clear();
+    if (aTracks)
+        m_cmap[aItem].tracks.clear();
+}
+
+void CONNECTIONS::connect ( BOARD_CONNECTED_ITEM *aHost, BOARD_CONNECTED_ITEM *aConnectedItem )
+{
+    if( aConnectedItem->Type() == PCB_PAD_T )
+        m_cmap[aHost].pads.push_back ( static_cast<D_PAD*> (aConnectedItem ) );
+    else
+        m_cmap[aHost].tracks.push_back ( static_cast<TRACK*> (aConnectedItem ) );
+    
 }

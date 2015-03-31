@@ -51,7 +51,8 @@
 #include <view/view.h>
 #include <view/view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
-
+#include <undo_manager.h>
+ 
 /**
  * Definition for enabling and disabling scroll bar setting trace output.  See the
  * wxWidgets documentation on useing the WXTRACE environment variable.
@@ -289,14 +290,14 @@ void EDA_DRAW_FRAME::OnToggleCrossHairStyle( wxCommandEvent& aEvent )
 void EDA_DRAW_FRAME::OnUpdateUndo( wxUpdateUIEvent& aEvent )
 {
     if( GetScreen() )
-        aEvent.Enable( GetScreen()->GetUndoCommandCount() > 0 );
+        aEvent.Enable( GetScreen()->UndoManager().GetUndoCommandCount() > 0 );
 }
 
 
 void EDA_DRAW_FRAME::OnUpdateRedo( wxUpdateUIEvent& aEvent )
 {
     if( GetScreen() )
-        aEvent.Enable( GetScreen()->GetRedoCommandCount() > 0 );
+        aEvent.Enable( GetScreen()->UndoManager().GetRedoCommandCount() > 0 );
 }
 
 

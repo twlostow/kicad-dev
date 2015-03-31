@@ -98,6 +98,8 @@ void IO_ERROR::init( const char* aThrowersFile, const char* aThrowersLoc, const 
     errorText.Printf( IO_FORMAT, aMsg.GetData(),
         wxString::FromUTF8( aThrowersFile ).GetData(),
         wxString::FromUTF8( aThrowersLoc ).GetData() );
+
+    shortErrorText = aMsg;
 }
 
 
@@ -110,6 +112,7 @@ void PARSE_ERROR::init( const char* aThrowersFile, const char* aThrowersLoc,
     inputLine  = aInputLine;
     lineNumber = aLineNumber;
     byteIndex  = aByteIndex;
+    shortErrorText = aMsg;
 
     errorText.Printf( PARSE_FORMAT, aMsg.GetData(), aSource.GetData(),
         aLineNumber, aByteIndex,

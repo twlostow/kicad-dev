@@ -32,10 +32,10 @@
 #define  CLASS_BASE_SCREEN_H_
 
 #include <base_struct.h>
-#include <class_undoredo_container.h>
 #include <block_commande.h>
 #include <common.h>
 
+class UNDO_MANAGER;
 
 /**
  * Class GRID_TYPE
@@ -82,6 +82,7 @@ private:
     GRID_TYPE   m_Grid;             ///< Current grid selection.
     wxPoint     m_scrollCenter;     ///< Current scroll center point in logical units.
     wxPoint     m_MousePosition;    ///< Mouse cursor coordinate in logical units.
+    UNDO_MANAGER *m_undoManager;    ///< undo management object
 
     /**
      * The cross hair position in logical (drawing) units.  The cross hair is not the cursor
@@ -204,11 +205,7 @@ public:
                                      * Schematic */
     bool        m_FirstRedraw;
 
-    // Undo/redo list of commands
-    UNDO_REDO_CONTAINER m_UndoList;         ///< Objects list for the undo command (old data)
-    UNDO_REDO_CONTAINER m_RedoList;         ///< Objects list for the redo command (old data)
-    unsigned            m_UndoRedoCountMax; ///< undo/Redo command Max depth
-
+    
     // block control
     BLOCK_SELECTOR      m_BlockLocate;      ///< Block description for block commands
 
@@ -243,68 +240,14 @@ public:
      */
     virtual int MilsToIuScalar() { return 1; }
 
-    /* general Undo/Redo command control */
-
-    /**
-     * Function ClearUndoORRedoList (virtual).
-     * this function must remove the aItemCount old commands from aList
-     * and delete commands, pickers and picked items if needed
-     * Because picked items must be deleted only if they are not in use, this
-     * is a virtual pure function that must be created for SCH_SCREEN and
-     * PCB_SCREEN
-     * @param aList = the UNDO_REDO_CONTAINER of commands
-     * @param aItemCount = number of old commands to delete. -1 to remove all
-     *                     old commands this will empty the list of commands.
-     *  Commands are deleted from the older to the last.
-     */
-    virtual void ClearUndoORRedoList( UNDO_REDO_CONTAINER& aList, int aItemCount = -1 ) = 0;
-
-    /**
-     * Function ClearUndoRedoList
-     * clear undo and redo list, using ClearUndoORRedoList()
-     * picked items are deleted by ClearUndoORRedoList() according to their
-     * status
-     */
-    virtual void ClearUndoRedoList();
-
-    /**
-     * Function PushCommandToUndoList
-     * add a command to undo in undo list
-     * delete the very old commands when the max count of undo commands is
-     * reached
-     * ( using ClearUndoORRedoList)
-     */
-    virtual void PushCommandToUndoList( PICKED_ITEMS_LIST* aItem );
-
-    /**
-     * Function PushCommandToRedoList
-     * add a command to redo in redo list
-     * delete the very old commands when the max count of redo commands is
-     * reached
-     * ( using ClearUndoORRedoList)
-     */
-    virtual void PushCommandToRedoList( PICKED_ITEMS_LIST* aItem );
-
-    /** PopCommandFromUndoList
-     * return the last command to undo and remove it from list
-     * nothing is deleted.
-     */
-    virtual PICKED_ITEMS_LIST* PopCommandFromUndoList();
-
-    /** PopCommandFromRedoList
-     * return the last command to undo and remove it from list
-     * nothing is deleted.
-     */
-    virtual PICKED_ITEMS_LIST* PopCommandFromRedoList();
-
-    int GetUndoCommandCount() const
+    void SetUndoManager( UNDO_MANAGER *aUndoManager )
     {
-        return m_UndoList.m_CommandsList.size();
+        m_undoManager = aUndoManager;
     }
 
-    int GetRedoCommandCount() const
+    UNDO_MANAGER& UndoManager() const
     {
-        return m_RedoList.m_CommandsList.size();
+        return *m_undoManager;
     }
 
     void SetModify()        { m_FlagModified = true; }

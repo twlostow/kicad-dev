@@ -815,6 +815,11 @@ public:
         m_NetInfo.AppendNet( aNewNet );
     }
 
+    NETINFO_LIST& GetNetInfo()
+    {
+        return m_NetInfo;
+    }
+
 #ifndef SWIG
     /**
      * Function BeginNets
@@ -836,7 +841,7 @@ public:
 #endif
 
     /**
-     * Function GetNetCount
+     * Function Count
      * @return the number of nets (NETINFO_ITEM)
      */
     unsigned GetNetCount() const

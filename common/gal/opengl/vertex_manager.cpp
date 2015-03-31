@@ -45,7 +45,7 @@ VERTEX_MANAGER::VERTEX_MANAGER( bool aCached ) :
 
     // There is no shader used by default
     for( unsigned int i = 0; i < ShaderStride; ++i )
-        m_shader[i] = 0.0f;
+        m_:[i] = 0.0f;
 }
 
 

@@ -34,6 +34,7 @@
 
 #include <pcbnew.h>
 #include <module_editor_frame.h>
+#include <board_undo_manager.h>
 
 
 bool PCB_EDIT_FRAME::Clear_Pcb( bool aQuery )
@@ -49,7 +50,7 @@ bool PCB_EDIT_FRAME::Clear_Pcb( bool aQuery )
     }
 
     // Clear undo and redo lists because we want a full deletion
-    GetScreen()->ClearUndoRedoList();
+    m_undoManager->ClearUndoRedoLists();
     GetScreen()->ClrModify();
 
     // Items visibility flags will be set because a new board will be created.
@@ -103,8 +104,8 @@ bool FOOTPRINT_EDIT_FRAME::Clear_Pcb( bool aQuery )
     }
 
     // Clear undo and redo lists
-    GetScreen()->ClearUndoRedoList();
-
+    m_undoManager->ClearUndoRedoLists();
+    
     // Delete the current footprint
     GetBoard()->m_Modules.DeleteAll();
 

@@ -47,13 +47,7 @@ class D_PAD;
  */
 class BOARD_CONNECTED_ITEM : public BOARD_ITEM
 {
-    friend class CONNECTIONS;
-
 public:
-    // These 2 members are used for temporary storage during connections calculations:
-    std::vector<TRACK*> m_TracksConnected;      // list of other tracks connected to me
-    std::vector<D_PAD*> m_PadsConnected;        // list of other pads connected to me
-
     BOARD_CONNECTED_ITEM( BOARD_ITEM* aParent, KICAD_T idtype );
 
     BOARD_CONNECTED_ITEM( const BOARD_CONNECTED_ITEM& aItem );
@@ -65,14 +59,14 @@ public:
 
         switch( aItem->Type() )
         {
-        case PCB_PAD_T:
-        case PCB_TRACE_T:
-        case PCB_VIA_T:
-        case PCB_ZONE_AREA_T:
-            return true;
+            case PCB_PAD_T:
+            case PCB_TRACE_T:
+            case PCB_VIA_T:
+            case PCB_ZONE_AREA_T:
+                return true;
 
-        default:
-            return false;
+            default:
+                return false;
         }
     }
 
@@ -87,7 +81,7 @@ public:
      * Returns NET_INFO object for a given item.
      */
     NETINFO_ITEM* GetNet() const
-    {
+ 	{
         return m_netinfo;
     }
 

@@ -399,6 +399,8 @@ public:
     {
     }
 
+    ~PNS_MEANDERED_LINE();
+
     /**
      * Function AddCorner()
      *

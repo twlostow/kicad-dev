@@ -140,7 +140,7 @@ void LENGTH_TUNER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
 
         if( settingsDlg.ShowModal() )
         {
-            placer->UpdateSettings( settings );
+            placer->UpdateSettings ( settings );
         }
 
         m_savedMeanderSettings = placer->MeanderSettings();
@@ -149,13 +149,13 @@ void LENGTH_TUNER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
 
 void LENGTH_TUNER_TOOL::updateStatusPopup( PNS_TUNE_STATUS_POPUP& aPopup )
 {
-    wxPoint p = wxGetMousePosition();
+    wxPoint p = wxGetMousePosition(); 
 
     p.x += 20;
     p.y += 20;
 
-    aPopup.UpdateStatus( m_router );
-    aPopup.Move( p );
+    aPopup.Update( m_router );
+    aPopup`.Move( p );
 }
 
 void LENGTH_TUNER_TOOL::performTuning()
@@ -181,7 +181,7 @@ void LENGTH_TUNER_TOOL::performTuning()
     }
 
     PNS_MEANDER_PLACER_BASE* placer = static_cast<PNS_MEANDER_PLACER_BASE*>( m_router->Placer() );
-
+    
     placer->UpdateSettings( m_savedMeanderSettings );
 
     VECTOR2I end( m_startSnapPoint );
@@ -192,7 +192,7 @@ void LENGTH_TUNER_TOOL::performTuning()
     m_router->Move( end, NULL );
     updateStatusPopup( statusPopup );
 
-
+    
     while( OPT_TOOL_EVENT evt = Wait() )
     {
         if( evt->IsCancel() || evt->IsActivate() )
@@ -207,6 +207,7 @@ void LENGTH_TUNER_TOOL::performTuning()
             end = evt->Position();
             m_router->Move( end, NULL );
             updateStatusPopup( statusPopup );
+            
         }
         else if( evt->IsClick( BUT_LEFT ) )
         {

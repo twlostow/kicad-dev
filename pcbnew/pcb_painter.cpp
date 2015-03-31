@@ -69,6 +69,7 @@ void PCB_RENDER_SETTINGS::ImportLegacyColors( const COLORS_DESIGN_SETTINGS* aSet
     for( int i = 0; i < END_PCB_VISIBLE_LIST; i++ )
     {
         m_layerColors[ITEM_GAL_LAYER( i )] = m_legacyColorMap[aSettings->GetItemColor( i )];
+        m_layerColors[ITEM_GAL_LAYER( i )].a = 0.4;
     }
 
     // Default colors for specific layers

@@ -42,6 +42,11 @@ const PNS_MEANDER_SETTINGS& PNS_MEANDERED_LINE::Settings() const
     return m_placer->MeanderSettings();
 }
 
+PNS_MEANDERED_LINE::~PNS_MEANDERED_LINE()
+{
+    Clear();
+}
+
 void PNS_MEANDERED_LINE::MeanderSegment( const SEG& aBase, int aBaseIndex )
 {
     double base_len = aBase.Length();

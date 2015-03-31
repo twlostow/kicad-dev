@@ -41,8 +41,11 @@
 #include <legacy_ratsnest.h>
 #include <pad_index.h>
 
+#include <boost/foreach.hpp>
+
 // Constructor and destructor
-NETINFO_LIST::NETINFO_LIST( BOARD* aParent ) : m_Parent( aParent )
+NETINFO_LIST::NETINFO_LIST( BOARD* aParent ) : 
+    m_Parent( aParent )
 {
     // Make sure that the unconnected net has number 0
     AppendNet( new NETINFO_ITEM( aParent, wxEmptyString, 0 ) );
@@ -69,6 +72,31 @@ void NETINFO_LIST::clear()
     m_newNetCode = 0;
 }
 
+
+void NETINFO_LIST::RemoveNet( NETINFO_ITEM* aNet )
+{
+    
+
+    for( NETCODES_MAP::iterator i = m_netCodes.begin(); i != m_netCodes.end(); ++i )
+    {
+        if ( i->second == aNet )
+        {
+            m_netCodes.erase(i);
+            break;
+        }
+    }
+
+    for( NETNAMES_MAP::iterator i = m_netNames.begin(); i != m_netNames.end(); ++i )
+    {
+        if ( i->second == aNet )
+        {
+            m_netNames.erase(i);
+            break;
+        }
+    }
+
+}
+    
 
 void NETINFO_LIST::AppendNet( NETINFO_ITEM* aNewElement )
 {
@@ -176,7 +204,7 @@ int NETINFO_MAPPING::Translate( int aNetCode ) const
 
 
 void NETINFO_MAPPING::Update()
-{
+    {
     // Collect all the used nets
     std::set<int> nets;
 
@@ -228,6 +256,6 @@ NETINFO_ITEM* NETINFO_MAPPING::iterator::operator->() const
 
 
 const int NETINFO_LIST::UNCONNECTED = 0;
-const int NETINFO_LIST::FORCE_ORPHANED = -1;
+const int NETINFO_LIST::ORPHANED = -1;
 
-NETINFO_ITEM NETINFO_LIST::ORPHANED = NETINFO_ITEM( NULL, wxEmptyString, NETINFO_LIST::UNCONNECTED );
+NETINFO_ITEM NETINFO_LIST::ORPHANED_ITEM = NETINFO_ITEM( NULL, wxEmptyString, NETINFO_LIST::ORPHANED );

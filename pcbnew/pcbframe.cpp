@@ -72,6 +72,8 @@
 
 #include <scripting/python_console_frame.h>
 
+#include <board_undo_manager.h>
+
 #if defined(KICAD_SCRIPTING) || defined(KICAD_SCRIPTING_WXPYTHON)
 #include <python_scripting.h>
 #endif
@@ -451,6 +453,10 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     setupTools();
 
     Zoom_Automatique( false );
+
+    m_undoManager = new BOARD_UNDO_MANAGER ( this );
+
+    GetScreen()->SetUndoManager ( m_undoManager ); 
 }
 
 

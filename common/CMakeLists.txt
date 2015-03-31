@@ -200,6 +200,7 @@ set( COMMON_SRCS
     search_stack.cpp
     selcolor.cpp
     systemdirsappend.cpp
+    undo_manager.cpp
     trigo.cpp
     utf8.cpp
     validators.cpp

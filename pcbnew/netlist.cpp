@@ -48,6 +48,8 @@
 #include <pcbnew.h>
 #include <io_mgr.h>
 
+#include <board_netlist_updater.h>
+
 
 void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
                                      const wxString& aCmpFileName,
@@ -64,11 +66,26 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
     NETLIST_READER* netlistReader;
     KIGFX::VIEW*    view = GetGalCanvas()->GetView();
     BOARD*          board = GetBoard();
+    BOARD_NETLIST_UPDATER updater ( this, board );
 
+    updater.SetReporter ( aReporter );
+
+    updater.SetDeleteSinglePadNets( aDeleteSinglePadNets );
+    updater.SetIsDryRun ( aIsDryRun );
+    updater.SetReplaceFootprints ( aChangeFootprints );
+    updater.SetDeleteUnusedComponents ( aDeleteExtraFootprints );
+    updater.SetLookupByTimestamp ( aSelectByTimeStamp );
+    
+
+
+    #if 0
     netlist.SetIsDryRun( aIsDryRun );
     netlist.SetFindByTimeStamp( aSelectByTimeStamp );
     netlist.SetDeleteExtraFootprints( aDeleteExtraFootprints );
     netlist.SetReplaceFootprints( aChangeFootprints );
+#endif
+
+
 
     try
     {
@@ -85,18 +102,27 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
         std::auto_ptr< NETLIST_READER > nlr( netlistReader );
         SetLastNetListRead( aNetlistFileName );
         netlistReader->LoadNetlist();
-        loadFootprints( netlist, aReporter );
+        
     }
     catch( const IO_ERROR& ioe )
     {
-        msg.Printf( _( "Error loading netlist.\n%s" ), ioe.errorText.GetData() );
+        msg.Printf( _( "Error loading netlist.\n%s" ), ioe.shortErrorText.GetData() );
         wxMessageBox( msg, _( "Netlist Load Error" ), wxOK | wxICON_ERROR );
         return;
     }
 
+    try {
+        loadFootprints( netlist, aReporter );
+    }
+    catch ( const IO_ERROR& ioe )
+    {
+        msg.Printf( _( "Error loading footprints: %s" ), ioe.shortErrorText.GetData() );
+        aReporter->Report ( msg, REPORTER::ERROR );
+    }
+
     // Clear undo and redo lists to avoid inconsistencies between lists
-    if( !netlist.IsDryRun() )
-        GetScreen()->ClearUndoRedoList();
+    //if( !netlist.IsDryRun() )
+       // GetScreen()->ClearUndoRedoList();
 
     if( !netlist.IsDryRun() )
     {
@@ -109,7 +135,7 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
     }
 
     netlist.SortByReference();
-    board->ReplaceNetlist( netlist, aDeleteSinglePadNets, aReporter );
+    updater.UpdateNetlist ( netlist );
 
     // If it was a dry run, nothing has changed so we're done.
     if( netlist.IsDryRun() )

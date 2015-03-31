@@ -645,9 +645,52 @@ bool BOARD::IsModuleLayerVisible( LAYER_ID layer )
     }
 }
 
+bool checkIfItemExists( BOARD* aPcb, BOARD_ITEM* aItem )
+{
+    std::set<BOARD_ITEM*> itemsList;
+
+    int icnt = 0;
+    BOARD_ITEM* item;
+
+    NETINFO_LIST& netInfo = aPcb->GetNetInfo();
+
+        // Store items in list:
+        // Append tracks:
+        for( item = aPcb->m_Track; item != NULL; item = item->Next() )
+            itemsList.insert( item );
+
+        // Append modules:
+        for( item = aPcb->m_Modules; item != NULL; item = item->Next() )
+            itemsList.insert( item );
+
+        // Append drawings
+        for( item = aPcb->m_Drawings; item != NULL; item = item->Next() )
+            itemsList.insert( item );
+
+        // Append zones outlines
+        for( int ii = 0; ii < aPcb->GetAreaCount(); ii++ )
+            itemsList.insert( aPcb->GetArea( ii ) );
+
+        // Append zones segm:
+        for( item = aPcb->m_Zone; item != NULL; item = item->Next() )
+            itemsList.insert( item );
+
+        for( NETINFO_LIST::iterator i = netInfo.begin(); i != netInfo.end(); ++i )
+            itemsList.insert ( *i );
+
+        
+        return itemsList.find( aItem ) != itemsList.end();  
+}
+
 
 void BOARD::Add( BOARD_ITEM* aBoardItem, int aControl )
 {
+    if(checkIfItemExists(this, aBoardItem))
+    {
+        printf("trying to add already existing item.\n");
+        assert(false);
+    }
+
     if( aBoardItem == NULL )
     {
         wxFAIL_MSG( wxT( "BOARD::Add() param error: aBoardItem NULL" ) );
@@ -656,6 +699,10 @@ void BOARD::Add( BOARD_ITEM* aBoardItem, int aControl )
 
     switch( aBoardItem->Type() )
     {
+    case PCB_NETINFO_T:
+        aBoardItem->SetParent ( this );
+        m_NetInfo.AppendNet ( (NETINFO_ITEM*) aBoardItem );
+
     // this one uses a vector
     case PCB_MARKER_T:
         aBoardItem->SetParent( this );
@@ -733,8 +780,20 @@ BOARD_ITEM* BOARD::Remove( BOARD_ITEM* aBoardItem )
     // find these calls and fix them!  Don't send me no stinking' NULL.
     wxASSERT( aBoardItem );
 
+    if(!checkIfItemExists(this, aBoardItem))
+    {
+        printf("trying to remove nonexistent item.\n");
+        assert(false);
+    }
+
+    printf(" remove %p type %d\n", aBoardItem, aBoardItem->Type() );
+
     switch( aBoardItem->Type() )
     {
+    case PCB_NETINFO_T:
+        m_NetInfo.RemoveNet ( (NETINFO_ITEM*) aBoardItem );
+        break;        
+
     case PCB_MARKER_T:
 
         // find the item in the vector, then remove it
@@ -787,6 +846,8 @@ BOARD_ITEM* BOARD::Remove( BOARD_ITEM* aBoardItem )
     default:
         wxFAIL_MSG( wxT( "BOARD::Remove() needs more ::Type() support" ) );
     }
+
+
 
     m_ratsnest->Remove( aBoardItem );
 
@@ -1227,10 +1288,7 @@ NETINFO_ITEM* BOARD::FindNet( int aNetcode ) const
 
     wxASSERT( m_NetInfo.GetNetCount() > 0 );    // net zero should exist
 
-    if( aNetcode == NETINFO_LIST::UNCONNECTED && m_NetInfo.GetNetCount() == 0 )
-        return &NETINFO_LIST::ORPHANED;
-    else
-        return m_NetInfo.GetNetItem( aNetcode );
+    return m_NetInfo.GetNetItem( aNetcode );
 }
 
 
@@ -2185,416 +2243,6 @@ bool BOARD::NormalizeAreaPolygon( PICKED_ITEMS_LIST * aNewZonesList, ZONE_CONTAI
 
     return true;
 }
-
-
-void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
-                            REPORTER* aReporter )
-{
-    unsigned       i;
-    wxPoint        bestPosition;
-    wxString       msg;
-    D_PAD*         pad;
-    MODULE*        footprint;
-
-    if( !IsEmpty() )
-    {
-        // Position new components below any existing board features.
-        EDA_RECT bbbox = ComputeBoundingBox( true );
-
-        if( bbbox.GetWidth() || bbbox.GetHeight() )
-        {
-            bestPosition.x = bbbox.Centre().x;
-            bestPosition.y = bbbox.GetBottom() + Millimeter2iu( 10 );
-        }
-    }
-    else
-    {
-        // Position new components in the center of the page when the board is empty.
-        wxSize pageSize = m_paper.GetSizeIU();
-
-        bestPosition.x = pageSize.GetWidth() / 2;
-        bestPosition.y = pageSize.GetHeight() / 2;
-    }
-
-    m_pcbStatus = 0;
-
-    for( i = 0;  i < aNetlist.GetCount();  i++ )
-    {
-        COMPONENT* component = aNetlist.GetComponent( i );
-
-        if( aReporter )
-        {
-
-            msg.Printf( _( "Checking netlist component footprint \"%s:%s:%s\".\n" ),
-                        GetChars( component->GetReference() ),
-                        GetChars( component->GetTimeStamp() ),
-                        GetChars( component->GetFPID().Format() ) );
-            aReporter->Report( msg, REPORTER::INFO );
-        }
-
-        if( aNetlist.IsFindByTimeStamp() )
-            footprint = FindModule( aNetlist.GetComponent( i )->GetTimeStamp(), true );
-        else
-            footprint = FindModule( aNetlist.GetComponent( i )->GetReference() );
-
-        if( footprint == NULL )        // A new footprint.
-        {
-            if( aReporter )
-            {
-                if( component->GetModule() != NULL )
-                {
-                    msg.Printf( _( "Adding new component \"%s:%s\" footprint \"%s\".\n" ),
-                                GetChars( component->GetReference() ),
-                                GetChars( component->GetTimeStamp() ),
-                                GetChars( component->GetFPID().Format() ) );
-
-                    aReporter->Report( msg, REPORTER::ACTION );
-                }
-                else
-                {
-                    msg.Printf( _( "Cannot add new component \"%s:%s\" due to missing "
-                                   "footprint \"%s\".\n" ),
-                                GetChars( component->GetReference() ),
-                                GetChars( component->GetTimeStamp() ),
-                                GetChars( component->GetFPID().Format() ) );
-
-                    aReporter->Report( msg, REPORTER::ERROR );
-                }
-            }
-
-            if( !aNetlist.IsDryRun() && (component->GetModule() != NULL) )
-            {
-                // Owned by NETLIST, can only copy it.
-                footprint = new MODULE( *component->GetModule() );
-                footprint->SetParent( this );
-                footprint->SetPosition( bestPosition );
-                footprint->SetTimeStamp( GetNewTimeStamp() );
-                Add( footprint, ADD_APPEND );
-            }
-        }
-        else                           // An existing footprint.
-        {
-            // Test for footprint change.
-            if( !component->GetFPID().empty() &&
-                footprint->GetFPID() != component->GetFPID() )
-            {
-                if( aNetlist.GetReplaceFootprints() )
-                {
-                    if( aReporter )
-                    {
-                        if( component->GetModule() != NULL )
-                        {
-                            msg.Printf( _( "Replacing component \"%s:%s\" footprint \"%s\" with "
-                                           "\"%s\".\n" ),
-                                        GetChars( footprint->GetReference() ),
-                                        GetChars( footprint->GetPath() ),
-                                        GetChars( footprint->GetFPID().Format() ),
-                                        GetChars( component->GetFPID().Format() ) );
-
-                            aReporter->Report( msg, REPORTER::ACTION );
-                        }
-                        else
-                        {
-                            msg.Printf( _( "Cannot replace component \"%s:%s\" due to missing "
-                                           "footprint \"%s\".\n" ),
-                                        GetChars( footprint->GetReference() ),
-                                        GetChars( footprint->GetPath() ),
-                                        GetChars( component->GetFPID().Format() ) );
-
-                            aReporter->Report( msg, REPORTER::ERROR );                            
-                        }
-                    }
-
-                    if( !aNetlist.IsDryRun() && (component->GetModule() != NULL) )
-                    {
-                        wxASSERT( footprint != NULL );
-                        MODULE* newFootprint = new MODULE( *component->GetModule() );
-
-                        if( aNetlist.IsFindByTimeStamp() )
-                            newFootprint->SetReference( footprint->GetReference() );
-                        else
-                            newFootprint->SetPath( footprint->GetPath() );
-
-                        footprint->CopyNetlistSettings( newFootprint );
-                        Remove( footprint );
-                        Add( newFootprint, ADD_APPEND );
-                        footprint = newFootprint;
-                    }
-                }
-            }
-
-            // Test for reference designator field change.
-            if( footprint->GetReference() != component->GetReference() )
-            {
-                if( aReporter )
-                {
-                    msg.Printf( _( "Changing component \"%s:%s\" reference to \"%s\".\n" ),
-                                GetChars( footprint->GetReference() ),
-                                GetChars( footprint->GetPath() ),
-                                GetChars( component->GetReference() ) );
-                    aReporter->Report( msg, REPORTER::ACTION );
-                }
-
-                if( !aNetlist.IsDryRun() )
-                    footprint->SetReference( component->GetReference() );
-            }
-
-            // Test for value field change.
-            if( footprint->GetValue() != component->GetValue() )
-            {
-                if( aReporter )
-                {
-                    msg.Printf( _( "Changing component \"%s:%s\" value from \"%s\" to \"%s\".\n" ),
-                                GetChars( footprint->GetReference() ),
-                                GetChars( footprint->GetPath() ),
-                                GetChars( footprint->GetValue() ),
-                                GetChars( component->GetValue() ) );
-                    aReporter->Report( msg, REPORTER::ACTION );
-                }
-
-                if( !aNetlist.IsDryRun() )
-                    footprint->SetValue( component->GetValue() );
-            }
-
-            // Test for time stamp change.
-            if( footprint->GetPath() != component->GetTimeStamp() )
-            {
-                if( aReporter )
-                {
-                    msg.Printf( _( "Changing component path \"%s:%s\" to \"%s\".\n" ),
-                                GetChars( footprint->GetReference() ),
-                                GetChars( footprint->GetPath() ),
-                                GetChars( component->GetTimeStamp() ) );
-                    aReporter->Report( msg, REPORTER::INFO );
-                }
-
-                if( !aNetlist.IsDryRun() )
-                    footprint->SetPath( component->GetTimeStamp() );
-            }
-        }
-
-        if( footprint == NULL )
-            continue;
-
-        // At this point, the component footprint is updated.  Now update the nets.
-        for( pad = footprint->Pads();  pad;  pad = pad->Next() )
-        {
-            COMPONENT_NET net = component->GetNet( pad->GetPadName() );
-
-            if( !net.IsValid() )                // Footprint pad had no net.
-            {
-                if( aReporter && !pad->GetNetname().IsEmpty() )
-                {
-                    msg.Printf( _( "Clearing component \"%s:%s\" pin \"%s\" net name.\n" ),
-                                GetChars( footprint->GetReference() ),
-                                GetChars( footprint->GetPath() ),
-                                GetChars( pad->GetPadName() ) );
-                    aReporter->Report( msg, REPORTER::ACTION );
-                }
-
-                if( !aNetlist.IsDryRun() )
-                    pad->SetNetCode( NETINFO_LIST::UNCONNECTED );
-            }
-            else                                 // Footprint pad has a net.
-            {
-                if( net.GetNetName() != pad->GetNetname() )
-                {
-                    if( aReporter )
-                    {
-                        msg.Printf( _( "Changing component \"%s:%s\" pin \"%s\" net name from "
-                                       "\"%s\" to \"%s\".\n" ),
-                                    GetChars( footprint->GetReference() ),
-                                    GetChars( footprint->GetPath() ),
-                                    GetChars( pad->GetPadName() ),
-                                    GetChars( pad->GetNetname() ),
-                                    GetChars( net.GetNetName() ) );
-                        aReporter->Report( msg, REPORTER::ACTION );
-                    }
-
-                    if( !aNetlist.IsDryRun() )
-                    {
-                        NETINFO_ITEM* netinfo = FindNet( net.GetNetName() );
-                        if( netinfo == NULL )
-                        {
-                            // It is a new net, we have to add it
-                            netinfo = new NETINFO_ITEM( this, net.GetNetName() );
-                            m_NetInfo.AppendNet( netinfo );
-                        }
-
-                        pad->SetNetCode( netinfo->GetNet() );
-                    }
-                }
-            }
-        }
-    }
-
-    // Remove all components not in the netlist.
-    if( aNetlist.GetDeleteExtraFootprints() )
-    {
-        MODULE* nextModule;
-        const COMPONENT* component;
-
-        for( MODULE* module = m_Modules;  module != NULL;  module = nextModule )
-        {
-            nextModule = module->Next();
-
-            if( module->IsLocked() )
-                continue;
-
-            if( aNetlist.IsFindByTimeStamp() )
-                component = aNetlist.GetComponentByTimeStamp( module->GetPath() );
-            else
-                component = aNetlist.GetComponentByReference( module->GetReference() );
-
-            if( component == NULL )
-            {
-                if( aReporter )
-                {
-                    msg.Printf( _( "Removing unused component \"%s:%s\".\n" ),
-                                GetChars( module->GetReference() ),
-                                GetChars( module->GetPath() ) );
-                    aReporter->Report( msg, REPORTER::ACTION );
-                }
-
-                if( !aNetlist.IsDryRun() )
-                    module->DeleteStructure();
-            }
-        }
-    }
-
-    // We need the pad list, for next tests.
-    // padlist is the list of pads, sorted by netname.
-    BuildListOfNets();
-    PAD_INDEX& padIndex = GetPadIndex();
-
-    // If needed, remove the single pad nets:
-    if( aDeleteSinglePadNets && !aNetlist.IsDryRun() )
-    {
-        int         count = 0;
-        wxString    netname;
-        D_PAD*      pad = NULL;
-        D_PAD*      previouspad = NULL;
-
-        for( unsigned ii = 0; ii < padIndex.Size(); ii++ )
-        {
-            pad = padIndex[ii];
-
-            if( pad->GetNetname().IsEmpty() )
-                continue;
-
-            if( netname != pad->GetNetname() )  // End of net
-            {
-                if( previouspad && count == 1 )
-                {
-                    // First, see if we have a copper zone attached to this pad.
-                    // If so, this is not really a single pad net
-
-                    for( int ii = 0; ii < GetAreaCount(); ii++ )
-                    {
-                        ZONE_CONTAINER* zone = GetArea( ii );
-
-                        if( !zone->IsOnCopperLayer() )
-                            continue;
-
-                        if( zone->GetIsKeepout() )
-                            continue;
-
-                        if( zone->GetNet() == previouspad->GetNet() )
-                        {
-                            count++;
-                            break;
-                        }
-                    }
-
-                    if( count == 1 )    // Really one pad, and nothing else
-                    {
-                        if( aReporter )
-                        {
-                            msg.Printf( _( "Remove single pad net \"%s\" on \"%s\" pad '%s'\n" ),
-                                        GetChars( previouspad->GetNetname() ),
-                                        GetChars( previouspad->GetParent()->GetReference() ),
-                                        GetChars( previouspad->GetPadName() ) );
-                            aReporter->Report( msg, REPORTER::ACTION );
-                        }
-
-                        previouspad->SetNetCode( NETINFO_LIST::UNCONNECTED );
-                    }
-                }
-
-                netname = pad->GetNetname();
-                count = 1;
-            }
-            else
-                count++;
-
-            previouspad = pad;
-        }
-
-        // Examine last pad
-        if( pad && count == 1 )
-            pad->SetNetCode( NETINFO_LIST::UNCONNECTED );
-    }
-
-    m_ratsnest->ProcessBoard();
-
-    // Last step: Some tests:
-    // verify all pads found in netlist:
-    // They should exist in footprints, otherwise the footprint is wrong
-    // note also references or time stamps are updated, so we use only
-    // the reference to find a footprint
-    //
-    // Also verify if zones have acceptable nets, i.e. nets with pads.
-    // Zone with no pad belongs to a "dead" net which happens after changes in schematic
-    // when no more pad use this net name.
-    if( aReporter )
-    {
-        wxString padname;
-        for( i = 0; i < aNetlist.GetCount(); i++ )
-        {
-            const COMPONENT* component = aNetlist.GetComponent( i );
-            MODULE* footprint = FindModuleByReference( component->GetReference() );
-
-            if( footprint == NULL )    // It can be missing in partial designs
-                continue;
-
-            // Explore all pins/pads in component
-            for( unsigned jj = 0; jj < component->GetNetCount(); jj++ )
-            {
-                COMPONENT_NET net = component->GetNet( jj );
-                padname = net.GetPinName();
-
-                if( footprint->FindPadByName( padname ) )
-                    continue;   // OK, pad found
-
-                // not found: bad footprint, report error
-                msg.Printf( _( "Component '%s' pad '%s' not found in footprint '%s'\n" ),
-                            GetChars( component->GetReference() ),
-                            GetChars( padname ),
-                            GetChars( footprint->GetFPID().Format() ) );
-                aReporter->Report( msg, REPORTER::ERROR );
-            }
-        }
-
-        // Test copper zones to detect "dead" nets (nets without any pad):
-        for( int ii = 0; ii < GetAreaCount(); ii++ )
-        {
-            ZONE_CONTAINER* zone = GetArea( ii );
-
-            if( !zone->IsOnCopperLayer() || zone->GetIsKeepout() )
-                continue;
-
-            int nc = m_padIndex->CountNodesInNet( zone->GetNet() );
-
-            if( nc == 0 )
-            {
-                msg.Printf( _( "Copper zone (net name '%s'): net has no pads connected." ),
-                           GetChars( zone->GetNet()->GetNetname() ) );
-                aReporter->Report( msg, REPORTER::WARNING );
-            }
-        }
-    }
-}
-
 
 BOARD_ITEM* BOARD::DuplicateAndAddItem( const BOARD_ITEM* aItem,
                                         bool aIncrementReferences )

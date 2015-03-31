@@ -99,7 +99,7 @@ std::string
 struct IO_ERROR // : std::exception
 {
     wxString    errorText;
-
+    wxString    shortErrorText;
     /**
      * Constructor
      *

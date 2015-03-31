@@ -39,6 +39,8 @@
 #include <dialog_cleaning_options.h>
 #include <ratsnest_data.h>
 
+#include <board_undo_manager.h>
+
 // Helper class used to clean tracks and vias
 class TRACKS_CLEANER: CONNECTIONS
 {
@@ -156,7 +158,7 @@ bool TRACKS_CLEANER::CleanupBoard( PCB_EDIT_FRAME *aFrame,
     if( modified )
     {
         // Clear undo and redo lists to avoid inconsistencies between lists
-        aFrame->GetScreen()->ClearUndoRedoList();
+        aFrame->UndoManager().ClearUndoRedoLists();
         aFrame->SetCurItem( NULL );
         aFrame->Compile_Ratsnest( NULL, true );
         aFrame->OnModify();
@@ -180,9 +182,9 @@ void TRACKS_CLEANER::buildTrackConnectionInfo()
     // clear flags and variables used in cleanup
     for( TRACK *track = m_Brd->m_Track; track != NULL; track = track->Next() )
     {
+        clearConnections( track, true, false );
         track->start = NULL;
         track->end = NULL;
-        track->m_PadsConnected.clear();
         track->SetState( START_ON_PAD|END_ON_PAD|BUSY, false );
     }
 
@@ -191,10 +193,8 @@ void TRACKS_CLEANER::buildTrackConnectionInfo()
     for( TRACK *track = m_Brd->m_Track; track != NULL; track = track->Next() )
     {
         // Mark track if connected to pads
-        for( unsigned jj = 0; jj < track->m_PadsConnected.size(); jj++ )
+        BOOST_FOREACH ( D_PAD *pad, ConnectedPads( track ) )
         {
-            D_PAD * pad = track->m_PadsConnected[jj];
-
             if( pad->HitTest( track->GetStart() ) )
             {
                 track->start = pad;
@@ -257,10 +257,8 @@ bool TRACKS_CLEANER::clean_vias()
             /* To delete through Via on THT pads at same location
              * Examine the list of connected pads:
              * if one through pad is found, the via can be removed */
-            for( unsigned ii = 0; ii < via->m_PadsConnected.size(); ++ii )
+            BOOST_FOREACH ( const D_PAD *pad, ConnectedPads( via ) )
             {
-                const D_PAD *pad = via->m_PadsConnected[ii];
-
                 const LSET all_cu = LSET::AllCuMask();
 
                 if( (pad->GetLayerSet() & all_cu) == all_cu )

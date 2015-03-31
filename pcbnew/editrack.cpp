@@ -41,7 +41,8 @@
 #include <class_board.h>
 #include <class_track.h>
 #include <class_zone.h>
-
+#include <board_undo_manager.h>
+ 
 
 static void Abort_Create_Track( EDA_DRAW_PANEL* panel, wxDC* DC );
 void        ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
@@ -80,7 +81,7 @@ static void Abort_Create_Track( EDA_DRAW_PANEL* Panel, wxDC* DC )
 
         // Undo pending changes (mainly a lock point creation) and clear the
         // undo picker list:
-        frame->PutDataInPreviousState( &s_ItemsListPicker, false, false );
+        frame->UndoManager().ForceRestoreState( &s_ItemsListPicker, false );
         s_ItemsListPicker.ClearListAndDeleteItems();
 
         // Delete current (new) track
@@ -183,7 +184,7 @@ TRACK* PCB_EDIT_FRAME::Begin_Route( TRACK* aTrack, wxDC* aDC )
 
         if( pad )
         {
-            g_CurrentTrackSegment->m_PadsConnected.push_back( pad );
+            //g_CurrentTrackSegment->m_PadsConnected.push_back( pad );
             // Useful to display track length, if the pad has a die length:
             g_CurrentTrackSegment->SetState( BEGIN_ONPAD, true );
             g_CurrentTrackSegment->start = pad;
@@ -268,11 +269,13 @@ TRACK* PCB_EDIT_FRAME::Begin_Route( TRACK* aTrack, wxDC* aDC )
 
             D_PAD* pad = GetBoard()->GetPad( previousTrack, ENDPOINT_END );
 
+            #if 0
             if( pad )
             {
                 newTrack->m_PadsConnected.push_back( pad );
                 previousTrack->m_PadsConnected.push_back( pad );
             }
+            #endif
 
             newTrack->start = previousTrack->end;
 

@@ -61,6 +61,7 @@ class BOARD_ITEM;
 class PCB_LAYER_BOX_SELECTOR;
 class NETLIST;
 class REPORTER;
+class BOARD_UNDO_MANAGER;
 struct PARSE_ERROR;
 struct IO_ERROR;
 class FP_LIB_TABLE;
@@ -85,7 +86,7 @@ class PCB_EDIT_FRAME : public PCB_BASE_EDIT_FRAME
 
     int             m_RecordingMacros;
     MACROS_RECORDED m_Macros[10];
-
+    
     /// The auxiliary right vertical tool bar used to access the microwave tools.
     wxAuiToolBar* m_microWaveToolBar;
 
@@ -713,6 +714,7 @@ public:
      */
     void RestoreCopyFromUndoList( wxCommandEvent& aEvent );
 
+    
     /* Block operations: */
 
     /**

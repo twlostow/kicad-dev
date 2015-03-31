@@ -332,7 +332,7 @@ bool PNS_DP_GATEWAYS::FitGateways( PNS_DP_GATEWAYS& aEntry, PNS_DP_GATEWAYS& aTa
 
     int bestScore = -1000;
     DP_CANDIDATE best;
-    bool found = false;
+    bool found;
 
     BOOST_FOREACH( DP_CANDIDATE c, candidates )
     {
@@ -385,6 +385,7 @@ void PNS_DP_GATEWAYS::BuildFromPrimitivePair( PNS_DP_PRIMITIVE_PAIR aPair, bool 
         p0_n = aPair.AnchorN();
 
         shP = aPair.PrimP()->Shape();
+
     }
     else if( aPair.PrimP()->OfKind( PNS_ITEM::SEGMENT ) && aPair.PrimN()->OfKind( PNS_ITEM::SEGMENT ) )
     {
@@ -394,9 +395,6 @@ void PNS_DP_GATEWAYS::BuildFromPrimitivePair( PNS_DP_PRIMITIVE_PAIR aPair, bool 
     }
 
     majorDirection = ( p0_p - p0_n ).Perpendicular();
-
-    if( shP == NULL )
-        return;
 
     switch( shP->Type() )
     {
@@ -817,7 +815,7 @@ double PNS_DIFF_PAIR::CoupledLength() const
 
     double l = 0.0;
     for( unsigned int i = 0; i < pairs.size(); i++ )
-        l += pairs[i].coupledP.Length();
+            l += pairs[i].coupledP.Length();
 
     return l;
 }
@@ -853,4 +851,90 @@ int PNS_DIFF_PAIR::CoupledLength ( const SEG& aP, const SEG& aN ) const
         return p_clip.Length();
 
     return 0;
+}
+
+void PNS_DIFF_PAIR::Decompose ( std::vector<PNS_DIFF_PAIR> &aDecomposed )
+{
+    SHAPE_LINE_CHAIN p( m_p );
+    SHAPE_LINE_CHAIN n( m_n );
+
+    p.Simplify();
+    n.Simplify();
+
+    int lastIdxP = 0, lastIdxN = 0;
+    VECTOR2I lastP ( p.CPoint(0));
+    VECTOR2I lastN ( n.CPoint(0));
+
+    for( int i = 0; i < p.SegmentCount(); i++ )
+    {
+        for( int j = 0; j < n.SegmentCount(); j++ )
+        {
+            SEG sp = p.CSegment( i );
+            SEG sn = n.CSegment( j );
+
+            SEG p_clip, n_clip;
+
+            int64_t dist = std::abs( sp.Distance( sn ) - m_width );
+
+            if( sp.ApproxParallel( sn ) && m_gapConstraint.Matches( dist ) && commonParallelProjection( sp, sn, p_clip, n_clip ) )
+            {
+                PNS_DIFF_PAIR uncoupled;
+
+                uncoupled.SetNets ( m_net_p, m_net_n );
+                uncoupled.SetGap ( m_gap );
+    
+                uncoupled.P().Append( p.Slice ( lastIdxP, i ) );
+                uncoupled.N().Append( n.Slice ( lastIdxN, j ) );
+    
+                uncoupled.P().Append ( p_clip.A );
+                uncoupled.N().Append ( n_clip.A );
+
+                aDecomposed.push_back( uncoupled );
+
+                lastIdxP = i;
+                lastIdxN = j;
+
+                lastP = p_clip.B;
+                lastN = n_clip.B;
+
+
+                //const COUPLED_SEGMENTS spair( p_clip, sp, i, n_clip, sn, j );
+                //aPairs.push_back( spair );
+            }
+        }
+    }
+
+/*    BOOST_FOREACH( const PNS_DIFF_PAIR::COUPLED_SEGMENTS& sp, pairs )
+    {
+        int idxP = p.Find ( sp.coupledP.A );
+        int idxN = n.Find ( sp.coupledN.A );
+
+        printf("P %d-%d  N %d-%d\n", prevP, idxP, prevN, idxN);
+
+        if (idxP != prevP || idxN != prevN )
+        {
+            PNS_DIFF_PAIR uncoupled;
+
+            uncoupled.SetShape ( p.Slice ( prevP, idxP ), n.Slice ( prevN, idxN ) );
+            uncoupled.SetNets ( m_net_p, m_net_n );
+            uncoupled.SetGap ( m_gap );
+
+            aDecomposed.push_back( uncoupled );
+        }
+
+        PNS_DIFF_PAIR coupled;
+
+        coupled.SetShape ( SHAPE_LINE_CHAIN ( sp.coupledP),
+                             SHAPE_LINE_CHAIN ( sp.coupledN) );
+        coupled.SetNets ( m_net_p, m_net_n );
+        coupled.SetGap ( m_gap );
+
+        //aDecomposed.push_back( coupled );
+
+        prevP = p.Find ( sp.coupledP.B );
+        prevN = n.Find ( sp.coupledN.B );
+    }
+    
+*/
+
 }

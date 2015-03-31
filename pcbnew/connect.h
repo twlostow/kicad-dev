@@ -1,9 +1,7 @@
 /**
- * @file connect.h
+ * @file connections.h
  * @brief helper classes to find track to track and track to pad connections.
  */
-#ifndef CONNECT_H
-#define CONNECT_H
 
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
@@ -30,13 +28,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#ifndef __CONNECTIONS_H
+#define __CONNECTIONS_H
+
 #include <class_track.h>
 #include <class_board.h>
 
+#include <boost/unordered_map.hpp>
 
-// Helper classes to handle connection points (i.e. candidates) for tracks
-
-/* class CONNECTED_POINT describes a coordinate having a track or pad parent.
+/**
+ * Class CONNECTED_POINT 
+ *
+ * Describes a coordinate having a track or pad parent.
  * when a pad is the parent, the coordinate is (obviously) the connection point
  * when a track is the parent, the coordinate is the staring point
  * or the ending point.
@@ -69,7 +72,7 @@ public:
      * @return the parent track or via of this connected point,
      * or null if the parent is a pad
      */
-    TRACK * GetTrack() const
+    TRACK* GetTrack() const
     {
         return m_item->Type() != PCB_PAD_T ? (TRACK*) m_item : NULL ;
     }
@@ -79,7 +82,7 @@ public:
      * @return the parent pad of this connected point,
      * or null if the parent is a track or via
      */
-    D_PAD * GetPad() const
+    D_PAD* GetPad() const
     {
         return m_item->Type() == PCB_PAD_T ? (D_PAD*) m_item : NULL;
     }
@@ -87,22 +90,60 @@ public:
     const wxPoint & GetPoint() const { return m_point; }
 };
 
-// A helper class to handle connections calculations:
+/**
+ * Class CONNECTIONS
+ *
+ * A helper class to handle connections calculations.
+ * Builds a connectivity map, which is a list of pads/tracks/vias connected 
+ * to each other pad/track/via. Such information is later used to propagate netcodes
+ * from pads and in dragging/cleaning code.
+ */
 class CONNECTIONS
 {
+public:
+    typedef std::vector<TRACK*> TRACK_LIST;
+    typedef std::vector<D_PAD*> PAD_LIST;
+
 private:
-    std::vector <TRACK*> m_connected;           // List of connected tracks/vias
-                                                // to a given track or via
+    struct CONN_ENTRY {
+        TRACK_LIST tracks;
+        PAD_LIST pads;
+    };
+    
+    typedef boost::unordered_map<BOARD_CONNECTED_ITEM*, CONN_ENTRY> CONN_MAP;
+
     std::vector <CONNECTED_POINT> m_candidates; // List of points to test
                                                 // (end points of tracks or vias location )
     BOARD * m_brd;                              // the master board.
+    
     const TRACK * m_firstTrack;                 // The first track used to build m_Candidates
     const TRACK * m_lastTrack;                  // The last track used to build m_Candidates
-    std::vector<D_PAD*> m_sortedPads;           // list of sorted pads by X (then Y) coordinate
+    
+    PAD_LIST m_sortedPads;                      // list of sorted pads by X (then Y) coordinate to a given track or via
+    
+    CONN_MAP m_cmap;                            // connectivity map
 
+
+protected:
+    
+    void clearConnections ( BOARD_CONNECTED_ITEM *aItem, bool aPads = true, bool aTracks = true );
+    void connect ( BOARD_CONNECTED_ITEM *aHost, BOARD_CONNECTED_ITEM *aConnectedItem );
+    
 public:
     CONNECTIONS( BOARD * aBrd );
     ~CONNECTIONS() {};
+
+    TRACK_LIST& ConnectedTracks ( BOARD_CONNECTED_ITEM *aItem )
+    {
+        return m_cmap[aItem].tracks;
+    };
+    
+    PAD_LIST& ConnectedPads ( BOARD_CONNECTED_ITEM *aItem )
+    {
+        return m_cmap[aItem].pads;
+    }
+
+
 
     /**
      * Function BuildPadsList
@@ -117,7 +158,7 @@ public:
      * Function GetPadsList
      * @return the pads list used in connections calculations
      */
-    std::vector<D_PAD*>& GetPadsList() { return m_sortedPads; }
+    PAD_LIST& GetPadsList() { return m_sortedPads; }
 
     /**
      * Function Build_CurrNet_SubNets_Connections
@@ -158,23 +199,12 @@ public:
      * m_candidates is expected to be populated by the track candidates ends list
      * @param aTrack = track or via to use as reference
      */
-    int SearchConnectedTracks( const TRACK * aTrack );
+    int SearchConnectedTracks( TRACK* aTrack );
 
-    /**
-     * Function GetConnectedTracks
-     * Copy m_Connected that contains the list of tracks connected
-     * calculated by SearchConnectedTracks
-     * in aTrack->m_TracksConnected
-     * @param aTrack = track or via to fill with connected tracks
-     */
-    void GetConnectedTracks(TRACK * aTrack)
-    {
-        aTrack->m_TracksConnected = m_connected;
-    }
-
+    
     /**
      * function SearchConnectionsPadsToIntersectingPads
-     * Explores the list of pads and adds to m_PadsConnected member
+     * Explores the list of pads and adds to the connected pads list
      * of each pad pads connected to
      * Here, connections are due to intersecting pads, not tracks
      * m_sortedPads must be initialized
@@ -185,13 +215,13 @@ public:
      * function SearchTracksConnectedToPads
      * Explores the list of pads.
      * if( add_to_padlist )
-     *  adds to m_PadsConnected member of each track the pad(s) connected to
+     *  adds to connected pads list of each track the pad(s) connected to
      * if add_to_tracklist
-     *  adds to m_TracksConnected member of each pad the track(s) connected to
-     * D_PAD::m_TracksConnected is cleared before adding items
-     * TRACK::m_PadsConnected is not cleared
-     * @param add_to_padlist = true to fill m_PadsConnected member of each track
-     * @param add_to_tracklist = true to fill m_TracksConnected member of each pad
+     *  adds to connected track list member of each pad the track(s) connected to
+     * Connected tracks list is cleared before adding items
+     * Connected pads list is not cleared
+     * @param add_to_padlist = true to fill connected pads list for each track
+     * @param add_to_tracklist = true to fill connected track list for  member of each pad
      */
     void SearchTracksConnectedToPads( bool add_to_padlist = true, bool add_to_tracklist = true);
 
@@ -260,4 +290,4 @@ private:
     int Merge_PadsSubNets( int aOldSubNet, int aNewSubNet );
 };
 
-#endif      //  ifndef CONNECT_H
+#endif      //  ifndef __CONNECTIONS_H

@@ -42,19 +42,18 @@ class wxDC;
 void BOARD_ITEM::Draw( EDA_DRAW_PANEL* panel, wxDC* DC,
                        GR_DRAWMODE aDrawMode, const wxPoint& offset )
 {
-    wxASSERT( false );
+    printf("Attempting to draw non-drawable item %s ", (const char *) GetClass() );
+    return;
 }
 
 const wxPoint& BOARD_ITEM::GetPosition() const
 {
     static wxPoint dummy(0, 0);
-    wxASSERT( false );
     return dummy;
 }
 
 void BOARD_ITEM::SetPosition( const wxPoint& aPos )
 {
-    wxASSERT( false );
 }
 
 wxString BOARD_ITEM::ShowShape( STROKE_T aShape )

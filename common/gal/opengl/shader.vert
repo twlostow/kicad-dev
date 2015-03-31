@@ -28,8 +28,12 @@
 
 // Shader types
 const float SHADER_LINE                 = 1.0f;
-const float SHADER_FILLED_CIRCLE        = 2.0f;
 const float SHADER_STROKED_CIRCLE       = 3.0f;
+const float SHADER_FILLED_CIRCLE        = 2.0f;
+const float SHADER_PIXEL_LINE_R0        = 4.0f;
+const float SHADER_PIXEL_LINE_R1        = 5.0f;
+const float SHADER_PIXEL_LINE_R2        = 6.0f;
+const float SHADER_PIXEL_LINE_R3        = 7.0f;
 
 // Minimum line width
 const float MIN_WIDTH = 1.0f;
@@ -37,6 +41,16 @@ const float MIN_WIDTH = 1.0f;
 attribute vec4 attrShaderParams;
 varying vec4 shaderParams;
 varying vec2 circleCoords;
+uniform vec2 pxSize;
+
+
+void aaLine()
+{
+    float ratio = shaderParams[1];
+    
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex + vec4 ( pxSize.x * shaderParams[2], pxSize.y  * shaderParams[3], 0.0, 0.0);
+    gl_TexCoord[0].xy = vec2 ( 0.0, ratio < 0 ? -1.0 : 1.0 );
+}
 
 void main()
 {
@@ -64,7 +78,7 @@ void main()
         // Compute relative circle coordinates basing on indices
         // Circle
         if( shaderParams[1] == 1.0f )
-            circleCoords = vec2( -sqrt( 3.0f ), -1.0f );
+        circleCoords = vec2( -sqrt( 3.0f )  , -1.0f );
         else if( shaderParams[1] == 2.0f )
             circleCoords = vec2( sqrt( 3.0f ), -1.0f );
         else if( shaderParams[1] == 3.0f )
@@ -87,6 +101,9 @@ void main()
             shaderParams[3] = shaderParams[3] / ( worldScale * lineWidth );
 
         gl_Position = ftransform();
+    } else if ( shaderParams [0] == SHADER_PIXEL_LINE_R1 )
+    {
+        aaLine();
     }
     else
     {

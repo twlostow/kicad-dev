@@ -35,31 +35,39 @@
 #include <class_board_item.h>
 
 BOARD_CONNECTED_ITEM::BOARD_CONNECTED_ITEM( BOARD_ITEM* aParent, KICAD_T idtype ) :
-    BOARD_ITEM( aParent, idtype ), m_netinfo( &NETINFO_LIST::ORPHANED ),
-    m_Subnet( 0 ), m_ZoneSubnet( 0 )
+    BOARD_ITEM( aParent, idtype ), 
+	m_netinfo( &NETINFO_LIST::ORPHANED_ITEM ),
+    m_Subnet( 0 ), 
+    m_ZoneSubnet( 0 )
 {
 }
 
 
 BOARD_CONNECTED_ITEM::BOARD_CONNECTED_ITEM( const BOARD_CONNECTED_ITEM& aItem ) :
-    BOARD_ITEM( aItem ), m_netinfo( aItem.m_netinfo ), m_Subnet( aItem.m_Subnet ),
+    BOARD_ITEM( aItem ),
+    m_netinfo( aItem.m_netinfo ),
+    m_Subnet( aItem.m_Subnet ),
     m_ZoneSubnet( aItem.m_ZoneSubnet )
 {
 }
 
+int dbgnetcode = 0;
 
 void BOARD_CONNECTED_ITEM::SetNetCode( int aNetCode )
 {
-    // if aNetCode < 0 ( typically NETINFO_LIST::FORCE_ORPHANED )
+	// if aNetCode < 0 ( typically NETINFO_LIST::FORCE_ORPHANED )
     // or no parent board,
     // set the m_netinfo to the dummy NETINFO_LIST::ORPHANED
 
     BOARD* board = GetBoard();
 
     if( ( aNetCode >= 0 ) && board )
+    {
         m_netinfo = board->FindNet( aNetCode );
-    else
-        m_netinfo = &NETINFO_LIST::ORPHANED;
+        if(dbgnetcode)
+            printf("SetNetCode: %d [%s]\n", aNetCode, (const char *) m_netinfo->GetNetname() ); 
+    } else
+        m_netinfo = &NETINFO_LIST::ORPHANED_ITEM;
 
     assert( m_netinfo );
 }

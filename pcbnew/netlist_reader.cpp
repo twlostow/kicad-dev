@@ -202,7 +202,7 @@ bool CMP_READER::Load( NETLIST* aNetlist ) throw( IO_ERROR, PARSE_ERROR )
             if( !footprint.IsEmpty() && fpid.Parse( footprint ) >= 0 )
             {
                 wxString error;
-                error.Printf( _( "invalid PFID in\nfile: <%s>\nline: %d" ),
+                error.Printf( _( "invalid FPID in\nfile: <%s>\nline: %d" ),
                               GetChars( m_lineReader->GetSource() ),
                               m_lineReader->LineNumber() );
 

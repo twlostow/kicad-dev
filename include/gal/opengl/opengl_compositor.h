@@ -82,6 +82,7 @@ protected:
 
     bool            m_initialized;            ///< Initialization status flag
     unsigned int    m_current;                ///< Currently used buffer handle
+    GLuint          m_stencilBuffer;            ///< Depth buffer handle
     GLuint          m_framebuffer;            ///< Main FBO handle
     GLuint          m_depthBuffer;            ///< Depth buffer handle
     typedef std::deque<OPENGL_BUFFER> OPENGL_BUFFERS;

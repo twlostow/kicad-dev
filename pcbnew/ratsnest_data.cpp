@@ -1133,7 +1133,7 @@ void RN_DATA::Update( const BOARD_ITEM* aItem )
 void RN_DATA::ProcessBoard()
 {
     m_nets.clear();
-    m_nets.resize( m_board->GetNetCount() );
+ //   m_nets.resize( m_board->GetNetCount() );
     int netCode;
 
     // Iterate over all items that may need to be connected
@@ -1179,8 +1179,8 @@ void RN_DATA::Recalculate( int aNet )
 {
     unsigned int netCount = m_board->GetNetCount();
 
-    if( netCount > m_nets.size() )
-        m_nets.resize( netCount );
+    //if( netCount > m_nets.size() )
+      //  m_nets.resize( netCount );
 
     if( aNet < 0 )              // Recompute everything
     {
@@ -1209,11 +1209,28 @@ void RN_DATA::Recalculate( int aNet )
 
 void RN_DATA::updateNet( int aNetCode )
 {
-    assert( aNetCode < (int) m_nets.size() );
+    ///assert( aNetCode < (int) m_nets.size() );
 
-    if( aNetCode < 1 || aNetCode > (int) m_nets.size() )
-        return;
+    //if( aNetCode < 1 || aNetCode > (int) m_nets.size() )
+       // return;
+
 
     m_nets[aNetCode].ClearSimple();
     m_nets[aNetCode].Update();
+}
+
+void RN_DATA::OnNotify( const BOARD_ITEM *aItem, NOTIFY_ACTION aAction )
+{
+    switch(aAction)
+    {
+    case NOTIFY_ADD:
+        Add(aItem);
+        break;
+    case NOTIFY_REMOVE:
+        Remove(aItem);
+        break;
+    case NOTIFY_CHANGE:
+        Update(aItem);
+        break;
+    }
 }

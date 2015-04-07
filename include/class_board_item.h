@@ -141,6 +141,7 @@ public:
         // trap any invalid layers, then go find the caller and fix it.
         // wxASSERT( unsigned( aLayer ) < unsigned( NB_PCB_LAYERS ) );
         m_Layer = aLayer;
+        notify();
     }
 
     /**
@@ -314,6 +315,11 @@ public:
 
     /// @copydoc VIEW_ITEM::ViewGetLayers()
     virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
+
+protected:
+    void notify() const;
+
+
 };
 
 #endif /* BOARD_ITEM_STRUCT_H */

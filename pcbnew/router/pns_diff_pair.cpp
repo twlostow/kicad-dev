@@ -332,7 +332,7 @@ bool PNS_DP_GATEWAYS::FitGateways( PNS_DP_GATEWAYS& aEntry, PNS_DP_GATEWAYS& aTa
 
     int bestScore = -1000;
     DP_CANDIDATE best;
-    bool found;
+    bool found = false;
 
     BOOST_FOREACH( DP_CANDIDATE c, candidates )
     {
@@ -395,6 +395,9 @@ void PNS_DP_GATEWAYS::BuildFromPrimitivePair( PNS_DP_PRIMITIVE_PAIR aPair, bool 
     }
 
     majorDirection = ( p0_p - p0_n ).Perpendicular();
+
+    if( shP == NULL )
+        return;
 
     switch( shP->Type() )
     {
@@ -853,6 +856,7 @@ int PNS_DIFF_PAIR::CoupledLength ( const SEG& aP, const SEG& aN ) const
     return 0;
 }
 
+#if 0
 void PNS_DIFF_PAIR::Decompose ( std::vector<PNS_DIFF_PAIR> &aDecomposed )
 {
     SHAPE_LINE_CHAIN p( m_p );
@@ -882,10 +886,10 @@ void PNS_DIFF_PAIR::Decompose ( std::vector<PNS_DIFF_PAIR> &aDecomposed )
 
                 uncoupled.SetNets ( m_net_p, m_net_n );
                 uncoupled.SetGap ( m_gap );
-    
+
                 uncoupled.P().Append( p.Slice ( lastIdxP, i ) );
                 uncoupled.N().Append( n.Slice ( lastIdxN, j ) );
-    
+
                 uncoupled.P().Append ( p_clip.A );
                 uncoupled.N().Append ( n_clip.A );
 
@@ -934,7 +938,8 @@ void PNS_DIFF_PAIR::Decompose ( std::vector<PNS_DIFF_PAIR> &aDecomposed )
         prevP = p.Find ( sp.coupledP.B );
         prevN = n.Find ( sp.coupledN.B );
     }
-    
+
 */
 
 }
+#endif

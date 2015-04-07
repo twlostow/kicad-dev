@@ -114,6 +114,8 @@ BOARD::BOARD() :
 
     // Initialize ratsnest
     m_ratsnest = new RN_DATA( this );
+
+    NfAddObserver ( m_ratsnest );
 }
 
 
@@ -124,6 +126,8 @@ BOARD::~BOARD()
         ZONE_CONTAINER* area_to_remove = m_ZoneDescriptorList[0];
         Delete( area_to_remove );
     }
+
+    NfRemoveObserver( m_ratsnest );
 
     delete m_ratsnest;
     delete m_legacyRatsnest;
@@ -678,8 +682,8 @@ bool checkIfItemExists( BOARD* aPcb, BOARD_ITEM* aItem )
         for( NETINFO_LIST::iterator i = netInfo.begin(); i != netInfo.end(); ++i )
             itemsList.insert ( *i );
 
-        
-        return itemsList.find( aItem ) != itemsList.end();  
+
+        return itemsList.find( aItem ) != itemsList.end();
 }
 
 
@@ -771,7 +775,9 @@ void BOARD::Add( BOARD_ITEM* aBoardItem, int aControl )
         break;
     }
 
-    m_ratsnest->Add( aBoardItem );
+    NfNotify ( aBoardItem, NOTIFY_ADD );
+
+    //m_ratsnest->Add( aBoardItem );
 }
 
 
@@ -786,13 +792,15 @@ BOARD_ITEM* BOARD::Remove( BOARD_ITEM* aBoardItem )
         assert(false);
     }
 
+    NfNotify ( aBoardItem, NOTIFY_REMOVE );
+
     printf(" remove %p type %d\n", aBoardItem, aBoardItem->Type() );
 
     switch( aBoardItem->Type() )
     {
     case PCB_NETINFO_T:
         m_NetInfo.RemoveNet ( (NETINFO_ITEM*) aBoardItem );
-        break;        
+        break;
 
     case PCB_MARKER_T:
 
@@ -849,7 +857,7 @@ BOARD_ITEM* BOARD::Remove( BOARD_ITEM* aBoardItem )
 
 
 
-    m_ratsnest->Remove( aBoardItem );
+    //m_ratsnest->Remove( aBoardItem );
 
     return aBoardItem;
 }
@@ -1688,7 +1696,7 @@ void BOARD::GetSortedPadListByXthenYCoord( std::vector<D_PAD*>& aVector, int aNe
 {
     if( aNetCode < 0 )
     {
-        aVector.insert( aVector.end(), 
+        aVector.insert( aVector.end(),
                         m_padIndex->AllPads().begin(),
                         m_padIndex->AllPads().end() );
     }
@@ -2346,4 +2354,5 @@ unsigned BOARD::GetRatsnestsCount() const
 {
     return m_legacyRatsnest->GetFull().size();
 }
-    
+
+

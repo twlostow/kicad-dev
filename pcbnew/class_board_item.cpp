@@ -264,3 +264,21 @@ int BOARD_ITEM::getNextNumberInSequence( std::set<int> aSeq, bool aFillSequenceG
     candidate++;
     return candidate;
 }
+
+void BOARD_ITEM::notify() const
+{
+    BOARD *brd;
+
+    if( m_Parent )
+    {
+        if ( m_Parent->Type() == PCB_T )
+            brd = static_cast<BOARD*> (m_Parent);
+        else {
+            BOARD_ITEM* parent = static_cast<BOARD_ITEM *> (m_Parent);
+            brd = parent->GetBoard();
+        }
+    } else
+        return;
+
+    brd->NfNotify( this, NOTIFY_CHANGE );
+}

@@ -182,6 +182,7 @@ set( PCBNEW_CLASS_SRCS
     append_board_to_current.cpp
     attribut.cpp
     board_items_to_polygon_shape_transform.cpp
+    board_observer.cpp
     board_undo_manager.cpp
     board_undo_redo.cpp
     board_netlist_updater.cpp

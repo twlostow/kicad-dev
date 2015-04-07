@@ -127,30 +127,30 @@ public:
      * @return the shape of this pad.
      */
     PAD_SHAPE_T GetShape() const                { return m_padShape; }
-    void SetShape( PAD_SHAPE_T aShape )         { m_padShape = aShape; m_boundingRadius = -1; }
+    void SetShape( PAD_SHAPE_T aShape )         { m_padShape = aShape; m_boundingRadius = -1; notify(); }
 
-    void SetPosition( const wxPoint& aPos )     { m_Pos = aPos; }   // was overload
+    void SetPosition( const wxPoint& aPos )     { m_Pos = aPos; notify(); }   // was overload
     const wxPoint& GetPosition() const          { return m_Pos; }   // was overload
 
-    void SetY( int y )                          { m_Pos.y = y; }
-    void SetX( int x )                          { m_Pos.x = x; }
+    void SetY( int y )                          { m_Pos.y = y; notify(); }
+    void SetX( int x )                          { m_Pos.x = x; notify(); }
 
-    void SetPos0( const wxPoint& aPos )         { m_Pos0 = aPos; }
+    void SetPos0( const wxPoint& aPos )         { m_Pos0 = aPos; notify(); }
     const wxPoint& GetPos0() const              { return m_Pos0; }
 
-    void SetY0( int y )                         { m_Pos0.y = y; }
-    void SetX0( int x )                         { m_Pos0.x = x; }
+    void SetY0( int y )                         { m_Pos0.y = y; notify(); }
+    void SetX0( int x )                         { m_Pos0.x = x; notify(); }
 
-    void SetSize( const wxSize& aSize )         { m_Size = aSize;  m_boundingRadius = -1; }
+    void SetSize( const wxSize& aSize )         { m_Size = aSize;  m_boundingRadius = -1; notify(); }
     const wxSize& GetSize() const               { return m_Size; }
 
-    void SetDelta( const wxSize& aSize )        { m_DeltaSize = aSize;  m_boundingRadius = -1; }
+    void SetDelta( const wxSize& aSize )        { m_DeltaSize = aSize;  m_boundingRadius = -1; notify(); }
     const wxSize& GetDelta() const              { return m_DeltaSize; }
 
-    void SetDrillSize( const wxSize& aSize )    { m_Drill = aSize; }
+    void SetDrillSize( const wxSize& aSize )    { m_Drill = aSize; notify(); }
     const wxSize& GetDrillSize() const          { return m_Drill; }
 
-    void SetOffset( const wxPoint& aOffset )    { m_Offset = aOffset; }
+    void SetOffset( const wxPoint& aOffset )    { m_Offset = aOffset; notify(); }
     const wxPoint& GetOffset() const            { return m_Offset; }
 
     void Flip( const wxPoint& aCentre );        // Virtual function
@@ -170,7 +170,7 @@ public:
     double GetOrientation() const { return m_Orient; }
 
     void SetDrillShape( PAD_DRILL_SHAPE_T aDrillShape )
-        { m_drillShape = aDrillShape; }
+        { m_drillShape = aDrillShape; notify(); }
     PAD_DRILL_SHAPE_T GetDrillShape() const     { return m_drillShape; }
 
     /**
@@ -184,25 +184,25 @@ public:
      */
     void GetOblongDrillGeometry( wxPoint& aStartPoint, wxPoint& aEndPoint, int& aWidth ) const;
 
-    void SetLayerSet( LSET aLayerMask )         { m_layerMask = aLayerMask; }
+    void SetLayerSet( LSET aLayerMask )         { m_layerMask = aLayerMask; notify(); }
     LSET GetLayerSet() const                    { return m_layerMask; }
 
     void SetAttribute( PAD_ATTR_T aAttribute );
     PAD_ATTR_T GetAttribute() const             { return m_Attribute; }
 
-    void SetPadToDieLength( int aLength )       { m_LengthPadToDie = aLength; }
+    void SetPadToDieLength( int aLength )       { m_LengthPadToDie = aLength; notify(); }
     int GetPadToDieLength() const               { return m_LengthPadToDie; }
 
-    int GetLocalSolderMaskMargin() const        { return m_LocalSolderMaskMargin; }
+    int GetLocalSolderMaskMargin() const        { return m_LocalSolderMaskMargin; notify(); }
     void SetLocalSolderMaskMargin( int aMargin ) { m_LocalSolderMaskMargin = aMargin; }
 
-    int GetLocalClearance() const               { return m_LocalClearance; }
+    int GetLocalClearance() const               { return m_LocalClearance; notify(); }
     void SetLocalClearance( int aClearance )    { m_LocalClearance = aClearance; }
 
-    int GetLocalSolderPasteMargin() const       { return m_LocalSolderPasteMargin; }
+    int GetLocalSolderPasteMargin() const       { return m_LocalSolderPasteMargin; notify(); }
     void SetLocalSolderPasteMargin( int aMargin ) { m_LocalSolderPasteMargin = aMargin; }
 
-    double GetLocalSolderPasteMarginRatio() const { return m_LocalSolderPasteMarginRatio; }
+    double GetLocalSolderPasteMarginRatio() const { return m_LocalSolderPasteMarginRatio; notify(); }
     void SetLocalSolderPasteMarginRatio( double aRatio ) { m_LocalSolderPasteMarginRatio = aRatio; }
 
 
@@ -259,10 +259,10 @@ public:
      */
     wxSize GetSolderPasteMargin() const;
 
-    void SetZoneConnection( ZoneConnection aType ) { m_ZoneConnection = aType; }
+    void SetZoneConnection( ZoneConnection aType ) { m_ZoneConnection = aType; notify(); }
     ZoneConnection GetZoneConnection() const;
 
-    void SetThermalWidth( int aWidth ) { m_ThermalWidth = aWidth; }
+    void SetThermalWidth( int aWidth ) { m_ThermalWidth = aWidth; notify(); }
     int GetThermalWidth() const;
 
     void SetThermalGap( int aGap ) { m_ThermalGap = aGap; }

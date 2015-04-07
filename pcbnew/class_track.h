@@ -101,22 +101,23 @@ public:
     {
         m_Start += aMoveVector;
         m_End   += aMoveVector;
+        notify();
     }
 
     virtual void Rotate( const wxPoint& aRotCentre, double aAngle );
 
     virtual void Flip( const wxPoint& aCentre );
 
-    void SetPosition( const wxPoint& aPos )     { m_Start = aPos; }     // was overload
+    void SetPosition( const wxPoint& aPos )     { m_Start = aPos; notify(); }     // was overload
     const wxPoint& GetPosition() const          { return m_Start; }     // was overload
 
-    void SetWidth( int aWidth )                 { m_Width = aWidth; }
+    void SetWidth( int aWidth )                 { m_Width = aWidth; notify(); }
     int GetWidth() const                        { return m_Width; }
 
-    void SetEnd( const wxPoint& aEnd )          { m_End = aEnd; }
+    void SetEnd( const wxPoint& aEnd )          { m_End = aEnd; notify(); }
     const wxPoint& GetEnd() const               { return m_End; }
 
-    void SetStart( const wxPoint& aStart )      { m_Start = aStart; }
+    void SetStart( const wxPoint& aStart )      { m_Start = aStart; notify(); }
     const wxPoint& GetStart() const             { return m_Start; }
 
 
@@ -127,6 +128,7 @@ public:
             return m_Start;
         else
             return m_End;
+
     }
 
     // Virtual function
@@ -412,8 +414,17 @@ public:
      */
     void LayerPair( LAYER_ID* top_layer, LAYER_ID* bottom_layer ) const;
 
-    const wxPoint& GetPosition() const  {  return m_Start; }       // was overload
-    void SetPosition( const wxPoint& aPoint ) { m_Start = aPoint;  m_End = aPoint; }    // was overload
+    const wxPoint& GetPosition() const
+    {
+        return m_Start;
+    }       // was overload
+
+    void SetPosition( const wxPoint& aPoint )
+    {
+        m_Start = aPoint;
+        m_End = aPoint;
+        notify();
+    }    // was overload
 
     virtual bool HitTest( const wxPoint& aPosition ) const;
 
@@ -440,14 +451,18 @@ public:
 #endif
 
     VIATYPE_T GetViaType() const          { return m_ViaType; }
-    void SetViaType( VIATYPE_T aViaType ) { m_ViaType = aViaType; }
+    void SetViaType( VIATYPE_T aViaType )
+    {
+        m_ViaType = aViaType;
+        notify();
+    }
 
     /**
      * Function SetDrill
      * sets the drill value for vias.
      * @param aDrill is the new drill diameter
     */
-    void SetDrill( int aDrill )             { m_Drill = aDrill; }
+    void SetDrill( int aDrill )             { m_Drill = aDrill; notify(); }
 
     /**
      * Function GetDrill
@@ -468,7 +483,7 @@ public:
      * Function SetDrillDefault
      * sets the drill value for vias to the default value #UNDEFINED_DRILL_DIAMETER.
     */
-    void SetDrillDefault()      { m_Drill = UNDEFINED_DRILL_DIAMETER; }
+    void SetDrillDefault()      { m_Drill = UNDEFINED_DRILL_DIAMETER; notify(); }
 
     /**
      * Function IsDrillDefault

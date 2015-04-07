@@ -32,10 +32,12 @@
 #include <class_undoredo_container.h>
 
 #include "selection_conditions.h"
+#include "board_item_set.h"
 
 class PCB_BASE_FRAME;
 class SELECTION_AREA;
 class BOARD_ITEM;
+class BOARD_CONNECTED_ITEM;
 class GENERAL_COLLECTOR;
 
 namespace KIGFX
@@ -186,6 +188,14 @@ public:
     static const TOOL_EVENT ClearedEvent;
 
 private:
+enum CONNECTION_SCOPE {
+    CS_ITEM = 0,
+    CS_TRACK,
+    CS_CONNECTION,
+    CS_NET_ON_LAYER,
+    CS_WHOLE_NET
+};
+
     /**
      * Function selectCursor()
      * Selects an item pointed by the parameter aWhere. If there is more than one item at that
@@ -197,6 +207,8 @@ private:
      * @return True if an item was selected, false otherwise.
      */
     bool selectCursor( const VECTOR2I& aWhere, bool aOnDrag = false );
+
+    BOARD_ITEM *pickCursor( const VECTOR2I& aWhere, bool aOnDrag = false );
 
     /**
      * Function selectMultiple()
@@ -211,6 +223,9 @@ private:
 
     ///> Selects all copper connections belonging to a single net.
     int selectNet( const TOOL_EVENT& aEvent );
+
+    ///> Selects all copper connections belonging to a single net.
+    int cycleSelectScope( const TOOL_EVENT& aEvent );
 
     ///> Find dialog callback.
     void findCallback( BOARD_ITEM* aItem );
@@ -324,6 +339,8 @@ private:
      */
     void generateMenu();
 
+    const BOARD_ITEM_SET<BOARD_CONNECTED_ITEM> getConnectedItems ( BOARD_CONNECTED_ITEM *aPrimaryItem, CONNECTION_SCOPE aScope );
+
     /// Pointer to the parent frame.
     PCB_BASE_FRAME* m_frame;
 
@@ -353,6 +370,11 @@ private:
 
     /// Conditions for specific context menu entries.
     std::deque<SELECTION_CONDITION> m_menuConditions;
+
+    /// First connected item clicked (for cycle selection mode)
+    BOARD_CONNECTED_ITEM *m_primaryConnectedItem;
+
+    CONNECTION_SCOPE m_currentScope;
 };
 
 #endif

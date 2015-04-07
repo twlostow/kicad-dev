@@ -167,37 +167,37 @@ public:
     void SetFPID( const FPID& aFPID ) { m_fpid = aFPID; }
 
     const wxString& GetDescription() const { return m_Doc; }
-    void SetDescription( const wxString& aDoc ) { m_Doc = aDoc; }
+    void SetDescription( const wxString& aDoc ) { m_Doc = aDoc; notify(); }
 
     const wxString& GetKeywords() const { return m_KeyWord; }
-    void SetKeywords( const wxString& aKeywords ) { m_KeyWord = aKeywords; }
+    void SetKeywords( const wxString& aKeywords ) { m_KeyWord = aKeywords; notify(); }
 
     const wxString& GetPath() const { return m_Path; }
-    void SetPath( const wxString& aPath ) { m_Path = aPath; }
+    void SetPath( const wxString& aPath ) { m_Path = aPath;notify();  }
 
     int GetLocalSolderMaskMargin() const { return m_LocalSolderMaskMargin; }
-    void SetLocalSolderMaskMargin( int aMargin ) { m_LocalSolderMaskMargin = aMargin; }
+    void SetLocalSolderMaskMargin( int aMargin ) { m_LocalSolderMaskMargin = aMargin;notify();  }
 
     int GetLocalClearance() const { return m_LocalClearance; }
-    void SetLocalClearance( int aClearance ) { m_LocalClearance = aClearance; }
+    void SetLocalClearance( int aClearance ) { m_LocalClearance = aClearance; notify(); }
 
     int GetLocalSolderPasteMargin() const { return m_LocalSolderPasteMargin; }
-    void SetLocalSolderPasteMargin( int aMargin ) { m_LocalSolderPasteMargin = aMargin; }
+    void SetLocalSolderPasteMargin( int aMargin ) { m_LocalSolderPasteMargin = aMargin; notify(); }
 
     double GetLocalSolderPasteMarginRatio() const { return m_LocalSolderPasteMarginRatio; }
-    void SetLocalSolderPasteMarginRatio( double aRatio ) { m_LocalSolderPasteMarginRatio = aRatio; }
+    void SetLocalSolderPasteMarginRatio( double aRatio ) { m_LocalSolderPasteMarginRatio = aRatio; notify(); }
 
-    void SetZoneConnection( ZoneConnection aType ) { m_ZoneConnection = aType; }
-    ZoneConnection GetZoneConnection() const { return m_ZoneConnection; }
+    void SetZoneConnection( ZoneConnection aType ) { m_ZoneConnection = aType; notify();}
+    ZoneConnection GetZoneConnection() const { return m_ZoneConnection;  }
 
-    void SetThermalWidth( int aWidth ) { m_ThermalWidth = aWidth; }
+    void SetThermalWidth( int aWidth ) { m_ThermalWidth = aWidth;notify(); }
     int GetThermalWidth() const { return m_ThermalWidth; }
 
-    void SetThermalGap( int aGap ) { m_ThermalGap = aGap; }
+    void SetThermalGap( int aGap ) { m_ThermalGap = aGap; notify();}
     int GetThermalGap() const { return m_ThermalGap; }
 
     int GetAttributes() const { return m_Attributs; }
-    void SetAttributes( int aAttributes ) { m_Attributs = aAttributes; }
+    void SetAttributes( int aAttributes ) { m_Attributs = aAttributes; notify();}
 
     void SetFlag( int aFlag ) { flag = aFlag; }
     void IncrementFlag() { flag += 1; }
@@ -251,6 +251,7 @@ public:
             m_ModuleStatus |= MODULE_is_LOCKED;
         else
             m_ModuleStatus &= ~MODULE_is_LOCKED;
+        notify();
     }
 
     bool IsPlaced() const   { return (m_ModuleStatus & MODULE_is_PLACED); }
@@ -279,6 +280,8 @@ public:
             m_ModuleStatus |= MODULE_PADS_LOCKED;
         else
             m_ModuleStatus &= ~MODULE_PADS_LOCKED;
+
+        notify();
     }
 
     void SetLastEditTime( time_t aTime ) { m_LastEditTime = aTime; }

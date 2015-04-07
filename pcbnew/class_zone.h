@@ -96,7 +96,7 @@ public:
      * Function SetPriority
      * @param aPriority = the priority level
      */
-    void SetPriority( unsigned aPriority ) { m_priority = aPriority; }
+    void SetPriority( unsigned aPriority ) { m_priority = aPriority; notify(); }
 
     /**
      * Function GetPriority
@@ -187,35 +187,36 @@ public:
     }
 
     /// How to fill areas: 0 = use filled polygons, 1 => fill with segments.
-    void SetFillMode( int aFillMode )                   { m_FillMode = aFillMode; }
+    void SetFillMode( int aFillMode )                   { m_FillMode = aFillMode; notify(); }
     int GetFillMode() const                             { return m_FillMode; }
 
-    void SetThermalReliefGap( int aThermalReliefGap )   { m_ThermalReliefGap = aThermalReliefGap; }
+    void SetThermalReliefGap( int aThermalReliefGap )   { m_ThermalReliefGap = aThermalReliefGap; notify(); }
     int GetThermalReliefGap( D_PAD* aPad = NULL ) const;
 
     void SetThermalReliefCopperBridge( int aThermalReliefCopperBridge )
     {
         m_ThermalReliefCopperBridge = aThermalReliefCopperBridge;
+        notify();
     }
     int GetThermalReliefCopperBridge( D_PAD* aPad = NULL ) const;
 
-    void SetArcSegmentCount( int aArcSegCount ) { m_ArcToSegmentsCount = aArcSegCount; }
+    void SetArcSegmentCount( int aArcSegCount ) { m_ArcToSegmentsCount = aArcSegCount; notify(); }
     int GetArcSegmentCount() const { return m_ArcToSegmentsCount; }
 
     bool IsFilled() const { return m_IsFilled; }
-    void SetIsFilled( bool isFilled ) { m_IsFilled = isFilled; }
+    void SetIsFilled( bool isFilled ) { m_IsFilled = isFilled; notify(); }
 
     int GetZoneClearance() const { return m_ZoneClearance; }
-    void SetZoneClearance( int aZoneClearance ) { m_ZoneClearance = aZoneClearance; }
+    void SetZoneClearance( int aZoneClearance ) { m_ZoneClearance = aZoneClearance; notify(); }
 
     ZoneConnection GetPadConnection( D_PAD* aPad = NULL ) const;
-    void SetPadConnection( ZoneConnection aPadConnection ) { m_PadConnection = aPadConnection; }
+    void SetPadConnection( ZoneConnection aPadConnection ) { m_PadConnection = aPadConnection; notify(); }
 
     int GetMinThickness() const { return m_ZoneMinThickness; }
-    void SetMinThickness( int aMinThickness ) { m_ZoneMinThickness = aMinThickness; }
+    void SetMinThickness( int aMinThickness ) { m_ZoneMinThickness = aMinThickness; notify(); }
 
     int GetSelectedCorner() const { return m_CornerSelection; }
-    void SetSelectedCorner( int aCorner ) { m_CornerSelection = aCorner; }
+    void SetSelectedCorner( int aCorner ) { m_CornerSelection = aCorner; notify(); }
 
     ///
     // Like HitTest but selects the current corner to be operated on
@@ -225,12 +226,12 @@ public:
     void SetLocalFlags( int aFlags ) { m_localFlgs = aFlags; }
 
     std::vector <SEGMENT>& FillSegments() { return m_FillSegmList; }
-    const std::vector <SEGMENT>& FillSegments() const { return m_FillSegmList; }
+    const std::vector <SEGMENT>& FillSegments() const { return m_FillSegmList; notify(); }
 
     CPolyLine* Outline() { return m_Poly; }
     const CPolyLine* Outline() const { return const_cast< CPolyLine* >( m_Poly ); }
 
-    void SetOutline( CPolyLine* aOutline ) { m_Poly = aOutline; }
+    void SetOutline( CPolyLine* aOutline ) { m_Poly = aOutline; notify(); }
 
     /**
      * Function HitTest
@@ -455,6 +456,7 @@ public:
     void RemoveAllContours( void )
     {
         m_Poly->RemoveAllContours();
+        notify();
     }
 
     const wxPoint& GetCornerPosition( int aCornerIndex ) const
@@ -466,11 +468,13 @@ public:
     {
         m_Poly->SetX( aCornerIndex, new_pos.x );
         m_Poly->SetY( aCornerIndex, new_pos.y );
+        notify();
     }
 
     void AppendCorner( wxPoint position )
     {
         m_Poly->AppendCorner( position.x, position.y );
+        notify();
     }
 
     int GetHatchStyle() const
@@ -481,6 +485,7 @@ public:
     void SetHatchStyle( CPolyLine::HATCH_STYLE aStyle )
     {
         m_Poly->SetHatchStyle( aStyle );
+        notify();
     }
 
     /**
@@ -499,6 +504,7 @@ public:
     void ClearFilledPolysList()
     {
         m_FilledPolysList.RemoveAllContours();
+        notify();
     }
 
    /**
@@ -518,6 +524,7 @@ public:
     void AddFilledPolysList( CPOLYGONS_LIST& aPolysList )
     {
         m_FilledPolysList = aPolysList;
+        notify();
     }
 
     /**
@@ -534,7 +541,7 @@ public:
             return m_Poly;
     };
 
-    void SetCornerSmoothingType( int aType ) { m_cornerSmoothingType = aType; };
+    void SetCornerSmoothingType( int aType ) { m_cornerSmoothingType = aType; notify(); };
 
     int  GetCornerSmoothingType() const { return m_cornerSmoothingType; };
 
@@ -543,6 +550,7 @@ public:
         m_cornerRadius = aRadius;
         if( m_cornerRadius > (unsigned int) Mils2iu( MAX_ZONE_CORNER_RADIUS_MILS ) )
             m_cornerRadius = Mils2iu( MAX_ZONE_CORNER_RADIUS_MILS );
+        notify();
     };
 
     unsigned int GetCornerRadius() const { return m_cornerRadius; };
@@ -552,11 +560,13 @@ public:
     void AddFilledPolygon( CPOLYGONS_LIST& aPolygon )
     {
         m_FilledPolysList.Append( aPolygon );
+        notify();
     }
 
     void AddFillSegments( std::vector< SEGMENT >& aSegments )
     {
         m_FillSegmList.insert( m_FillSegmList.end(), aSegments.begin(), aSegments.end() );
+        notify();
     }
 
     virtual wxString GetSelectMenuText() const;
@@ -574,9 +584,9 @@ public:
     bool GetDoNotAllowTracks() const { return m_doNotAllowTracks; }
 
     void SetIsKeepout( bool aEnable ) { m_isKeepout = aEnable; }
-    void SetDoNotAllowCopperPour( bool aEnable ) { m_doNotAllowCopperPour = aEnable; }
-    void SetDoNotAllowVias( bool aEnable ) { m_doNotAllowVias = aEnable; }
-    void SetDoNotAllowTracks( bool aEnable ) { m_doNotAllowTracks = aEnable; }
+    void SetDoNotAllowCopperPour( bool aEnable ) { m_doNotAllowCopperPour = aEnable; notify(); }
+    void SetDoNotAllowVias( bool aEnable ) { m_doNotAllowVias = aEnable; notify(); }
+    void SetDoNotAllowTracks( bool aEnable ) { m_doNotAllowTracks = aEnable; notify(); }
 
 #if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); }    // override

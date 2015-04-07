@@ -39,6 +39,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/foreach.hpp>
 
+#include <board_observer.h>
+
 class BOARD;
 class BOARD_ITEM;
 class BOARD_CONNECTED_ITEM;
@@ -497,6 +499,7 @@ public:
                             std::list<BOARD_CONNECTED_ITEM*>& aOutput,
                             RN_ITEM_TYPE aTypes = RN_ALL ) const;
 
+
 protected:
     ///> Validates edge, i.e. modifies source and target nodes for an edge
     ///> to make sure that they are not ones with the flag set.
@@ -558,7 +561,7 @@ protected:
  *
  * Stores information about unconnected items for the whole PCB.
  */
-class RN_DATA
+class RN_DATA : public BOARD_OBSERVER
 {
 public:
     /**
@@ -566,6 +569,8 @@ public:
      * @param aBoard is the board to be processed in order to look for unconnected items.
      */
     RN_DATA( const BOARD* aBoard ) : m_board( aBoard ) {}
+
+    virtual ~RN_DATA() {};
 
     /**
      * Function Add()
@@ -691,6 +696,8 @@ public:
      */
     bool AreConnected( const BOARD_CONNECTED_ITEM* aItem, const BOARD_CONNECTED_ITEM* aOther );
 
+    virtual void OnNotify ( const BOARD_ITEM *aItem, NOTIFY_ACTION aAction );
+
 protected:
     /**
      * Function updateNet()
@@ -703,7 +710,7 @@ protected:
     const BOARD* m_board;
 
     ///> Stores information about ratsnest grouped by net numbers.
-    std::vector<RN_NET> m_nets;
+    boost::unordered_map<int, RN_NET> m_nets;
 };
 
 #endif /* RATSNEST_DATA_H */

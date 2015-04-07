@@ -856,7 +856,6 @@ void OPENGL_GAL::drawFilledSemiCircle( const VECTOR2D& aCenterPoint, double aRad
      *  v0 //__\\ v1
      */
 
-     printf("ldepth %.10f\n", layerDepth);
     currentManager->Shader( SHADER_FILLED_CIRCLE, 4.0f );
     currentManager->Vertex( -aRadius * 3.0f / sqrt( 3.0f ), 0.0f, layerDepth );     // v0
 

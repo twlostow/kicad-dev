@@ -42,6 +42,7 @@
 #include <class_title_block.h>
 #include <class_zone_settings.h>
 #include <pcb_plot_params.h>
+#include <board_observer.h>
 
 class PCB_BASE_FRAME;
 class PCB_EDIT_FRAME;
@@ -167,7 +168,7 @@ protected:
  * Class BOARD
  * holds information pertinent to a Pcbnew printed circuit board.
  */
-class BOARD : public BOARD_ITEM
+class BOARD : public BOARD_ITEM, public NOTIFY_FORWARDER
 {
     friend class PCB_EDIT_FRAME;
 
@@ -248,7 +249,7 @@ public:
     DLIST<TRACK>                m_Track;                 // linked list of TRACKs and VIAs
     DLIST<SEGZONE>              m_Zone;                  // linked list of SEGZONEs
 
-    
+
     /// zone contour currently in progress
     ZONE_CONTAINER*             m_CurrentZoneContour;
 
@@ -743,7 +744,7 @@ public:
      * @return int - The number of rats
      */
     unsigned GetRatsnestsCount() const;
-    
+
     /**
      * Function GetNodesCount
      * @return the number of pads members of nets (i.e. with netcode > 0)
@@ -771,10 +772,10 @@ public:
      * @param aCount is the number of unconneceted nets in the current rats nest.
      */
     void SetUnconnectedNetCount( unsigned aCount ) { m_unconnectedNetCount = aCount; }
-   
+
     /**
      * Function GetPadIndex
-     * returns an index of all the pads by value.  The returned list is 
+     * returns an index of all the pads by value.  The returned list is
      * sorted and contains pointers to D_PADS, but those pointers do not convey
      * ownership of the respective D_PADs.
      * @return PAD_INDEX - a full list of pads
@@ -1381,7 +1382,7 @@ public:
     int GetStatus() const
     {
         return m_pcbStatus;
-    }    
+    }
 
     void SetStatus( int aNewStatus )
     {
@@ -1397,6 +1398,10 @@ public:
     {
         m_pcbStatus |= aMask;
     }
+
+    void NotifyItemChanged ( const BOARD_ITEM *aItem );
+    void NotifyItemAdded( const BOARD_ITEM *aItem );
+    void NotifyItemRemoved( const BOARD_ITEM *aItem );
 
 };
 

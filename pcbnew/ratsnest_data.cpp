@@ -909,7 +909,9 @@ void RN_DATA::GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
 
     assert( net < (int) m_nets.size() );
 
-    m_nets[net].GetConnectedItems( aItem, aOutput, aTypes );
+    //const RN_NET& n = m_nets[net];
+
+    //n.GetConnectedItems( aItem, aOutput, aTypes );
 }
 
 
@@ -921,7 +923,9 @@ void RN_DATA::GetNetItems( int aNetCode, std::list<BOARD_CONNECTED_ITEM*>& aOutp
 
     assert( aNetCode < (int) m_nets.size() );
 
-    m_nets[aNetCode].GetAllItems( aOutput, aTypes );
+    //const RN_NET& n = m_nets[aNetCode];
+
+    //n.GetAllItems( aOutput, aTypes );
 }
 
 
@@ -1002,8 +1006,8 @@ void RN_DATA::Add( const BOARD_ITEM* aItem )
         if( net < 1 )           // do not process unconnected items
             return;
 
-        if( net >= (int) m_nets.size() )            // Autoresize
-            m_nets.resize( net + 1 );
+        //if( net >= (int) m_nets.size() )            // Autoresize
+          //  m_nets.resize( net + 1 );
     }
     else if( aItem->Type() == PCB_MODULE_T )
     {
@@ -1015,8 +1019,8 @@ void RN_DATA::Add( const BOARD_ITEM* aItem )
             if( net < 1 )       // do not process unconnected items
                 continue;
 
-            if( net >= (int) m_nets.size() )        // Autoresize
-                m_nets.resize( net + 1 );
+//            if( net >= (int) m_nets.size() )        // Autoresize
+  //              m_nets.resize( net + 1 );
 
             m_nets[net].AddItem( pad );
         }
@@ -1061,7 +1065,7 @@ void RN_DATA::Remove( const BOARD_ITEM* aItem )
         if( net < 1 )           // do not process unconnected items
             return;
 
-#ifdef NDEBUG
+/*#ifdef NDEBUG
         if( net >= (int) m_nets.size() )        // Autoresize
         {
             m_nets.resize( net + 1 );
@@ -1069,7 +1073,7 @@ void RN_DATA::Remove( const BOARD_ITEM* aItem )
             return;     // if it was resized, then surely the item had not been added before
         }
 #endif
-        assert( net < (int) m_nets.size() );
+        assert( net < (int) m_nets.size() );*/
     }
     else if( aItem->Type() == PCB_MODULE_T )
     {
@@ -1081,7 +1085,7 @@ void RN_DATA::Remove( const BOARD_ITEM* aItem )
             if( net < 1 )       // do not process unconnected items
                 continue;
 
-#ifdef NDEBUG
+/*#ifdef NDEBUG
             if( net >= (int) m_nets.size() )    // Autoresize
             {
                 m_nets.resize( net + 1 );
@@ -1089,7 +1093,7 @@ void RN_DATA::Remove( const BOARD_ITEM* aItem )
                 return;     // if it was resized, then surely the item had not been added before
             }
 #endif
-            assert( net < (int) m_nets.size() );
+            assert( net < (int) m_nets.size() );*/
 
             m_nets[net].RemoveItem( pad );
         }
@@ -1130,6 +1134,12 @@ void RN_DATA::Update( const BOARD_ITEM* aItem )
 }
 
 
+void RN_DATA::ProcessBoard()
+{
+    printf("Dummy ProcessBoard()");
+}
+
+#if 0
 void RN_DATA::ProcessBoard()
 {
     m_nets.clear();
@@ -1174,6 +1184,7 @@ void RN_DATA::ProcessBoard()
     Recalculate();
 }
 
+#endif
 
 void RN_DATA::Recalculate( int aNet )
 {
@@ -1221,16 +1232,26 @@ void RN_DATA::updateNet( int aNetCode )
 
 void RN_DATA::OnNotify( const BOARD_ITEM *aItem, NOTIFY_ACTION aAction )
 {
+
     switch(aAction)
     {
     case NOTIFY_ADD:
+        printf("RN Notify add %p\n", aItem);
         Add(aItem);
         break;
     case NOTIFY_REMOVE:
+        printf("RN Notify remove %p\n", aItem);
         Remove(aItem);
         break;
     case NOTIFY_CHANGE:
+        printf("RN Notify change %p\n", aItem);
         Update(aItem);
         break;
     }
+}
+
+void RN_DATA::ClearSimple()
+{
+    BOOST_FOREACH( RN_NET& net, m_nets | boost::adaptors::map_values )
+        net.ClearSimple();
 }

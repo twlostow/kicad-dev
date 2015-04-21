@@ -623,11 +623,7 @@ public:
      * Function ClearSimple()
      * Clears the list of nodes for which ratsnest is drawn in simple mode (one line per node).
      */
-    void ClearSimple()
-    {
-        BOOST_FOREACH( RN_NET& net, m_nets )
-            net.ClearSimple();
-    }
+    void ClearSimple();
 
     /**
      * Function ProcessBoard()
@@ -710,7 +706,7 @@ protected:
     const BOARD* m_board;
 
     ///> Stores information about ratsnest grouped by net numbers.
-    boost::unordered_map<int, RN_NET> m_nets;
+    boost::unordered_map<const int, RN_NET> m_nets;
 };
 
 #endif /* RATSNEST_DATA_H */

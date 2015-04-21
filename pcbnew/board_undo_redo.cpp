@@ -124,7 +124,7 @@
  */
 bool BOARD_UNDO_MANAGER::testForExistingItem( BOARD_ITEM* aItem )
 {
-    
+
     static std::vector<BOARD_ITEM*> itemsList;
     BOARD *board = getBoard();
 
@@ -314,13 +314,15 @@ void BOARD_ITEM::SwapData( BOARD_ITEM* aImage )
     Pback = pback;
     m_List = mylist;
     SetTimeStamp( timestamp );
+
+    notify();
 }
 
 void PCB_EDIT_FRAME::SaveCopyInUndoList( BOARD_ITEM*    aItem,
                                          UNDO_REDO_T    aCommandType,
                                          const wxPoint& aTransformPoint )
 {
-    
+
     m_undoManager->Add ( aItem, aCommandType );
     m_undoManager->SetTransformPoint ( aTransformPoint );
     m_undoManager->Commit ( );
@@ -355,7 +357,7 @@ void PCB_EDIT_FRAME::RestoreCopyFromUndoList( wxCommandEvent& aEvent )
         else
             Compile_Ratsnest( NULL, true );
     }
-    
+
     OnModify();
     m_canvas->Refresh();
 }
@@ -380,7 +382,7 @@ void PCB_EDIT_FRAME::RestoreCopyFromRedoList( wxCommandEvent& aEvent )
         else
             Compile_Ratsnest( NULL, true );
     }
-    
+
     OnModify();
     m_canvas->Refresh();
 }

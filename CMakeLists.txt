@@ -376,6 +376,26 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
 
 endif( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
 
+if( MSVC )
+    add_definitions( -DBOOST_ALL_NO_LIB -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES -DNOMINMAX )
+    # C4290: throw() is interpreted as declspec(nothrow)
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4290" )
+    # C4800: non-bool is explicitly cast to bool, forcing value of 0 or 1
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4800" )
+    # /Zi: create PDB
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi" )
+    # /GF: enable string pooling
+    set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /GF" )
+    foreach( type EXE SHARED MODULE)
+        # /DEBUG: create PDB
+        set( CMAKE_${type}_LINKER_FLAGS "${CMAKE_${type}_LINKER_FLAGS} /DEBUG" )
+        # /OPT:REF: omit unreferenced code
+        set( CMAKE_${type}_LINKER_FLAGS_RELEASE "${CMAKE_${type}_LINKER_FLAGS_RELEASE} /OPT:REF" )
+        # /OPT:ICF: fold common data
+        set( CMAKE_${type}_LINKER_FLAGS_RELEASE "${CMAKE_${type}_LINKER_FLAGS_RELEASE} /OPT:ICF" )
+    endforeach()
+endif()
+
 if( USE_WX_OVERLAY OR APPLE )
     add_definitions( -DUSE_WX_OVERLAY )
 endif()

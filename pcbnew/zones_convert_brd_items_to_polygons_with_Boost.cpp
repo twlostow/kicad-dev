@@ -453,10 +453,26 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList( BOARD* aPcb )
     // Calculate now actual solid areas
     if( cornerBufferPolysToSubstract.GetCornersCount() > 0 )
     {
-        KI_POLYGON_SET polyset_holes;
-        cornerBufferPolysToSubstract.ExportTo( polyset_holes );
-        // Remove holes from initial area.:
-        polyset_zone_solid_areas -= polyset_holes;
+        KI_POLYGON_SET holes_orig, holes_reduced;
+        cornerBufferPolysToSubstract.ExportTo( holes_orig );
+
+        // Merge overlapping holes
+        assign(holes_reduced, holes_orig);
+
+        printf("orig: %d, reduced: %d\n", holes_orig.size(), holes_reduced.size());
+        int n = 0;
+     /*   for( KI_POLYGON_SET::iterator hole = polyset_holes.begin(); hole != polyset_holes.end(); ++hole )
+        {
+            polyset_zone_solid_areas -= (*hole);
+            fprintf(stderr,"hole %d/%d\n", n++, polyset_holes.size());
+        }*/
+        for( KI_POLYGON_SET::iterator hole = holes_reduced.begin(); hole != holes_reduced.end(); ++hole )
+        {
+            polyset_zone_solid_areas -= (*hole);
+            fprintf(stderr,"hole %d/%d\n", n++, holes_reduced.size());
+        }
+       // polyset_zone_solid_areas -= holes_reduced;
+
     }
 
     // put solid areas in m_FilledPolysList:
@@ -479,11 +495,26 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList( BOARD* aPcb )
     // remove copper areas corresponding to not connected stubs
     if( cornerBufferPolysToSubstract.GetCornersCount() )
     {
-        KI_POLYGON_SET polyset_holes;
-        cornerBufferPolysToSubstract.ExportTo( polyset_holes );
+        //KI_POLYGON_SET polyset_holes;
+        //cornerBufferPolysToSubstract.ExportTo( polyset_holes );
 
+        KI_POLYGON_SET holes_orig, holes_reduced;
+        cornerBufferPolysToSubstract.ExportTo( holes_orig );
+
+        // Merge overlapping holes
+        assign(holes_reduced, holes_orig);
+        printf("orig: %d, reduced: %d\n", holes_orig.size(), holes_reduced.size());
+        int n = 0;
+        for( KI_POLYGON_SET::iterator hole = holes_reduced.begin(); hole != holes_reduced.end(); ++hole )
+        {
+            polyset_zone_solid_areas -= (*hole);
+            fprintf(stderr,"hole %d/%d\n", n++, holes_reduced.size());
+        }
+
+        //polyset_zone_solid_areas -= holes_reduced;
         // Remove unconnected stubs
-        polyset_zone_solid_areas -= polyset_holes;
+//        for( KI_POLYGON_SET::iterator hole = polyset_holes.begin(); hole != polyset_holes.end(); ++hole )
+  //          polyset_zone_solid_areas -= (*hole);
 
         // put these areas in m_FilledPolysList
         m_FilledPolysList.RemoveAllContours();

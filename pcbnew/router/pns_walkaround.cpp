@@ -139,6 +139,19 @@ PNS_WALKAROUND::WALKAROUND_STATUS PNS_WALKAROUND::Route( const PNS_LINE& aInitia
     WALKAROUND_STATUS s_cw = IN_PROGRESS, s_ccw = IN_PROGRESS;
     SHAPE_LINE_CHAIN best_path;
 
+
+    printf("init-segC %d\n", aInitialPath.SegmentCount());
+    // special case for via-in-the-middle-of-track placement
+    if( aInitialPath.PointCount() == 1 )
+    {
+        if ( m_world->CheckColliding( &aInitialPath ) )
+            return STUCK;
+        else {
+            aWalkPath = aInitialPath;
+            return DONE;
+        }
+    }
+
     start( aInitialPath );
 
     m_currentObstacle[0] = m_currentObstacle[1] = nearestObstacle( aInitialPath );
@@ -235,6 +248,8 @@ PNS_WALKAROUND::WALKAROUND_STATUS PNS_WALKAROUND::Route( const PNS_LINE& aInitia
     }
 
     aWalkPath.Line().Simplify();
+
+    PNS_ROUTER::GetInstance()->DisplayDebugLine ( aWalkPath.CLine(), 4, 10000 );
 
     if( aWalkPath.SegmentCount() < 1 )
         return STUCK;

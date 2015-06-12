@@ -27,9 +27,9 @@
 
 static inline void _trace_print( const char* aFuncName, int aLevel, const std::string& aMsg )
 {
-#ifdef DEBUG
+//#ifdef DEBUG
     std::cerr << "trace[" << aLevel << "]: " << aFuncName << ": " << aMsg << std::endl;
-#endif
+//#endif
 }
 
 #ifdef PNS_DEBUG

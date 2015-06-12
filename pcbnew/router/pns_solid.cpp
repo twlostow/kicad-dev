@@ -30,14 +30,14 @@
 
 const SHAPE_LINE_CHAIN PNS_SOLID::Hull( int aClearance, int aWalkaroundThickness ) const
 {
-    int cl = aClearance + aWalkaroundThickness / 2;
+    int cl = aClearance + (aWalkaroundThickness + 1)/ 2;
 
     switch( m_shape->Type() )
     {
     case SH_RECT:
     {
         SHAPE_RECT* rect = static_cast<SHAPE_RECT*>( m_shape );
-        return OctagonalHull( rect->GetPosition(), rect->GetSize(), cl + 1, 0.2 * cl );
+        return OctagonalHull( rect->GetPosition(), rect->GetSize(), cl, 0.2 * cl );
     }
 
     case SH_CIRCLE:
@@ -45,7 +45,7 @@ const SHAPE_LINE_CHAIN PNS_SOLID::Hull( int aClearance, int aWalkaroundThickness
         SHAPE_CIRCLE* circle = static_cast<SHAPE_CIRCLE*>( m_shape );
         int r = circle->GetRadius();
         return OctagonalHull( circle->GetCenter() - VECTOR2I( r, r ), VECTOR2I( 2 * r, 2 * r ),
-                              cl + 1, 0.52 * ( r + cl ) );
+                              cl, 0.52 * ( r + cl ) );
     }
 
     case SH_SEGMENT:

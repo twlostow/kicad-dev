@@ -48,36 +48,43 @@ const SHAPE_LINE_CHAIN OctagonalHull( const VECTOR2I& aP0, const VECTOR2I& aSize
 const SHAPE_LINE_CHAIN SegmentHull ( const SHAPE_SEGMENT& aSeg, int aClearance,
                                      int aWalkaroundThickness )
 {
-    int d = aSeg.GetWidth() / 2 + aClearance + aWalkaroundThickness / 2 + HULL_MARGIN;
-    int x = (int)( 2.0 / ( 1.0 + M_SQRT2 ) * d );
+    for(int margin = 0; margin < HULL_MARGIN; margin++)
+    {
+        int hullDist = aClearance + (aWalkaroundThickness + 1) / 2;
+        int d = aSeg.GetWidth() / 2 + hullDist + margin;
+        int x = (int)( 2.0 / ( 1.0 + M_SQRT2 ) * d );
 
-    const VECTOR2I a = aSeg.GetSeg().A;
-    const VECTOR2I b = aSeg.GetSeg().B;
+        const VECTOR2I a = aSeg.GetSeg().A;
+        const VECTOR2I b = aSeg.GetSeg().B;
 
-    VECTOR2I dir = b - a;
-    VECTOR2I p0 = dir.Perpendicular().Resize( d );
-    VECTOR2I ds = dir.Perpendicular().Resize( x / 2 );
-    VECTOR2I pd = dir.Resize( x / 2 );
-    VECTOR2I dp = dir.Resize( d );
+        VECTOR2I dir = b - a;
+        VECTOR2I p0 = dir.Perpendicular().Resize( d );
+        VECTOR2I ds = dir.Perpendicular().Resize( (x + 1) / 2 );
+        VECTOR2I pd = dir.Resize( (x + 1) / 2 );
+        VECTOR2I dp = dir.Resize( d );
 
-    SHAPE_LINE_CHAIN s;
+        SHAPE_LINE_CHAIN s;
 
-    s.SetClosed( true );
+        s.SetClosed( true );
 
-    s.Append( b + p0 + pd );
-    s.Append( b + dp + ds );
-    s.Append( b + dp - ds );
-    s.Append( b - p0 + pd );
-    s.Append( a - p0 - pd );
-    s.Append( a - dp - ds );
-    s.Append( a - dp + ds );
-    s.Append( a + p0 - pd );
+        s.Append( b + p0 + pd );
+        s.Append( b + dp + ds );
+        s.Append( b + dp - ds );
+        s.Append( b - p0 + pd );
+        s.Append( a - p0 - pd );
+        s.Append( a - dp - ds );
+        s.Append( a - dp + ds );
+        s.Append( a + p0 - pd );
 
-    // make sure the hull outline is always clockwise
-    if( s.CSegment( 0 ).Side( a ) < 0 )
-        return s.Reverse();
-    else
-        return s;
+        if( static_cast<const SHAPE*>( &aSeg )->Collide ( &s, hullDist) )
+            continue;
+
+        // make sure the hull outline is always clockwise
+        if( s.CSegment( 0 ).Side( a ) < 0 )
+            return s.Reverse();
+        else
+            return s;
+    }
 }
 
 

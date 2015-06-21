@@ -119,6 +119,7 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
                  _( "Save only current schematic sheet" ),
                  KiBitmap( save_xpm ) );
 
+
     if( Kiface().IsSingle() )   // not when under a project mgr
     {
         AddMenuItem( fileMenu,
@@ -418,6 +419,21 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
 
     // Menu Tools:
     wxMenu* toolsMenu = new wxMenu;
+
+    text = AddHotkeyName( _( "Update PCB from Schematics" ), g_Schematic_Hokeys_Descr, HK_UPDATE_PCB_FROM_SCH );
+
+
+    wxMenuItem *updItem = AddMenuItem( toolsMenu,
+                 ID_UPDATE_PCB_FROM_SCH,
+                 text, _( "Updates the PCB design with the current schematic." ),
+                 KiBitmap( libedit_xpm ) );
+
+    KIWAY_PLAYER* pcbFrame = Kiway().Player( FRAME_PCB, false );  // test open already.
+
+    //if( Kiface().IsSingle() || !pcbFrame )   FIXME: refresh
+        //updItem->Enable( false );
+
+    toolsMenu->AppendSeparator();
 
     AddMenuItem( toolsMenu,
                  ID_RUN_LIBRARY,

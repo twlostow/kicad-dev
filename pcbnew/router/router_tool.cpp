@@ -484,6 +484,8 @@ bool ROUTER_TOOL::prepareInteractive()
     m_endItem = NULL;
     m_endSnapPoint = m_startSnapPoint;
 
+    m_frame->DisableUndo(true);
+
     return true;
 }
 
@@ -509,6 +511,8 @@ bool ROUTER_TOOL::finishInteractive( bool aSaveUndoBuffer )
     m_ctls->ForceCursorPosition( false );
     highlightNet( false );
 
+    m_frame->DisableUndo(false);
+
     return true;
 }
 
@@ -524,11 +528,6 @@ void ROUTER_TOOL::performRouting()
     {
         if( evt->IsCancel() || evt->IsActivate() )
             break;
-        else if( evt->Action() == TA_UNDO_REDO )
-        {
-            saveUndoBuffer = false;
-            break;
-        }
         else if( evt->IsMotion() )
         {
             updateEndItem( *evt );
@@ -696,13 +695,15 @@ int ROUTER_TOOL::mainLoop( PNS_ROUTER_MODE aMode )
 void ROUTER_TOOL::performDragging()
 {
     PCB_EDIT_FRAME* frame = getEditFrame<PCB_EDIT_FRAME>();
-    bool saveUndoBuffer = true;
     VIEW_CONTROLS* ctls = getViewControls();
+
 
     bool dragStarted = m_router->StartDragging( m_startSnapPoint, m_startItem );
 
     if( !dragStarted )
         return;
+
+    frame->DisableUndo(true);
 
     if( m_startItem && m_startItem->Net() >= 0 )
         highlightNet( true, m_startItem->Net() );
@@ -714,11 +715,6 @@ void ROUTER_TOOL::performDragging()
     {
         if( evt->IsCancel() || evt->IsActivate() )
             break;
-        else if( evt->Action() == TA_UNDO_REDO )
-        {
-            saveUndoBuffer = false;
-            break;
-        }
         else if( evt->IsMotion() )
         {
             updateEndItem( *evt );
@@ -736,7 +732,7 @@ void ROUTER_TOOL::performDragging()
     if( m_router->RoutingInProgress() )
         m_router->StopRouting();
 
-    if( saveUndoBuffer )
+    if( true )
     {
         // Save the recent changes in the undo buffer
         frame->SaveCopyInUndoList( m_router->GetUndoBuffer(), UR_UNSPECIFIED );
@@ -752,6 +748,7 @@ void ROUTER_TOOL::performDragging()
     ctls->SetAutoPan( false );
     ctls->ForceCursorPosition( false );
     highlightNet( false );
+    frame->DisableUndo(false);
 }
 
 

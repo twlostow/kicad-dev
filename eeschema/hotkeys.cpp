@@ -219,6 +219,8 @@ static EDA_HOTKEY HkSaveLib( _HKI( "Save Library" ), HK_SAVE_LIB, 'S' + GR_KB_CT
 static EDA_HOTKEY HkSaveSchematic( _HKI( "Save Schematic" ), HK_SAVE_SCH, 'S' + GR_KB_CTRL );
 static EDA_HOTKEY HkLoadSchematic( _HKI( "Load Schematic" ), HK_LOAD_SCH, 'L' + GR_KB_CTRL );
 
+static EDA_HOTKEY HkUpdatePcbFromSch( _HKI( "Update PCB from Schematics" ), HK_UPDATE_PCB_FROM_SCH, WXK_F9 );
+
 // List of common hotkey descriptors
 static EDA_HOTKEY* common_Hotkey_List[] =
 {
@@ -291,7 +293,8 @@ static EDA_HOTKEY* schematic_Hotkey_List[] =
     &HkAddBusEntry,
     &HkAddGraphicPolyLine,
     &HkAddGraphicText,
-    &HkLeaveSheet,
+    &HkUpdatePcbFromSch,
+	&HkLeaveSheet,
     &HkDeleteNode,
     NULL
 };
@@ -444,9 +447,9 @@ bool SCH_EDIT_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
     case HK_ZOOM_REDRAW:
     case HK_ZOOM_CENTER:
     case HK_ZOOM_AUTO:
-    case HK_LEAVE_SHEET:
+	case HK_LEAVE_SHEET:
     case HK_DELETE_NODE:
-    case HK_MOVEBLOCK_TO_DRAGBLOCK:          // Switch to drag mode, when block moving
+	case HK_MOVEBLOCK_TO_DRAGBLOCK:          // Switch to drag mode, when block moving
     case HK_SAVE_BLOCK:                      // Copy block to paste buffer.
         cmd.SetId( hotKey->m_IdMenuEvent );
         GetEventHandler()->ProcessEvent( cmd );

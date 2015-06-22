@@ -55,6 +55,20 @@ public:
     ///> clears the report panel
     void Clear();
 
+    ///> sets the frame label
+    void SetLabel ( const wxString& aLabel );
+
+    void SetLazyUpdate ( bool aLazyUpdate );
+
+    void Flush();
+
+    void SetVisibleSeverities( int aSeverities )
+    {
+        m_showAll = false;
+        m_severities = aSeverities;
+        syncCheckboxes();
+    }
+
 private:
     struct REPORT_LINE
     {
@@ -91,6 +105,10 @@ private:
 
     ///> show all messages flag (overrides m_severities)
     bool m_showAll;
+
+    wxString m_html;
+
+    bool m_lazyUpdate;
 };
 
 #endif //__WX_HTML_REPORT_PANEL_H__

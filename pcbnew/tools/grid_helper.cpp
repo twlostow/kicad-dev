@@ -60,6 +60,7 @@ void GRID_HELPER::SetGrid( int aSize )
 
 void GRID_HELPER::SetOrigin( const VECTOR2I& aOrigin )
 {
+    assert( false );
 }
 
 

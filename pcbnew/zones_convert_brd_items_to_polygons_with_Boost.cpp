@@ -368,68 +368,6 @@ void ZONE_CONTAINER::buildFeatureHoleList( BOARD* aPcb, CPOLYGONS_LIST& aFeature
 
 }
 
-static const SHAPE_POLY_SET convertPolyListToPolySet(const CPOLYGONS_LIST& aList)
-{
-    SHAPE_POLY_SET rv;
-
-    unsigned    corners_count = aList.GetCornersCount();
-
-    // Enter main outline: this is the first contour
-    unsigned    ic = 0;
-
-    if(!corners_count)
-        return rv;
-
-    while( ic < corners_count )
-    {
-        rv.NewOutline( );
-
-        while( ic < corners_count )
-        {
-            rv.AppendVertex( aList.GetX(ic), aList.GetY(ic) );
-            if( aList.IsEndContour( ic ) )
-                break;
-
-            ic++;
-        }
-        ic++;
-    }
-
-    return rv;
-}
-
-static const CPOLYGONS_LIST convertPolySetToPolyList(const SHAPE_POLY_SET& aPolyset)
-{
-    CPOLYGONS_LIST list;
-
-    CPolyPt corner, firstCorner;
-
-    for( int ii = 0; ii < aPolyset.OutlineCount(); ii++ )
-    {
-
-        for( int jj = 0; jj < aPolyset.VertexCount(ii); jj++ )
-        {
-            VECTOR2I v = aPolyset.GetVertex( jj, ii );
-
-
-            corner.x    = v.x;
-            corner.y    = v.y;
-            corner.end_contour = false;
-
-            if(!jj)
-                firstCorner = corner;
-
-            list.AddCorner( corner );
-        }
-
-        firstCorner.end_contour = true;
-        list.AddCorner( firstCorner );
-    }
-
-    return list;
-
-}
-
 static const SHAPE_POLY_SET convertBoostToPolySet ( const KI_POLYGON_SET& aSet )
 {
     SHAPE_POLY_SET rv;

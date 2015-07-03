@@ -30,6 +30,8 @@
 #include <geometry/shape.h>
 #include <geometry/shape_line_chain.h>
 
+#include <PolyLine.h> // to be removed when boost.polygon is removed
+
 #include "clipper.hpp"
 
 /**
@@ -128,5 +130,8 @@ class SHAPE_POLY_SET : public SHAPE
 
         Polyset m_polys;
 };
+
+const SHAPE_POLY_SET convertPolyListToPolySet(const CPOLYGONS_LIST& aList);
+const CPOLYGONS_LIST convertPolySetToPolyList(const SHAPE_POLY_SET& aPolyset);
 
 #endif

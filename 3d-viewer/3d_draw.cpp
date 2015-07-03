@@ -60,6 +60,7 @@
 #include <CImage.h>
 #include <reporter.h>
 
+#include <geometry/shape_poly_set.h>
 
 
 /* returns the Z orientation parameter 1.0 or -1.0 for aLayer
@@ -914,20 +915,23 @@ void EDA_3D_CANVAS::buildBoard3DView( GLuint aBoardList, GLuint aBodyOnlyList,
         if( bufferPolys.GetCornersCount() == 0 )
             continue;
 
-        KI_POLYGON_SET  currLayerPolyset;
-        KI_POLYGON_SET  polysetHoles;
-
-        // Add polygons, without holes
-        bufferPolys.ExportTo( currLayerPolyset );
+        SHAPE_POLY_SET currLayerPolyset = convertPolyListToPolySet ( bufferPolys );
+        SHAPE_POLY_SET polysetHoles;
 
         // Add through holes (created only once) in current polygon holes list
         currLayerHoles.Append( allLayerHoles );
 
         if( currLayerHoles.GetCornersCount() > 0 )
-            currLayerHoles.ExportTo( polysetHoles );
+        {
+            polysetHoles = convertPolyListToPolySet ( currLayerHoles );
+            polysetHoles.Simplify();
 
-        // Merge polygons, and remove holes
-        currLayerPolyset -= polysetHoles;
+            currLayerPolyset.Subtract( polysetHoles );
+        }
+
+        currLayerPolyset.Fracture( );
+
+
 
         int thickness = GetPrm3DVisu().GetLayerObjectThicknessBIU( layer );
         int zpos = GetPrm3DVisu().GetLayerZcoordBIU( layer );
@@ -950,8 +954,7 @@ void EDA_3D_CANVAS::buildBoard3DView( GLuint aBoardList, GLuint aBodyOnlyList,
             SetGLColor( color );
         }
 
-        bufferPolys.RemoveAllContours();
-        bufferPolys.ImportFrom( currLayerPolyset );
+        bufferPolys = convertPolySetToPolyList ( currLayerPolyset );
 
         // If holes are removed from copper zones, bufferPolys contains all polygons
         // to draw (tracks+zones+texts).
@@ -1030,20 +1033,14 @@ void EDA_3D_CANVAS::buildBoard3DView( GLuint aBoardList, GLuint aBodyOnlyList,
     zpos += (copper_thickness + epsilon) / 2.0f;
     board_thickness -= copper_thickness + epsilon;
 
-    KI_POLYGON_SET  currLayerPolyset;
-    KI_POLYGON_SET  polysetHoles;
+    SHAPE_POLY_SET currLayerPolyset = convertPolyListToPolySet ( bufferPcbOutlines );
+    SHAPE_POLY_SET polysetHoles = convertPolyListToPolySet ( allLayerHoles );
 
-    // Add polygons, without holes
-    bufferPcbOutlines.ExportTo( currLayerPolyset );
+    polysetHoles.Simplify( );
+    currLayerPolyset.Subtract( polysetHoles );
+    currLayerPolyset.Fracture( );
 
-    // Build holes list
-    allLayerHoles.ExportTo( polysetHoles );
-
-    // remove holes
-    currLayerPolyset -= polysetHoles;
-
-    bufferPcbOutlines.RemoveAllContours();
-    bufferPcbOutlines.ImportFrom( currLayerPolyset );
+    bufferPcbOutlines = convertPolySetToPolyList( currLayerPolyset );
 
     if( bufferPcbOutlines.GetCornersCount() )
     {
@@ -1121,8 +1118,7 @@ void EDA_3D_CANVAS::buildTechLayers3DView( REPORTER* aErrorMessages, REPORTER* a
 
     // draw graphic items, on technical layers
 
-    KI_POLYGON_SET  brdpolysetHoles;
-    allLayerHoles.ExportTo( brdpolysetHoles );
+    SHAPE_POLY_SET brdpolysetHoles = convertPolyListToPolySet ( allLayerHoles );
 
     static const LAYER_ID teckLayerList[] = {
         B_Adhes,
@@ -1217,30 +1213,34 @@ void EDA_3D_CANVAS::buildTechLayers3DView( REPORTER* aErrorMessages, REPORTER* a
         // Calculate merged polygons and remove pads and vias holes
         if( bufferPolys.GetCornersCount() == 0 )
             continue;
-        KI_POLYGON_SET  currLayerPolyset;
-        KI_POLYGON_SET  polyset;
+        SHAPE_POLY_SET currLayerPolyset, polyset;
 
         // Solder mask layers are "negative" layers.
         // Shapes should be removed from the full board area.
         if( layer == B_Mask || layer == F_Mask )
         {
-            bufferPcbOutlines.ExportTo( currLayerPolyset );
+            currLayerPolyset = convertPolyListToPolySet ( bufferPcbOutlines );
             bufferPolys.Append( allLayerHoles );
-            bufferPolys.ExportTo( polyset );
-            currLayerPolyset -= polyset;
+            polyset = convertPolyListToPolySet ( bufferPolys );
+            polyset.Simplify( );
+            currLayerPolyset.Subtract( polyset );
         }
         // Remove holes from Solder paste layers and siklscreen
         else if( layer == B_Paste || layer == F_Paste
                  || layer == B_SilkS || layer == F_SilkS  )
         {
-            bufferPolys.ExportTo( currLayerPolyset );
-            currLayerPolyset -= brdpolysetHoles;
+            currLayerPolyset = convertPolyListToPolySet ( bufferPolys );
+            brdpolysetHoles.Simplify();
+            currLayerPolyset.Subtract ( brdpolysetHoles );
         }
         else    // usuall layers, merge polys built from each item shape:
         {
-            bufferPolys.ExportTo( polyset );
-            currLayerPolyset += polyset;
+            polyset = convertPolyListToPolySet ( bufferPolys );
+            polyset.Simplify();
+            currLayerPolyset.Add( polyset );
         }
+
+        currLayerPolyset.Fracture();
 
         int         thickness = 0;
 
@@ -1268,8 +1268,7 @@ void EDA_3D_CANVAS::buildTechLayers3DView( REPORTER* aErrorMessages, REPORTER* a
                 zpos -= thickness/2 ;
         }
 
-        bufferPolys.RemoveAllContours();
-        bufferPolys.ImportFrom( currLayerPolyset );
+        bufferPolys = convertPolySetToPolyList ( currLayerPolyset );
 
         float zNormal = 1.0f; // When using thickness it will draw first the top and then botton (with z inverted)
 
@@ -1365,10 +1364,13 @@ void EDA_3D_CANVAS::buildBoard3DAuxLayers( REPORTER* aErrorMessages, REPORTER* a
         // Calculate merged polygons and remove pads and vias holes
         if( bufferPolys.GetCornersCount() == 0 )
             continue;
-        KI_POLYGON_SET  currLayerPolyset;
-        KI_POLYGON_SET  polyset;
-        bufferPolys.ExportTo( polyset );
-        currLayerPolyset += polyset;
+        SHAPE_POLY_SET  currLayerPolyset;
+        SHAPE_POLY_SET  polyset;
+
+        polyset = convertPolyListToPolySet ( bufferPolys );
+        polyset.Simplify();
+
+        currLayerPolyset.Add ( polyset );
 
         int         thickness = GetPrm3DVisu().GetLayerObjectThicknessBIU( layer );
         int         zpos = GetPrm3DVisu().GetLayerZcoordBIU( layer );
@@ -1381,8 +1383,8 @@ void EDA_3D_CANVAS::buildBoard3DAuxLayers( REPORTER* aErrorMessages, REPORTER* a
         else
             zpos -= thickness/2 ;
 
-        bufferPolys.RemoveAllContours();
-        bufferPolys.ImportFrom( currLayerPolyset );
+        currLayerPolyset.Fracture();
+        bufferPolys = convertPolySetToPolyList( currLayerPolyset );
 
         float zNormal = 1.0f; // When using thickness it will draw first the top and then botton (with z inverted)
 

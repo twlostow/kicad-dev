@@ -164,7 +164,7 @@ void SHAPE_POLY_SET::booleanOp( ClipperLib::ClipType type, const SHAPE_POLY_SET&
 
     c.StrictlySimple( true );
 
-    BOOST_FOREACH ( Paths& subject, m_polys )
+    BOOST_FOREACH ( const Paths& subject, m_polys )
     {
          c.AddPaths(subject, ptSubject, true);
     }
@@ -351,7 +351,7 @@ static int processEdge ( FractureEdgeSet& edges, FractureEdge* edge )
 
         bool connFlag = (*e_nearest)->m_connected;
 
-        FractureEdge split_1 ( connFlag, (*e_nearest)->m_p1, IntPoint(x_nearest, y) );
+    //    FractureEdge split_1 ( connFlag, (*e_nearest)->m_p1, IntPoint(x_nearest, y) );
         FractureEdge *lead1 = new FractureEdge( connFlag, IntPoint(x_nearest, y), IntPoint(x, y) );
         FractureEdge *lead2 = new FractureEdge( connFlag, IntPoint(x, y), IntPoint(x_nearest, y) );
         FractureEdge *split_2 = new FractureEdge ( connFlag, IntPoint(x_nearest, y), (*e_nearest)->m_p2 );
@@ -362,7 +362,7 @@ static int processEdge ( FractureEdgeSet& edges, FractureEdge* edge )
 
         FractureEdge* link = (*e_nearest)->m_next;
 
-        (*e_nearest)->m_p1 = split_1.m_p1;
+        //(*e_nearest)->m_p1 = split_1.m_p1;
         (*e_nearest)->m_p2 = IntPoint(x_nearest, y);
         (*e_nearest)->m_connected = connFlag;
         (*e_nearest)->m_next = lead1;
@@ -399,11 +399,17 @@ void SHAPE_POLY_SET::fractureSingle( ClipperLib::Paths& paths )
 
     int num_unconnected = 0;
 
+    printf("paths: %d\n", paths.size());
+
+    printf("pt-paths: %p\n", &paths);
+
+
     BOOST_FOREACH(Path& path, paths)
     {
         int index = 0;
 
         FractureEdge *prev = NULL, *first_edge = NULL;
+        printf("Npath %d\n", path.size());
         for(unsigned i = 0; i < path.size(); i++)
         {
             FractureEdge *fe = new FractureEdge ( first, &path, index++ );
@@ -429,6 +435,15 @@ void SHAPE_POLY_SET::fractureSingle( ClipperLib::Paths& paths )
         first = false; // first path is always the outline
     }
 
+    paths.clear();
+
+    printf("psize-pre: %d\n", paths.size());
+
+    BOOST_FOREACH(Path& path, paths)
+    {
+        printf("path %x\n", &path);
+    }
+
     while(1)
     {
         int n_unconnected = 0;
@@ -452,7 +467,12 @@ void SHAPE_POLY_SET::fractureSingle( ClipperLib::Paths& paths )
         }
     }
 
-    paths.clear();
+    BOOST_FOREACH(Path& path, paths)
+    {
+        printf("xpath %x\n", &path);
+    }
+
+    printf("psize: %d\n", paths.size());
     Path newPath;
     FractureEdge *e;
 
@@ -582,3 +602,66 @@ const BOX2I SHAPE_POLY_SET::BBox( int aClearance ) const
     bb.Inflate( aClearance );
     return bb;
 }
+
+const SHAPE_POLY_SET convertPolyListToPolySet(const CPOLYGONS_LIST& aList)
+{
+    SHAPE_POLY_SET rv;
+
+    unsigned    corners_count = aList.GetCornersCount();
+
+    // Enter main outline: this is the first contour
+    unsigned    ic = 0;
+
+    if(!corners_count)
+        return rv;
+
+    while( ic < corners_count )
+    {
+        rv.NewOutline( );
+
+        while( ic < corners_count )
+        {
+            rv.AppendVertex( aList.GetX(ic), aList.GetY(ic) );
+            if( aList.IsEndContour( ic ) )
+                break;
+
+            ic++;
+        }
+        ic++;
+    }
+
+    return rv;
+}
+
+const CPOLYGONS_LIST convertPolySetToPolyList(const SHAPE_POLY_SET& aPolyset)
+{
+    CPOLYGONS_LIST list;
+
+    CPolyPt corner, firstCorner;
+
+    for( int ii = 0; ii < aPolyset.OutlineCount(); ii++ )
+    {
+
+        for( int jj = 0; jj < aPolyset.VertexCount(ii); jj++ )
+        {
+            VECTOR2I v = aPolyset.GetVertex( jj, ii );
+
+
+            corner.x    = v.x;
+            corner.y    = v.y;
+            corner.end_contour = false;
+
+            if(!jj)
+                firstCorner = corner;
+
+            list.AddCorner( corner );
+        }
+
+        firstCorner.end_contour = true;
+        list.AddCorner( firstCorner );
+    }
+
+    return list;
+
+}
+

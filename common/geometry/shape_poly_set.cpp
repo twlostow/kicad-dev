@@ -237,7 +237,6 @@ struct FractureEdge
 {
     FractureEdge(bool connected, Path* owner, int index) :
         m_connected(connected),
-        m_owner(owner),
         m_next(NULL)
     {
         m_p1 = (*owner)[index];
@@ -246,7 +245,6 @@ struct FractureEdge
 
     FractureEdge(int64_t y = 0) :
         m_connected(false),
-        m_owner(NULL),
         m_next(NULL)
     {
         m_p1.Y = m_p2.Y = y;
@@ -254,7 +252,6 @@ struct FractureEdge
 
     FractureEdge(bool connected, const IntPoint& p1, const IntPoint& p2) :
         m_connected(connected),
-        m_owner(NULL),
         m_p1(p1),
         m_p2(p2),
         m_next(NULL)
@@ -271,117 +268,76 @@ struct FractureEdge
     }
 
     bool m_connected;
-    Path* m_owner;
     IntPoint m_p1, m_p2;
     FractureEdge *m_next;
 };
 
-struct CompareEdges
-{
-    bool operator()(const FractureEdge *a, const FractureEdge *b) const
-    {
-       if( std::min(a->m_p1.Y, a->m_p2.Y) < std::min(b->m_p1.Y, b->m_p2.Y) )
-            return true;
-       return false;
-    }
-};
 
-typedef std::vector<FractureEdge*> FractureEdgeSet;
+typedef std::vector<FractureEdge *> FractureEdgeSet;
 
 static int processEdge ( FractureEdgeSet& edges, FractureEdge* edge )
 {
-    int n  = 0;
     int64_t x = edge->m_p1.X;
     int64_t y = edge->m_p1.Y;
+    int64_t min_dist = std::numeric_limits<int64_t>::max();
+    int64_t x_nearest = 0;
 
+    FractureEdge* e_nearest = NULL;
 
-    int64_t min_dist_l = std::numeric_limits<int64_t>::max();
-    int64_t min_dist_r = std::numeric_limits<int64_t>::max();
-    int64_t x_nearest_l = 0, x_nearest_r = 0, x_nearest;
-
- // fixme: search edges in sorted multiset
- // FractureEdge comp_min( std::min(edge->m_p1.Y, edge->m_p2.Y) );
- // FractureEdgeSet::iterator e_begin = edges.lower_bound ( &comp_min );
-
-    FractureEdgeSet::iterator e_nearest_l = edges.end(), e_nearest_r = edges.end(), e_nearest;
-
-
-    for(FractureEdgeSet::iterator i = edges.begin() ; i != edges.end(); ++i)
+    for(FractureEdgeSet::iterator i = edges.begin(); i != edges.end(); ++i)
     {
-        n++;
-        if( (*i)->matches(y) )
+        if( ! (*i)->matches(y) )
+            continue;
+
+        int64_t x_intersect;
+
+        if( (*i)->m_p1.Y == (*i)->m_p2.Y ) // horizontal edge
+            x_intersect = std::max ( (*i)->m_p1.X, (*i)->m_p2.X );
+        else
+            x_intersect = (*i)->m_p1.X + rescale((*i)->m_p2.X - (*i)->m_p1.X,   y - (*i)->m_p1.Y,   (*i)->m_p2.Y - (*i)->m_p1.Y );
+
+        int64_t dist = (x - x_intersect);
+
+        if(dist > 0 && dist < min_dist)
         {
-            int64_t x_intersect;
-            if( (*i)->m_p1.Y == (*i)->m_p2.Y ) // horizontal edge
-                x_intersect = std::max ( (*i)->m_p1.X, (*i)->m_p2.X );
-            else
-                x_intersect = (*i)->m_p1.X + rescale((*i)->m_p2.X - (*i)->m_p1.X,   y - (*i)->m_p1.Y,   (*i)->m_p2.Y - (*i)->m_p1.Y );
-
-            int64_t dist = (x - x_intersect);
-
-            if(dist > 0 && dist < min_dist_l)
-            {
-                min_dist_l = dist;
-                x_nearest_l = x_intersect;
-                e_nearest_l = i;
-            }
-
-            if(dist <= 0 && (-dist) < min_dist_r)
-            {
-                min_dist_r = -dist;
-                x_nearest_r = x_intersect;
-                e_nearest_r = i;
-            }
+            min_dist = dist;
+            x_nearest = x_intersect;
+            e_nearest = (*i);
         }
     }
 
-    if(e_nearest_l != edges.end() || e_nearest_r != edges.end())
+    if(e_nearest && e_nearest->m_connected )
     {
-        if( e_nearest_l !=edges.end() && ( (*e_nearest_l)->m_connected || ((*e_nearest_l) ->m_owner != edge->m_owner )))
-        {
-            e_nearest = e_nearest_l;
-            x_nearest = x_nearest_l;
-        }
-        else if( e_nearest_r !=edges.end() && ( (*e_nearest_r)->m_connected || ((*e_nearest_r) ->m_owner != edge->m_owner ) )) {
-            e_nearest = e_nearest_r;
-            x_nearest = x_nearest_r;
-        }
-        else
-            return 0;
+        int count = 0;
 
-        bool connFlag = (*e_nearest)->m_connected;
-
-        FractureEdge split_1 ( connFlag, (*e_nearest)->m_p1, IntPoint(x_nearest, y) );
-        FractureEdge *lead1 = new FractureEdge( connFlag, IntPoint(x_nearest, y), IntPoint(x, y) );
-        FractureEdge *lead2 = new FractureEdge( connFlag, IntPoint(x, y), IntPoint(x_nearest, y) );
-        FractureEdge *split_2 = new FractureEdge ( connFlag, IntPoint(x_nearest, y), (*e_nearest)->m_p2 );
+        FractureEdge *lead1 = new FractureEdge( true, IntPoint(x_nearest, y), IntPoint(x, y) );
+        FractureEdge *lead2 = new FractureEdge( true, IntPoint(x, y), IntPoint(x_nearest, y) );
+        FractureEdge *split_2 = new FractureEdge ( true, IntPoint(x_nearest, y), e_nearest->m_p2 );
 
         edges.push_back(split_2);
         edges.push_back(lead1);
         edges.push_back(lead2);
 
-        FractureEdge* link = (*e_nearest)->m_next;
+        FractureEdge* link = e_nearest->m_next;
 
-        (*e_nearest)->m_p1 = split_1.m_p1;
-        (*e_nearest)->m_p2 = IntPoint(x_nearest, y);
-        (*e_nearest)->m_connected = connFlag;
-        (*e_nearest)->m_next = lead1;
+        e_nearest->m_p2 = IntPoint(x_nearest, y);
+        e_nearest->m_next = lead1;
         lead1->m_next = edge;
+
 
         FractureEdge *last;
         for(last = edge; last->m_next != edge; last = last->m_next)
         {
-            last->m_connected = connFlag;
-            last->m_owner = NULL;
+            last->m_connected = true;
+            count++;
         }
 
-        last->m_owner = NULL;
-        last->m_connected = connFlag;
+        last->m_connected = true;
         last->m_next = lead2;
         lead2->m_next = split_2;
         split_2->m_next = link;
 
-        return 1;
+        return count + 1;
     }
 
     return 0;
@@ -390,6 +346,7 @@ static int processEdge ( FractureEdgeSet& edges, FractureEdge* edge )
 void SHAPE_POLY_SET::fractureSingle( ClipperLib::Paths& paths )
 {
     FractureEdgeSet edges;
+    FractureEdgeSet border_edges;
     FractureEdge *root = NULL;
 
     bool first = true;
@@ -404,6 +361,15 @@ void SHAPE_POLY_SET::fractureSingle( ClipperLib::Paths& paths )
         int index = 0;
 
         FractureEdge *prev = NULL, *first_edge = NULL;
+
+        int64_t x_min = std::numeric_limits<int64_t>::max();
+
+        for(unsigned i = 0; i < path.size(); i++)
+        {
+            if( path[i].X < x_min )
+                x_min = path[i].X;
+        }
+
         for(unsigned i = 0; i < path.size(); i++)
         {
             FractureEdge *fe = new FractureEdge ( first, &path, index++ );
@@ -422,34 +388,38 @@ void SHAPE_POLY_SET::fractureSingle( ClipperLib::Paths& paths )
             prev = fe;
             edges.push_back ( fe );
 
+            if(!first)
+            {
+                if(fe->m_p1.X == x_min || fe->m_p2.X == x_min)
+                    border_edges.push_back(fe);
+
+            }
+
             if(!fe->m_connected)
                 num_unconnected++;
         }
-
         first = false; // first path is always the outline
     }
 
-    while(1)
+    // keep connecting holes to the main outline, until there's no holes left...
+    while(num_unconnected > 0)
     {
-        int n_unconnected = 0;
+        int64_t x_min = std::numeric_limits<int64_t>::max();
 
-        for(FractureEdgeSet::iterator i = edges.begin(); i != edges.end(); ++i )
+        FractureEdge *smallestX;
+
+        // find the left-most hole edge and merge with the outline
+        for(FractureEdgeSet::iterator i = border_edges.begin(); i != border_edges.end(); ++i )
         {
-            if(!(*i)->m_connected)
-                n_unconnected++;
-        }
-
-        if(!n_unconnected)
-            break;
-
-        for(FractureEdgeSet::iterator i = edges.begin(); i != edges.end(); ++i )
-        {
-            if(!(*i)->m_connected)
+            int64_t xt = std::min((*i)->m_p1.X, (*i)->m_p2.X);
+            if( (xt < x_min) && ! (*i)->m_connected )
             {
-                if (processEdge ( edges, *i ) )
-                    break;
+                x_min = xt;
+                smallestX = *i;
             }
         }
+
+        num_unconnected -= processEdge ( edges, smallestX );
     }
 
     paths.clear();

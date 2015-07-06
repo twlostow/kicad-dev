@@ -422,10 +422,9 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
 
     text = AddHotkeyName( _( "Update PCB from Schematics" ), g_Schematic_Hokeys_Descr, HK_UPDATE_PCB_FROM_SCH );
 
-
     wxMenuItem *updItem = AddMenuItem( toolsMenu,
                  ID_UPDATE_PCB_FROM_SCH,
-                 text, _( "Updates the PCB design with the current schematic." ),
+                 text, _( "Updates the PCB design with the current schematic (forward annotation)." ),
                  KiBitmap( libedit_xpm ) );
 
     KIWAY_PLAYER* pcbFrame = Kiway().Player( FRAME_PCB, false );  // test open already.

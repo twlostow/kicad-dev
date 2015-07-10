@@ -39,14 +39,20 @@
  * Represents a set of closed polygons. Polygons may be nonconvex, self-intersecting
  * and have holes. Provides boolean operations (using Clipper library as the backend).
  *
- * TODO: document, derive from class SHAPE, add convex partitioning & spatial index
+ * TODO: add convex partitioning & spatial index
  */
-
 class SHAPE_POLY_SET : public SHAPE
 {
     public:
+        ///> represents a single polygon outline with holes. The first entry is the outline,
+        ///> the remaining (if any), are the holes
         typedef std::vector<SHAPE_LINE_CHAIN> POLYGON;
 
+        /**
+         * Class ITERATOR_TEMPLATE
+         *
+         * Base class for iterating over all vertices in a given SHAPE_POLY_SET
+         */
         template <class T>
         class ITERATOR_TEMPLATE {
             public:
@@ -86,9 +92,6 @@ class SHAPE_POLY_SET : public SHAPE
                 {
                     Advance();
                 }
-
-
-
 
                 T& Get( )
                 {
@@ -133,8 +136,14 @@ class SHAPE_POLY_SET : public SHAPE
         ///> Adds a new hole to the given outline (default: last) and returns its index
         int AddHole ( const SHAPE_LINE_CHAIN& aHole, int aOutline = -1 );
 
-        ///> Appends a vertex at the end of the given outline/hole (default: last hole in the last outline)
+        ///> Appends a vertex at the end of the given outline/hole (default: the last outline)
         int Append ( int x, int y, int aOutline = -1, int aHole = -1 );
+
+        ///> Merges polygons from two sets.
+        void Append ( const SHAPE_POLY_SET& aSet );
+
+        ///> Appends a vertex at the end of the given outline/hole (default: the last outline)
+        void Append ( const VECTOR2I& aP, int aOutline = -1, int aHole = -1);
 
         ///> Returns the index-th vertex in a given hole outline within a given outline
         VECTOR2I& Vertex ( int index, int aOutline = -1, int aHole = -1);
@@ -154,16 +163,19 @@ class SHAPE_POLY_SET : public SHAPE
         ///> Returns the number of holes in a given outline
         int HoleCount ( int aOutline ) const;
 
+        ///> Returns the reference to aIndex-th outline in the set
         SHAPE_LINE_CHAIN& Outline ( int aIndex )
         {
             return m_polys[aIndex][0];
         }
 
+        ///> Returns the reference to aHole-th hole in the aIndex-th outline
         SHAPE_LINE_CHAIN& Hole ( int aOutline, int aHole )
         {
             return m_polys[aOutline][aHole + 1];
         }
 
+        ///> Returns the aIndex-th subpolygon in the set
         POLYGON& Polygon( int aIndex )
         {
             return m_polys[aIndex];
@@ -184,6 +196,7 @@ class SHAPE_POLY_SET : public SHAPE
             return m_polys[aIndex];
         }
 
+        ///> Returns an iterator object, for iterating between aFirst and aLast outline.
         ITERATOR Iterate( int aFirst, int aLast )
         {
             ITERATOR iter;
@@ -196,11 +209,13 @@ class SHAPE_POLY_SET : public SHAPE
             return iter;
         }
 
+        ///> Returns an iterator object, for iterating aOutline-th outline
         ITERATOR Iterate ( int aOutline )
         {
             return Iterate ( aOutline, aOutline );
         }
 
+        ///> Returns an iterator object, for all outlines in the set (no holes)
         ITERATOR Iterate ( )
         {
             return Iterate ( 0, OutlineCount() - 1 );
@@ -235,11 +250,8 @@ class SHAPE_POLY_SET : public SHAPE
         ///> Performs boolean polyset difference
         void BooleanSubtract( const SHAPE_POLY_SET& b );
 
-        ///> Performs smooth outline inflation (Minkowski sum of the outline and a circle of a given radius)
-        ///void SmoothInflate ( int aFactor, int aCircleSegmentsCount = 32 );
-
-        ///> Performs outline erosion/shrinking
-        void Inflate ( int aFactor, int aCircleSegmentsCount = 16 );
+        ///> Performs outline inflation/deflation, using round corners.
+        void Inflate ( int aFactor, int aCircleSegmentsCount = 32 );
 
         ///> Converts a set of polygons with holes to a singe outline with "slits"/"fractures" connecting the outer ring
         ///> to the inner holes
@@ -248,6 +260,7 @@ class SHAPE_POLY_SET : public SHAPE
         ///> Converts a set of slitted polygons to a set of polygons with holes
         void Unfracture ();
 
+        ///> Returns true if the polygon set has any holes.
         bool HasHoles() const;
 
         ///> Simplifies the polyset (merges overlapping polys, eliminates degeneracy/self-intersections)
@@ -259,8 +272,10 @@ class SHAPE_POLY_SET : public SHAPE
         /// @copydoc SHAPE::Parse()
         bool Parse( std::stringstream& aStream );
 
+        /// @copydoc SHAPE::Move()
         void Move( const VECTOR2I& aVector );
 
+        /// @copydoc SHAPE::IsSolid()
         bool IsSolid() const
         {
             return true;
@@ -272,49 +287,26 @@ class SHAPE_POLY_SET : public SHAPE
         bool Collide( const VECTOR2I& aP, int aClearance = 0 ) const { return false; }
         bool Collide( const SEG& aSeg, int aClearance = 0 ) const { return false; }
 
+
+        ///> Returns true is a given subpolygon contains the point aP. If aSubpolyIndex < 0 (default value),
+        ///> checks all polygons in the set
         bool Contains( const VECTOR2I& aP, int aSubpolyIndex = -1 ) const;
 
+        ///> Returns true if the set is empty (no polygons at all)
         bool IsEmpty() const
         {
             return m_polys.size() == 0;
         }
 
-/* Compatibility functions (CPOLYGONS_LIST API) */
-
-#if 0
-        int GetX( int ic ) const;
-        void SetX( int ic, int aValue );
-        int GetY( int ic ) const;
-        void SetY( int ic, int aValue );
-#endif
-
-#ifdef WX_COMPATIBILITY
-        /*wxPoint GetPos( int ic ) const
-        {
-            return wxPoint( GetX(ic), GetY(ic) );
-        }
-
-
-        void Append ( const wxPoint& aP, int aOutline = -1, int aHole = -1);*/
-#endif
-
-        //bool IsEndContour( int ic ) const;
-
-        //const VECTOR2I GetCorner( int ic ) const;
-
+        ///> Removes all outlines & holes (clears) the polygon set.
         void RemoveAllContours( );
-        //const VECTOR2I GetLastCorner() const;
 
+        ///> Returns total number of vertices stored in the set.
         int TotalVertices() const;
 
-        //void DeleteCorner( int aIdx );
+        ///> Deletes aIdx-th polygon from the set
         void DeletePolygon( int aIdx );
 
-        void Append ( const SHAPE_POLY_SET& aSet );
-        void Append ( const VECTOR2I& aP, int aOutline = -1, int aHole = -1);
-        //void InsertCorner ( int aPosition, const VECTOR2I& aP );
-
-        void ExtractHoles ( SHAPE_POLY_SET& aHoles );
     private:
 
         SHAPE_LINE_CHAIN& getContourForCorner( int aCornerId, int& aIndexWithinContour );

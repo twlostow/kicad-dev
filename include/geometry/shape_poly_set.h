@@ -32,6 +32,7 @@
 
 #include "clipper.hpp"
 
+
 /**
  * Class SHAPE_POLY_SET
  *
@@ -40,29 +41,106 @@
  *
  * TODO: document, derive from class SHAPE, add convex partitioning & spatial index
  */
+
 class SHAPE_POLY_SET : public SHAPE
 {
     public:
-        SHAPE_POLY_SET() : SHAPE( SH_POLY_SET ) {};
-        ~SHAPE_POLY_SET() {};
+        typedef std::vector<SHAPE_LINE_CHAIN> POLYGON;
+
+        template <class T>
+        class ITERATOR_TEMPLATE {
+            public:
+
+                bool IsEndContour() const
+                {
+                    return m_currentVertex + 1 == m_poly->CPolygon(m_currentOutline)[0].PointCount();
+                }
+
+                bool IsLastContour() const
+                {
+                    return m_currentOutline == m_lastOutline;
+                }
+
+                operator bool() const
+                {
+                    return m_currentOutline <= m_lastOutline;
+                }
+
+                void Advance()
+                {
+                    m_currentVertex ++;
+
+                    if(m_currentVertex >= m_poly->CPolygon(m_currentOutline)[0].PointCount())
+                    {
+                        m_currentVertex = 0;
+                        m_currentOutline++;
+                    }
+                }
+
+                void operator++( int dummy )
+                {
+                    Advance();
+                }
+
+                void operator++( )
+                {
+                    Advance();
+                }
+
+
+
+
+                T& Get( )
+                {
+                    return m_poly->Polygon(m_currentOutline)[0].Point(m_currentVertex);
+                }
+
+                T& operator*()
+                {
+                    return Get();
+                }
+
+                T* operator->()
+                {
+                    return &Get();
+                }
+
+
+            private:
+                friend class SHAPE_POLY_SET;
+
+                SHAPE_POLY_SET* m_poly;
+                int m_currentOutline;
+                int m_lastOutline;
+                int m_currentVertex;
+        };
+
+        typedef ITERATOR_TEMPLATE<VECTOR2I> ITERATOR;
+        typedef ITERATOR_TEMPLATE<const VECTOR2I> CONST_ITERATOR;
+
+        SHAPE_POLY_SET();
+        ~SHAPE_POLY_SET();
 
         ///> Creates a new empty polygon in the set and returns its index
-        int NewOutline();
+        int NewOutline ();
 
-        ///> Cretes a new empty hole in the given outline (default: last one) and returns its index
-        int NewHole( int aOutline = -1);
+        ///> Creates a new hole in a given outline
+        int NewHole ( int aOutline = -1 );
 
         ///> Adds a new outline to the set and returns its index
-        int AddOutline( const SHAPE_LINE_CHAIN& aOutline );
+        int AddOutline ( const SHAPE_LINE_CHAIN& aOutline );
 
         ///> Adds a new hole to the given outline (default: last) and returns its index
-        int AddHole( const SHAPE_LINE_CHAIN& aHole, int aOutline = -1 );
+        int AddHole ( const SHAPE_LINE_CHAIN& aHole, int aOutline = -1 );
 
         ///> Appends a vertex at the end of the given outline/hole (default: last hole in the last outline)
-        int AppendVertex( int x, int y, int aOutline = -1, int aHole = -1 );
+        int Append ( int x, int y, int aOutline = -1, int aHole = -1 );
 
         ///> Returns the index-th vertex in a given hole outline within a given outline
-        const VECTOR2I GetVertex( int index, int aOutline = -1, int aHole = -1) const;
+        VECTOR2I& Vertex ( int index, int aOutline = -1, int aHole = -1);
+
+        ///> Returns the index-th vertex in a given hole outline within a given outline
+        const VECTOR2I& CVertex ( int index, int aOutline = -1, int aHole = -1) const;
 
         ///> Returns true if any of the outlines is self-intersecting
         bool IsSelfIntersecting();
@@ -71,32 +149,109 @@ class SHAPE_POLY_SET : public SHAPE
         int OutlineCount() const { return m_polys.size(); }
 
         ///> Returns the number of vertices in a given outline/hole
-        int VertexCount( int aOutline = -1, int aHole = -1 ) const;
+        int VertexCount ( int aOutline = -1, int aHole = -1 ) const;
 
-        ///> Returns the internal representation (ClipperLib) of a given polygon (outline + holes)
-        const ClipperLib::Paths& GetPoly( int aIndex ) const
+        ///> Returns the number of holes in a given outline
+        int HoleCount ( int aOutline ) const;
+
+        SHAPE_LINE_CHAIN& Outline ( int aIndex )
+        {
+            return m_polys[aIndex][0];
+        }
+
+        SHAPE_LINE_CHAIN& Hole ( int aOutline, int aHole )
+        {
+            return m_polys[aOutline][aHole + 1];
+        }
+
+        POLYGON& Polygon( int aIndex )
         {
             return m_polys[aIndex];
         }
 
-        ///> Performs boolean polyset difference
-        void Subtract( const SHAPE_POLY_SET& b );
+        const SHAPE_LINE_CHAIN& COutline ( int aIndex ) const
+        {
+            return m_polys[aIndex][0];
+        }
+
+        const SHAPE_LINE_CHAIN& CHole ( int aOutline, int aHole ) const
+        {
+            return m_polys[aOutline][aHole + 1];
+        }
+
+        const POLYGON& CPolygon( int aIndex ) const
+        {
+            return m_polys[aIndex];
+        }
+
+        ITERATOR Iterate( int aFirst, int aLast )
+        {
+            ITERATOR iter;
+
+            iter.m_poly = this;
+            iter.m_currentOutline = aFirst;
+            iter.m_lastOutline = aLast < 0 ? OutlineCount() - 1 : aLast;
+            iter.m_currentVertex = 0;
+
+            return iter;
+        }
+
+        ITERATOR Iterate ( int aOutline )
+        {
+            return Iterate ( aOutline, aOutline );
+        }
+
+        ITERATOR Iterate ( )
+        {
+            return Iterate ( 0, OutlineCount() - 1 );
+        }
+
+        CONST_ITERATOR CIterate( int aFirst, int aLast ) const
+        {
+            CONST_ITERATOR iter;
+
+            iter.m_poly = const_cast<SHAPE_POLY_SET*> (this);
+            iter.m_currentOutline = aFirst;
+            iter.m_lastOutline = aLast < 0 ? OutlineCount() - 1 : aLast;
+            iter.m_currentVertex = 0;
+
+            return iter;
+        }
+
+        CONST_ITERATOR CIterate ( int aOutline ) const
+        {
+            return CIterate ( aOutline, aOutline );
+        }
+
+        CONST_ITERATOR CIterate ( ) const
+        {
+            return CIterate ( 0, OutlineCount() - 1 );
+        }
+
 
         ///> Performs boolean polyset union
-        void Add( const SHAPE_POLY_SET& b );
+        void BooleanAdd( const SHAPE_POLY_SET& b );
+
+        ///> Performs boolean polyset difference
+        void BooleanSubtract( const SHAPE_POLY_SET& b );
 
         ///> Performs smooth outline inflation (Minkowski sum of the outline and a circle of a given radius)
-        void SmoothInflate( int aFactor );
+        ///void SmoothInflate ( int aFactor, int aCircleSegmentsCount = 32 );
 
         ///> Performs outline erosion/shrinking
-        void Erode( int aFactor );
+        void Inflate ( int aFactor, int aCircleSegmentsCount = 16 );
 
         ///> Converts a set of polygons with holes to a singe outline with "slits"/"fractures" connecting the outer ring
         ///> to the inner holes
-        void Fracture();
+        void Fracture ();
+
+        ///> Converts a set of slitted polygons to a set of polygons with holes
+        void Unfracture ();
+
+        bool HasHoles() const;
 
         ///> Simplifies the polyset (merges overlapping polys, eliminates degeneracy/self-intersections)
-        void Simplify();
+        void Simplify ();
 
         /// @copydoc SHAPE::Format()
         const std::string Format() const;
@@ -104,7 +259,7 @@ class SHAPE_POLY_SET : public SHAPE
         /// @copydoc SHAPE::Parse()
         bool Parse( std::stringstream& aStream );
 
-        void  Move( const VECTOR2I& aVector ) { assert(false ); };
+        void Move( const VECTOR2I& aVector );
 
         bool IsSolid() const
         {
@@ -117,15 +272,66 @@ class SHAPE_POLY_SET : public SHAPE
         bool Collide( const VECTOR2I& aP, int aClearance = 0 ) const { return false; }
         bool Collide( const SEG& aSeg, int aClearance = 0 ) const { return false; }
 
+        bool Contains( const VECTOR2I& aP, int aSubpolyIndex = -1 ) const;
+
+        bool IsEmpty() const
+        {
+            return m_polys.size() == 0;
+        }
+
+/* Compatibility functions (CPOLYGONS_LIST API) */
+
+#if 0
+        int GetX( int ic ) const;
+        void SetX( int ic, int aValue );
+        int GetY( int ic ) const;
+        void SetY( int ic, int aValue );
+#endif
+
+#ifdef WX_COMPATIBILITY
+        /*wxPoint GetPos( int ic ) const
+        {
+            return wxPoint( GetX(ic), GetY(ic) );
+        }
+
+
+        void Append ( const wxPoint& aP, int aOutline = -1, int aHole = -1);*/
+#endif
+
+        //bool IsEndContour( int ic ) const;
+
+        //const VECTOR2I GetCorner( int ic ) const;
+
+        void RemoveAllContours( );
+        //const VECTOR2I GetLastCorner() const;
+
+        int TotalVertices() const;
+
+        //void DeleteCorner( int aIdx );
+        void DeletePolygon( int aIdx );
+
+        void Append ( const SHAPE_POLY_SET& aSet );
+        void Append ( const VECTOR2I& aP, int aOutline = -1, int aHole = -1);
+        //void InsertCorner ( int aPosition, const VECTOR2I& aP );
+
+        void ExtractHoles ( SHAPE_POLY_SET& aHoles );
     private:
 
-        void fractureSingle( ClipperLib::Paths& paths );
-        void importTree( ClipperLib::PolyTree* tree);
+        SHAPE_LINE_CHAIN& getContourForCorner( int aCornerId, int& aIndexWithinContour );
+        VECTOR2I& vertex( int aCornerId );
+        const VECTOR2I& cvertex( int aCornerId ) const;
+
+
+        void fractureSingle( POLYGON& paths );
+        void importTree ( ClipperLib::PolyTree* tree);
         void booleanOp( ClipperLib::ClipType type, const SHAPE_POLY_SET& b );
 
-        const ClipperLib::Path convert( const SHAPE_LINE_CHAIN& aPath );
+        bool pointInPolygon ( const VECTOR2I& aP, const SHAPE_LINE_CHAIN& aPath ) const;
 
-        typedef std::vector<ClipperLib::Paths> Polyset;
+        const ClipperLib::Path convertToClipper ( const SHAPE_LINE_CHAIN& aPath, bool aRequiredOrientation );
+        const SHAPE_LINE_CHAIN convertFromClipper ( const ClipperLib::Path& aPath );
+
+        typedef std::vector<POLYGON> Polyset;
 
         Polyset m_polys;
 };

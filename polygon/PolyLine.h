@@ -53,8 +53,8 @@
 #include <wx/gdicmn.h>                          // for wxPoint definition
 #include <layers_id_colors_and_visibility.h>    // for LAYER_NUM definition
 #include <class_eda_rect.h>                     // for EDA_RECT definition
-#include <polygons_defs.h>
-#include <clipper.hpp>
+
+#include <geometry/shape_poly_set.h> // fixme
 
 class CSegment
 {
@@ -116,28 +116,20 @@ private:
 public:
     CPOLYGONS_LIST() {};
 
-    CPolyPt& operator [](int aIdx) {return m_cornersList[aIdx]; }
+    CPolyPt& operator [](int aIdx) { return m_cornersList[aIdx]; }
 
     // Accessor:
     const std::vector <CPolyPt>& GetList() const {return m_cornersList;}
+
     int        GetX( int ic ) const { return m_cornersList[ic].x; }
     void       SetX( int ic, int aValue ) { m_cornersList[ic].x = aValue; }
     int        GetY( int ic ) const { return m_cornersList[ic].y; }
     void       SetY( int ic, int aValue ) { m_cornersList[ic].y = aValue; }
-    int        GetUtility( int ic ) const { return m_cornersList[ic].m_flags; }
-    void       SetFlag( int ic, int aFlag )
-    {
-        m_cornersList[ic].m_flags = aFlag;
-    }
+
 
     bool       IsEndContour( int ic ) const
     {
         return m_cornersList[ic].end_contour;
-    }
-
-    void        SetEndContour( int ic, bool end_contour )
-    {
-        m_cornersList[ic].end_contour = end_contour;
     }
 
     const wxPoint&  GetPos( int ic ) const { return m_cornersList[ic]; }
@@ -157,6 +149,7 @@ public:
         m_cornersList.erase( m_cornersList.begin() + aIdx );
     }
 
+    // used only to erase an entire polygon
     void DeleteCorners( int aIdFirstCorner, int aIdLastCorner )
     {
         m_cornersList.erase( m_cornersList.begin() + aIdFirstCorner,
@@ -213,55 +206,6 @@ public:
      */
     int GetContoursCount() const;
 
-    /**
-     * Function ExportTo
-     * Copy all contours to a KI_POLYGON_SET, each contour is exported
-     * to a KI_POLYGON
-     * @param aPolygons = the KI_POLYGON_SET to populate
-     */
-    void    ExportTo( KI_POLYGON_SET& aPolygons ) const;
-
-    /**
-     * Function ExportTo
-     * Copy the contours to a KI_POLYGON_WITH_HOLES
-     * The first contour is the main outline, others are holes
-     * @param aPolygoneWithHole = the KI_POLYGON_WITH_HOLES to populate
-     */
-    void    ExportTo( KI_POLYGON_WITH_HOLES& aPolygoneWithHole ) const;
-
-    /**
-     * Function ExportTo
-     * Copy all contours to a ClipperLib::Paths, each contour is exported
-     * to a ClipperLib::Path
-     * @param aPolygons = the ClipperLib::Paths to populate
-     */
-    void    ExportTo( ClipperLib::Paths& aPolygons ) const;
-
-    /**
-     * Function ImportFrom
-     * Copy all polygons from a KI_POLYGON_SET in list
-     * @param aPolygons = the KI_POLYGON_SET to import
-     */
-    void    ImportFrom( KI_POLYGON_SET& aPolygons );
-
-    /**
-     * Function ImportFrom
-     * Copy all polygons from a ClipperLib::Paths in list
-     * @param aPolygons = the ClipperLib::Paths to import
-     */
-    void    ImportFrom( ClipperLib::Paths& aPolygons );
-
-    /**
-     * Function InflateOutline
-     * Inflate the outline stored in m_cornersList.
-     * The first polygon is the external outline. It is inflated
-     * The other polygons are holes. they are deflated
-     * @param aResult = the Inflated outline
-     * @param aInflateValue = the Inflate value. when < 0, this is a deflate transform
-     * @param aLinkHoles = if true, aResult contains only one polygon,
-     * with holes linked by overlapping segments
-     */
-    void InflateOutline( CPOLYGONS_LIST& aResult, int aInflateValue, bool aLinkHoles );
 };
 
 class CPolyLine
@@ -447,9 +391,6 @@ public:
 
     const wxPoint& GetPos( int ic ) const { return m_CornersList.GetPos( ic ); }
 
-    int        GetUtility( int ic ) const { return m_CornersList.GetUtility( ic ); };
-    void       SetUtility( int ic, int aFlag ) { m_CornersList.SetFlag( ic, aFlag ); };
-
     int        GetHatchPitch() const { return m_hatchPitch; }
     static int GetDefaultHatchPitchMils() { return 20; }    // default hatch pitch value in mils
 
@@ -471,11 +412,6 @@ public:
     void    SetY( int ic, int y )
     {
         m_CornersList.SetY( ic, y );
-    }
-
-    void    SetEndContour( int ic, bool end_contour )
-    {
-        m_CornersList.SetEndContour( ic, end_contour );
     }
 
     void       SetHatchStyle( enum HATCH_STYLE style )
@@ -574,5 +510,7 @@ void    ConvertPolysListWithHolesToOnePolygon( const CPOLYGONS_LIST&    aPolysLi
 void    ConvertOnePolygonToPolysListWithHoles( const CPOLYGONS_LIST&    aOnePolyList,
                                                CPOLYGONS_LIST&          aPolysListWithHoles );
 
+const SHAPE_POLY_SET ConvertPolyListToPolySet(const CPOLYGONS_LIST& aList);
+const CPOLYGONS_LIST ConvertPolySetToPolyList(const SHAPE_POLY_SET& aPolyset);
 
 #endif    // #ifndef POLYLINE_H

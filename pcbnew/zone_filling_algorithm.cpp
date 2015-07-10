@@ -54,7 +54,7 @@
  * to add holes for pads and tracks and other items not in net.
  */
 
-bool ZONE_CONTAINER::BuildFilledSolidAreasPolygons( BOARD* aPcb, CPOLYGONS_LIST* aOutlineBuffer )
+bool ZONE_CONTAINER::BuildFilledSolidAreasPolygons( BOARD* aPcb, SHAPE_POLY_SET* aOutlineBuffer )
 {
     /* convert outlines + holes to outlines without holes (adding extra segments if necessary)
      * m_Poly data is expected normalized, i.e. NormalizeAreaOutlines was used after building
@@ -92,7 +92,7 @@ bool ZONE_CONTAINER::BuildFilledSolidAreasPolygons( BOARD* aPcb, CPOLYGONS_LIST*
     }
 
     if( aOutlineBuffer )
-        aOutlineBuffer->Append( m_smoothedPoly->m_CornersList );
+        aOutlineBuffer->Append( ConvertPolyListToPolySet( m_smoothedPoly->m_CornersList ) );
 
     /* For copper layers, we now must add holes in the Polygon list.
      * holes are pads and tracks with their clearance area
@@ -105,15 +105,14 @@ bool ZONE_CONTAINER::BuildFilledSolidAreasPolygons( BOARD* aPcb, CPOLYGONS_LIST*
 
         if( IsOnCopperLayer() )
         {
-            if(g_UseOldZoneFillingAlgo)
-                AddClearanceAreasPolygonsToPolysList( aPcb );
-            else
-                AddClearanceAreasPolygonsToPolysList_NG( aPcb );
+        	AddClearanceAreasPolygonsToPolysList_NG( aPcb );
         }
         else
         {
             int margin = m_ZoneMinThickness / 2;
-            m_smoothedPoly->m_CornersList.InflateOutline(m_FilledPolysList, -margin, true );
+            m_FilledPolysList = ConvertPolyListToPolySet ( m_smoothedPoly->m_CornersList );
+            m_FilledPolysList.Inflate( -margin );
+            m_FilledPolysList.Fracture( );
         }
 
         if( m_FillMode )   // if fill mode uses segments, create them:
@@ -135,6 +134,7 @@ static bool SortByXValues( const int& a, const int &b )
 
 int ZONE_CONTAINER::FillZoneAreasWithSegments()
 {
+#if 0
     int ics, ice;
     int count = 0;
     std::vector <int> x_coordinates;
@@ -260,6 +260,7 @@ int ZONE_CONTAINER::FillZoneAreasWithSegments()
         m_IsFilled = true;
 
     return count;
+#endif
 }
 
 

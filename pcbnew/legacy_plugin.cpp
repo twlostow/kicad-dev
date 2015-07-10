@@ -2676,7 +2676,9 @@ void LEGACY_PLUGIN::loadZONE_CONTAINER()
         else if( TESTLINE( "$POLYSCORNERS" ) )
         {
             // Read the PolysList (polygons used for fill areas in the zone)
-            CPOLYGONS_LIST polysList;
+            SHAPE_POLY_SET polysList;
+
+            bool makeNewOutline = true;
 
             while( ( line = READLINE( m_reader ) ) != NULL )
             {
@@ -2687,11 +2689,17 @@ void LEGACY_PLUGIN::loadZONE_CONTAINER()
                 BIU     x = biuParse( line, &data );
                 BIU     y = biuParse( data, &data );
 
+                if( makeNewOutline )
+                    polysList.NewOutline();
+
+                polysList.Append (x, y);
+
                 bool    end_contour = intParse( data, &data );  // end_countour was a bool when file saved, so '0' or '1' here
                 int     cornerUtilityFlg  = intParse( data );
 
-               polysList.Append( CPolyPt( x, y, end_contour, cornerUtilityFlg ) );
+                makeNewOutline = end_contour;
             }
+
             zc->AddFilledPolysList( polysList );
         }
 

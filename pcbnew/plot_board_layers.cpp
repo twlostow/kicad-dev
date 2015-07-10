@@ -542,7 +542,6 @@ static const LAYER_ID plot_seq[] = {
 
 /* Plot outlines of copper, for copper layer
  */
-#include "clipper.hpp"
 void PlotLayerOutlines( BOARD *aBoard, PLOTTER* aPlotter,
                         LSET aLayerMask, const PCB_PLOT_PARAMS& aPlotOpt )
 {
@@ -559,10 +558,10 @@ void PlotLayerOutlines( BOARD *aBoard, PLOTTER* aPlotter,
         outlines.RemoveAllContours();
         aBoard->ConvertBrdLayerToPolygonalContours( layer, outlines );
 
+		outlines.Simplify();
+
         // Plot outlines
         std::vector< wxPoint > cornerList;
-
-        #warning FIXME
 
         // Now we have one or more basic polygons: plot each polygon
         for( int ii = 0; ii < outlines.OutlineCount(); ii++ )

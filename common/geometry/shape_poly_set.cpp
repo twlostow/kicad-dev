@@ -4,8 +4,8 @@
  * Copyright (C) 2015 CERN
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
- * Point in polygon algorithm (C) Angus Johnson, subject to Clipper library
- * license.
+ * Point in polygon algorithm adapted from Clipper Library (C) Angus Johnson,
+ * subject to Clipper library license.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -245,7 +245,6 @@ void SHAPE_POLY_SET::Inflate ( int aFactor, int aCircleSegmentsCount )
 
     c.ArcTolerance = (double)aFactor / M_PI / aCircleSegmentsCount;
 
-    printf("Inflate %d\n", aFactor );
     c.Execute ( solution, aFactor );
 
     importTree(&solution);
@@ -588,109 +587,11 @@ const BOX2I SHAPE_POLY_SET::BBox( int aClearance ) const
     return bb;
 }
 
-#if 0
-
-Path& SHAPE_POLY_SET::getContourForCorner( int aCornerId, int& aIndexWithinContour )
-{
-    int c = 0;
-
-    BOOST_FOREACH( Paths& paths, m_polys )
-    {
-        assert(paths.size() == 1);
-
-        int s = paths[0].size();
-
-        if( aCornerId >= c && aCornerId < c + s )
-        {
-            aIndexWithinContour = aCornerId - c;
-            return paths[0];
-        }
-
-        c += s;
-    }
-
-    assert ( false );
-}
-
-VECTOR2I& SHAPE_POLY_SET::vertex( int aCornerId )
-{
-    int index;
-
-    Path& contour = getContourForCorner( aCornerId, index );
-
-    return contour[index];
-}
-
-const IntPoint& SHAPE_POLY_SET::cvertex( int aCornerId ) const
-{
-    int index;
-
-    Path& contour = const_cast<SHAPE_POLY_SET*>(this) -> getContourForCorner( aCornerId, index );
-
-    return contour[index];
-}
-
-int SHAPE_POLY_SET::GetX( int ic ) const
-{
-    return cvertex(ic).X;
-}
-
-void SHAPE_POLY_SET::SetX( int ic, int aValue )
-{
-    vertex(ic).X = aValue;
-}
-
-int SHAPE_POLY_SET::GetY( int ic ) const
-{
-    return cvertex(ic).Y;
-}
-
-void SHAPE_POLY_SET::SetY( int ic, int aValue )
-{
-    vertex(ic).Y = aValue;
-}
-
-bool SHAPE_POLY_SET::IsEndContour( int ic ) const
-{
-    int index;
-    Path& contour = const_cast<SHAPE_POLY_SET*>(this) -> getContourForCorner( ic, index );
-
-    return index == (int) (contour.size() - 1);
-}
-
-
-const VECTOR2I SHAPE_POLY_SET::GetCorner( int ic ) const
-{
-    const IntPoint& v = cvertex(ic);
-
-    return VECTOR2I(v.X, v.Y);
-}
-#endif
 
 void SHAPE_POLY_SET::RemoveAllContours( )
 {
     m_polys.clear();
 }
-
-#if 0
-const VECTOR2I SHAPE_POLY_SET::GetLastCorner() const
-{
-    const IntPoint& v = m_polys.back().front().back();
-
-    return VECTOR2I(v.X, v.Y);
-}
-
-
-
-void SHAPE_POLY_SET::DeleteCorner( int aIdx )
-{
-    int index;
-    Path& contour = getContourForCorner( aIdx, index );
-
-    contour.erase ( contour.begin() + index );
-}
-
-#endif
 
 void SHAPE_POLY_SET::DeletePolygon( int aIdx )
 {
@@ -706,27 +607,6 @@ void SHAPE_POLY_SET::Append ( const VECTOR2I& aP, int aOutline, int aHole )
 {
     Append(aP.x, aP.y,aOutline, aHole );
 }
-
-#if 0
-#ifdef WX_COMPATIBILITY
-void SHAPE_POLY_SET::Append ( const wxPoint& aP, int aOutline, int aHole )
-{
-    Append(aP.x, aP.y,aOutline, aHole );
-}
-#endif
-#endif
-
-#if 0
-
-void SHAPE_POLY_SET::InsertCorner( int aPosition, const VECTOR2I& aP )
-{
-    int index;
-    Path& contour = getContourForCorner( aPosition, index );
-
-    contour.insert( contour.begin() + index + 1, IntPoint(aP.x, aP.y) );
-}
-
-#endif
 
 bool SHAPE_POLY_SET::Contains( const VECTOR2I& aP, int aSubpolyIndex ) const
 {

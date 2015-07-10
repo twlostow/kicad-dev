@@ -124,7 +124,7 @@ int CPolyLine::NormalizeAreaOutlines( std::vector<CPolyLine*>* aNewPolygonList )
 
     RemoveAllContours();
 
-    for( unsigned ii = 0; ii < polySet.OutlineCount(); ii++ )
+    for( int ii = 0; ii < polySet.OutlineCount(); ii++ )
     {
         CPolyLine* polyline = this;
 
@@ -1326,7 +1326,7 @@ const CPOLYGONS_LIST ConvertPolySetToPolyList(const SHAPE_POLY_SET& aPolyset)
     {
         const SHAPE_LINE_CHAIN& path = poly[jj];
 
-        for ( unsigned int i =0; i < path.PointCount(); i++)
+        for ( int i = 0; i < path.PointCount(); i++ )
         {
             const VECTOR2I &v = path.CPoint(i);
 

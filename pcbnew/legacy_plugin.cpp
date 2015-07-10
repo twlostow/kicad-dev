@@ -2695,7 +2695,7 @@ void LEGACY_PLUGIN::loadZONE_CONTAINER()
                 polysList.Append (x, y);
 
                 bool    end_contour = intParse( data, &data );  // end_countour was a bool when file saved, so '0' or '1' here
-                int     cornerUtilityFlg  = intParse( data );
+                intParse( data ); // skip corner utility flag
 
                 makeNewOutline = end_contour;
             }

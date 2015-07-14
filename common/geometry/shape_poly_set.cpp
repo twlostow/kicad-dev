@@ -243,7 +243,7 @@ void SHAPE_POLY_SET::Inflate ( int aFactor, int aCircleSegmentsCount )
 
     PolyTree solution;
 
-    c.ArcTolerance = (double)aFactor / M_PI / aCircleSegmentsCount;
+    c.ArcTolerance = (double)fabs(aFactor) / M_PI / aCircleSegmentsCount;
 
     c.Execute ( solution, aFactor );
 

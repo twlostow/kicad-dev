@@ -58,6 +58,7 @@
 #include <module_editor_frame.h>
 #include <modview_frame.h>
 #include <footprint_wizard_frame.h>
+#include <footprint_preview_panel.h>
 
 extern bool IsWxPythonLoaded();
 
@@ -147,6 +148,9 @@ static struct IFACE : public KIFACE_I
             frame = dynamic_cast< wxWindow* >( new FOOTPRINT_WIZARD_FRAME( aKiway, aParent,
                                                                            FRAME_T( aClassId ) ) );
             break;
+
+        case FRAME_PCB_FOOTPRINT_PREVIEW:
+            frame = dynamic_cast< wxWindow* >( new FOOTPRINT_PREVIEW_PANEL( aKiway, aParent ) );
 
         default:
             ;

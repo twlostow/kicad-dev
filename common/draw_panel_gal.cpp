@@ -118,6 +118,7 @@ EDA_DRAW_PANEL_GAL::~EDA_DRAW_PANEL_GAL()
 
 void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
+    printf("OnPaint\n");
     m_pendingRefresh = false;
 
     if( m_drawing )
@@ -151,6 +152,8 @@ void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 
 void EDA_DRAW_PANEL_GAL::onSize( wxSizeEvent& aEvent )
 {
+
+    printf("OnSize\n");
     m_gal->ResizeScreen( aEvent.GetSize().x, aEvent.GetSize().y );
     m_view->MarkTargetDirty( KIGFX::TARGET_CACHED );
     m_view->MarkTargetDirty( KIGFX::TARGET_NONCACHED );

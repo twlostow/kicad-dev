@@ -143,6 +143,8 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_footprint_wizard_list.cpp
     dialogs/wizard_add_fplib_base.cpp
     dialogs/wizard_add_fplib.cpp
+#    dialogs/dialog_test_fp_preview_base.cpp
+#    dialogs/dialog_test_fp_preview.cpp
     )
 
 set( PCBNEW_IMPORT_DXF
@@ -292,6 +294,8 @@ set( PCBNEW_CLASS_SRCS
     tools/grid_menu.cpp
     tools/zoom_menu.cpp
     tools/size_menu.cpp
+
+    footprint_preview_panel.cpp
     )
 
 set( PCBNEW_SRCS ${PCBNEW_AUTOROUTER_SRCS} ${PCBNEW_CLASS_SRCS} ${PCBNEW_DIALOGS} )

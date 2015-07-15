@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -23,6 +23,7 @@ class DIALOG_SHIM;
 #include <wx/textctrl.h>
 #include <wx/sizer.h>
 #include <wx/treectrl.h>
+#include <wx/listbox.h>
 #include <wx/panel.h>
 #include <wx/button.h>
 #include <wx/dialog.h>
@@ -41,8 +42,12 @@ class DIALOG_CHOOSE_COMPONENT_BASE : public DIALOG_SHIM
 		wxStaticText* m_searchLabel;
 		wxTextCtrl* m_searchBox;
 		wxTreeCtrl* m_libraryComponentTree;
-		wxPanel* m_componentView;
+		wxStaticText* m_staticText2;
+		wxStaticText* m_staticText21;
 		wxTextCtrl* m_componentDetails;
+		wxListBox* m_footprintCandidates;
+		wxPanel* m_componentView;
+		wxPanel* m_footprintView;
 		wxStdDialogButtonSizer* m_stdButtons;
 		wxButton* m_stdButtonsOK;
 		wxButton* m_stdButtonsCancel;
@@ -61,7 +66,7 @@ class DIALOG_CHOOSE_COMPONENT_BASE : public DIALOG_SHIM
 	
 	public:
 		
-		DIALOG_CHOOSE_COMPONENT_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 503,500 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
+		DIALOG_CHOOSE_COMPONENT_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Choose Component"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 553,706 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
 		~DIALOG_CHOOSE_COMPONENT_BASE();
 	
 };

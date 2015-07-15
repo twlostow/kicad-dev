@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -27,28 +27,60 @@ DIALOG_CHOOSE_COMPONENT_BASE::DIALOG_CHOOSE_COMPONENT_BASE( wxWindow* parent, wx
 	bSearchSizer->Add( m_searchBox, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
-	bSizerMain->Add( bSearchSizer, 0, wxEXPAND, 5 );
+	bSizerMain->Add( bSearchSizer, 0, wxALL|wxEXPAND, 5 );
 	
 	m_libraryComponentTree = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_HIDE_ROOT );
 	m_libraryComponentTree->SetMinSize( wxSize( 400,200 ) );
 	
 	bSizerMain->Add( m_libraryComponentTree, 1, wxALL|wxEXPAND, 5 );
 	
-	wxBoxSizer* bSizerView;
-	bSizerView = new wxBoxSizer( wxHORIZONTAL );
+	wxGridSizer* gSizer2;
+	gSizer2 = new wxGridSizer( 0, 2, 0, 0 );
+	
+	m_staticText2 = new wxStaticText( this, wxID_ANY, _("Component details:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText2->Wrap( -1 );
+	gSizer2->Add( m_staticText2, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	m_staticText21 = new wxStaticText( this, wxID_ANY, _("Predefined footprints:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText21->Wrap( -1 );
+	gSizer2->Add( m_staticText21, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	
+	bSizerMain->Add( gSizer2, 0, wxEXPAND, 5 );
+	
+	wxGridSizer* gSizer3;
+	gSizer3 = new wxGridSizer( 0, 2, 0, 0 );
+	
+	m_componentDetails = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxTE_MULTILINE );
+	m_componentDetails->SetMinSize( wxSize( 200,200 ) );
+	m_componentDetails->SetMaxSize( wxSize( 200,200 ) );
+	
+	gSizer3->Add( m_componentDetails, 1, wxALL|wxEXPAND, 5 );
+	
+	m_footprintCandidates = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	m_footprintCandidates->SetMinSize( wxSize( 200,200 ) );
+	m_footprintCandidates->SetMaxSize( wxSize( 200,200 ) );
+	
+	gSizer3->Add( m_footprintCandidates, 1, wxALL|wxEXPAND, 5 );
+	
+	
+	bSizerMain->Add( gSizer3, 1, wxEXPAND, 5 );
+	
+	wxGridSizer* gSizer6;
+	gSizer6 = new wxGridSizer( 0, 2, 0, 0 );
 	
 	m_componentView = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxSUNKEN_BORDER );
 	m_componentView->SetMinSize( wxSize( 200,200 ) );
 	
-	bSizerView->Add( m_componentView, 4, wxEXPAND | wxALL, 5 );
+	gSizer6->Add( m_componentView, 4, wxEXPAND | wxALL, 5 );
 	
-	m_componentDetails = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxTE_MULTILINE );
-	m_componentDetails->SetMinSize( wxSize( 200,200 ) );
+	m_footprintView = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE|wxSUNKEN_BORDER );
+	m_footprintView->SetMinSize( wxSize( 200,200 ) );
 	
-	bSizerView->Add( m_componentDetails, 3, wxALL|wxEXPAND, 5 );
+	gSizer6->Add( m_footprintView, 1, wxEXPAND | wxALL, 5 );
 	
 	
-	bSizerMain->Add( bSizerView, 1, wxEXPAND, 5 );
+	bSizerMain->Add( gSizer6, 1, wxEXPAND, 5 );
 	
 	m_stdButtons = new wxStdDialogButtonSizer();
 	m_stdButtonsOK = new wxButton( this, wxID_OK );
@@ -75,6 +107,8 @@ DIALOG_CHOOSE_COMPONENT_BASE::DIALOG_CHOOSE_COMPONENT_BASE( wxWindow* parent, wx
 	m_libraryComponentTree->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnTreeSelect ), NULL, this );
 	m_componentView->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnStartComponentBrowser ), NULL, this );
 	m_componentView->Connect( wxEVT_PAINT, wxPaintEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnHandlePreviewRepaint ), NULL, this );
+	m_footprintView->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnStartComponentBrowser ), NULL, this );
+	m_footprintView->Connect( wxEVT_PAINT, wxPaintEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnHandlePreviewRepaint ), NULL, this );
 }
 
 DIALOG_CHOOSE_COMPONENT_BASE::~DIALOG_CHOOSE_COMPONENT_BASE()
@@ -89,5 +123,7 @@ DIALOG_CHOOSE_COMPONENT_BASE::~DIALOG_CHOOSE_COMPONENT_BASE()
 	m_libraryComponentTree->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnTreeSelect ), NULL, this );
 	m_componentView->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnStartComponentBrowser ), NULL, this );
 	m_componentView->Disconnect( wxEVT_PAINT, wxPaintEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnHandlePreviewRepaint ), NULL, this );
+	m_footprintView->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnStartComponentBrowser ), NULL, this );
+	m_footprintView->Disconnect( wxEVT_PAINT, wxPaintEventHandler( DIALOG_CHOOSE_COMPONENT_BASE::OnHandlePreviewRepaint ), NULL, this );
 	
 }

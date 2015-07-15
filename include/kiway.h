@@ -263,6 +263,7 @@ public:
         FACE_PL_EDITOR,
         FACE_PCB_CALCULATOR,
         FACE_BMP2CMP,
+        FACE_TEST,
 
         KIWAY_FACE_COUNT
     };

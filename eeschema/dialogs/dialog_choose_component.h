@@ -25,6 +25,9 @@
 #define DIALOG_CHOOSE_COMPONENT_H
 
 #include <dialog_choose_component_base.h>
+#include <fpid.h>
+
+#include <vector>
 
 class COMPONENT_TREE_SEARCH_CONTAINER;
 class LIB_ALIAS;
@@ -39,6 +42,8 @@ class DIALOG_CHOOSE_COMPONENT : public DIALOG_CHOOSE_COMPONENT_BASE
     int             m_deMorganConvert;
     bool            m_external_browser_requested;
     bool            m_received_doubleclick_in_tree;
+    std::vector<FPID> m_FPIDList;
+    FPID m_currentFPID;
 
 public:
     /**
@@ -70,6 +75,8 @@ public:
      */
     bool IsExternalBrowserSelected() const { return m_external_browser_requested; }
 
+    const wxString GetSelectedFootprintName ( ) const;
+
 protected:
     virtual void OnSearchBoxChange( wxCommandEvent& aEvent );
     virtual void OnSearchBoxEnter( wxCommandEvent& aEvent );
@@ -82,6 +89,11 @@ protected:
 
     virtual void OnStartComponentBrowser( wxMouseEvent& aEvent );
     virtual void OnHandlePreviewRepaint( wxPaintEvent& aRepaintEvent );
+
+    virtual void OnFootprintCandidateSelect( wxCommandEvent& event );
+    virtual void OnFootprintCandidateDClick( wxCommandEvent& event );
+    virtual void OnFootprintListMouseUp( wxMouseEvent& event );
+
 
 private:
     bool updateSelection();

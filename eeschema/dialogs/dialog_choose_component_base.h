@@ -25,6 +25,8 @@ class DIALOG_SHIM;
 #include <wx/treectrl.h>
 #include <wx/listbox.h>
 #include <wx/panel.h>
+#include <kiway.h>
+#include <footprint_preview_panel.h>
 #include <wx/button.h>
 #include <wx/dialog.h>
 
@@ -47,7 +49,7 @@ class DIALOG_CHOOSE_COMPONENT_BASE : public DIALOG_SHIM
 		wxTextCtrl* m_componentDetails;
 		wxListBox* m_footprintCandidates;
 		wxPanel* m_componentView;
-		wxPanel* m_footprintView;
+		FOOTPRINT_PREVIEW_PANEL *m_footprintView;
 		wxStdDialogButtonSizer* m_stdButtons;
 		wxButton* m_stdButtonsOK;
 		wxButton* m_stdButtonsCancel;
@@ -60,6 +62,9 @@ class DIALOG_CHOOSE_COMPONENT_BASE : public DIALOG_SHIM
 		virtual void OnTreeMouseUp( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnDoubleClickTreeActivation( wxTreeEvent& event ) { event.Skip(); }
 		virtual void OnTreeSelect( wxTreeEvent& event ) { event.Skip(); }
+		virtual void OnFootprintListMouseUp( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnFootprintCandidateSelect( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnFootprintCandidateDClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnStartComponentBrowser( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnHandlePreviewRepaint( wxPaintEvent& event ) { event.Skip(); }
 		

@@ -30,6 +30,10 @@
 #include <component_tree_search_container.h>
 #include <sch_base_frame.h>
 
+#include <kiway.h>
+#include <fpid.h>
+#include <footprint_preview_panel.h>
+
 // Tree navigation helpers.
 static wxTreeItemId GetPrevItem( const wxTreeCtrl& tree, const wxTreeItemId& item );
 static wxTreeItemId GetNextItem( const wxTreeCtrl& tree, const wxTreeItemId& item );
@@ -58,7 +62,20 @@ DIALOG_CHOOSE_COMPONENT::DIALOG_CHOOSE_COMPONENT( SCH_BASE_FRAME* aParent, const
     m_libraryComponentTree->SetFont( wxFont( font.GetPointSize(),
              wxFONTFAMILY_MODERN,  wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL ) );
 
-    // We have to call SetSizeHints to fix the minimal size of the dialog
+
+#if 0
+    KIFACE* kiface = Kiway().KiFACE( KIWAY::FACE_PCB );
+    wxASSERT( kiface );
+
+    try {
+        m_footprintView = static_cast<FOOTPRINT_PREVIEW_PANEL*> ( kiface->CreateWindow ( this, FRAME_PCB_FOOTPRINT_PREVIEW, &Kiway() ) );
+    } catch (...)
+    {
+        // do nothing...
+    }
+#endif
+
+   // We have to call SetSizeHints to fix the minimal size of the dialog
     // and its widgets.
     // this line also fixes an issue on Linux Ubuntu using Unity (dialog not shown).
     GetSizer()->SetSizeHints( this );
@@ -182,6 +199,14 @@ void DIALOG_CHOOSE_COMPONENT::OnTreeMouseUp( wxMouseEvent& aMouseEvent )
         aMouseEvent.Skip();      // Let upstream handle it.
 }
 
+void DIALOG_CHOOSE_COMPONENT::OnFootprintListMouseUp( wxMouseEvent& event )
+{
+    if( m_received_doubleclick_in_tree )
+        EndModal( wxID_OK );     // We are done (see OnDoubleClickTreeSelect)
+    else
+        event.Skip();      // Let upstream handle it.
+}
+
 // Test strategy to see if OnInterceptTreeEnter() works:
 //  - search for an item.
 //  - click into the tree once to set focus on tree; navigate. Press 'Enter'
@@ -281,10 +306,60 @@ bool DIALOG_CHOOSE_COMPONENT::updateSelection()
         m_componentDetails->AppendText( root_component_name );
     }
 
+    const wxArrayString& fpList = selection->GetPart()->GetFootPrints();
+
+    m_FPIDList.clear();
+    wxArrayString fpids;
+
+    for(unsigned int i = 0; i < fpList.Count(); i++)
+    {
+        if ( fpList[i].Contains(wxT("?")) || fpList[i].Contains(wxT("*")) )
+            continue;
+
+        FPID fpid ( fpList[i] );
+        if(fpid.IsValid())
+        {
+            m_FPIDList.push_back(fpid);
+            m_footprintView->CacheFootprint ( fpid );
+        }
+    }
+
+    m_footprintCandidates->Clear();
+
+    for(unsigned int i = 0; i < m_FPIDList.size(); i++)
+    {
+        fpids.Add( m_FPIDList[i].Format());
+    }
+
+    if( !fpids.IsEmpty() )
+    {
+        m_currentFPID = m_FPIDList [0];
+        m_footprintView->DisplayFootprint ( m_currentFPID );
+        m_footprintCandidates->InsertItems ( fpids, 0 );
+        m_footprintCandidates->SetSelection ( 0 );
+    }
+
     m_componentDetails->SetInsertionPoint( 0 );  // scroll up.
     m_componentDetails->Thaw();
 
     return true;
+}
+
+void DIALOG_CHOOSE_COMPONENT::OnFootprintCandidateSelect( wxCommandEvent& event )
+{
+    int sel = m_footprintCandidates->GetSelection();
+
+    if(sel >= 0 && sel < m_FPIDList.size() )
+    {
+        m_currentFPID = m_FPIDList[sel];
+        m_footprintView->DisplayFootprint ( m_currentFPID );
+    }
+}
+
+void DIALOG_CHOOSE_COMPONENT::OnFootprintCandidateDClick( wxCommandEvent& event )
+{
+    if( !m_currentFPID.empty() )
+        m_received_doubleclick_in_tree = true;
 }
 
 
@@ -397,4 +472,9 @@ static wxTreeItemId GetNextItem( const wxTreeCtrl& tree, const wxTreeItemId& ite
     }
 
     return nextItem;
+}
+
+const wxString DIALOG_CHOOSE_COMPONENT::GetSelectedFootprintName ( ) const
+{
+    return m_currentFPID.Format();
 }

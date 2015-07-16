@@ -236,6 +236,8 @@ set( COMMON_SRCS
     wx_status_popup.cpp
     xnode.cpp
     zoom.cpp
+    fpid.cpp
+
     )
 
 if( TRUE OR NOT USE_KIWAY_DLLS )
@@ -332,7 +334,6 @@ set( PCB_COMMON_SRCS
     pcb_keywords.cpp
     ../pcbnew/pcb_parser.cpp
     fp_lib_table_keywords.cpp
-    fpid.cpp
     fp_lib_table.cpp
 )
 

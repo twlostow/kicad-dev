@@ -135,7 +135,7 @@ public:
      * @param aUseLibBrowser     bool to call the library viewer to select the component
      * @param aUnit              a pointer to int to return the selected unit (if any)
      * @param aConvert           a pointer to int to return the selected De Morgan shape (if any)
-     *
+     * @param aFootprintName     a pre-assigned footprint (or empty if none)
      * @return the component name
      */
     wxString SelectComponentFromLibrary( const SCHLIB_FILTER* aFilter,
@@ -143,7 +143,8 @@ public:
                                          int&            aHistoryLastUnit,
                                          bool            aUseLibBrowser,
                                          int*            aUnit,
-                                         int*            aConvert );
+                                         int*            aConvert,
+                                         wxString&       aFootprintName  );
 
 protected:
 

@@ -103,7 +103,8 @@ wxString SCH_BASE_FRAME::SelectComponentFromLibrary( const SCHLIB_FILTER* aFilte
                                                      int&            aHistoryLastUnit,
                                                      bool            aUseLibBrowser,
                                                      int*            aUnit,
-                                                     int*            aConvert )
+                                                     int*            aConvert,
+                                                     wxString&       aFootprintName )
 {
     wxString        dialogTitle;
     PART_LIBS*      libs = Prj().SchLibs();
@@ -163,6 +164,9 @@ wxString SCH_BASE_FRAME::SelectComponentFromLibrary( const SCHLIB_FILTER* aFilte
 
     wxString cmpName;
     LIB_ALIAS* const alias = dlg.GetSelectedAlias( aUnit );
+
+    aFootprintName = dlg.GetSelectedFootprintName();
+
     if ( alias )
         cmpName = alias->GetName();
 
@@ -189,9 +193,10 @@ SCH_COMPONENT* SCH_EDIT_FRAME::Load_Component( wxDC*           aDC,
     int convert = 1;
     SetRepeatItem( NULL );
     m_canvas->SetIgnoreMouseEvents( true );
+    wxString footprintName;
 
     wxString name = SelectComponentFromLibrary( aFilter, aHistoryList, aHistoryLastUnit,
-                                                aUseLibBrowser, &unit, &convert );
+                                                aUseLibBrowser, &unit, &convert, footprintName );
 
     if( name.IsEmpty() )
     {
@@ -233,6 +238,8 @@ SCH_COMPONENT* SCH_EDIT_FRAME::Load_Component( wxDC*           aDC,
 
     // Set the component value that can differ from component name in lib, for aliases
     component->GetField( VALUE )->SetText( name );
+
+    component->GetField( FOOTPRINT )->SetText( footprintName );
 
     MSG_PANEL_ITEMS items;
 

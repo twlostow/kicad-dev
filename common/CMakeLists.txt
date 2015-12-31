@@ -54,6 +54,8 @@ set( GAL_SRCS
     # Cairo GAL
     gal/cairo/cairo_gal.cpp
     gal/cairo/cairo_compositor.cpp
+    gal/wxdc/wxdc_gal.cpp
+
     )
 
 add_library( gal STATIC ${GAL_SRCS} )

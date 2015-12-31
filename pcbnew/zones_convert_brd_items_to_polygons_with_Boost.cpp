@@ -404,6 +404,7 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList_NG( BOARD* aPcb )
     double correctionFactor;
     int outline_half_thickness = m_ZoneMinThickness / 2;
 
+    g_DumpZonesWhenFilling = true;
 
     std::auto_ptr<SHAPE_FILE_IO> dumper( new SHAPE_FILE_IO(
             g_DumpZonesWhenFilling ? "zones_dump.txt" : "", SHAPE_FILE_IO::IOM_APPEND ) );
@@ -426,7 +427,13 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList_NG( BOARD* aPcb )
     if(g_DumpZonesWhenFilling)
         dumper->BeginGroup("clipper-zone");
 
+        //for(int i = 0;i<m_smoothedPoly->m_CornersList.size(); i++)
+        //printf("x %d y %d\n", m_smoothedPoly->m_CornersList[i].x, m_smoothedPoly->m_CornersList[i].y);
+
     SHAPE_POLY_SET solidAreas = ConvertPolyListToPolySet( m_smoothedPoly->m_CornersList );
+
+    if(g_DumpZonesWhenFilling)
+        dumper->Write( &solidAreas, "solid-areas-preinflate" );
 
     solidAreas.Inflate( -outline_half_thickness, segsPerCircle );
     solidAreas.Simplify();

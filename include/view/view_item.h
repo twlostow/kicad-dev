@@ -36,6 +36,7 @@
 #include <view/view.h>
 #include <gal/definitions.h>
 
+#include <view/view_item_ng.h>
 
 namespace KIGFX
 {
@@ -53,7 +54,7 @@ class PAINTER;
  * VIEW_ITEM objects are never owned by a VIEW. A single VIEW_ITEM can belong to any number of
  * static VIEWs, but only one dynamic VIEW due to storage of only one VIEW reference.
  */
-class VIEW_ITEM
+class VIEW_ITEM : public VIEW_ITEM_NG
 {
 public:
     /**

@@ -86,6 +86,8 @@ public:
      */
     virtual void SetShader( SHADER& aShader );
 
+    virtual void Commit () = 0;
+
 protected:
     GPU_MANAGER( VERTEX_CONTAINER* aContainer );
 
@@ -123,6 +125,8 @@ public:
 
     ///> @copydoc GPU_MANAGER::EndDrawing()
     virtual void EndDrawing();
+
+    virtual void Commit();
 
 protected:
     /**
@@ -177,6 +181,9 @@ public:
 
     ///> @copydoc GPU_MANAGER::EndDrawing()
     virtual void EndDrawing();
+
+    virtual void Commit();
+
 };
 } // namespace KIGFX
 #endif /* GPU_MANAGER_H_ */

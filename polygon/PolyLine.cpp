@@ -382,6 +382,8 @@ CPolyLine* CPolyLine::Fillet( unsigned int aRadius, unsigned int aSegments )
             long long   xb, yb; // Next vertex
             double      nx, ny;
 
+            printf("cnt %d index %d\n", contour, index  );
+
             x1  = m_CornersList[index].x;
             y1  = m_CornersList[index].y;
 
@@ -406,6 +408,8 @@ CPolyLine* CPolyLine::Fillet( unsigned int aRadius, unsigned int aSegments )
                 xb  = m_CornersList[index + 1].x - x1;
                 yb  = m_CornersList[index + 1].y - y1;
             }
+
+            printf("xa %d ya %d xb %d yb %d\n", (int) xa, (int) ya, (int) xb,  (int) yb);
 
             double          lena    = hypot( xa, ya );
             double          lenb    = hypot( xb, yb );
@@ -449,6 +453,8 @@ CPolyLine* CPolyLine::Fillet( unsigned int aRadius, unsigned int aSegments )
 
             double  arcAngle = acos( argument );
 
+            printf("angle %.1f\n", arcAngle*180.0 / M_PI);
+
             // Calculate the number of segments
             double  tempSegments = (double) aSegments * ( arcAngle / ( 2 * M_PI ) );
 
@@ -467,16 +473,23 @@ CPolyLine* CPolyLine::Fillet( unsigned int aRadius, unsigned int aSegments )
             nx  = xc + xs;
             ny  = yc + ys;
 
+
+            printf("segments: %d %d %d %d %d\n", segments, (int)xc, (int)yc, (int)xs, (int)ys);
+
             if( index == startIndex )
                 newPoly->Start( GetLayer(), KiROUND( nx ), KiROUND( ny ), GetHatchStyle() );
             else
+            {
+              printf("aAAppend: %d %d\n",  KiROUND( nx ), KiROUND( ny ));
                 newPoly->AppendCorner( KiROUND( nx ), KiROUND( ny ) );
-
+              }
             for( unsigned int j = 0; j < segments; j++ )
             {
                 nx  = xc + cos( startAngle + (j + 1) * deltaAngle ) * radius;
                 ny  = yc - sin( startAngle + (j + 1) * deltaAngle ) * radius;
                 newPoly->AppendCorner( KiROUND( nx ), KiROUND( ny ) );
+
+                printf("bAppend: %d %d\n",  KiROUND( nx ), KiROUND( ny ));
             }
         }
 

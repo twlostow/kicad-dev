@@ -299,6 +299,7 @@ set( PCBNEW_CLASS_SRCS
     tools/grid_menu.cpp
     tools/zoom_menu.cpp
     tools/size_menu.cpp
+
     )
 
 set( PCBNEW_SRCS ${PCBNEW_AUTOROUTER_SRCS} ${PCBNEW_CLASS_SRCS} ${PCBNEW_DIALOGS} )
@@ -563,10 +564,18 @@ endif()
 # the main pcbnew program, in DSO form.
 add_library( pcbnew_kiface MODULE
     pcbnew.cpp
+    view_item_ng.cpp
     ${PCBNEW_SRCS}
     ${PCBNEW_COMMON_SRCS}
     ${PCBNEW_SCRIPTING_SRCS}
     )
+
+add_library( libpcbnew STATIC
+    ${PCBNEW_SRCS}
+    ${PCBNEW_COMMON_SRCS}
+    ${PCBNEW_SCRIPTING_SRCS}
+)
+
 set_target_properties( pcbnew_kiface PROPERTIES
     # Decorate OUTPUT_NAME with PREFIX and SUFFIX, creating something like
     # _pcbnew.so, _pcbnew.dll, or _pcbnew.kiface
@@ -600,6 +609,7 @@ target_link_libraries( pcbnew_kiface
     ${PCBNEW_EXTRA_LIBS}    # -lrt must follow Boost
     ${OPENMP_LIBRARIES}
     )
+
 set_source_files_properties( pcbnew.cpp PROPERTIES
     # The KIFACE is in pcbnew.cpp, export it:
     COMPILE_DEFINITIONS     "BUILD_KIWAY_DLL;COMPILING_DLL"

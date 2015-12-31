@@ -78,8 +78,12 @@ bool ZONE_CONTAINER::BuildFilledSolidAreasPolygons( BOARD* aPcb, SHAPE_POLY_SET*
         break;
 
     case ZONE_SETTINGS::SMOOTHING_FILLET:
+    {
+        SHAPE_POLY_SET tmp = ConvertPolyListToPolySet( m_Poly->m_CornersList );
+
         m_smoothedPoly = m_Poly->Fillet( m_cornerRadius, m_ArcToSegmentsCount );
         break;
+      }
 
     default:
         // Acute angles between adjacent edges can create issues in calculations,
@@ -245,5 +249,3 @@ int ZONE_CONTAINER::FillZoneAreasWithSegments()
 
     return count;
 }
-
-

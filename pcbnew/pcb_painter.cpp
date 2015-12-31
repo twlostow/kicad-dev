@@ -346,9 +346,9 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
     double   radius = 0.0;
 
     // Only draw the via if at least one of the layers it crosses is being displayed
-    BOARD*  brd =  aVia->GetBoard( );
+    /*BOARD*  brd =  aVia->GetBoard( );
     if( !( brd->GetVisibleLayers() & aVia->GetLayerSet() ).any() )
-        return;
+        return;*/
 
     // Choose drawing settings depending on if we are drawing via's pad or hole
     if( aLayer == ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE ) )
@@ -399,19 +399,19 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
             m_gal->SetIsStroke( false );
             m_gal->SetFillColor( color );
 
-            if( aLayer == layerTop )
-            {
+    //        if( aLayer == layerTop )
+        //    {
                 m_gal->DrawArc( center, radius, 0.0, M_PI / 2.0 );
-            }
-            else if( aLayer == layerBottom )
-            {
+      //      }
+          //  else if( aLayer == layerBottom )
+            //{
                 m_gal->DrawArc( center, radius, M_PI, 3.0 * M_PI / 2.0 );
-            }
-            else if( aLayer == ITEM_GAL_LAYER( VIA_BBLIND_VISIBLE ) )
-            {
+            //}
+          //  else if( aLayer == ITEM_GAL_LAYER( VIA_BBLIND_VISIBLE ) )
+          //  {
                 m_gal->DrawArc( center, radius, M_PI / 2.0, M_PI );
                 m_gal->DrawArc( center, radius, 3.0 * M_PI / 2.0, 2.0 * M_PI );
-            }
+          //  }
         }
     }
     else
@@ -444,6 +444,8 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
     double      m, n;
     double      orientation = aPad->GetOrientation();
     wxString buffer;
+
+    //printf("gal %p\n", m_gal);
 
     // Draw description layer
     if( IsNetnameLayer( aLayer ) )
@@ -563,6 +565,12 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
         m_gal->SetFillColor( color );
     }
 
+
+
+    m_gal->SetIsFill( true );
+    m_gal->SetIsStroke( false );
+    m_gal->SetFillColor( color );
+
     m_gal->Save();
     m_gal->Translate( VECTOR2D( aPad->GetPosition() ) );
     m_gal->Rotate( -aPad->GetOrientation() * M_PI / 1800.0 );
@@ -601,6 +609,10 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
         size  = VECTOR2D( aPad->GetSize() ) / 2.0;
         shape = aPad->GetShape();
     }
+
+    //if ( ( aLayer == F_Cu || aLayer == B_Cu ) &&
+      //( aPad->GetAttribute() == PAD_ATTRIB_NORMAL || aPad->GetAttribute() == PAD_HOLE_NOT_PLATED )
+      //return;
 
     switch( shape )
     {

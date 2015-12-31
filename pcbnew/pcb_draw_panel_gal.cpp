@@ -35,6 +35,7 @@
 #include <class_module.h>
 #include <class_track.h>
 #include <wxBasePcbFrame.h>
+#include <profile.h>
 
 #include <boost/bind.hpp>
 
@@ -125,10 +126,11 @@ PCB_DRAW_PANEL_GAL::~PCB_DRAW_PANEL_GAL()
     delete m_ratsnest;
 }
 
-
 void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
 {
-    m_view->Clear();
+  PROF_COUNTER pcnt ("build-board-view",true);
+
+  m_view->Clear();
 
     // Load zones
     for( int i = 0; i < aBoard->GetAreaCount(); ++i )
@@ -175,6 +177,8 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
         static_cast<KIGFX::PCB_RENDER_SETTINGS*>(
             m_view->GetPainter()->GetSettings() )->LoadDisplayOptions( displ_opts );
     }
+
+    pcnt.show();
 
     m_view->RecacheAllItems( true );
 }

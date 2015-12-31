@@ -59,13 +59,22 @@ enum GRID_STYLE
  * for drawing purposes these are transformed to screen units with this layer. So zooming is handled here as well.
  *
  */
-class GAL_API_BASE 
+
+class GAL_API_BASE
 {
 public:
     GAL_API_BASE();
     virtual ~GAL_API_BASE();
 
+
     virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) = 0;
+
+    inline void DrawLineX ( int x0, int y0, int x1, int y1, const COLOR4D& color )
+    {
+        SetStrokeColor ( color );
+        DrawLine( VECTOR2D( x0, y0 ),
+                  VECTOR2D( x1, y1 ) );
+    }
 
     /**
      * @brief Draw a rounded segment.
@@ -130,9 +139,6 @@ public:
     virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
                             const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) = 0;
 
-
-    virtual void TestLine ( double x0, double y0, double x1, double y1 );
-    
 
     /**
      * @brief Enable/disable fill.
@@ -301,7 +307,7 @@ public:
 
     /// @brief Restore the context.
     virtual void Restore() = 0;
-    
+
 protected:
     STROKE_FONT strokeFont;
 
@@ -353,7 +359,7 @@ public:
      * @param aStartPoint   is the start point of the line.
      * @param aEndPoint     is the end point of the line.
      */
-    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint );
+    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
 
     /**
      * @brief Draw a rounded segment.
@@ -364,14 +370,14 @@ public:
      * @param aEndPoint     is the end point of the segment.
      * @param aWidth        is a width of the segment
      */
-    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth );
+    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth ) {};
 
     /**
      * @brief Draw a polyline
      *
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
-    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList );
+    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList ) {};
 
     /**
      * @brief Draw a circle using world coordinates.
@@ -379,7 +385,7 @@ public:
      * @param aCenterPoint is the center point of the circle.
      * @param aRadius is the radius of the circle.
      */
-    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius );
+    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) {};
 
     /**
      * @brief Draw an arc.
@@ -390,7 +396,7 @@ public:
      * @param aEndAngle     is the end angle of the arc.
      */
     virtual void
-    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle );
+    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle ) {};
 
     /**
      * @brief Draw a rectangle.
@@ -398,14 +404,14 @@ public:
      * @param aStartPoint   is the start point of the rectangle.
      * @param aEndPoint     is the end point of the rectangle.
      */
-    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint );
+    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
 
     /**
      * @brief Draw a polygon.
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList );
+    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) {};
 
     /**
      * @brief Draw a cubic bezier spline.
@@ -416,7 +422,7 @@ public:
      * @param endPoint      is the end point of the spline.
      */
     virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
-                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint );
+                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) {};
 
     // --------------
     // Screen methods
@@ -508,6 +514,13 @@ public:
      *
      * @return the number of the group.
      */
+
+    virtual GAL_GROUP *BeginGroupNG() { return NULL; }
+    virtual void EndGroupNG() { };
+    virtual void DrawGroupNG ( const GAL_GROUP *aGroup ) {};
+    virtual void DeleteGroupNG () {};
+
+
     virtual int BeginGroup() { return 0; };
 
     /// @brief End the group.
@@ -719,33 +732,33 @@ public:
     /**
      * @brief Save the screen contents.
      */
-    virtual void SaveScreen() = 0;
+    virtual void SaveScreen() {};
 
     /**
      * @brief Restore the screen contents.
      */
-    virtual void RestoreScreen() = 0;
+    virtual void RestoreScreen() {};
 
     /**
      * @brief Sets the target for rendering.
      *
      * @param aTarget is the new target for rendering.
      */
-    virtual void SetTarget( RENDER_TARGET aTarget ) = 0;
+    virtual void SetTarget( RENDER_TARGET aTarget ) {};
 
     /**
      * @brief Gets the currently used target for rendering.
      *
      * @return The current rendering target.
      */
-    virtual RENDER_TARGET GetTarget() const = 0;
+    virtual RENDER_TARGET GetTarget() const { return TARGET_CACHED; };
 
     /**
      * @brief Clears the target for rendering.
      *
      * @param aTarget is the target to be cleared.
      */
-    virtual void ClearTarget( RENDER_TARGET aTarget ) = 0;
+    virtual void ClearTarget( RENDER_TARGET aTarget ) {};
 
     // -------------
     // Grid methods
@@ -772,16 +785,6 @@ public:
 
         gridOffset = VECTOR2D( (long) gridOrigin.x % (long) gridSize.x,
                                (long) gridOrigin.y % (long) gridSize.y );
-    }
-
-    /**
-     * @brief Sets the screen size of the grid origin marker
-     *
-     * @param aSize is the radius of the origin marker, in pixels.
-     */
-    inline void SetGridOriginMarkerSize( int aSize )
-    {
-        gridOriginMarkerSize = aSize;
     }
 
     /**
@@ -973,9 +976,6 @@ public:
         layerDepth = depthStack.top();
         depthStack.pop();
     }
-
-    /// Depth level on which the grid is drawn
-    static const int GRID_DEPTH = 1024;
 
     static const double METRIC_UNIT_LENGTH;
 

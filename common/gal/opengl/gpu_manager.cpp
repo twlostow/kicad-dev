@@ -132,12 +132,14 @@ void GPU_CACHED_MANAGER::DrawIndices( unsigned int aOffset, unsigned int aSize )
 {
     wxASSERT( m_isDrawing );
 
+    if (m_indicesSize + aSize > m_indicesCapacity )
+        Commit();
+
     // Copy indices of items that should be drawn to GPU memory
     for( unsigned int i = aOffset; i < aOffset + aSize; *m_indicesPtr++ = i++ );
 
     m_indicesSize += aSize;
 }
-
 
 void GPU_CACHED_MANAGER::DrawAll()
 {
@@ -147,10 +149,10 @@ void GPU_CACHED_MANAGER::DrawAll()
     for( unsigned int i = 0; i < m_indicesSize; *m_indicesPtr++ = i++ );
 }
 
-
-void GPU_CACHED_MANAGER::EndDrawing()
+void GPU_CACHED_MANAGER::Commit()
 {
-    wxASSERT( m_isDrawing );
+    if(!m_indicesSize)
+        return;
 
     // Prepare buffers
     glEnableClientState( GL_VERTEX_ARRAY );
@@ -187,10 +189,23 @@ void GPU_CACHED_MANAGER::EndDrawing()
         m_shader->Deactivate();
     }
 
+    m_indicesSize = 0;
+    // Set the indices pointer to the beginning of the indices-to-draw buffer
+    m_indicesPtr = m_indices.get();
+
+}
+
+void GPU_CACHED_MANAGER::EndDrawing()
+{
+    wxASSERT( m_isDrawing );
+
+    Commit();
+
     m_isDrawing = false;
 }
 
 
+#define PROFILE
 void GPU_CACHED_MANAGER::uploadToGpu()
 {
 #ifdef PROFILE
@@ -227,8 +242,17 @@ void GPU_CACHED_MANAGER::resizeIndices( unsigned int aNewSize )
 {
     if( aNewSize > m_indicesCapacity )
     {
+        GLuint *newIndices = new GLuint[aNewSize];
+
+        if ( m_indicesSize )
+          memcpy(newIndices, m_indices.get(), m_indicesSize * sizeof(GLuint));
+
+          //m_indicesPtr -= (GLuint*)m_indices.get();
+          //m_indicesPtr += newIndices;
+
+        m_indices.reset( newIndices );
         m_indicesCapacity = aNewSize;
-        m_indices.reset( new GLuint[m_indicesCapacity] );
+        m_indicesPtr = newIndices + m_indicesSize;
     }
 }
 
@@ -265,8 +289,11 @@ void GPU_NONCACHED_MANAGER::DrawAll()
 }
 
 
-void GPU_NONCACHED_MANAGER::EndDrawing()
+void GPU_NONCACHED_MANAGER::Commit()
 {
+    if( !m_container->GetSize() )
+        return;
+
     VERTEX*  vertices       = m_container->GetAllVertices();
     GLfloat* coordinates    = (GLfloat*) ( vertices );
     GLubyte* colors         = (GLubyte*) ( vertices ) + ColorOffset;
@@ -299,4 +326,10 @@ void GPU_NONCACHED_MANAGER::EndDrawing()
         glDisableVertexAttribArray( m_shaderAttrib );
         m_shader->Deactivate();
     }
+
+}
+
+void GPU_NONCACHED_MANAGER::EndDrawing()
+{
+    Commit();
 }

@@ -111,7 +111,7 @@ OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
 
     gluTessProperty( tesselator, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_POSITIVE );
 
-    currentManager = &nonCachedManager;
+    currentManager = &cachedManager;
 }
 
 
@@ -161,8 +161,8 @@ void OPENGL_GAL::BeginDrawing()
     glDisable( GL_TEXTURE_2D );
 
     // Enable the depth buffer
-    glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LESS );
+    glDisable( GL_DEPTH_TEST );
+    //glDepthFunc( GL_LESS );
 
     // Setup blending, required for transparent objects
     glEnable( GL_BLEND );
@@ -1198,22 +1198,22 @@ void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
             Rx=R*0.7071; Ry=R*0.7071;
         }
     }
-    
+	
     #if 0
     //draw the line by triangle strip
 glBegin(GL_TRIANGLE_STRIP);
     if ( !alphablend) {glColor3f( 1,1,1);} else {glColor4f( C,C,C, 0);}
-    
+
     glVertex2f( x1-tx-Rx, y1-ty-Ry); //fading edge
     glVertex2f( x2-tx-Rx, y2-ty-Ry);
-    
-    glColor3f( C,C,C);  
-    
+
+    glColor3f( C,C,C);
+
     glVertex2f( x1-tx,y1-ty); //core
     glVertex2f( x2-tx,y2-ty);
     glVertex2f( x1+tx,y1+ty);
     glVertex2f( x2+tx,y2+ty);
-    
+
     if ( !alphablend) {glColor3f( 1,1,1);} else {glColor4f( C,C,C, 0);}
     glVertex2f( x1+tx+Rx, y1+ty+Ry); //fading edge
     glVertex2f( x2+tx+Rx, y2+ty+Ry);

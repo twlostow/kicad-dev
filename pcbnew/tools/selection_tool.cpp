@@ -40,9 +40,15 @@
 #include <confirm.h>
 #include <dialog_find.h>
 
+#include <gal/graphics_abstraction_layer.h>
+#include <gal/color4d.h>
+
 #include <class_draw_panel_gal.h>
-#include <view/view_controls.h>
+#include <view/view_item_ng.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <view/view_group.h>
+#include <view/view_overlay.h>
 #include <painter.h>
 
 #include <tool/tool_event.h>
@@ -406,16 +412,28 @@ bool SELECTION_TOOL::selectCursor( bool aSelectAlways )
     return !m_selection.Empty();
 }
 
+static void drawSelectionArea( KIGFX::GAL_API_BASE* aGal, const BOX2I& area )
+{
+    aGal->SetLineWidth( 1.0 );
+    aGal->SetStrokeColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 )) ; //0.4, 1.0 ) );
+    aGal->SetFillColor( KIGFX::COLOR4D( 0.3, 0.3, 0.5, 0.3 ) );
+    aGal->SetIsStroke( true );
+    aGal->SetIsFill( true );
+    aGal->DrawRectangle( area.GetOrigin(), area.GetEnd() );
+    //aGal->DrawLine(area.GetOrigin(), area.GetEnd() );
+
+    printf("%d %d %d %d\n",area.GetOrigin().x,area.GetOrigin().y, area.GetEnd().x, area.GetEnd().y);
+}
 
 bool SELECTION_TOOL::selectMultiple()
 {
     bool cancelled = false;     // Was the tool cancelled while it was running?
     m_multiple = true;          // Multiple selection mode is active
-    KIGFX::VIEW* view = getView();
     getViewControls()->SetAutoPan( true );
 
-    SELECTION_AREA area;
-    view->Add( &area );
+    BOX2I area;
+    boost::shared_ptr<KIGFX::VIEW_OVERLAY> ovl = getView()->MakeOverlay();
+
 
     while( OPT_TOOL_EVENT evt = Wait() )
     {
@@ -433,29 +451,29 @@ bool SELECTION_TOOL::selectMultiple()
             // Start drawing a selection box
             area.SetOrigin( evt->DragOrigin() );
             area.SetEnd( evt->Position() );
-            area.ViewSetVisible( true );
-            area.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+
+            ovl->Clear();
+            drawSelectionArea( ovl.get(), area );
+            ovl->End();
+
         }
 
         if( evt->IsMouseUp( BUT_LEFT ) )
         {
-            // End drawing the selection box
-            area.ViewSetVisible( false );
-
             // Mark items within the selection box as selected
-            std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> selectedItems;
-            BOX2I selectionBox = area.ViewBBox();
-            view->Query( selectionBox, selectedItems );         // Get the list of selected items
+            std::vector<KIGFX::VIEW_ITEM_NG*> selectedItems;
+//            BOX2I selectionBox = area.ViewBBox();
+//            view->Query( selectionBox, selectedItems );         // Get the list of selected items
 
-            std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR>::iterator it, it_end;
+            std::vector<KIGFX::VIEW_ITEM_NG*>::iterator it, it_end;
 
             for( it = selectedItems.begin(), it_end = selectedItems.end(); it != it_end; ++it )
             {
-                BOARD_ITEM* item = static_cast<BOARD_ITEM*>( it->first );
+                BOARD_ITEM* item = static_cast<BOARD_ITEM*>( *it );
 
                 // Add only those items that are visible and fully within the selection box
                 if( !item->IsSelected() && selectable( item ) &&
-                        selectionBox.Contains( item->ViewBBox() ) )
+                        area.Contains( item->ngViewBBox() ) )
                 {
                     select( item );
                 }
@@ -476,9 +494,8 @@ bool SELECTION_TOOL::selectMultiple()
         }
     }
 
-    // Stop drawing the selection box
-    area.ViewSetVisible( false );
-    view->Remove( &area );
+    ovl->Clear();
+
     m_multiple = false;         // Multiple selection mode is inactive
     getViewControls()->SetAutoPan( false );
 
@@ -752,10 +769,10 @@ void SELECTION_TOOL::clearSelection()
     {
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( *it );
 
-        item->ViewHide( false );
+        getView()->Hide( item, false );
         item->ClearSelected();
-        item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY ) ;
     }
+
     m_selection.clear();
 
     m_frame->SetCurItem( NULL );
@@ -823,7 +840,7 @@ BOARD_ITEM* SELECTION_TOOL::disambiguationMenu( GENERAL_COLLECTOR* aCollector )
         {
             brightBox.reset( new BRIGHT_BOX( current ) );
             getView()->Add( brightBox.get() );
-            // BRIGHT_BOX is removed from view on destruction
+             //BRIGHT_BOX is removed from view on destruction
         }
     }
 
@@ -875,6 +892,7 @@ bool SELECTION_TOOL::selectable( const BOARD_ITEM* aItem ) const
 
     if( highContrast )
     {
+    #if 0
         bool onActive = false;          // Is the item on any of active layers?
         int layers[KIGFX::VIEW::VIEW_MAX_LAYERS], layers_count;
 
@@ -894,6 +912,8 @@ bool SELECTION_TOOL::selectable( const BOARD_ITEM* aItem ) const
 
         if( !onActive ) // We do not want to select items that are in the background
             return false;
+
+    #endif
     }
 
     BOARD* board = getModel<BOARD>();
@@ -926,7 +946,7 @@ bool SELECTION_TOOL::selectable( const BOARD_ITEM* aItem ) const
         if( m_multiple && !m_editModules )
             return false;
 
-        return aItem->ViewIsVisible() && board->IsLayerVisible( aItem->GetLayer() );
+        return getView()->IsVisible( aItem ) && board->IsLayerVisible( aItem->GetLayer() );
 
     // These are not selectable
     case PCB_MODULE_EDGE_T:
@@ -1022,7 +1042,7 @@ void SELECTION_TOOL::selectVisually( BOARD_ITEM* aItem ) const
     m_selection.group->Add( aItem );
 
     // Hide the original item, so it is shown only on overlay
-    aItem->ViewHide( true );
+    getView()->Hide( aItem );
     aItem->SetSelected();
 }
 
@@ -1032,9 +1052,8 @@ void SELECTION_TOOL::unselectVisually( BOARD_ITEM* aItem ) const
     m_selection.group->Remove( aItem );
 
     // Restore original item visibility
-    aItem->ViewHide( false );
+    getView()->Hide( aItem, false );
     aItem->ClearSelected();
-    aItem->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
 }
 
 
@@ -1047,7 +1066,7 @@ bool SELECTION_TOOL::selectionContains( const VECTOR2I& aPoint ) const
     for( unsigned int i = 0; i < m_selection.items.GetCount(); ++i )
     {
         BOARD_ITEM* item = m_selection.Item<BOARD_ITEM>( i );
-        BOX2I itemBox = item->ViewBBox();
+        BOX2I itemBox = item->ngViewBBox();
         itemBox.Inflate( margin.x, margin.y );    // Give some margin for gripping an item
 
         if( itemBox.Contains( aPoint ) )

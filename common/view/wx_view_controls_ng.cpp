@@ -26,8 +26,8 @@
 
 #include <wx/wx.h>
 
-#include <view_ng.h>
-#include <wx_view_controls_ng.h>
+#include <view/view_ng.h>
+#include <view/wx_view_controls_ng.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_dispatcher.h>
 

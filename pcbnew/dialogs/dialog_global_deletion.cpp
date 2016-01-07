@@ -130,7 +130,7 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
                 itemPicker.SetItem( item );
                 pickersList.PushItem( itemPicker );
                 pcb->Remove( item );
-                item->ViewRelease();
+                //item->ViewRelease();
                 ratsnest->Remove( item );
                 gen_rastnest = true;
             }
@@ -164,7 +164,7 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
             {
                 itemPicker.SetItem( item );
                 pickersList.PushItem( itemPicker );
-                item->ViewRelease();
+                //item->ViewRelease();
                 item->UnLink();
             }
         }
@@ -183,7 +183,7 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
             {
                 itemPicker.SetItem( item );
                 pickersList.PushItem( itemPicker );
-                item->ViewRelease();
+                //item->ViewRelease();
                 item->UnLink();
             }
         }
@@ -206,10 +206,10 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
             {
                 itemPicker.SetItem( item );
                 pickersList.PushItem( itemPicker );
-                static_cast<MODULE*>( item )->RunOnChildren(
-                        boost::bind( &KIGFX::VIEW_ITEM::ViewRelease, _1 ) );
+                //static_cast<MODULE*>( item )->RunOnChildren(
+                //        boost::bind( &KIGFX::VIEW_ITEM::ViewRelease, _1 ) );
                 ratsnest->Remove( item );
-                item->ViewRelease();
+                //item->ViewRelease();
                 item->UnLink();
                 gen_rastnest = true;
             }
@@ -250,7 +250,7 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
 
             itemPicker.SetItem( track );
             pickersList.PushItem( itemPicker );
-            track->ViewRelease();
+            //track->ViewRelease();
             ratsnest->Remove( track );
             track->UnLink();
             gen_rastnest = true;

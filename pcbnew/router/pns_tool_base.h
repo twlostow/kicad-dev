@@ -72,7 +72,7 @@ protected:
     bool m_needsSync;
 
     PCB_EDIT_FRAME* m_frame;
-    KIGFX::VIEW_CONTROLS* m_ctls;
+    KIGFX::VIEW_CONTROLS_NG* m_ctls;
     BOARD* m_board;
     GRID_HELPER* m_gridHelper;
 

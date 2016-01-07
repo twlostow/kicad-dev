@@ -26,7 +26,7 @@
 #define __BRIGHT_BOX_H
 
 #include <math/box2.h>
-#include <view/view.h>
+#include <view/view_ng.h>
 #include <class_board_item.h>
 #include <layers_id_colors_and_visibility.h>
 #include <gal/color4d.h>
@@ -42,18 +42,12 @@ public:
     BRIGHT_BOX( BOARD_ITEM* aItem );
     ~BRIGHT_BOX() {};
 
-    virtual const BOX2I ViewBBox() const
+    virtual const BOX2I ngViewBBox() const
     {
-        return m_item->ViewBBox();
+        return m_item->ngViewBBox();
     }
 
-    void ViewDraw( int aLayer, KIGFX::GAL* aGal ) const;
-
-    void ViewGetLayers( int aLayers[], int& aCount ) const
-    {
-        aLayers[0] = ITEM_GAL_LAYER( GP_OVERLAY );
-        aCount = 1;
-    }
+    void ngViewDraw( int aLayer, KIGFX::VIEW_BASE* aView ) const;
 
 #if defined(DEBUG)
     void Show( int x, std::ostream& st ) const

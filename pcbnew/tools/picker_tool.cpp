@@ -26,7 +26,7 @@
 #include "common_actions.h"
 
 #include <wxPcbStruct.h>
-#include <view/view_controls.h>
+#include <view/view_controls_ng.h>
 #include <tool/tool_manager.h>
 
 PICKER_TOOL::PICKER_TOOL()
@@ -38,7 +38,7 @@ PICKER_TOOL::PICKER_TOOL()
 
 int PICKER_TOOL::Main( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
 
     assert( !m_picking );
     m_picking = true;
@@ -103,7 +103,7 @@ void PICKER_TOOL::reset()
 
 void PICKER_TOOL::setControls()
 {
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
 
     controls->ShowCursor( m_cursorVisible );
     controls->SetSnapping( m_cursorSnapping );

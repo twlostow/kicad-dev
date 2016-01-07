@@ -32,7 +32,7 @@
 #include <pgm_base.h>
 #include <class_drawpanel.h>
 #include <class_draw_panel_gal.h>
-#include <view/view.h>
+#include <pcb_view.h>
 #include <painter.h>
 
 #include <confirm.h>
@@ -408,9 +408,9 @@ void PCB_LAYER_WIDGET::OnLayerColorChange( int aLayer, EDA_COLOR_T aColor )
 
     if( myframe->IsGalCanvasActive() )
     {
-        KIGFX::VIEW* view = myframe->GetGalCanvas()->GetView();
+        KIGFX::VIEW_BASE* view = myframe->GetGalCanvas()->GetView();
         view->GetPainter()->GetSettings()->ImportLegacyColors( myframe->GetBoard()->GetColorsSettings() );
-        view->UpdateLayerColor( aLayer );
+        //view->UpdateLayerColor( aLayer );
     }
 
     myframe->GetCanvas()->Refresh();
@@ -467,9 +467,8 @@ void PCB_LAYER_WIDGET::OnLayerVisible( int aLayer, bool isVisible, bool isFinal 
 
     if( galCanvas )
     {
-        KIGFX::VIEW* view = galCanvas->GetView();
-        view->SetLayerVisible( aLayer, isVisible );
-        view->RecacheAllItems( true );
+        KIGFX::PCB_VIEW* view = static_cast<KIGFX::PCB_VIEW *> ( galCanvas->GetView() );
+        view->SetVisibleLayers( visibleLayers );
     }
 
     if( isFinal )
@@ -507,8 +506,9 @@ void PCB_LAYER_WIDGET::OnRenderEnable( int aId, bool isEnabled )
             galCanvas->GetGAL()->SetGridVisibility( myframe->IsGridVisible() );
             galCanvas->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
         }
-        else
-            galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), isEnabled );
+        else {
+        //    galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), isEnabled );
+        }
     }
 
     if( galCanvas && myframe->IsGalCanvasActive() )

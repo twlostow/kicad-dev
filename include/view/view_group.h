@@ -33,20 +33,23 @@
 #ifndef VIEW_GROUP_H_
 #define VIEW_GROUP_H_
 
-#include <view/view_item.h>
+#include <view/view_item_ng.h>
 #include <deque>
 
 namespace KIGFX
 {
-class VIEW_GROUP : public VIEW_ITEM
+
+class VIEW_BASE;
+
+class VIEW_GROUP : public VIEW_ITEM_NG
 {
 public:
-    VIEW_GROUP( VIEW* aView = NULL );
+    VIEW_GROUP( VIEW_BASE* aView = NULL );
     virtual ~VIEW_GROUP();
 
     /// Helper typedefs
-    typedef std::set<VIEW_ITEM*>::const_iterator const_iter;
-    typedef std::set<VIEW_ITEM*>::iterator iter;
+    typedef std::set<VIEW_ITEM_NG*>::const_iterator const_iter;
+    typedef std::set<VIEW_ITEM_NG*>::iterator iter;
 
     /**
      * Function Add()
@@ -54,7 +57,7 @@ public:
      *
      * @param aItem is the item to be added.
      */
-    virtual void Add( VIEW_ITEM* aItem );
+    virtual void Add( VIEW_ITEM_NG* aItem );
 
     /**
      * Function Remove()
@@ -62,7 +65,7 @@ public:
      *
      * @param aItem is the item to be removed.
      */
-    virtual void Remove( VIEW_ITEM* aItem );
+    virtual void Remove( VIEW_ITEM_NG* aItem );
 
     /**
      * Function Clear()
@@ -102,7 +105,7 @@ public:
      *
      * @return The current bounding box
      */
-    virtual const BOX2I ViewBBox() const;
+    virtual const BOX2I ngViewBBox() const;
 
     /**
      * Function ViewDraw()
@@ -111,16 +114,7 @@ public:
      * @param aLayer is the layer which should be drawn.
      * @param aGal is the GAL that should be used for drawing.
      */
-    virtual void ViewDraw( int aLayer, GAL* aGal ) const;
-
-    /**
-     * Function ViewGetLayers()
-     * Returns all the layers used by the stored items.
-     *
-     * @param aLayers[] is the output layer index array.
-     * @param aCount is the number of layer indices in aLayers[].
-     */
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
+    virtual void ngViewDraw( int aLayer, VIEW_BASE* aView ) const;
 
     /**
      * Function SetLayer()
@@ -128,6 +122,7 @@ public:
      *
      * @param aLayer is the layer used for drawing.
      */
+
     inline virtual void SetLayer( int aLayer )
     {
         m_layer = aLayer;
@@ -145,7 +140,7 @@ public:
      *
      * @return Pointer to the VIEW instance.
      */
-    KIGFX::VIEW* GetView() const
+    KIGFX::VIEW_BASE* GetView() const
     {
         return m_view;
     }
@@ -156,7 +151,7 @@ public:
      *
      * @param aVisible decides if items should be visible or not.
      */
-    virtual void ItemsSetVisibility( bool aVisible );
+    //virtual void ItemsSetVisibility( bool aVisible );
 
     /**
      * Function ItemsViewUpdate()
@@ -164,41 +159,21 @@ public:
      *
      * @param aFlags determines the way in which items will be updated.
      */
-    virtual void ItemsViewUpdate( VIEW_ITEM::VIEW_UPDATE_FLAGS aFlags );
+    //virtual void ItemsViewUpdate( VIEW_ITEM::VIEW_UPDATE_FLAGS aFlags );
+
+    virtual void ngViewGetLayers( int aLayers[], int& aCount ) const;
+
 
 protected:
-    /// These functions cannot be used with VIEW_GROUP as they are intended only to work with
-    /// singular VIEW_ITEMs (there is only one-to-one relation between item/layer combination and
-    /// its group).
-    int getGroup( int aLayer ) const
-    {
-        return -1;
-    }
 
-    std::vector<int> getAllGroups() const
-    {
-        return std::vector<int>();
-    }
-
-    void setGroup( int aLayer, int aGroup )
-    {}
-
-    void deleteGroups()
-    {}
-
-    bool storesGroups() const
-    {
-        return false;
-    }
-
-    /// Layer on which the group is drawn
+    VIEW_BASE *m_view;
     int m_layer;
 
 private:
     void updateBbox();
 
     /// Container for storing VIEW_ITEMs
-    std::set<VIEW_ITEM*> m_items;
+    std::set<VIEW_ITEM_NG*> m_items;
 };
 } // namespace KIGFX
 

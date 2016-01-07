@@ -51,6 +51,8 @@
 #include <tool/tool_manager.h>
 #include <tools/common_actions.h>
 
+#include <view/view_ng.h>
+
 
 void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
                                      const wxString& aCmpFileName,
@@ -64,7 +66,7 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
 {
     wxString        msg;
     NETLIST         netlist;
-    KIGFX::VIEW*    view = GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE*    view = GetGalCanvas()->GetView();
     BOARD*          board = GetBoard();
 
     netlist.SetIsDryRun( aIsDryRun );
@@ -104,7 +106,7 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
         // Remove old modules
         for( MODULE* module = board->m_Modules; module; module = module->Next() )
         {
-            module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+            //module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
             view->Remove( module );
         }
     }
@@ -126,9 +128,9 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
     // Reload modules
     for( MODULE* module = board->m_Modules; module; module = module->Next() )
     {
-        module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+        //module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
         view->Add( module );
-        module->ViewUpdate();
+        //module->ViewUpdate();
     }
 
     if( aDeleteUnconnectedTracks && board->m_Track )
@@ -316,4 +318,3 @@ void PCB_EDIT_FRAME::loadFootprints( NETLIST& aNetlist, REPORTER* aReporter )
             component->SetModule( module );
     }
 }
-

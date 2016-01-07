@@ -31,6 +31,7 @@
 #include <ratsnest_data.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <pcb_painter.h>
+#include <view/view_ng.h>
 #include <layers_id_colors_and_visibility.h>
 
 #include <boost/foreach.hpp>
@@ -43,7 +44,7 @@ RATSNEST_VIEWITEM::RATSNEST_VIEWITEM( RN_DATA* aData ) :
 }
 
 
-const BOX2I RATSNEST_VIEWITEM::ViewBBox() const
+const BOX2I RATSNEST_VIEWITEM::ngViewBBox() const
 {
     // Make it always visible
     BOX2I bbox;
@@ -53,12 +54,14 @@ const BOX2I RATSNEST_VIEWITEM::ViewBBox() const
 }
 
 
-void RATSNEST_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
+void RATSNEST_VIEWITEM::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
 {
-    aGal->SetIsStroke( true );
-    aGal->SetIsFill( false );
-    aGal->SetLineWidth( 1.0 );
-    RENDER_SETTINGS* rs = m_view->GetPainter()->GetSettings();
+    GAL *gal = aView->GetGAL();
+
+    gal->SetIsStroke( true );
+    gal->SetIsFill( false );
+    gal->SetLineWidth( 1.0 );
+    RENDER_SETTINGS* rs = aView->GetPainter()->GetSettings();
     COLOR4D color = rs->GetColor( NULL, ITEM_GAL_LAYER( RATSNEST_VISIBLE ) );
     int highlightedNet = rs->GetHighlightNetCode();
 
@@ -71,7 +74,7 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
             continue;
 
         // Set brighter color for the temporary ratsnest
-        aGal->SetStrokeColor( color.Brightened( 0.8 ) );
+        gal->SetStrokeColor( color.Brightened( 0.8 ) );
 
         // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
         BOOST_FOREACH( const RN_NODE_PTR& node, net.GetSimpleNodes() )
@@ -87,13 +90,13 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
                 VECTOR2D origin( node->GetX(), node->GetY() );
                 VECTOR2D end( dest->GetX(), dest->GetY() );
 
-                aGal->DrawLine( origin, end );
+                gal->DrawLine( origin, end );
             }
         }
 
         // Draw the "static" ratsnest
         if( i != highlightedNet )
-            aGal->SetStrokeColor( color );  // using the default ratsnest color for not highlighted
+            gal->SetStrokeColor( color );  // using the default ratsnest color for not highlighted
 
         const std::vector<RN_EDGE_MST_PTR>* edges = net.GetUnconnected();
 
@@ -107,14 +110,7 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
             VECTOR2D source( sourceNode->GetX(), sourceNode->GetY() );
             VECTOR2D target( targetNode->GetX(), targetNode->GetY() );
 
-            aGal->DrawLine( source, target );
+            gal->DrawLine( source, target );
         }
     }
-}
-
-
-void RATSNEST_VIEWITEM::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aCount = 1;
-    aLayers[0] = ITEM_GAL_LAYER( RATSNEST_VISIBLE );
 }

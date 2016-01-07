@@ -34,8 +34,10 @@
 #include <dialog_edit_module_text.h>
 #include <import_dxf/dialog_dxf_import.h>
 
+#include <view/view_ng.h>
 #include <view/view_group.h>
-#include <view/view_controls.h>
+#include <view/view_controls_ng.h>
+#include <view/view_overlay.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_manager.h>
 #include <router/direction.h>
@@ -241,9 +243,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
     // then hereby I'm letting you know that this tool does not handle UR_MODEDIT undo yet
     assert( !m_editModules );
 
-    // Add a VIEW_GROUP that serves as a preview for the new item
-    KIGFX::VIEW_GROUP preview( m_view );
-    m_view->Add( &preview );
+    boost::shared_ptr<KIGFX::VIEW_OVERLAY> ovl = getView()->MakeOverlay();
 
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
     m_controls->ShowCursor( true );
@@ -270,9 +270,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
         {
             if( step != SET_ORIGIN )    // start from the beginning
             {
-                preview.Clear();
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
-
+                ovl->Clear();
                 delete dimension;
                 step = SET_ORIGIN;
             }
@@ -286,7 +284,6 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
         else if( evt->IsAction( &COMMON_ACTIONS::incWidth ) && step != SET_ORIGIN )
         {
             dimension->SetWidth( dimension->GetWidth() + WIDTH_STEP );
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
 
         else if( evt->IsAction( &COMMON_ACTIONS::decWidth ) && step != SET_ORIGIN )
@@ -296,7 +293,6 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
             if( width > WIDTH_STEP )
             {
                 dimension->SetWidth( width - WIDTH_STEP );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             }
         }
 
@@ -332,8 +328,6 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
                         dimension->SetWidth( width );
                         dimension->AdjustDimensionDetails();
 
-                        preview.Add( dimension );
-
                         m_controls->SetAutoPan( true );
                         m_controls->CaptureCursor( true );
                     }
@@ -357,12 +351,11 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
                         m_view->Add( dimension );
                         m_board->Add( dimension );
-                        dimension->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+
+                        ovl->Clear();
 
                         m_frame->OnModify();
                         m_frame->SaveCopyInUndoList( dimension, UR_NEW );
-
-                        preview.Remove( dimension );
                     }
                 }
                 break;
@@ -396,10 +389,10 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
             }
             break;
             }
-
-            // Show a preview of the item
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
+
+        if (dimension)
+            ovl->DrawSingleItem ( dimension );
     }
 
     if( step != SET_ORIGIN )
@@ -409,7 +402,6 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
     m_controls->SetSnapping( false );
     m_controls->SetAutoPan( false );
     m_controls->CaptureCursor( false );
-    m_view->Remove( &preview );
 
     m_frame->SetToolID( ID_NO_TOOL_SELECTED, wxCURSOR_DEFAULT, wxEmptyString );
 
@@ -484,7 +476,7 @@ int DRAWING_TOOL::PlaceDXF( const TOOL_EVENT& aEvent )
             for( KIGFX::VIEW_GROUP::iter it = preview.Begin(), end = preview.End(); it != end; ++it )
                 static_cast<BOARD_ITEM*>( *it )->Move( wxPoint( delta.x, delta.y ) );
 
-            preview.ViewUpdate();
+            m_view->Update ( &preview );
         }
 
         else if( evt->Category() == TC_COMMAND )
@@ -495,14 +487,14 @@ int DRAWING_TOOL::PlaceDXF( const TOOL_EVENT& aEvent )
                     static_cast<BOARD_ITEM*>( *it )->Rotate( wxPoint( cursorPos.x, cursorPos.y ),
                                                              m_frame->GetRotationAngle() );
 
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+                m_view->Update ( &preview );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::flip ) )
             {
                 for( KIGFX::VIEW_GROUP::iter it = preview.Begin(), end = preview.End(); it != end; ++it )
                     static_cast<BOARD_ITEM*>( *it )->Flip( wxPoint( cursorPos.x, cursorPos.y ) );
 
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+                m_view->Update ( &preview );
             }
             else if( evt->IsCancel() || evt->IsActivate() )
             {
@@ -617,7 +609,7 @@ int DRAWING_TOOL::SetAnchor( const TOOL_EVENT& aEvent )
             wxPoint moveVector = m_board->m_Modules->GetPosition() - wxPoint( cursorPos.x, cursorPos.y );
             m_board->m_Modules->MoveAnchorPosition( moveVector );
 
-            m_board->m_Modules->ViewUpdate();
+            m_view->Update ( m_board->m_Modules );
 
             // Usually, we do not need to change twice the anchor position,
             // so deselect the active tool
@@ -767,9 +759,9 @@ bool DRAWING_TOOL::drawSegment( int aShape, DRAWSEGMENT*& aGraphic,
                             m_frame->SaveCopyInUndoList( m_board->m_Modules, UR_MODEDIT );
                             m_board->m_Modules->SetLastEditTime();
                             m_board->m_Modules->GraphicalItems().PushFront( l );
-
                             m_view->Add( l );
-                            l->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        				    m_view->Update ( m_board->m_Modules );
+
                         }
                         else
                         {
@@ -778,9 +770,7 @@ bool DRAWING_TOOL::drawSegment( int aShape, DRAWSEGMENT*& aGraphic,
 
                             m_frame->SaveCopyInUndoList( l, UR_NEW );
                             m_board->Add( l );
-
                             m_view->Add( l );
-                            l->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
                         }
 
                         m_frame->OnModify();
@@ -795,7 +785,6 @@ bool DRAWING_TOOL::drawSegment( int aShape, DRAWSEGMENT*& aGraphic,
                     assert( aGraphic->GetWidth() > 0 );
 
                     m_view->Add( aGraphic );
-                    aGraphic->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
                 }
 
                 preview.Clear();
@@ -832,7 +821,7 @@ bool DRAWING_TOOL::drawSegment( int aShape, DRAWSEGMENT*& aGraphic,
         }
 
         if( updatePreview )
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update ( &preview ); 
     }
 
     m_controls->ShowCursor( false );
@@ -883,7 +872,7 @@ bool DRAWING_TOOL::drawArc( DRAWSEGMENT*& aGraphic )
         if( evt->IsCancel() || evt->IsActivate() )
         {
             preview.Clear();
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update ( &preview );
             delete aGraphic;
             aGraphic = NULL;
             break;
@@ -944,7 +933,6 @@ bool DRAWING_TOOL::drawArc( DRAWSEGMENT*& aGraphic )
                     assert( aGraphic->GetWidth() > 0 );
 
                     m_view->Add( aGraphic );
-                    aGraphic->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
 
                     preview.Remove( aGraphic );
                     preview.Remove( &helperLine );
@@ -985,13 +973,13 @@ bool DRAWING_TOOL::drawArc( DRAWSEGMENT*& aGraphic )
             }
 
             // Show a preview of the item
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update ( &preview );
         }
 
         else if( evt->IsAction( &COMMON_ACTIONS::incWidth ) )
         {
             aGraphic->SetWidth( aGraphic->GetWidth() + WIDTH_STEP );
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update ( &preview );
         }
 
         else if( evt->IsAction( &COMMON_ACTIONS::decWidth ) )
@@ -1001,7 +989,7 @@ bool DRAWING_TOOL::drawArc( DRAWSEGMENT*& aGraphic )
             if( width > WIDTH_STEP )
             {
                 aGraphic->SetWidth( width - WIDTH_STEP );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+	            m_view->Update ( &preview );
             }
         }
 
@@ -1013,7 +1001,7 @@ bool DRAWING_TOOL::drawArc( DRAWSEGMENT*& aGraphic )
                 aGraphic->SetAngle( aGraphic->GetAngle() + 3600.0 );
 
             clockwise = !clockwise;
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update ( &preview );
         }
     }
 
@@ -1125,7 +1113,7 @@ int DRAWING_TOOL::drawZone( bool aKeepout )
                     if( !aKeepout )
                         static_cast<PCB_EDIT_FRAME*>( m_frame )->Fill_Zone( zone );
 
-                    zone->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+					m_view->Update ( zone );
                     m_board->GetRatsnest()->Update( zone );
 
                     m_frame->OnModify();
@@ -1231,7 +1219,7 @@ int DRAWING_TOOL::drawZone( bool aKeepout )
         }
 
         if( updatePreview )
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update( &preview );
     }
 
     m_controls->ShowCursor( false );
@@ -1274,7 +1262,7 @@ int DRAWING_TOOL::placeTextModule()
         if( evt->IsCancel() || evt->IsActivate() )
         {
             preview.Clear();
-            preview.ViewUpdate();
+			m_view->Update ( &preview );
             m_controls->SetAutoPan( false );
             m_controls->CaptureCursor( false );
             m_controls->ShowCursor( true );
@@ -1295,12 +1283,12 @@ int DRAWING_TOOL::placeTextModule()
             if( evt->IsAction( &COMMON_ACTIONS::rotate ) )
             {
                 text->Rotate( text->GetPosition(), m_frame->GetRotationAngle() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::flip ) )
             {
                 text->Flip( text->GetPosition() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
             }
         }
 
@@ -1339,7 +1327,7 @@ int DRAWING_TOOL::placeTextModule()
                 m_board->m_Modules->GraphicalItems().PushFront( text );
 
                 m_view->Add( text );
-                text->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
 
                 m_frame->OnModify();
 
@@ -1358,7 +1346,7 @@ int DRAWING_TOOL::placeTextModule()
             text->SetTextPosition( wxPoint( cursorPos.x, cursorPos.y ) );
 
             // Show a preview of the item
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+			m_view->Update ( &preview );
         }
     }
 
@@ -1406,7 +1394,7 @@ int DRAWING_TOOL::placeTextPcb()
                 text = NULL;
 
                 preview.Clear();
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
                 m_controls->SetAutoPan( false );
                 m_controls->CaptureCursor( false );
                 m_controls->ShowCursor( true );
@@ -1423,12 +1411,12 @@ int DRAWING_TOOL::placeTextPcb()
             if( evt->IsAction( &COMMON_ACTIONS::rotate ) )
             {
                 text->Rotate( text->GetPosition(), m_frame->GetRotationAngle() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::flip ) )
             {
                 text->Flip( text->GetPosition() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
             }
         }
 
@@ -1454,7 +1442,7 @@ int DRAWING_TOOL::placeTextPcb()
                 text->ClearFlags();
                 m_view->Add( text );
                 // m_board->Add( text );        // it is already added by CreateTextePcb()
-                text->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
 
                 m_frame->OnModify();
                 m_frame->SaveCopyInUndoList( text, UR_NEW );
@@ -1472,7 +1460,7 @@ int DRAWING_TOOL::placeTextPcb()
             text->SetTextPosition( wxPoint( cursorPos.x, cursorPos.y ) );
 
             // Show a preview of the item
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+			m_view->Update ( &preview );
         }
     }
 

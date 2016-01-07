@@ -35,7 +35,8 @@
 #include <module_editor_frame.h>
 
 #include <tool/tool_manager.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <ratsnest_data.h>
 #include <confirm.h>
@@ -57,8 +58,8 @@
 
 EDIT_TOOL::EDIT_TOOL() :
     TOOL_INTERACTIVE( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ),
-    m_dragging( false ), m_editModules( false ), m_undoInhibit( 0 ),
-    m_updateFlag( KIGFX::VIEW_ITEM::NONE )
+    m_dragging( false ), m_editModules( false ), m_undoInhibit( 0 )
+    //m_updateFlag( KIGFX::VIEW_ITEM::NONE )
 {
 }
 
@@ -66,7 +67,8 @@ EDIT_TOOL::EDIT_TOOL() :
 void EDIT_TOOL::Reset( RESET_REASON aReason )
 {
     m_dragging = false;
-    m_updateFlag = KIGFX::VIEW_ITEM::NONE;
+    //m_updateFlag = KIGFX::VIEW_ITEM::NONE;
+    m_view = getView();
 }
 
 
@@ -134,7 +136,7 @@ bool EDIT_TOOL::invokeInlineRouter()
 
 int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
     PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
 
     VECTOR2I originalCursorPos = controls->GetCursorPosition();
@@ -155,7 +157,6 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
     bool lockOverride = false;
 
     // By default, modified items need to update their geometry
-    m_updateFlag = KIGFX::VIEW_ITEM::GEOMETRY;
 
     controls->ShowCursor( true );
 
@@ -250,7 +251,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
                 }
             }
 
-            selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update( selection.group );
             m_toolMgr->RunAction( COMMON_ACTIONS::pointEditorUpdate, true );
         }
 
@@ -266,7 +267,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
                 Flip( aEvent );
 
                 // Flip causes change of layers
-                enableUpdateFlag( KIGFX::VIEW_ITEM::LAYERS );
+	            m_view->Update( selection.group );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::remove ) )
             {
@@ -331,7 +332,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
     else
     {
         // Changes are applied, so update the items
-        selection.group->ItemsViewUpdate( m_updateFlag );
+        m_view->Update( selection.group );
     }
 
     if( unselect )
@@ -372,8 +373,7 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
             editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
             dlg.Apply();
 
-            selection.ForAll<KIGFX::VIEW_ITEM>( boost::bind( &KIGFX::VIEW_ITEM::ViewUpdate, _1,
-                                                             KIGFX::VIEW_ITEM::ALL ) );
+            selection.ForAll<KIGFX::VIEW_ITEM_NG>( boost::bind( &KIGFX::VIEW_BASE::Update, m_view, _1 ) );
             selection.ForAll<BOARD_ITEM>( boost::bind( &RN_DATA::Update, ratsnest, _1 ) );
             ratsnest->Recalculate();
         }
@@ -403,7 +403,7 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
             processUndoBuffer( undoSavePoint );
 
             // Update the modified item
-            item->ViewUpdate();
+            m_view->Update ( item );
             RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
             ratsnest->Recalculate();
 
@@ -447,8 +447,7 @@ int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
 
         item->Rotate( rotatePoint, editFrame->GetRotationAngle() );
 
-        if( !m_dragging )
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        m_view->Update ( item );
     }
 
     updateRatsnest( m_dragging );
@@ -458,7 +457,7 @@ int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
                                          rotatePoint;
 
     if( m_dragging )
-        selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        m_view->Update ( selection.group );
     else
         getModel<BOARD>()->GetRatsnest()->Recalculate();
 
@@ -495,9 +494,7 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
         BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
 
         item->Flip( flipPoint );
-
-        if( !m_dragging )
-            item->ViewUpdate( KIGFX::VIEW_ITEM::LAYERS );
+        m_view->Update ( item );
     }
 
     updateRatsnest( m_dragging );
@@ -507,7 +504,7 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
                                          flipPoint;
 
     if( m_dragging )
-        selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        m_view->Update ( selection.group );
     else
         getModel<BOARD>()->GetRatsnest()->Recalculate();
 
@@ -561,7 +558,6 @@ void EDIT_TOOL::remove( BOARD_ITEM* aItem )
     {
         MODULE* module = static_cast<MODULE*>( aItem );
         module->ClearFlags();
-        module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, getView(), _1 ) );
 
         // Module itself is deleted after the switch scope is finished
         // list of pads is rebuild by BOARD::BuildListOfNets()
@@ -679,14 +675,13 @@ int EDIT_TOOL::MoveExact( const TOOL_EVENT& aEvent )
             item->Move( translation );
             item->Rotate( rotPoint, rotation );
 
-            if( !m_dragging )
-                item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+			m_view->Update( item );
         }
 
         updateRatsnest( m_dragging );
 
         if( m_dragging )
-            selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            m_view->Update ( selection.group );
         else
             getModel<BOARD>()->GetRatsnest()->Recalculate();
 
@@ -761,13 +756,7 @@ int EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
 
         if( new_item )
         {
-            if( new_item->Type() == PCB_MODULE_T )
-            {
-                static_cast<MODULE*>( new_item )->RunOnChildren( boost::bind( &KIGFX::VIEW::Add,
-                        getView(), _1 ) );
-            }
-
-            editFrame->GetGalCanvas()->GetView()->Add( new_item );
+            m_view->Add( new_item );
 
             // Select the new item, so we can pick it up
             m_toolMgr->RunAction( COMMON_ACTIONS::selectItem, true, new_item );
@@ -894,12 +883,6 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
 
                         newItemList.PushItem( newItem );
 
-                        if( newItem->Type() == PCB_MODULE_T)
-                        {
-                            static_cast<MODULE*>( newItem )->RunOnChildren( boost::bind( &KIGFX::VIEW::Add,
-                                    getView(), _1 ) );
-                        }
-
                         editFrame->GetGalCanvas()->GetView()->Add( newItem );
                         getModel<BOARD>()->GetRatsnest()->Update( newItem );
                     }
@@ -950,7 +933,7 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
             if( originalItemsModified )
             {
                 // Update the appearance of the original items
-                selection.group->ItemsViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+                m_view->UpdateAll();
             }
 
             // Add all items as a single undo point for PCB editors
@@ -1066,7 +1049,7 @@ void EDIT_TOOL::processUndoBuffer( const PICKED_ITEMS_LIST* aLastChange )
 
 void EDIT_TOOL::processPickedList( const PICKED_ITEMS_LIST* aList )
 {
-    KIGFX::VIEW* view = getView();
+    KIGFX::VIEW_BASE* view = getView();
     RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
 
     for( unsigned int i = 0; i < aList->GetCount(); ++i )
@@ -1081,25 +1064,17 @@ void EDIT_TOOL::processPickedList( const PICKED_ITEMS_LIST* aList )
             // fall through
 
         case UR_MODEDIT:
-            updItem->ViewUpdate( KIGFX::VIEW_ITEM::ALL );
+            m_view->Update ( updItem );
             break;
 
         case UR_DELETED:
-            if( updItem->Type() == PCB_MODULE_T )
-                static_cast<MODULE*>( updItem )->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove,
-                                                                             view, _1 ) );
 
-            view->Remove( updItem );
-            //ratsnest->Remove( updItem );  // this is done in BOARD::Remove
+            m_view->Remove( updItem );
             break;
 
         case UR_NEW:
-            if( updItem->Type() == PCB_MODULE_T )
-                static_cast<MODULE*>( updItem )->RunOnChildren( boost::bind( &KIGFX::VIEW::Add,
-                                                                             view, _1 ) );
 
-            view->Add( updItem );
-            //ratsnest->Add( updItem );     // this is done in BOARD::Add
+            m_view->Add( updItem );
             break;
 
         default:

@@ -929,74 +929,7 @@ EDA_ITEM* D_PAD::Clone() const
 }
 
 
-void D_PAD::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aCount = 0;
-
-    // These types of pads contain a hole
-    if( m_Attribute == PAD_ATTRIB_STANDARD || m_Attribute == PAD_ATTRIB_HOLE_NOT_PLATED )
-        aLayers[aCount++] = ITEM_GAL_LAYER( PADS_HOLES_VISIBLE );
-
-    if( IsOnLayer( F_Cu ) && IsOnLayer( B_Cu ) )
-    {
-        // Multi layer pad
-        aLayers[aCount++] = ITEM_GAL_LAYER( PADS_VISIBLE );
-        aLayers[aCount++] = NETNAMES_GAL_LAYER( PADS_NETNAMES_VISIBLE );
-    }
-    else if( IsOnLayer( F_Cu ) )
-    {
-        aLayers[aCount++] = ITEM_GAL_LAYER( PAD_FR_VISIBLE );
-        aLayers[aCount++] = NETNAMES_GAL_LAYER( PAD_FR_NETNAMES_VISIBLE );
-    }
-    else if( IsOnLayer( B_Cu ) )
-    {
-        aLayers[aCount++] = ITEM_GAL_LAYER( PAD_BK_VISIBLE );
-        aLayers[aCount++] = NETNAMES_GAL_LAYER( PAD_BK_NETNAMES_VISIBLE );
-    }
-
-    // Check non-copper layers. This list should include all the layers that the
-    // footprint editor allows a pad to be placed on.
-    static const LAYER_ID layers_mech[] = { F_Mask, B_Mask, F_Paste, B_Paste,
-        F_Adhes, B_Adhes, F_SilkS, B_SilkS, Dwgs_User, Eco1_User, Eco2_User };
-
-    BOOST_FOREACH( LAYER_ID each_layer, layers_mech )
-    {
-        if( IsOnLayer( each_layer ) )
-            aLayers[aCount++] = each_layer;
-    }
-
-#ifdef __WXDEBUG__
-    if( aCount == 0 )    // Should not occur
-    {
-        wxString msg;
-        msg.Printf( wxT( "footprint %s, pad %s: could not find valid layer for pad" ),
-                GetParent() ? GetParent()->GetReference() : "<null>",
-                GetPadName().IsEmpty() ? "(unnamed)" : GetPadName() );
-        wxLogWarning( msg );
-    }
-#endif
-}
-
-
-unsigned int D_PAD::ViewGetLOD( int aLayer ) const
-{
-    // Netnames will be shown only if zoom is appropriate
-    if( IsNetnameLayer( aLayer ) )
-    {
-        // Pad sizes can be zero briefly when someone is typing a number like "0.5" in the pad properties dialog.
-        // Fail gracefully if this happens.
-        if( ( m_Size.x == 0 ) && ( m_Size.y == 0 ) )
-            return UINT_MAX;
-
-        return ( 100000000 / std::max( m_Size.x, m_Size.y ) );
-    }
-
-    // Other layers are shown without any conditions
-    return 0;
-}
-
-
-const BOX2I D_PAD::ViewBBox() const
+const BOX2I D_PAD::ngViewBBox() const
 {
     // Bounding box includes soldermask too
     int solderMaskMargin       = GetSolderMaskMargin();

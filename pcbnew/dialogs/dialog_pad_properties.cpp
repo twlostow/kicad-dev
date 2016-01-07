@@ -49,6 +49,8 @@
 #include <dialog_pad_properties_base.h>
 #include <html_messagebox.h>
 
+#include <view/view_ng.h>
+
 
 // list of pad shapes.
 static PAD_SHAPE_T code_shape[] = {
@@ -828,9 +830,9 @@ void DIALOG_PAD_PROPERTIES::redraw()
 {
     if( m_parent->IsGalCanvasActive() )
     {
-        m_dummyPad->ViewUpdate();
+        //m_dummyPad->ViewUpdate();
 
-        BOX2I bbox = m_dummyPad->ViewBBox();
+        BOX2I bbox = m_dummyPad->ngViewBBox();
 
         if( bbox.GetSize().x > 0 && bbox.GetSize().y > 0 )
         {

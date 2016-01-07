@@ -57,7 +57,7 @@ class PNS_DRAGGER;
 
 namespace KIGFX
 {
-    class VIEW;
+    class VIEW_BASE;
     class VIEW_GROUP;
 };
 
@@ -98,7 +98,7 @@ public:
     void SetBoard( BOARD* aBoard );
     void SyncWorld();
 
-    void SetView( KIGFX::VIEW* aView );
+    void SetView( KIGFX::VIEW_BASE* aView );
 
     bool RoutingInProgress() const;
     bool StartRouting( const VECTOR2I& aP, PNS_ITEM* aItem, int aLayer );
@@ -260,7 +260,7 @@ private:
     bool m_showInterSteps;
     int m_snapshotIter;
 
-    KIGFX::VIEW* m_view;
+    KIGFX::VIEW_BASE* m_view;
     KIGFX::VIEW_GROUP* m_previewItems;
 
     bool m_snappingEnabled;

@@ -43,7 +43,7 @@
 #include <dialog_display_options_base.h>
 
 #include <class_draw_panel_gal.h>
-#include <view/view.h>
+#include <view/view_ng.h>
 #include <pcb_painter.h>
 
 
@@ -170,12 +170,12 @@ void DIALOG_DISPLAY_OPTIONS::OnOkClick(wxCommandEvent& event)
     displ_opts->m_DisplayNetNamesMode = m_ShowNetNamesOption->GetSelection();
 
     // Apply changes to the GAL
-    KIGFX::VIEW* view = m_Parent->GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = m_Parent->GetGalCanvas()->GetView();
     KIGFX::PCB_PAINTER* painter = static_cast<KIGFX::PCB_PAINTER*>( view->GetPainter() );
     KIGFX::PCB_RENDER_SETTINGS* settings =
             static_cast<KIGFX::PCB_RENDER_SETTINGS*>( painter->GetSettings() );
     settings->LoadDisplayOptions( displ_opts );
-    view->RecacheAllItems( true );
+    //view->UpdateAll();
 
     m_Parent->GetCanvas()->Refresh();
 

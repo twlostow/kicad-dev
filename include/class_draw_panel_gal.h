@@ -42,9 +42,9 @@ class TOOL_DISPATCHER;
 namespace KIGFX
 {
 class GAL;
-class VIEW;
-class WX_VIEW_CONTROLS;
-class VIEW_CONTROLS;
+class VIEW_BASE;
+class WX_VIEW_CONTROLS_NG;
+class VIEW_CONTROLS_NG;
 class PAINTER;
 };
 
@@ -97,7 +97,7 @@ public:
      * Returns a pointer to the VIEW instance used in the panel.
      * @return The instance of VIEW.
      */
-    KIGFX::VIEW* GetView() const
+    KIGFX::VIEW_BASE* GetView() const
     {
         return m_view;
     }
@@ -107,9 +107,9 @@ public:
      * Returns a pointer to the VIEW_CONTROLS instance used in the panel.
      * @return The instance of VIEW_CONTROLS.
      */
-    KIGFX::VIEW_CONTROLS* GetViewControls() const
+    KIGFX::VIEW_CONTROLS_NG* GetViewControls() const
     {
-        return (KIGFX::VIEW_CONTROLS*)( m_viewControls );
+        return (KIGFX::VIEW_CONTROLS_NG*)( m_viewControls );
     }
 
     /// @copydoc wxWindow::Refresh()
@@ -198,13 +198,13 @@ protected:
     KIGFX::GAL*              m_gal;
 
     /// Stores view settings (scale, center, etc.) and items to be drawn
-    KIGFX::VIEW*             m_view;
+    KIGFX::VIEW_BASE*        m_view;
 
     /// Contains information about how to draw items using GAL
     KIGFX::PAINTER*          m_painter;
 
     /// Control for VIEW (moving, zooming, etc.)
-    KIGFX::WX_VIEW_CONTROLS* m_viewControls;
+    KIGFX::WX_VIEW_CONTROLS_NG* m_viewControls;
 
     /// Currently used GAL
     GAL_TYPE                 m_backend;

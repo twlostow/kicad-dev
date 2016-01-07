@@ -436,7 +436,7 @@ EDA_ITEM* TEXTE_MODULE::Clone() const
 }
 
 
-const BOX2I TEXTE_MODULE::ViewBBox() const
+const BOX2I TEXTE_MODULE::ngViewBBox() const
 {
     double   angle = GetDrawRotation();
     EDA_RECT text_area = GetTextBox( -1, -1 );
@@ -445,46 +445,6 @@ const BOX2I TEXTE_MODULE::ViewBBox() const
         text_area = text_area.GetBoundingBoxRotated( m_Pos, angle );
 
     return BOX2I( text_area.GetPosition(), text_area.GetSize() );
-}
-
-
-void TEXTE_MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    if( m_NoShow )      // Hidden text
-        aLayers[0] = ITEM_GAL_LAYER( MOD_TEXT_INVISIBLE );
-    //else if( IsFrontLayer( m_Layer ) )
-        //aLayers[0] = ITEM_GAL_LAYER( MOD_TEXT_FR_VISIBLE );
-    //else if( IsBackLayer( m_Layer ) )
-        //aLayers[0] = ITEM_GAL_LAYER( MOD_TEXT_BK_VISIBLE );
-    else
-        aLayers[0] = GetLayer();
-
-    aCount = 1;
-}
-
-
-unsigned int TEXTE_MODULE::ViewGetLOD( int aLayer ) const
-{
-    const int MAX = std::numeric_limits<unsigned int>::max();
-
-    if( !m_view )
-        return 0;
-
-    if( m_Type == TEXT_is_VALUE && !m_view->IsLayerVisible( ITEM_GAL_LAYER( MOD_VALUES_VISIBLE ) ) )
-        return MAX;
-
-    if( m_Type == TEXT_is_REFERENCE && !m_view->IsLayerVisible( ITEM_GAL_LAYER( MOD_REFERENCES_VISIBLE ) ) )
-        return MAX;
-
-    if( IsFrontLayer( m_Layer ) && ( !m_view->IsLayerVisible( ITEM_GAL_LAYER( MOD_TEXT_FR_VISIBLE ) ) ||
-                                     !m_view->IsLayerVisible( ITEM_GAL_LAYER( MOD_FR_VISIBLE ) ) ) )
-        return MAX;
-
-    if( IsBackLayer( m_Layer ) && ( !m_view->IsLayerVisible( ITEM_GAL_LAYER( MOD_TEXT_BK_VISIBLE ) ) ||
-                                    !m_view->IsLayerVisible( ITEM_GAL_LAYER( MOD_BK_VISIBLE ) ) ) )
-        return MAX;
-
-    return 0;
 }
 
 
@@ -546,5 +506,3 @@ wxString TEXTE_MODULE::GetShownText() const
     }
     return newbuf;
 }
-
-

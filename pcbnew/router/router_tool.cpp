@@ -31,7 +31,8 @@
 #include <id.h>
 #include <macros.h>
 #include <pcbnew_id.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <pcbcommon.h>
 #include <pcb_painter.h>
 #include <dialogs/dialog_pns_settings.h>
@@ -346,7 +347,7 @@ void ROUTER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
 
 int ROUTER_TOOL::getStartLayer( const PNS_ITEM* aItem )
 {
-    int tl = getView()->GetTopLayer();
+    int tl = F_Cu; //getView()->GetTopLayer();
 
     if( m_startItem )
     {
@@ -729,7 +730,7 @@ int ROUTER_TOOL::mainLoop( PNS_ROUTER_MODE aMode )
 void ROUTER_TOOL::performDragging()
 {
     PCB_EDIT_FRAME* frame = getEditFrame<PCB_EDIT_FRAME>();
-    VIEW_CONTROLS* ctls = getViewControls();
+    VIEW_CONTROLS_NG* ctls = getViewControls();
 
     bool dragStarted = m_router->StartDragging( m_startSnapPoint, m_startItem );
 
@@ -783,7 +784,7 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
 {
     const BOARD_CONNECTED_ITEM *item = aEvent.Parameter<const BOARD_CONNECTED_ITEM*>();
     PCB_EDIT_FRAME* frame = getEditFrame<PCB_EDIT_FRAME>();
-    VIEW_CONTROLS* ctls = getViewControls();
+    VIEW_CONTROLS_NG* ctls = getViewControls();
 
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
 
@@ -843,4 +844,3 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
 
     return 0;
 }
-

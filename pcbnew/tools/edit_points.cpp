@@ -24,8 +24,10 @@
 
 #include <boost/foreach.hpp>
 
+#include <list>
 #include <gal/graphics_abstraction_layer.h>
 #include "edit_points.h"
+
 
 bool EDIT_POINT::WithinPoint( const VECTOR2I& aPoint, unsigned int aSize ) const
 {
@@ -38,8 +40,8 @@ bool EDIT_POINT::WithinPoint( const VECTOR2I& aPoint, unsigned int aSize ) const
 }
 
 
-EDIT_POINTS::EDIT_POINTS( EDA_ITEM* aParent ) :
-    EDA_ITEM( NOT_USED ), m_parent( aParent )
+EDIT_POINTS::EDIT_POINTS( EDA_ITEM* aParent, KIGFX::VIEW_BASE *aView ) :
+    EDA_ITEM( NOT_USED ), m_view(aView), m_parent( aParent )
 {
 }
 
@@ -205,23 +207,25 @@ EDIT_LINE* EDIT_POINTS::Next( const EDIT_LINE& aLine )
 }
 
 
-void EDIT_POINTS::ViewDraw( int aLayer, KIGFX::GAL* aGal ) const
+void EDIT_POINTS::ngViewDraw( int aLayer, KIGFX::VIEW_BASE* aView ) const
 {
-    aGal->SetFillColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
-    aGal->SetIsFill( true );
-    aGal->SetIsStroke( false );
-    aGal->PushDepth();
-    aGal->SetLayerDepth( aGal->GetMinDepth() );
+    KIGFX::GAL *gal = aView->GetGAL();
+
+    gal->SetFillColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
+    gal->SetIsFill( true );
+    gal->SetIsStroke( false );
+    //gal->PushDepth();
+    //gal->SetLayerDepth( gal->GetMinDepth() );
 
     float size = m_view->ToWorld( EDIT_POINT::POINT_SIZE );
 
     BOOST_FOREACH( const EDIT_POINT& point, m_points )
-        aGal->DrawRectangle( point.GetPosition() - size / 2, point.GetPosition() + size / 2 );
+        gal->DrawRectangle( point.GetPosition() - size / 2, point.GetPosition() + size / 2 );
 
     BOOST_FOREACH( const EDIT_LINE& line, m_lines )
     {
-        aGal->DrawCircle( line.GetPosition(), size / 2 );
+        gal->DrawCircle( line.GetPosition(), size / 2 );
     }
 
-    aGal->PopDepth();
+    //gal->PopDepth();
 }

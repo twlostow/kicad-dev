@@ -36,6 +36,8 @@
 #include <protos.h>
 #include <module_editor_frame.h>
 
+#include <view/view_ng.h>
+
 
 void FOOTPRINT_EDIT_FRAME::SaveCopyInUndoList( BOARD_ITEM*    aItem,
                                                UNDO_REDO_T    aTypeCommand,
@@ -99,12 +101,12 @@ void FOOTPRINT_EDIT_FRAME::RestoreCopyFromRedoList( wxCommandEvent& aEvent )
     PICKED_ITEMS_LIST* lastcmd = new PICKED_ITEMS_LIST();
     MODULE* module = GetBoard()->m_Modules.PopFront();
     ITEM_PICKER wrapper( module, UR_MODEDIT );
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = GetGalCanvas()->GetView();
     lastcmd->PushItem( wrapper );
     GetScreen()->PushCommandToUndoList( lastcmd );
 
     view->Remove( module );
-    module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+    //module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
 
     // Retrieve last module state from undo list
     lastcmd = GetScreen()->PopCommandFromRedoList();
@@ -116,8 +118,8 @@ void FOOTPRINT_EDIT_FRAME::RestoreCopyFromRedoList( wxCommandEvent& aEvent )
     {
         GetBoard()->Add( module );
         GetGalCanvas()->GetView()->Add( module );
-        module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
-        module->ViewUpdate();
+        //module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+        //module->ViewUpdate();
     }
 
     SetCurItem( NULL );
@@ -146,12 +148,12 @@ void FOOTPRINT_EDIT_FRAME::RestoreCopyFromUndoList( wxCommandEvent& aEvent )
     PICKED_ITEMS_LIST* lastcmd = new PICKED_ITEMS_LIST();
     MODULE* module = GetBoard()->m_Modules.PopFront();
     ITEM_PICKER wrapper( module, UR_MODEDIT );
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = GetGalCanvas()->GetView();
     lastcmd->PushItem( wrapper );
     GetScreen()->PushCommandToRedoList( lastcmd );
 
     view->Remove( module );
-    module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+    //module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
 
     // Retrieve last module state from undo list
     lastcmd = GetScreen()->PopCommandFromUndoList();
@@ -163,8 +165,8 @@ void FOOTPRINT_EDIT_FRAME::RestoreCopyFromUndoList( wxCommandEvent& aEvent )
     {
         GetBoard()->Add( module, ADD_APPEND );
         view->Add( module );
-        module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
-        module->ViewUpdate();
+        //module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+        //module->ViewUpdate();
     }
 
     SetCurItem( NULL );

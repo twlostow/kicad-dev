@@ -44,13 +44,10 @@ public:
     RATSNEST_VIEWITEM( RN_DATA* aData );
 
     /// @copydoc VIEW_ITEM::ViewBBox()
-    const BOX2I ViewBBox() const;
+    const BOX2I ngViewBBox() const;
 
     /// @copydoc VIEW_ITEM::ViewDraw()
-    void ViewDraw( int aLayer, GAL* aGal ) const;
-
-    /// @copydoc VIEW_ITEM::ViewGetLayers()
-    void ViewGetLayers( int aLayers[], int& aCount ) const;
+    void ngViewDraw( int aLayer, VIEW_BASE* aView ) const;
 
 #if defined(DEBUG)
     /// @copydoc EDA_ITEM::Show()

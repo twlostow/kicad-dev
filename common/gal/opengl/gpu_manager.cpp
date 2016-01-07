@@ -205,7 +205,6 @@ void GPU_CACHED_MANAGER::EndDrawing()
 }
 
 
-#define PROFILE
 void GPU_CACHED_MANAGER::uploadToGpu()
 {
 #ifdef PROFILE

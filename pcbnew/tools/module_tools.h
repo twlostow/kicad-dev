@@ -30,8 +30,8 @@
 
 namespace KIGFX
 {
-    class VIEW;
-    class VIEW_CONTROLS;
+    class VIEW_BASE;
+    class VIEW_CONTROLS_NG;
 }
 class BOARD;
 class PCB_EDIT_FRAME;
@@ -104,8 +104,8 @@ public:
     void SetTransitions();
 
 private:
-    KIGFX::VIEW* m_view;
-    KIGFX::VIEW_CONTROLS* m_controls;
+	KIGFX::VIEW_BASE* m_view;
+    KIGFX::VIEW_CONTROLS_NG* m_controls;
     BOARD* m_board;
     PCB_EDIT_FRAME* m_frame;
 

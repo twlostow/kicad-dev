@@ -141,8 +141,8 @@ void PCB_EDIT_FRAME::OnResetModuleTextSizes( wxCommandEvent& event )
     {
         for( MODULE* module = GetBoard()->m_Modules; module; module = module->Next() )
         {
-            module->Value().ViewUpdate();
-            module->Reference().ViewUpdate();
+            //module->Value().ViewUpdate();
+            //module->Reference().ViewUpdate();
         }
     }
 

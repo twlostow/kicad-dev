@@ -27,13 +27,13 @@
 
 #include <wxPcbStruct.h> // LAME!
 
-KIGFX::VIEW* TOOL_BASE::getView() const
+KIGFX::VIEW_BASE* TOOL_BASE::getView() const
 {
     return m_toolMgr->GetView();
 }
 
 
-KIGFX::VIEW_CONTROLS* TOOL_BASE::getViewControls() const
+KIGFX::VIEW_CONTROLS_NG* TOOL_BASE::getViewControls() const
 {
     return m_toolMgr->GetViewControls();
 }

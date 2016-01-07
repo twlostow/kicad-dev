@@ -130,6 +130,8 @@ public:
     void SetTransitions();
 
 private:
+    KIGFX::VIEW_BASE *m_view;
+
     ///> Selection tool used for obtaining selected items
     SELECTION_TOOL* m_selectionTool;
 
@@ -154,16 +156,6 @@ private:
 
     ///> Removes and frees a single BOARD_ITEM.
     void remove( BOARD_ITEM* aItem );
-
-    ///> The required update flag for modified items
-    KIGFX::VIEW_ITEM::VIEW_UPDATE_FLAGS m_updateFlag;
-
-    ///> Enables higher order update flag
-    void enableUpdateFlag( KIGFX::VIEW_ITEM::VIEW_UPDATE_FLAGS aFlag )
-    {
-        if( m_updateFlag < aFlag )
-            m_updateFlag = aFlag;
-    }
 
     ///> Updates ratsnest for selected items.
     ///> @param aRedraw says if selected items should be drawn using the simple mode (e.g. one line

@@ -50,7 +50,6 @@ void NONCACHED_CONTAINER::SetItem( VERTEX_ITEM* aItem )
     // does not care about VERTEX_ITEMs ownership
 }
 
-
 VERTEX* NONCACHED_CONTAINER::Allocate( unsigned int aSize )
 {
     if( m_freeSpace < aSize )

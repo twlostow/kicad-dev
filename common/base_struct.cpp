@@ -243,21 +243,12 @@ EDA_ITEM& EDA_ITEM::operator=( const EDA_ITEM& aItem )
 }
 #endif
 
-const BOX2I EDA_ITEM::ViewBBox() const
+const BOX2I EDA_ITEM::ngViewBBox() const
 {
     // Basic fallback
     return BOX2I( VECTOR2I( GetBoundingBox().GetOrigin() ),
                   VECTOR2I( GetBoundingBox().GetSize() ) );
 }
-
-
-void EDA_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    // Basic fallback
-    aCount      = 1;
-    aLayers[0]  = 0;
-}
-
 
 #if defined(DEBUG)
 

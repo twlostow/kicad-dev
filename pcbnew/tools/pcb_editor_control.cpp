@@ -45,8 +45,11 @@
 #include <zones_functions_for_undo_redo.h>
 
 #include <view/view_group.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <origin_viewitem.h>
+
+#include <pcb_view.h>
 
 #include <boost/bind.hpp>
 
@@ -101,11 +104,13 @@ void PCB_EDITOR_CONTROL::Reset( RESET_REASON aReason )
 {
     m_frame = getEditFrame<PCB_EDIT_FRAME>();
 
+    m_view = static_cast <KIGFX::PCB_VIEW *> ( getView() );
+
     if( aReason == MODEL_RELOAD || aReason == GAL_SWITCH )
     {
         m_placeOrigin->SetPosition( getModel<BOARD>()->GetAuxOrigin() );
-        getView()->Remove( m_placeOrigin );
-        getView()->Add( m_placeOrigin );
+        m_view->Remove( m_placeOrigin );
+        m_view->Add( m_placeOrigin );
     }
 }
 
@@ -206,12 +211,12 @@ int PCB_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
 int PCB_EDITOR_CONTROL::PlaceModule( const TOOL_EVENT& aEvent )
 {
     MODULE* module = NULL;
-    KIGFX::VIEW* view = getView();
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    KIGFX::VIEW_BASE* view = getView();
+    KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
     BOARD* board = getModel<BOARD>();
 
     // Add a VIEW_GROUP that serves as a preview for the new item
-    KIGFX::VIEW_GROUP preview( view );
+    KIGFX::VIEW_GROUP preview( m_view );
     view->Add( &preview );
 
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
@@ -234,7 +239,6 @@ int PCB_EDITOR_CONTROL::PlaceModule( const TOOL_EVENT& aEvent )
                 module = NULL;
 
                 preview.Clear();
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
                 controls->ShowCursor( true );
             }
             else
@@ -249,12 +253,12 @@ int PCB_EDITOR_CONTROL::PlaceModule( const TOOL_EVENT& aEvent )
             if( evt->IsAction( &COMMON_ACTIONS::rotate ) )
             {
                 module->Rotate( module->GetPosition(), m_frame->GetRotationAngle() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update( &preview );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::flip ) )
             {
                 module->Flip( module->GetPosition() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update( &preview );
             }
         }
 
@@ -273,23 +277,17 @@ int PCB_EDITOR_CONTROL::PlaceModule( const TOOL_EVENT& aEvent )
 
                 // Add all the drawable parts to preview
                 preview.Add( module );
-                module->RunOnChildren( boost::bind( &KIGFX::VIEW_GROUP::Add, &preview, _1 ) );
-
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             }
             else
             {
                 // Place the selected module
-                module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
-                view->Add( module );
-                module->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+                m_view->Add( module );
 
                 m_frame->OnModify();
                 m_frame->SaveCopyInUndoList( module, UR_NEW );
 
                 // Remove from preview
-                preview.Remove( module );
-                module->RunOnChildren( boost::bind( &KIGFX::VIEW_GROUP::Remove, &preview, _1 ) );
+                preview.Clear();
                 module = NULL;  // to indicate that there is no module that we currently modify
             }
 
@@ -303,7 +301,7 @@ int PCB_EDITOR_CONTROL::PlaceModule( const TOOL_EVENT& aEvent )
         else if( module && evt->IsMotion() )
         {
             module->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+			m_view->Update ( &preview );
         }
     }
 
@@ -346,8 +344,8 @@ int PCB_EDITOR_CONTROL::ToggleLockModule( const TOOL_EVENT& aEvent )
 
 int PCB_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW* view = getView();
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    KIGFX::VIEW_BASE* view = getView();
+    KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
     BOARD* board = getModel<BOARD>();
     PCB_TARGET* target = new PCB_TARGET( board );
 
@@ -362,7 +360,6 @@ int PCB_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
     KIGFX::VIEW_GROUP preview( view );
     preview.Add( target );
     view->Add( &preview );
-    preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
 
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
     controls->SetSnapping( true );
@@ -381,7 +378,7 @@ int PCB_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
         else if( evt->IsAction( &COMMON_ACTIONS::incWidth ) )
         {
             target->SetWidth( target->GetWidth() + WIDTH_STEP );
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+			m_view->Update ( &preview );
         }
 
         else if( evt->IsAction( &COMMON_ACTIONS::decWidth ) )
@@ -391,7 +388,7 @@ int PCB_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
             if( width > WIDTH_STEP )
             {
                 target->SetWidth( width - WIDTH_STEP );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+				m_view->Update ( &preview );
             }
         }
 
@@ -402,7 +399,6 @@ int PCB_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 
             view->Add( target );
             board->Add( target );
-            target->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
 
             m_frame->OnModify();
             m_frame->SaveCopyInUndoList( target, UR_NEW );
@@ -417,7 +413,7 @@ int PCB_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
         else if( evt->IsMotion() )
         {
             target->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-            preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+			m_view->Update ( &preview );
         }
     }
 
@@ -447,7 +443,7 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
         m_frame->Fill_Zone( zone );
         zone->SetIsFilled( true );
         ratsnest->Update( zone );
-        zone->ViewUpdate();
+        m_view->Update ( zone );
     }
 
     ratsnest->Recalculate();
@@ -467,7 +463,7 @@ int PCB_EDITOR_CONTROL::ZoneFillAll( const TOOL_EVENT& aEvent )
         m_frame->Fill_Zone( zone );
         zone->SetIsFilled( true );
         ratsnest->Update( zone );
-        zone->ViewUpdate();
+		m_view->Update ( zone );
     }
 
     ratsnest->Recalculate();
@@ -490,7 +486,7 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
         zone->SetIsFilled( false );
         zone->ClearFilledPolysList();
         ratsnest->Update( zone );
-        zone->ViewUpdate();
+		m_view->Update ( zone );
     }
 
     ratsnest->Recalculate();
@@ -510,7 +506,7 @@ int PCB_EDITOR_CONTROL::ZoneUnfillAll( const TOOL_EVENT& aEvent )
         zone->SetIsFilled( false );
         zone->ClearFilledPolysList();
         ratsnest->Update( zone );
-        zone->ViewUpdate();
+		m_view->Update ( zone );
     }
 
     ratsnest->Recalculate();
@@ -524,7 +520,7 @@ int PCB_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
     SELECTION selection = m_toolMgr->GetTool<SELECTION_TOOL>()->GetSelection();
     BOARD* board = getModel<BOARD>();
     RN_DATA* ratsnest = board->GetRatsnest();
-    KIGFX::VIEW* view = getView();
+    KIGFX::VIEW_BASE* view = getView();
 
     if( selection.Size() < 2 )
         return 0;
@@ -606,7 +602,7 @@ int PCB_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
         }
         else if( picker.GetStatus() == UR_CHANGED )
         {
-            item->ViewUpdate( KIGFX::VIEW_ITEM::ALL );
+            m_view->Update( item );
             m_toolMgr->RunAction( COMMON_ACTIONS::selectItem, true, item );
         }
     }
@@ -649,7 +645,7 @@ int PCB_EDITOR_CONTROL::CrossProbeSchToPcb( const TOOL_EVENT& aEvent )
 }
 
 
-static bool setDrillOrigin( KIGFX::VIEW* aView, PCB_BASE_FRAME* aFrame,
+static bool setDrillOrigin( KIGFX::VIEW_BASE* aView, PCB_BASE_FRAME* aFrame,
                             KIGFX::ORIGIN_VIEWITEM* aItem, const VECTOR2D& aPosition )
 {
     aFrame->SetAuxOrigin( wxPoint( aPosition.x, aPosition.y ) );
@@ -705,7 +701,7 @@ static bool highlightNet( TOOL_MANAGER* aToolMgr, const VECTOR2D& aPosition )
     if( enableHighlight != render->IsHighlightEnabled() || net != render->GetHighlightNetCode() )
     {
         render->SetHighlight( enableHighlight, net );
-        aToolMgr->GetView()->UpdateAllLayersColor();
+        //aToolMgr->GetView()->UpdateAllLayersColor();
     }
 
     return true;

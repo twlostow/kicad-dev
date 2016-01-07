@@ -33,6 +33,9 @@
 #include <sys/time.h>
 #include <stdint.h>
 
+#include <cstdio>
+#include <string>
+
 /**
  * Function get_tics
  * Returns the number of microseconds that have elapsed since the system was started.

@@ -27,6 +27,8 @@
 #include <pcb_draw_panel_gal.h>
 #include <class_board.h>
 
+#include <view/view_ng.h>
+
 void PCB_BASE_EDIT_FRAME::SetRotationAngle( int aRotationAngle )
 {
     wxCHECK2_MSG( aRotationAngle > 0 && aRotationAngle <= 900, aRotationAngle = 900,
@@ -86,4 +88,3 @@ void PCB_BASE_EDIT_FRAME::SetBoard( BOARD* aBoard )
             m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
     }
 }
-

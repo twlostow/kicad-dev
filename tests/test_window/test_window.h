@@ -13,9 +13,9 @@
 #ifndef __TEST_WINDOW_H
 #define __TEST_WINDOW_H
 
-//#include <view/view.h>
+#include <view/view_ng.h>
 
-class EDA_DRAW_PANEL_GAL_NG;
+class PCB_DRAW_PANEL_GAL;
 class BOARD;
 
 namespace KIGFX {
@@ -52,7 +52,7 @@ private :
 
     void buildView();
 
-    EDA_DRAW_PANEL_GAL_NG *m_galPanel;
+    PCB_DRAW_PANEL_GAL *m_galPanel;
     boost::shared_ptr<KIGFX::VIEW_OVERLAY> m_ovl;
 };
 

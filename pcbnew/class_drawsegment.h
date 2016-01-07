@@ -245,8 +245,8 @@ public:
 
     virtual EDA_ITEM* Clone() const;
 
-    /// @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ViewBBox() const;
+    /// @copydoc VIEW_ITEM::ngViewBBox()
+    virtual const BOX2I ngViewBBox() const;
 
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); } // override

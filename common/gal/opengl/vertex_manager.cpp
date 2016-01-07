@@ -57,6 +57,7 @@ void VERTEX_MANAGER::Vertex( GLfloat aX, GLfloat aY, GLfloat aZ ) const
     // Obtain the pointer to the vertex in the currently used container
     VERTEX* newVertex = m_container->Allocate( 1 );
 
+
     if( newVertex == NULL )
     {
         if( show_err )
@@ -67,6 +68,9 @@ void VERTEX_MANAGER::Vertex( GLfloat aX, GLfloat aY, GLfloat aZ ) const
 
         return;
     }
+
+    //printf("vertex %p cont %p\n", this, m_container.get());
+
 
     putVertex( *newVertex, aX, aY, aZ );
 }
@@ -107,6 +111,7 @@ void VERTEX_MANAGER::SetItem( VERTEX_ITEM& aItem ) const
 
 void VERTEX_MANAGER::FinishItem() const
 {
+//    printf("FinishItem called\n");
     m_container->FinishItem();
 }
 
@@ -184,6 +189,8 @@ void VERTEX_MANAGER::BeginDrawing() const
 void VERTEX_MANAGER::DrawItem( const VERTEX_ITEM& aItem ) const
 {
     int size = aItem.GetSize();
+
+    //printf("draw item %p size %d\n", &aItem, size);
 
     if( size > 0 )
     {

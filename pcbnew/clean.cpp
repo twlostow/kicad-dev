@@ -245,7 +245,7 @@ bool TRACKS_CLEANER::remove_duplicates_of_via( const VIA *aVia )
         {
             // delete via
             m_Brd->GetRatsnest()->Remove( alt_via );
-            alt_via->ViewRelease();
+            //alt_via->ViewRelease();
             alt_via->DeleteStructure();
             modified = true;
         }
@@ -286,7 +286,7 @@ bool TRACKS_CLEANER::clean_vias()
                 {
                     // redundant: delete the via
                     m_Brd->GetRatsnest()->Remove( via );
-                    via->ViewRelease();
+                    //via->ViewRelease();
                     via->DeleteStructure();
                     modified = true;
                     break;
@@ -401,7 +401,7 @@ bool TRACKS_CLEANER::deleteUnconnectedTracks()
             {
                 // remove segment from board
                 m_Brd->GetRatsnest()->Remove( track );
-                track->ViewRelease();
+                //track->ViewRelease();
                 track->DeleteStructure();
 
                 /* keep iterating, because a track connected to the deleted track
@@ -429,7 +429,7 @@ bool TRACKS_CLEANER::delete_null_segments()
         if( segment->IsNull() )     // Length segment = 0; delete it
         {
             m_Brd->GetRatsnest()->Remove( segment );
-            segment->ViewRelease();
+            //segment->ViewRelease();
             segment->DeleteStructure();
             modified = true;
         }
@@ -461,7 +461,7 @@ bool TRACKS_CLEANER::remove_duplicates_of_track( const TRACK *aTrack )
                  (aTrack->GetEnd() == other->GetStart())))
             {
                 m_Brd->GetRatsnest()->Remove( other );
-                other->ViewRelease();
+                //other->ViewRelease();
                 other->DeleteStructure();
                 modified = true;
             }
@@ -507,7 +507,7 @@ bool TRACKS_CLEANER::merge_collinear_of_track( TRACK *aSegment )
                         if( segDelete )
                         {
                             m_Brd->GetRatsnest()->Remove( segDelete );
-                            segDelete->ViewRelease();
+                            //segDelete->ViewRelease();
                             segDelete->DeleteStructure();
                             merged_this = true;
                         }
@@ -636,7 +636,7 @@ TRACK* TRACKS_CLEANER::mergeCollinearSegmentIfPossible( TRACK* aTrackRef, TRACK*
             aTrackRef->SetStart( aCandidate->GetEnd());
             aTrackRef->start = aCandidate->end;
             aTrackRef->SetState( START_ON_PAD, aCandidate->GetState( END_ON_PAD) );
-            aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             return aCandidate;
         }
         else
@@ -644,7 +644,7 @@ TRACK* TRACKS_CLEANER::mergeCollinearSegmentIfPossible( TRACK* aTrackRef, TRACK*
             aTrackRef->SetStart( aCandidate->GetStart() );
             aTrackRef->start = aCandidate->start;
             aTrackRef->SetState( START_ON_PAD, aCandidate->GetState( START_ON_PAD) );
-            aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             return aCandidate;
         }
     }
@@ -661,7 +661,7 @@ TRACK* TRACKS_CLEANER::mergeCollinearSegmentIfPossible( TRACK* aTrackRef, TRACK*
             aTrackRef->SetEnd( aCandidate->GetEnd() );
             aTrackRef->end = aCandidate->end;
             aTrackRef->SetState( END_ON_PAD, aCandidate->GetState( END_ON_PAD) );
-            aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             return aCandidate;
         }
         else
@@ -669,7 +669,7 @@ TRACK* TRACKS_CLEANER::mergeCollinearSegmentIfPossible( TRACK* aTrackRef, TRACK*
             aTrackRef->SetEnd( aCandidate->GetStart() );
             aTrackRef->end = aCandidate->start;
             aTrackRef->SetState( END_ON_PAD, aCandidate->GetState( START_ON_PAD) );
-            aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //aTrackRef->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             return aCandidate;
         }
     }

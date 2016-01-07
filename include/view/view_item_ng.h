@@ -39,7 +39,7 @@
 namespace KIGFX
 {
 // Forward declarations
-class GAL;
+class VIEW_BASE;
 class PAINTER;
 
 /**
@@ -89,9 +89,11 @@ public:
      * @param aLayer: current drawing layer
      * @param aGal: pointer to the GAL device we are drawing on
      */
-    virtual void ngViewDraw( int aLayer, GAL* aGal ) const
+    virtual void ngViewDraw( int aLayer, VIEW_BASE* aView ) const
     {}
 
+    virtual void ngViewGetLayers( int aLayers[], int& aCount ) const;
+    
 protected:
 
 

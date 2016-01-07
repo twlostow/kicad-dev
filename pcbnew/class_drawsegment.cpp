@@ -617,7 +617,7 @@ EDA_ITEM* DRAWSEGMENT::Clone() const
 }
 
 
-const BOX2I DRAWSEGMENT::ViewBBox() const
+const BOX2I DRAWSEGMENT::ngViewBBox() const
 {
     // For arcs - do not include the center point in the bounding box,
     // it is redundant for displaying an arc
@@ -629,7 +629,7 @@ const BOX2I DRAWSEGMENT::ViewBBox() const
         return BOX2I( bbox.GetOrigin(), bbox.GetSize() );
     }
 
-    return EDA_ITEM::ViewBBox();
+    return EDA_ITEM::ngViewBBox();
 }
 
 

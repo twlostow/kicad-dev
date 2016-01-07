@@ -63,6 +63,8 @@
 #include <footprint_wizard_frame.h>
 #include <pcbnew_config.h>
 
+#include <view/view_ng.h>
+
 #include <boost/bind.hpp>
 
 
@@ -458,8 +460,8 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
                 if( pcbframe->IsGalCanvasActive() )
                 {
-                    KIGFX::VIEW* view = pcbframe->GetGalCanvas()->GetView();
-                    source_module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+                    KIGFX::VIEW_BASE* view = pcbframe->GetGalCanvas()->GetView();
+                    //source_module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
                     view->Remove( source_module );
                 }
 
@@ -492,8 +494,8 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
                 ratsnest->Update( newmodule );
                 ratsnest->Recalculate();
 
-                KIGFX::VIEW* view = pcbframe->GetGalCanvas()->GetView();
-                newmodule->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+                KIGFX::VIEW_BASE* view = pcbframe->GetGalCanvas()->GetView();
+                //newmodule->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
                 view->Add( newmodule );
                 pcbframe->GetGalCanvas()->ForceRefresh();
             }
@@ -599,7 +601,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
             int ret = dialog.ShowModal();
             GetScreen()->GetCurItem()->ClearFlags();
-            GetBoard()->m_Modules.GetFirst()->ViewUpdate();
+            //GetBoard()->m_Modules.GetFirst()->ViewUpdate();
 
             if( ret > 0 )
                 m_canvas->Refresh();
@@ -1001,4 +1003,3 @@ void FOOTPRINT_EDIT_FRAME::SetActiveLayer( LAYER_ID aLayer )
     if( IsGalCanvasActive() )
         GetGalCanvas()->Refresh();
 }
-

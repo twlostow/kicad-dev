@@ -35,6 +35,8 @@
 #include <gr_basic.h>
 #include <layers_id_colors_and_visibility.h>
 
+#include <set>
+
 /// Abbrevation for fomatting internal units to a string.
 #define FMT_IU     BOARD_ITEM::FormatInternalUnits
 #define FMT_ANGLE  BOARD_ITEM::FormatAngle
@@ -319,9 +321,6 @@ public:
     static std::string FormatInternalUnits( const wxPoint& aPoint );
 
     static std::string FormatInternalUnits( const wxSize& aSize );
-
-    /// @copydoc VIEW_ITEM::ViewGetLayers()
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
 
     /*!
      * Function IncrementItemReference

@@ -41,7 +41,7 @@ class COLORS_DESIGN_SETTINGS;
 namespace KIGFX
 {
 class GAL;
-class VIEW_ITEM;
+class VIEW_ITEM_NG;
 
 /**
  * Class RENDER_SETTINGS
@@ -170,7 +170,7 @@ public:
      * @param aLayer is the layer.
      * @return The color.
      */
-    virtual const COLOR4D& GetColor( const VIEW_ITEM* aItem, int aLayer ) const = 0;
+    virtual const COLOR4D& GetColor( const VIEW_ITEM_NG* aItem, int aLayer ) const = 0;
 
     float GetWorksheetLineWidth() const
     {
@@ -299,7 +299,7 @@ public:
      * may know what to draw (eg. for pads there are separate layers for holes, because they
      * have other dimensions then the pad itself.
      */
-    virtual bool Draw( const VIEW_ITEM* aItem, int aLayer ) = 0;
+    virtual bool Draw( const VIEW_ITEM_NG* aItem, int aLayer ) = 0;
 
 protected:
     /// Instance of graphic abstraction layer that gives an interface to call

@@ -29,6 +29,8 @@
 #include <gal/opengl/opengl_gal.h>
 #include <gal/definitions.h>
 
+#include <stdexcept>
+
 #include <wx/log.h>
 #include <macros.h>
 #ifdef __WXDEBUG__
@@ -52,7 +54,7 @@ OPENGL_GAL::OPENGL_GAL( wxWindow* aParent, wxEvtHandler* aMouseListener,
     paintListener( aPaintListener ),
     cachedManager( true ),
     nonCachedManager( false ),
-    overlayManager( false )
+    overlayManager( true )
 {
     if( glContext == NULL )
         glContext = new wxGLContext( this );
@@ -193,7 +195,7 @@ void OPENGL_GAL::BeginDrawing()
 
     // Remove all previously stored items
     nonCachedManager.Clear();
-    overlayManager.Clear();
+    //overlayManager.Clear();
 
     cachedManager.BeginDrawing();
     nonCachedManager.BeginDrawing();
@@ -635,11 +637,13 @@ int OPENGL_GAL::BeginGroup()
 {
     isGrouping = true;
 
-    
+
 
     boost::shared_ptr<VERTEX_ITEM> newItem( new VERTEX_ITEM( *currentManager ) );
     int groupNumber = getNewGroupNumber();
-    
+
+    //printf("createVI %p [ovl %d]\n", newItem.get(), currentManager == &overlayManager ? 1 : 0);
+
     GROUP_ENTRY gent;
 
     gent.vItem = newItem;
@@ -669,7 +673,12 @@ int OPENGL_GAL::CurrentGroup()
 
 void OPENGL_GAL::DrawGroup( int aGroupNumber )
 {
+
+
     GROUP_ENTRY& gent = groups[aGroupNumber];
+
+    //printf("drawVI %p [ovl %d]\n", gent.vItem.get(), gent.owner == &overlayManager ? 1 : 0);
+
     gent.owner->DrawItem( *gent.vItem );
 }
 
@@ -1198,7 +1207,7 @@ void OPENGL_GAL::TestLine ( double x1, double y1, double x2, double y2 )
             Rx=R*0.7071; Ry=R*0.7071;
         }
     }
-	
+
     #if 0
     //draw the line by triangle strip
 glBegin(GL_TRIANGLE_STRIP);

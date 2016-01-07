@@ -869,60 +869,7 @@ void MODULE::RunOnChildren( boost::function<void (BOARD_ITEM*)> aFunction )
     }
 }
 
-
-void MODULE::ViewUpdate( int aUpdateFlags )
-{
-    if( !m_view )
-        return;
-
-    // Update the module itself
-    VIEW_ITEM::ViewUpdate( aUpdateFlags );
-
-    // Update pads
-    for( D_PAD* pad = m_Pads.GetFirst(); pad; pad = pad->Next() )
-        pad->ViewUpdate( aUpdateFlags );
-
-    // Update module's drawing (mostly silkscreen)
-    for( BOARD_ITEM* drawing = m_Drawings.GetFirst(); drawing; drawing = drawing->Next() )
-        drawing->ViewUpdate( aUpdateFlags );
-
-    // Update module's texts
-    m_Reference->ViewUpdate( aUpdateFlags );
-    m_Value->ViewUpdate( aUpdateFlags );
-}
-
-
-void MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aCount = 2;
-    aLayers[0] = ITEM_GAL_LAYER( ANCHOR_VISIBLE );
-
-    switch( m_Layer )
-    {
-    case F_Cu:
-        aLayers[1] = ITEM_GAL_LAYER( MOD_FR_VISIBLE );
-        break;
-
-    case B_Cu:
-        aLayers[1] = ITEM_GAL_LAYER( MOD_BK_VISIBLE );
-        break;
-
-    default:
-        assert( false );    // do you really have modules placed on inner layers?
-        break;
-    }
-}
-
-
-unsigned int MODULE::ViewGetLOD( int aLayer ) const
-{
-    // Currently there is only one layer, so there is nothing to check
-//    if( aLayer == ITEM_GAL_LAYER( ANCHOR_VISIBLE ) )
-        return 30;
-}
-
-
-const BOX2I MODULE::ViewBBox() const
+const BOX2I MODULE::ngViewBBox() const
 {
     EDA_RECT fpRect = GetFootprintRect();
 

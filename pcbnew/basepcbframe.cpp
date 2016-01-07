@@ -50,7 +50,7 @@
 #include <collectors.h>
 #include <class_drawpanel.h>
 #include <pcb_draw_panel_gal.h>
-#include <view/view.h>
+#include <view/view_ng.h>
 #include <math/vector2d.h>
 #include <trigo.h>
 #include <pcb_painter.h>
@@ -446,8 +446,8 @@ void PCB_BASE_FRAME::OnTogglePadDrawMode( wxCommandEvent& aEvent )
         BOARD* board = GetBoard();
         for( MODULE* module = board->m_Modules; module; module = module->Next() )
         {
-            for( D_PAD* pad = module->Pads(); pad; pad = pad->Next() )
-                pad->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //for( D_PAD* pad = module->Pads(); pad; pad = pad->Next() )
+            //pad->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
     }
 
@@ -967,7 +967,7 @@ void PCB_BASE_FRAME::UseGalCanvas( bool aEnable )
         if( m_toolManager )
             m_toolManager->ResetTools( TOOL_BASE::GAL_SWITCH );
 
-        galCanvas->GetView()->RecacheAllItems( true );
+        //  galCanvas->GetView()->RecacheAllItems( true );
         galCanvas->SetEventDispatcher( m_toolDispatcher );
         galCanvas->StartDrawing();
     }

@@ -106,6 +106,8 @@ VERTEX* CACHED_CONTAINER::Allocate( unsigned int aSize )
     if( m_failed )
         return NULL;
 
+        //printf("cc allocate %d\n", aSize);
+
     if( m_itemSize + aSize > m_chunkSize )
     {
         // There is not enough space in the currently reserved chunk, so we have to resize it

@@ -23,8 +23,8 @@
 
 #include <boost/foreach.hpp>
 
-#include <view/view.h>
-#include <view/view_item.h>
+#include <view/view_ng.h>
+#include <view/view_item_ng.h>
 #include <view/view_group.h>
 #include <gal/graphics_abstraction_layer.h>
 
@@ -465,7 +465,7 @@ PNS_ROUTER::PNS_ROUTER()
 }
 
 
-void PNS_ROUTER::SetView( KIGFX::VIEW* aView )
+void PNS_ROUTER::SetView( KIGFX::VIEW_BASE* aView )
 {
     if( m_previewItems )
     {
@@ -475,9 +475,7 @@ void PNS_ROUTER::SetView( KIGFX::VIEW* aView )
 
     m_view = aView;
     m_previewItems = new KIGFX::VIEW_GROUP( m_view );
-    m_previewItems->SetLayer( ITEM_GAL_LAYER( GP_OVERLAY ) );
     m_view->Add( m_previewItems );
-    m_previewItems->ViewSetVisible( true );
 }
 
 
@@ -492,8 +490,8 @@ PNS_ROUTER::~PNS_ROUTER()
     ClearWorld();
     theRouter = NULL;
 
-    if( m_previewItems )
-        delete m_previewItems;
+    //if( m_previewItems )
+    //    delete m_previewItems;
 }
 
 
@@ -660,7 +658,7 @@ void PNS_ROUTER::eraseView()
 {
     BOOST_FOREACH( BOARD_ITEM* item, m_hiddenItems )
     {
-        item->ViewSetVisible( true );
+        m_view->Hide (item, false);
     }
 
     m_hiddenItems.clear();
@@ -668,7 +666,7 @@ void PNS_ROUTER::eraseView()
     if( m_previewItems )
     {
         m_previewItems->FreeItems();
-        m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+		m_view->Update ( m_previewItems );
     }
 }
 
@@ -684,9 +682,7 @@ void PNS_ROUTER::DisplayItem( const PNS_ITEM* aItem, int aColor, int aClearance 
         pitem->SetClearance( aClearance );
 
     m_previewItems->Add( pitem );
-
-    pitem->ViewSetVisible( true );
-    m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
+	m_view->Update ( m_previewItems );
 }
 
 
@@ -703,8 +699,7 @@ void PNS_ROUTER::DisplayDebugLine( const SHAPE_LINE_CHAIN& aLine, int aType, int
 
     pitem->Line( aLine, aWidth, aType );
     m_previewItems->Add( pitem );
-    pitem->ViewSetVisible( true );
-    m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
+	m_view->Update ( m_previewItems );
 }
 
 
@@ -714,8 +709,7 @@ void PNS_ROUTER::DisplayDebugPoint( const VECTOR2I aPos, int aType )
 
     pitem->Point( aPos, aType );
     m_previewItems->Add( pitem );
-    pitem->ViewSetVisible( true );
-    m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
+	m_view->Update ( m_previewItems );
 }
 
 
@@ -806,11 +800,10 @@ void PNS_ROUTER::updateView( PNS_NODE* aNode, PNS_ITEMSET& aCurrent )
 
         if( parent )
         {
-            if( parent->ViewIsVisible() )
+            if( m_view->IsVisible( parent ) )
                 m_hiddenItems.insert( parent );
 
-            parent->ViewSetVisible( false );
-            parent->ViewUpdate( KIGFX::VIEW_ITEM::APPEARANCE );
+            m_view->Hide ( parent );
         }
     }
 }
@@ -918,7 +911,6 @@ void PNS_ROUTER::CommitRouting( PNS_NODE* aNode )
             m_view->Add( newBI );
             m_board->Add( newBI );
             m_undoBuffer.PushItem( ITEM_PICKER( newBI, UR_NEW ) );
-            newBI->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
     }
 

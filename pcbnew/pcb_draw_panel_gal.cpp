@@ -23,8 +23,8 @@
  */
 
 #include "pcb_draw_panel_gal.h"
-#include <view/view.h>
-#include <view/wx_view_controls.h>
+#include <view/view_ng.h>
+#include <view/wx_view_controls_ng.h>
 #include <pcb_painter.h>
 #include <worksheet_viewitem.h>
 #include <ratsnest_viewitem.h>
@@ -36,6 +36,8 @@
 #include <class_track.h>
 #include <wxBasePcbFrame.h>
 #include <profile.h>
+
+#include <pcb_view.h>
 
 #include <boost/bind.hpp>
 
@@ -128,28 +130,23 @@ PCB_DRAW_PANEL_GAL::~PCB_DRAW_PANEL_GAL()
 
 void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
 {
-  PROF_COUNTER pcnt ("build-board-view",true);
-
   m_view->Clear();
+  static_cast<KIGFX::PCB_VIEW*> (m_view) -> SetBoard ( const_cast<BOARD*>(aBoard ));
 
-    // Load zones
-    for( int i = 0; i < aBoard->GetAreaCount(); ++i )
-        m_view->Add( (KIGFX::VIEW_ITEM*) ( aBoard->GetArea( i ) ) );
+m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetRatsnest() );
 
-    // Load drawings
-    for( BOARD_ITEM* drawing = aBoard->m_Drawings; drawing; drawing = drawing->Next() )
-        m_view->Add( drawing );
+    UseColorScheme( aBoard->GetColorsSettings() );
 
-    // Load tracks
-    for( TRACK* track = aBoard->m_Track; track; track = track->Next() )
-        m_view->Add( track );
-
-    // Load modules and its additional elements
-    for( MODULE* module = aBoard->m_Modules; module; module = module->Next() )
+  if( m_ratsnest )
     {
-        module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, m_view, _1 ) );
-        m_view->Add( module );
+        m_view->Remove( m_ratsnest );
+        delete m_ratsnest;
     }
+
+    m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetRatsnest() );
+    m_view->Add( m_ratsnest );
+
+#if 0
 
     // Segzones (equivalent of ZONE_CONTAINER for legacy boards)
     for( SEGZONE* zone = aBoard->m_Zone; zone; zone = zone->Next() )
@@ -162,11 +159,10 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
         delete m_ratsnest;
     }
 
-    m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetRatsnest() );
+
     m_view->Add( m_ratsnest );
 
     // Display settings
-    UseColorScheme( aBoard->GetColorsSettings() );
 
     PCB_BASE_FRAME* frame = dynamic_cast<PCB_BASE_FRAME*>( GetParent() );
 
@@ -181,6 +177,8 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
     pcnt.show();
 
     m_view->RecacheAllItems( true );
+    #endif
+
 }
 
 
@@ -207,6 +205,7 @@ void PCB_DRAW_PANEL_GAL::UseColorScheme( const COLORS_DESIGN_SETTINGS* aSettings
 
 void PCB_DRAW_PANEL_GAL::SetHighContrastLayer( LAYER_ID aLayer )
 {
+    #if 0
     // Set display settings for high contrast mode
     KIGFX::RENDER_SETTINGS* rSettings = m_view->GetPainter()->GetSettings();
 
@@ -246,11 +245,14 @@ void PCB_DRAW_PANEL_GAL::SetHighContrastLayer( LAYER_ID aLayer )
     }
 
     m_view->UpdateAllLayersColor();
+    #endif
+
 }
 
 
 void PCB_DRAW_PANEL_GAL::SetTopLayer( LAYER_ID aLayer )
 {
+    #if 0
     m_view->ClearTopLayers();
     setDefaultLayerOrder();
     m_view->SetTopLayer( aLayer );
@@ -304,11 +306,13 @@ void PCB_DRAW_PANEL_GAL::SetTopLayer( LAYER_ID aLayer )
     }
 
     m_view->UpdateAllLayersOrder();
+    #endif
 }
 
 
 void PCB_DRAW_PANEL_GAL::SyncLayersVisibility( const BOARD* aBoard )
 {
+    #if 0
     // Load layer & elements visibility settings
     for( LAYER_NUM i = 0; i < LAYER_ID_COUNT; ++i )
     {
@@ -329,6 +333,8 @@ void PCB_DRAW_PANEL_GAL::SyncLayersVisibility( const BOARD* aBoard )
     m_view->SetLayerVisible( ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE ), true );
     m_view->SetLayerVisible( ITEM_GAL_LAYER( WORKSHEET ), true );
     m_view->SetLayerVisible( ITEM_GAL_LAYER( GP_OVERLAY ), true );
+
+    #endif
 }
 
 
@@ -369,6 +375,7 @@ void PCB_DRAW_PANEL_GAL::GetMsgPanelInfo( std::vector<MSG_PANEL_ITEM>& aList )
 
 void PCB_DRAW_PANEL_GAL::setDefaultLayerOrder()
 {
+    #if 0
     for( LAYER_NUM i = 0; (unsigned) i < sizeof( GAL_LAYER_ORDER ) / sizeof( LAYER_NUM ); ++i )
     {
         LAYER_NUM layer = GAL_LAYER_ORDER[i];
@@ -376,11 +383,13 @@ void PCB_DRAW_PANEL_GAL::setDefaultLayerOrder()
 
         m_view->SetLayerOrder( layer, i );
     }
+    #endif
 }
 
 
 void PCB_DRAW_PANEL_GAL::setDefaultLayerDeps()
 {
+    #if 0
     for( LAYER_NUM i = 0; (unsigned) i < sizeof( GAL_LAYER_ORDER ) / sizeof( LAYER_NUM ); ++i )
     {
         LAYER_NUM layer = GAL_LAYER_ORDER[i];
@@ -437,4 +446,6 @@ void PCB_DRAW_PANEL_GAL::setDefaultLayerDeps()
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( WORKSHEET ) );
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( GRID_VISIBLE ) );
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( DRC_VISIBLE ) );
+
+    #endif
 }

@@ -27,10 +27,6 @@ include_directories(
 set( TEST_SRCS
     test_window.cpp
     globals.cpp
-    draw_panel_gal_ng.cpp
-    view_ng.cpp
-    view_controls_ng.cpp
-    wx_view_controls_ng.cpp
 
     )
 

@@ -32,22 +32,25 @@
 #include <confirm.h>
 
 #include <class_draw_panel_gal.h>
-#include <view/view.h>
-#include <view/wx_view_controls.h>
+#include <view/view_ng.h>
+#include <view/wx_view_controls_ng.h>
 #include <pcb_painter.h>
 
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/opengl/opengl_gal.h>
+#include <gal/wxdc/wxdc_gal.h>
 #include <gal/cairo/cairo_gal.h>
 
 #include <tool/tool_dispatcher.h>
 #include <tool/tool_manager.h>
 
+#include <pcb_view.h>
+
 #include <boost/foreach.hpp>
 
-#ifdef __WXDEBUG__
+//#ifdef __WXDEBUG__
 #include <profile.h>
-#endif /* __WXDEBUG__ */
+//#endif /* __WXDEBUG__ */
 
 EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWindowId,
                                         const wxPoint& aPosition, const wxSize& aSize,
@@ -69,7 +72,7 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
 
     m_painter = new KIGFX::PCB_PAINTER( m_gal );
 
-    m_view = new KIGFX::VIEW( true );
+    m_view = new KIGFX::PCB_VIEW (); //KIGFX::VIEW( true );
     m_view->SetPainter( m_painter );
     m_view->SetGAL( m_gal );
 
@@ -86,7 +89,7 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
 #ifdef USE_OSX_MAGNIFY_EVENT
         wxEVT_MAGNIFY,
 #endif
-        KIGFX::WX_VIEW_CONTROLS::EVT_REFRESH_MOUSE
+        KIGFX::WX_VIEW_CONTROLS_NG::EVT_REFRESH_MOUSE
     };
 
     BOOST_FOREACH( wxEventType eventType, events )
@@ -97,7 +100,7 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
 
     // View controls is the first in the event handler chain, so the Tool Framework operates
     // on updated viewport data.
-    m_viewControls = new KIGFX::WX_VIEW_CONTROLS( m_view, this );
+    m_viewControls = new KIGFX::WX_VIEW_CONTROLS_NG( m_view, this );
 
     // Set up timer that prevents too frequent redraw commands
     m_refreshTimer.SetOwner( this );
@@ -135,6 +138,7 @@ void EDA_DRAW_PANEL_GAL::SetFocus()
 
 void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
+    PROF_COUNTER cnt ( "on-paint", true );
     m_pendingRefresh = false;
 
     if( m_drawing )
@@ -144,11 +148,15 @@ void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 
     m_viewControls->UpdateScrollbars();
     m_view->UpdateItems();
+
     m_gal->BeginDrawing();
     m_gal->ClearScreen( m_painter->GetSettings()->GetBackgroundColor() );
 
-    if( m_view->IsDirty() )
+    printf("dirty %d\n", m_view->IsDirty() );
+
+//    if( m_view->IsDirty() )
     {
+
         m_view->ClearTargets();
 
         // Grid has to be redrawn only when the NONCACHED target is redrawn
@@ -163,6 +171,8 @@ void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 
     m_lastRefresh = wxGetLocalTimeMillis();
     m_drawing = false;
+
+    cnt.show();
 }
 
 
@@ -256,15 +266,15 @@ void EDA_DRAW_PANEL_GAL::SetHighContrastLayer( LAYER_ID aLayer )
     rSettings->ClearActiveLayers();
     rSettings->SetActiveLayer( aLayer );
 
-    m_view->UpdateAllLayersColor();
+    //m_view->UpdateAllLayersColor();
 }
 
 
 void EDA_DRAW_PANEL_GAL::SetTopLayer( LAYER_ID aLayer )
 {
-    m_view->ClearTopLayers();
-    m_view->SetTopLayer( aLayer );
-    m_view->UpdateAllLayersOrder();
+    //m_view->ClearTopLayers();
+    //m_view->SetTopLayer( aLayer );
+    //m_view->UpdateAllLayersOrder();
 }
 
 
@@ -298,6 +308,10 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
 
         case GAL_TYPE_CAIRO:
             new_gal = new KIGFX::CAIRO_GAL( this, this, this );
+            break;
+
+        case GAL_TYPE_WXDC:
+            new_gal = new KIGFX::WXDC_GAL( this, this, this );
             break;
 
         default:

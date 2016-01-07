@@ -23,8 +23,8 @@
 
 #include <cstdio>
 
-#include <view/view.h>
-#include <view/view_item.h>
+#include <view/view_ng.h>
+#include <view/view_item_ng.h>
 #include <view/view_group.h>
 
 #include <math/vector2d.h>
@@ -84,13 +84,13 @@ public:
         return wxT( "ROUTER_PREVIEW_ITEM" );
     }
 
-    const BOX2I ViewBBox() const;
+    const BOX2I ngViewBBox() const;
 
-    virtual void ViewDraw( int aLayer, KIGFX::GAL* aGal ) const;
+    virtual void ngViewDraw( int aLayer, KIGFX::VIEW_BASE* aView ) const;
 
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const
+	virtual void ngViewGetLayers( int aLayers[], int& aCount ) const
     {
-        aLayers[0] = m_layer;
+        aLayers[0] = KIGFX::VIEW_BASE::DEFAULT_OVERLAY;
         aCount = 1;
     }
 

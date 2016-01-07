@@ -36,8 +36,8 @@ set( GAL_SRCS
     gal/graphics_abstraction_layer.cpp
     gal/stroke_font.cpp
     gal/color4d.cpp
-    view/view_controls.cpp
-    view/wx_view_controls.cpp
+    view/view_controls_ng.cpp
+    view/wx_view_controls_ng.cpp
     geometry/hetriang.cpp
 
     # OpenGL GAL
@@ -254,8 +254,8 @@ endif()
 
 set( COMMON_SRCS
     ${COMMON_SRCS}
-    view/view.cpp
-    view/view_item.cpp
+    view/view_ng.cpp
+#    view/view_item.cpp
     view/view_group.cpp
     view/view_overlay.cpp
 
@@ -290,6 +290,7 @@ set( PCB_COMMON_SRCS
     pcbcommon.cpp
     lset.cpp
     footprint_info.cpp
+    ../pcbnew/pcb_view.cpp
     ../pcbnew/basepcbframe.cpp
     ../pcbnew/class_board.cpp
     ../pcbnew/class_board_connected_item.cpp

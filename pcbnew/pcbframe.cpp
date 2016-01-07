@@ -54,8 +54,8 @@
 #include <dialog_helpers.h>
 #include <dialog_plot.h>
 #include <convert_from_iu.h>
-#include <view/view.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <pcb_painter.h>
 #include <invoke_pcb_dialog.h>
 
@@ -872,7 +872,7 @@ bool PCB_EDIT_FRAME::IsElementVisible( int aElement ) const
 
 void PCB_EDIT_FRAME::SetElementVisibility( int aElement, bool aNewState )
 {
-    GetGalCanvas()->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aElement ), aNewState );
+    //GetGalCanvas()->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aElement ), aNewState );
     GetBoard()->SetElementVisibility( aElement, aNewState );
     m_Layers->SetRenderState( aElement, aNewState );
 }

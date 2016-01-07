@@ -737,28 +737,6 @@ void SEGZONE::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode,
 }
 
 
-void TRACK::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    // Show the track and its netname on different layers
-    aLayers[0] = GetLayer();
-    aLayers[1] = GetNetnameLayer( aLayers[0] );
-    aCount = 2;
-}
-
-
-unsigned int TRACK::ViewGetLOD( int aLayer ) const
-{
-    // Netnames will be shown only if zoom is appropriate
-    if( IsNetnameLayer( aLayer ) )
-    {
-        return ( 20000000 / ( m_Width + 1 ) );
-    }
-
-    // Other layers are shown without any conditions
-    return 0;
-}
-
-
 void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode, const wxPoint& aOffset )
 {
     wxCHECK_RET( panel != NULL, wxT( "VIA::Draw panel cannot be NULL." ) );
@@ -992,36 +970,6 @@ void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode, const w
                                  GR_TEXT_HJUSTIFY_CENTER, GR_TEXT_VJUSTIFY_CENTER,
                                  tsize / 7, false, false );
         }
-    }
-}
-
-
-void VIA::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aLayers[0] = ITEM_GAL_LAYER( VIAS_HOLES_VISIBLE );
-    aCount = 2;
-
-    // Just show it on common via & via holes layers
-    switch( GetViaType() )
-    {
-    case VIA_THROUGH:
-        aLayers[1] = ITEM_GAL_LAYER( VIA_THROUGH_VISIBLE );
-        break;
-
-    case VIA_BLIND_BURIED:
-        aLayers[1] = ITEM_GAL_LAYER( VIA_BBLIND_VISIBLE );
-        aLayers[2] = m_Layer;
-        aLayers[3] = m_BottomLayer;
-        aCount += 2;
-        break;
-
-    case VIA_MICROVIA:
-        aLayers[1] = ITEM_GAL_LAYER( VIA_MICROVIA_VISIBLE );
-        break;
-
-    default:
-        assert( false );
-        break;
     }
 }
 

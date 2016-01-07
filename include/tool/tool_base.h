@@ -38,8 +38,8 @@ class TOOL_MANAGER;
 
 namespace KIGFX
 {
-class VIEW;
-class VIEW_CONTROLS;
+class VIEW_BASE;
+class VIEW_CONTROLS_NG;
 };
 
 enum TOOL_TYPE
@@ -169,7 +169,7 @@ protected:
      * Returns the instance of VIEW object used in the application. It allows tools to draw.
      * @return The instance of VIEW.
      */
-    KIGFX::VIEW* getView() const;
+    KIGFX::VIEW_BASE* getView() const;
 
     /**
      * Function getViewControls()
@@ -178,7 +178,7 @@ protected:
      * read & modify user input and its settings (eg. show cursor, enable snapping to grid, etc.)
      * @return The instance of VIEW_CONTROLS.
      */
-    KIGFX::VIEW_CONTROLS* getViewControls() const;
+    KIGFX::VIEW_CONTROLS_NG* getViewControls() const;
 
     /**
      * Function getEditFrame()

@@ -38,8 +38,7 @@
 #include <gal/stroke_font.h>
 #include <newstroke_font.h>
 
-namespace KIGFX
-{
+namespace KIGFX {
 /**
  * GridStyle: Type definition of the grid style
  */
@@ -69,12 +68,13 @@ public:
 
     virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) = 0;
 
-    inline void DrawLineX ( int x0, int y0, int x1, int y1, const COLOR4D& color )
+    inline void DrawLineX( int x0, int y0, int x1, int y1, const COLOR4D& color )
     {
-        SetStrokeColor ( color );
+        SetStrokeColor( color );
         DrawLine( VECTOR2D( x0, y0 ),
-                  VECTOR2D( x1, y1 ) );
+                VECTOR2D( x1, y1 ) );
     }
+
 
     /**
      * @brief Draw a rounded segment.
@@ -85,7 +85,8 @@ public:
      * @param aEndPoint     is the end point of the segment.
      * @param aWidth        is a width of the segment
      */
-    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth ) = 0;
+    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
+            double aWidth ) = 0;
 
     /**
      * @brief Draw a polyline
@@ -110,8 +111,10 @@ public:
      * @param aStartAngle   is the start angle of the arc.
      * @param aEndAngle     is the end angle of the arc.
      */
-    virtual void
-    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle ) = 0;
+    virtual void DrawArc( const VECTOR2D& aCenterPoint,
+            double aRadius,
+            double aStartAngle,
+            double aEndAngle ) = 0;
 
     /**
      * @brief Draw a rectangle.
@@ -136,8 +139,8 @@ public:
      * @param controlPointB is the second control point.
      * @param endPoint      is the end point of the spline.
      */
-    virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
-                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) = 0;
+    virtual void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
+            const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) = 0;
 
 
     /**
@@ -145,71 +148,49 @@ public:
      *
      * @param aIsFillEnabled is true, when the graphics objects should be filled, else false.
      */
-    inline virtual void SetIsFill( bool aIsFillEnabled )
-    {
-        isFillEnabled = aIsFillEnabled;
-    }
+    virtual void SetIsFill( bool aIsFillEnabled ) = 0;
 
     /**
      * @brief Enable/disable stroked outlines.
      *
      * @param aIsStrokeEnabled is true, if the outline of an object should be stroked.
      */
-    inline virtual void SetIsStroke( bool aIsStrokeEnabled )
-    {
-        isStrokeEnabled = aIsStrokeEnabled;
-    }
+    virtual void SetIsStroke( bool aIsStrokeEnabled ) = 0;
 
     /**
      * @brief Set the fill color.
      *
      * @param aColor is the color for filling.
      */
-    inline virtual void SetFillColor( const COLOR4D& aColor )
-    {
-        fillColor = aColor;
-    }
+    virtual void SetFillColor( const COLOR4D& aColor ) = 0;
 
     /**
      * @brief Set the stroke color.
      *
      * @param aColor is the color for stroking the outline.
      */
-    inline virtual void SetStrokeColor( const COLOR4D& aColor )
-    {
-        strokeColor = aColor;
-    }
+    virtual void SetStrokeColor( const COLOR4D& aColor ) = 0;
 
     /**
      * @brief Get the stroke color.
      *
      * @return the color for stroking the outline.
      */
-    inline const COLOR4D& GetStrokeColor() const
-    {
-        return strokeColor;
-    }
+    virtual const COLOR4D& GetStrokeColor() const = 0;
 
     /**
      * @brief Set the line width.
      *
      * @param aLineWidth is the line width.
      */
-    inline virtual void SetLineWidth( double aLineWidth )
-    {
-        lineWidth = aLineWidth;
-    }
+    virtual void SetLineWidth( double aLineWidth ) = 0;
 
     /**
      * @brief Get the line width.
      *
      * @return the actual line width.
      */
-    inline double GetLineWidth() const
-    {
-        return lineWidth;
-    }
-
+    virtual double GetLineWidth() const = 0;
 
     // ----
     // Text
@@ -221,54 +202,34 @@ public:
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle.
      */
-    inline virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                                    double aRotationAngle )
-    {
-        strokeFont.Draw( aText, aPosition, aRotationAngle );
-    }
+    virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
+            double aRotationAngle ) = 0;
 
     /**
      * @brief Loads attributes of the given text (bold/italic/underline/mirrored and so on).
      *
      * @param aText is the text item.
      */
-    virtual void SetTextAttributes( const EDA_TEXT* aText );
+    virtual void SetTextAttributes( const EDA_TEXT* aText ) = 0;
 
     /// @copydoc STROKE_FONT::SetGlyphSize()
-    inline void SetGlyphSize( const VECTOR2D aGlyphSize )
-    {
-        strokeFont.SetGlyphSize( aGlyphSize );
-    }
+    virtual void SetGlyphSize( const VECTOR2D aGlyphSize ) = 0;
 
     /// @copydoc STROKE_FONT::SetBold()
-    inline void SetBold( const bool aBold )
-    {
-        strokeFont.SetBold( aBold );
-    }
+    virtual void SetBold( const bool aBold ) = 0;
 
     /// @copydoc STROKE_FONT::SetItalic()
-    inline void SetItalic( const bool aItalic )
-    {
-        strokeFont.SetItalic( aItalic );
-    }
+    virtual void SetItalic( const bool aItalic ) = 0;
 
     /// @copydoc STROKE_FONT::SetMirrored()
-    inline void SetMirrored( const bool aMirrored )
-    {
-        strokeFont.SetMirrored( aMirrored );
-    }
+    virtual void SetMirrored( const bool aMirrored ) = 0;
 
     /// @copydoc STROKE_FONT::SetHorizontalJustify()
-    inline void SetHorizontalJustify( const EDA_TEXT_HJUSTIFY_T aHorizontalJustify )
-    {
-        strokeFont.SetHorizontalJustify( aHorizontalJustify );
-    }
+    virtual void SetHorizontalJustify( const EDA_TEXT_HJUSTIFY_T aHorizontalJustify ) = 0;
 
     /// @copydoc STROKE_FONT::SetVerticalJustify()
-    inline void SetVerticalJustify( const EDA_TEXT_VJUSTIFY_T aVerticalJustify )
-    {
-        strokeFont.SetVerticalJustify( aVerticalJustify );
-    }
+    virtual void SetVerticalJustify( const EDA_TEXT_VJUSTIFY_T aVerticalJustify ) = 0;
+
 
     // --------------
     // Transformation
@@ -309,16 +270,6 @@ public:
     virtual void Restore() = 0;
 
 protected:
-    STROKE_FONT strokeFont;
-
-    double             lineWidth;              ///< The line width
-
-    bool               isFillEnabled;          ///< Is filling of graphic objects enabled ?
-    bool               isStrokeEnabled;        ///< Are the outlines stroked ?
-
-    COLOR4D            fillColor;              ///< The fill color
-    COLOR4D            strokeColor;            ///< The color of the outlines
-
 };
 
 /**
@@ -338,18 +289,26 @@ public:
     GAL();
     virtual ~GAL();
 
-   /// @brief Returns the initalization status for the canvas.
-    virtual bool IsInitialized() const { return true; }
+    /// @brief Returns the initalization status for the canvas.
+    virtual bool IsInitialized() const
+    {
+        return true;
+    }
+
 
     // ---------------
     // Drawing methods
     // ---------------
 
     /// @brief Begin the drawing, needs to be called for every new frame.
-    virtual void BeginDrawing() {};
+    virtual void BeginDrawing()
+    {
+    };
 
     /// @brief End the drawing, needs to be called for every new frame.
-    virtual void EndDrawing() {};
+    virtual void EndDrawing()
+    {
+    };
 
     /**
      * @brief Draw a line.
@@ -359,7 +318,9 @@ public:
      * @param aStartPoint   is the start point of the line.
      * @param aEndPoint     is the end point of the line.
      */
-    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
+    virtual void DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
+    {
+    };
 
     /**
      * @brief Draw a rounded segment.
@@ -370,14 +331,19 @@ public:
      * @param aEndPoint     is the end point of the segment.
      * @param aWidth        is a width of the segment
      */
-    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint, double aWidth ) {};
+    virtual void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
+            double aWidth )
+    {
+    };
 
     /**
      * @brief Draw a polyline
      *
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
-    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList ) {};
+    virtual void DrawPolyline( std::deque<VECTOR2D>& aPointList )
+    {
+    };
 
     /**
      * @brief Draw a circle using world coordinates.
@@ -385,7 +351,9 @@ public:
      * @param aCenterPoint is the center point of the circle.
      * @param aRadius is the radius of the circle.
      */
-    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) {};
+    virtual void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
+    {
+    };
 
     /**
      * @brief Draw an arc.
@@ -395,8 +363,12 @@ public:
      * @param aStartAngle   is the start angle of the arc.
      * @param aEndAngle     is the end angle of the arc.
      */
-    virtual void
-    DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle, double aEndAngle ) {};
+    virtual void DrawArc( const VECTOR2D& aCenterPoint,
+            double aRadius,
+            double aStartAngle,
+            double aEndAngle )
+    {
+    };
 
     /**
      * @brief Draw a rectangle.
@@ -404,14 +376,18 @@ public:
      * @param aStartPoint   is the start point of the rectangle.
      * @param aEndPoint     is the end point of the rectangle.
      */
-    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
+    virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
+    {
+    };
 
     /**
      * @brief Draw a polygon.
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) {};
+    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList )
+    {
+    };
 
     /**
      * @brief Draw a cubic bezier spline.
@@ -421,18 +397,168 @@ public:
      * @param controlPointB is the second control point.
      * @param endPoint      is the end point of the spline.
      */
-    virtual void DrawCurve( const VECTOR2D& startPoint,    const VECTOR2D& controlPointA,
-                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint ) {};
+    virtual void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
+            const VECTOR2D& controlPointB, const VECTOR2D& endPoint )
+    {
+    };
+
+    /**
+     * @brief Enable/disable fill.
+     *
+     * @param aIsFillEnabled is true, when the graphics objects should be filled, else false.
+     */
+    inline virtual void SetIsFill( bool aIsFillEnabled )
+    {
+        isFillEnabled = aIsFillEnabled;
+    }
+
+
+    /**
+     * @brief Enable/disable stroked outlines.
+     *
+     * @param aIsStrokeEnabled is true, if the outline of an object should be stroked.
+     */
+    inline virtual void SetIsStroke( bool aIsStrokeEnabled )
+    {
+        isStrokeEnabled = aIsStrokeEnabled;
+    }
+
+
+    /**
+     * @brief Set the fill color.
+     *
+     * @param aColor is the color for filling.
+     */
+    inline virtual void SetFillColor( const COLOR4D& aColor )
+    {
+        fillColor = aColor;
+    }
+
+
+    /**
+     * @brief Set the stroke color.
+     *
+     * @param aColor is the color for stroking the outline.
+     */
+    inline virtual void SetStrokeColor( const COLOR4D& aColor )
+    {
+        strokeColor = aColor;
+    }
+
+
+    /**
+     * @brief Get the stroke color.
+     *
+     * @return the color for stroking the outline.
+     */
+    inline const COLOR4D& GetStrokeColor() const
+    {
+        return strokeColor;
+    }
+
+
+    /**
+     * @brief Set the line width.
+     *
+     * @param aLineWidth is the line width.
+     */
+    inline virtual void SetLineWidth( double aLineWidth )
+    {
+        lineWidth = aLineWidth;
+    }
+
+
+    /**
+     * @brief Get the line width.
+     *
+     * @return the actual line width.
+     */
+    inline double GetLineWidth() const
+    {
+        return lineWidth;
+    }
+
+
+    // ----
+    // Text
+    // ----
+    /**
+     * @brief Draws a vector type text using preloaded Newstroke font.
+     *
+     * @param aText is the text to be drawn.
+     * @param aPosition is the text position in world coordinates.
+     * @param aRotationAngle is the text rotation angle.
+     */
+    inline virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
+            double aRotationAngle )
+    {
+        strokeFont.Draw( aText, aPosition, aRotationAngle );
+    }
+
+
+    /**
+     * @brief Loads attributes of the given text (bold/italic/underline/mirrored and so on).
+     *
+     * @param aText is the text item.
+     */
+    virtual void SetTextAttributes( const EDA_TEXT* aText );
+
+    /// @copydoc STROKE_FONT::SetGlyphSize()
+    inline void SetGlyphSize( const VECTOR2D aGlyphSize )
+    {
+        strokeFont.SetGlyphSize( aGlyphSize );
+    }
+
+
+    /// @copydoc STROKE_FONT::SetBold()
+    inline void SetBold( const bool aBold )
+    {
+        strokeFont.SetBold( aBold );
+    }
+
+
+    /// @copydoc STROKE_FONT::SetItalic()
+    inline void SetItalic( const bool aItalic )
+    {
+        strokeFont.SetItalic( aItalic );
+    }
+
+
+    /// @copydoc STROKE_FONT::SetMirrored()
+    inline void SetMirrored( const bool aMirrored )
+    {
+        strokeFont.SetMirrored( aMirrored );
+    }
+
+
+    /// @copydoc STROKE_FONT::SetHorizontalJustify()
+    inline void SetHorizontalJustify( const EDA_TEXT_HJUSTIFY_T aHorizontalJustify )
+    {
+        strokeFont.SetHorizontalJustify( aHorizontalJustify );
+    }
+
+
+    /// @copydoc STROKE_FONT::SetVerticalJustify()
+    inline void SetVerticalJustify( const EDA_TEXT_VJUSTIFY_T aVerticalJustify )
+    {
+        strokeFont.SetVerticalJustify( aVerticalJustify );
+    }
+
 
     // --------------
     // Screen methods
     // --------------
 
     /// @brief Resizes the canvas.
-    virtual void ResizeScreen( int aWidth, int aHeight ) {};
+    virtual void ResizeScreen( int aWidth, int aHeight )
+    {
+    };
 
     /// @brief Shows/hides the GAL canvas
-    virtual bool Show( bool aShow ) { return true; };
+    virtual bool Show( bool aShow )
+    {
+        return true;
+    };
 
     /// @brief Returns GAL canvas size in pixels
     const VECTOR2I& GetScreenPixelSize() const
@@ -440,14 +566,19 @@ public:
         return screenSize;
     }
 
+
     /// @brief Force all remaining objects to be drawn.
-    virtual void Flush() {};
+    virtual void Flush()
+    {
+    };
 
     /**
      * @brief Clear the screen.
      * @param aColor is the color used for clearing.
      */
-    virtual void ClearScreen( const COLOR4D& aColor ) {};
+    virtual void ClearScreen( const COLOR4D& aColor )
+    {
+    };
 
 
     /**
@@ -473,34 +604,46 @@ public:
      *
      * @param aTransformation is the ransformation matrix.
      */
-    virtual void Transform( const MATRIX3x3D& aTransformation ) {};
+    virtual void Transform( const MATRIX3x3D& aTransformation )
+    {
+    };
 
     /**
      * @brief Rotate the context.
      *
      * @param aAngle is the rotation angle in radians.
      */
-    virtual void Rotate( double aAngle ) {};
+    virtual void Rotate( double aAngle )
+    {
+    };
 
     /**
      * @brief Translate the context.
      *
      * @param aTranslation is the translation vector.
      */
-    virtual void Translate( const VECTOR2D& aTranslation ) {};
+    virtual void Translate( const VECTOR2D& aTranslation )
+    {
+    };
 
     /**
      * @brief Scale the context.
      *
      * @param aScale is the scale factor for the x- and y-axis.
      */
-    virtual void Scale( const VECTOR2D& aScale ) {};
+    virtual void Scale( const VECTOR2D& aScale )
+    {
+    };
 
     /// @brief Save the context.
-    virtual void Save() {};
+    virtual void Save()
+    {
+    };
 
     /// @brief Restore the context.
-    virtual void Restore() {};
+    virtual void Restore()
+    {
+    };
 
     // --------------------------------------------
     // Group methods
@@ -515,23 +658,30 @@ public:
      * @return the number of the group.
      */
 
-    virtual GAL_GROUP *BeginGroupNG() { return NULL; }
-    virtual void EndGroupNG() { };
-    virtual void DrawGroupNG ( const GAL_GROUP *aGroup ) {};
-    virtual void DeleteGroupNG () {};
+    /*virtual GAL_GROUP *BeginGroupNG() { return NULL; }
+     *  virtual void EndGroupNG() { };
+     *  virtual void DrawGroupNG ( const GAL_GROUP *aGroup ) {};
+     *  virtual void DeleteGroupNG () {};*/
 
 
-    virtual int BeginGroup() { return 0; };
+    virtual int BeginGroup()
+    {
+        return 0;
+    };
 
     /// @brief End the group.
-    virtual void EndGroup() {};
+    virtual void EndGroup()
+    {
+    };
 
     /**
      * @brief Draw the stored group.
      *
      * @param aGroupNumber is the group number.
      */
-    virtual void DrawGroup( int aGroupNumber ) {};
+    virtual void DrawGroup( int aGroupNumber )
+    {
+    };
 
     /**
      * @brief Changes the color used to draw the group.
@@ -539,7 +689,9 @@ public:
      * @param aGroupNumber is the group number.
      * @param aNewColor is the new color.
      */
-    virtual void ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColor ) {};
+    virtual void ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColor )
+    {
+    };
 
     /**
      * @brief Changes the depth (Z-axis position) of the group.
@@ -547,19 +699,25 @@ public:
      * @param aGroupNumber is the group number.
      * @param aDepth is the new depth.
      */
-    virtual void ChangeGroupDepth( int aGroupNumber, int aDepth ) {};
+    virtual void ChangeGroupDepth( int aGroupNumber, int aDepth )
+    {
+    };
 
     /**
      * @brief Delete the group from the memory.
      *
      * @param aGroupNumber is the group number.
      */
-    virtual void DeleteGroup( int aGroupNumber ) {};
+    virtual void DeleteGroup( int aGroupNumber )
+    {
+    };
 
     /**
      * @brief Delete all data created during caching of graphic items.
      */
-    virtual void ClearCache() {};
+    virtual void ClearCache()
+    {
+    };
 
     // --------------------------------------------------------
     // Handling the world <-> screen transformation
@@ -578,6 +736,7 @@ public:
         return worldScreenMatrix;
     }
 
+
     /**
      * @brief Get the screen <-> world transformation matrix.
      *
@@ -588,6 +747,7 @@ public:
         return screenWorldMatrix;
     }
 
+
     /**
      * @brief Set the world <-> screen transformation matrix.
      *
@@ -597,6 +757,7 @@ public:
     {
         worldScreenMatrix = aMatrix;
     }
+
 
     /**
      * @brief Set the unit length.
@@ -612,6 +773,7 @@ public:
         worldUnitLength = aWorldUnitLength;
     }
 
+
     /**
      * @brief Set the dots per inch of the screen.
      *
@@ -625,6 +787,7 @@ public:
         screenDPI = aScreenDPI;
     }
 
+
     /**
      * @brief Set the Point in world space to look at.
      *
@@ -637,6 +800,7 @@ public:
         lookAtPoint = aPoint;
     }
 
+
     /**
      * @brief Get the look at point.
      *
@@ -646,6 +810,7 @@ public:
     {
         return lookAtPoint;
     }
+
 
     /**
      * @brief Set the zoom factor of the scene.
@@ -657,6 +822,7 @@ public:
         zoomFactor = aZoomFactor;
     }
 
+
     /**
      * @brief Get the zoom factor
      *
@@ -666,6 +832,7 @@ public:
     {
         return zoomFactor;
     }
+
 
     /**
      * @brief Set the range of the layer depth.
@@ -680,6 +847,7 @@ public:
         depthRange = aDepthRange;
     }
 
+
     /**
      * @brief Returns the minimum depth in the currently used range (the top).
      */
@@ -688,6 +856,7 @@ public:
         return depthRange.x;
     }
 
+
     /**
      * @brief Returns the maximum depth in the currently used range (the bottom).
      */
@@ -695,6 +864,7 @@ public:
     {
         return depthRange.y;
     }
+
 
     /**
      * @brief Get the world scale.
@@ -705,6 +875,7 @@ public:
     {
         return worldScale;
     }
+
 
     /**
      * @brief Sets flipping of the screen.
@@ -725,6 +896,7 @@ public:
             flipY = 1.0;    // regular
     }
 
+
     // ---------------------------
     // Buffer manipulation methods
     // ---------------------------
@@ -732,33 +904,44 @@ public:
     /**
      * @brief Save the screen contents.
      */
-    virtual void SaveScreen() {};
+    virtual void SaveScreen()
+    {
+    };
 
     /**
      * @brief Restore the screen contents.
      */
-    virtual void RestoreScreen() {};
+    virtual void RestoreScreen()
+    {
+    };
 
     /**
      * @brief Sets the target for rendering.
      *
      * @param aTarget is the new target for rendering.
      */
-    virtual void SetTarget( RENDER_TARGET aTarget ) {};
+    virtual void SetTarget( RENDER_TARGET aTarget )
+    {
+    };
 
     /**
      * @brief Gets the currently used target for rendering.
      *
      * @return The current rendering target.
      */
-    virtual RENDER_TARGET GetTarget() const { return TARGET_CACHED; };
+    virtual RENDER_TARGET GetTarget() const
+    {
+        return TARGET_CACHED;
+    };
 
     /**
      * @brief Clears the target for rendering.
      *
      * @param aTarget is the target to be cleared.
      */
-    virtual void ClearTarget( RENDER_TARGET aTarget ) {};
+    virtual void ClearTarget( RENDER_TARGET aTarget )
+    {
+    };
 
     // -------------
     // Grid methods
@@ -774,6 +957,7 @@ public:
         gridVisibility = aVisibility;
     }
 
+
     /**
      * @brief Set the origin point for the grid.
      *
@@ -784,8 +968,9 @@ public:
         gridOrigin = aGridOrigin;
 
         gridOffset = VECTOR2D( (long) gridOrigin.x % (long) gridSize.x,
-                               (long) gridOrigin.y % (long) gridSize.y );
+                (long) gridOrigin.y % (long) gridSize.y );
     }
+
 
     /**
      * @brief Set the threshold for grid drawing.
@@ -797,6 +982,7 @@ public:
         gridDrawThreshold = aThreshold;
     }
 
+
     /**
      * @brief Set the grid size.
      *
@@ -807,8 +993,9 @@ public:
         gridSize = aGridSize;
 
         gridOffset = VECTOR2D( (long) gridOrigin.x % (long) gridSize.x,
-                               (long) gridOrigin.y % (long) gridSize.y );
+                (long) gridOrigin.y % (long) gridSize.y );
     }
+
 
     /**
      * @brief Returns the grid size.
@@ -820,6 +1007,7 @@ public:
         return gridSize;
     }
 
+
     /**
      * @brief Set the grid color.
      *
@@ -829,6 +1017,7 @@ public:
     {
         gridColor = aGridColor;
     }
+
 
     /**
      * @brief Draw every tick line wider.
@@ -840,6 +1029,7 @@ public:
         gridTick = aInterval;
     }
 
+
     /**
      * @brief Get the grid line width.
      *
@@ -850,6 +1040,7 @@ public:
         return gridLineWidth;
     }
 
+
     /**
      * @brief Set the grid line width.
      *
@@ -859,6 +1050,7 @@ public:
     {
         gridLineWidth = aGridLineWidth;
     }
+
 
     ///> @brief Draw the grid
     void DrawGrid();
@@ -882,6 +1074,7 @@ public:
         gridStyle = aGridStyle;
     }
 
+
     /**
      * @brief Compute the point position in world coordinates from given screen coordinates.
      *
@@ -892,6 +1085,7 @@ public:
     {
         return VECTOR2D( screenWorldMatrix * aPoint );
     }
+
 
     /**
      * @brief Compute the point position in screen coordinates from given world coordinates.
@@ -904,6 +1098,7 @@ public:
         return VECTOR2D( worldScreenMatrix * aPoint );
     }
 
+
     /**
      * @brief Enable/disable cursor.
      *
@@ -913,6 +1108,7 @@ public:
     {
         isCursorEnabled = aCursorEnabled;
     }
+
 
     /**
      * @brief Set the cursor color.
@@ -924,6 +1120,7 @@ public:
         cursorColor = aCursorColor;
     }
 
+
     /**
      * @brief Returns the cursor size.
      *
@@ -933,6 +1130,7 @@ public:
     {
         return cursorSize;
     }
+
 
     /**
      * @brief Set the cursor size.
@@ -944,12 +1142,15 @@ public:
         cursorSize = aCursorSize;
     }
 
+
     /**
      * @brief Draw the cursor.
      *
      * @param aCursorPosition is the cursor position in screen coordinates.
      */
-    virtual void DrawCursor( const VECTOR2D& aCursorPosition ) {};
+    virtual void DrawCursor( const VECTOR2D& aCursorPosition )
+    {
+    };
 
     /**
      * @brief Changes the current depth to deeper, so it is possible to draw objects right beneath
@@ -960,6 +1161,7 @@ public:
         layerDepth -= 0.001;
     }
 
+
     /**
      * @brief Stores current drawing depth on the depth stack.
      */
@@ -967,6 +1169,7 @@ public:
     {
         depthStack.push( layerDepth );
     }
+
 
     /**
      * @brief Restores previously stored drawing depth for the depth stack.
@@ -977,43 +1180,54 @@ public:
         depthStack.pop();
     }
 
+
     static const double METRIC_UNIT_LENGTH;
 
 protected:
-    std::stack<double> depthStack;             ///< Stored depth values
-    VECTOR2I           screenSize;             ///< Screen size in screen coordinates
+    std::stack<double> depthStack;      ///< Stored depth values
+    VECTOR2I screenSize;                ///< Screen size in screen coordinates
 
-    double             worldUnitLength;        ///< The unit length of the world coordinates [inch]
-    double             screenDPI;              ///< The dots per inch of the screen
-    VECTOR2D           lookAtPoint;            ///< Point to be looked at in world space
+    STROKE_FONT strokeFont;
 
-    double             zoomFactor;             ///< The zoom factor
-    MATRIX3x3D         worldScreenMatrix;      ///< World transformation
-    MATRIX3x3D         screenWorldMatrix;      ///< Screen transformation
-    double             worldScale;             ///< The scale factor world->screen
-    double             flipX;                  ///< Flag for X axis flipping
-    double             flipY;                  ///< Flag for Y axis flipping
+    double lineWidth;               ///< The line width
 
-    double             layerDepth;             ///< The actual layer depth
-    VECTOR2D           depthRange;             ///< Range of the depth
+    bool isFillEnabled;             ///< Is filling of graphic objects enabled ?
+    bool isStrokeEnabled;           ///< Are the outlines stroked ?
+
+    COLOR4D fillColor;              ///< The fill color
+    COLOR4D strokeColor;            ///< The color of the outlines
+
+    double worldUnitLength;         ///< The unit length of the world coordinates [inch]
+    double screenDPI;               ///< The dots per inch of the screen
+    VECTOR2D lookAtPoint;           ///< Point to be looked at in world space
+
+    double zoomFactor;              ///< The zoom factor
+    MATRIX3x3D worldScreenMatrix;   ///< World transformation
+    MATRIX3x3D screenWorldMatrix;   ///< Screen transformation
+    double worldScale;              ///< The scale factor world->screen
+    double flipX;                   ///< Flag for X axis flipping
+    double flipY;                   ///< Flag for Y axis flipping
+
+    double layerDepth;              ///< The actual layer depth
+    VECTOR2D depthRange;            ///< Range of the depth
 
     // Grid settings
-    bool               gridVisibility;         ///< Should the grid be shown
-    GRID_STYLE         gridStyle;              ///< Grid display style
-    VECTOR2D           gridSize;               ///< The grid size
-    VECTOR2D           gridOrigin;             ///< The grid origin
-    VECTOR2D           gridOffset;             ///< The grid offset to compensate cursor position
-    COLOR4D            gridColor;              ///< Color of the grid
-    int                gridTick;               ///< Every tick line gets the double width
-    double             gridLineWidth;          ///< Line width of the grid
-    int                gridDrawThreshold;      ///< Minimum screen size of the grid (pixels)
-                                               ///< below which the grid is not drawn
+    bool gridVisibility;        ///< Should the grid be shown
+    GRID_STYLE gridStyle;       ///< Grid display style
+    VECTOR2D gridSize;          ///< The grid size
+    VECTOR2D gridOrigin;        ///< The grid origin
+    VECTOR2D    gridOffset;     ///< The grid offset to compensate cursor position
+    COLOR4D     gridColor;      ///< Color of the grid
+    int gridTick;               ///< Every tick line gets the double width
+    double gridLineWidth;       ///< Line width of the grid
+    int gridDrawThreshold;      ///< Minimum screen size of the grid (pixels)
+                                ///< below which the grid is not drawn
 
     // Cursor settings
-    bool               isCursorEnabled;        ///< Is the cursor enabled?
-    COLOR4D            cursorColor;            ///< Cursor color
-    unsigned int       cursorSize;             ///< Size of the cursor in pixels
-    VECTOR2D           cursorPosition;         ///< Current cursor position (world coordinates)
+    bool isCursorEnabled;           ///< Is the cursor enabled?
+    COLOR4D cursorColor;            ///< Cursor color
+    unsigned int cursorSize;        ///< Size of the cursor in pixels
+    VECTOR2D cursorPosition;        ///< Current cursor position (world coordinates)
 
     /// Compute the scaling factor for the world->screen matrix
     inline void ComputeWorldScale()
@@ -1021,13 +1235,16 @@ protected:
         worldScale = screenDPI * worldUnitLength * zoomFactor;
     }
 
+
     /**
      * @brief Draw a grid line (usually a simplified line function).
      *
      * @param aStartPoint is the start point of the line.
      * @param aEndPoint is the end point of the line.
      */
-    virtual void drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
+    virtual void drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
+    {
+    };
 
     /// Possible depth range
     static const int MIN_DEPTH;
@@ -1035,7 +1252,6 @@ protected:
 
     /// Depth level on which the grid is drawn
     static const int GRID_DEPTH;
-
 };
 }    // namespace KIGFX
 

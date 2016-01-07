@@ -27,6 +27,8 @@
 #include "selection_tool.h"
 #include <tool/tool_manager.h>
 
+#include <view/view_ng.h>
+
 #include <wxPcbStruct.h>
 #include <class_board.h>
 #include <ratsnest_data.h>
@@ -102,7 +104,7 @@ int PLACEMENT_TOOL::AlignTop( const TOOL_EVENT& aEvent )
             int difference = top - item->GetBoundingBox().GetY();
 
             item->Move( wxPoint( 0, difference ) );
-            item->ViewUpdate();
+            getView()->Update ( item );
             ratsnest->Update( item );
         }
 
@@ -143,7 +145,7 @@ int PLACEMENT_TOOL::AlignBottom( const TOOL_EVENT& aEvent )
             int difference = bottom - item->GetBoundingBox().GetBottom();
 
             item->Move( wxPoint( 0, difference ) );
-            item->ViewUpdate();
+            getView()->Update ( item );
             ratsnest->Update( item );
         }
 
@@ -184,7 +186,7 @@ int PLACEMENT_TOOL::AlignLeft( const TOOL_EVENT& aEvent )
             int difference = left - item->GetBoundingBox().GetX();
 
             item->Move( wxPoint( difference, 0 ) );
-            item->ViewUpdate();
+            getView()->Update ( item );
             ratsnest->Update( item );
         }
 
@@ -225,7 +227,7 @@ int PLACEMENT_TOOL::AlignRight( const TOOL_EVENT& aEvent )
             int difference = right - item->GetBoundingBox().GetRight();
 
             item->Move( wxPoint( difference, 0 ) );
-            item->ViewUpdate();
+            getView()->Update ( item );
             ratsnest->Update( item );
         }
 
@@ -282,7 +284,7 @@ int PLACEMENT_TOOL::DistributeHorizontally( const TOOL_EVENT& aEvent )
             int difference = position - item->GetBoundingBox().Centre().x;
 
             item->Move( wxPoint( difference, 0 ) );
-            item->ViewUpdate();
+            getView()->Update ( item );
             ratsnest->Update( item );
 
             position += distance;
@@ -329,7 +331,7 @@ int PLACEMENT_TOOL::DistributeVertically( const TOOL_EVENT& aEvent )
             int difference = position - item->GetBoundingBox().Centre().y;
 
             item->Move( wxPoint( 0, difference ) );
-            item->ViewUpdate();
+            getView()->Update ( item );
             ratsnest->Update( item );
 
             position += distance;

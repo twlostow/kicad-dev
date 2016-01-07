@@ -28,21 +28,26 @@
 #include <base_struct.h>
 #include <layers_id_colors_and_visibility.h>
 
-#include <view_ng.h>
+#include <view/view_ng.h>
 #include <view/view_group.h>
-#include <view_rtree_ng.h>
+#include <view/view_rtree_ng.h>
 #include <view/view_item_ng.h>
 #include <view/view_overlay.h>
+#include <view/view_cache.h>
+
 #include <gal/definitions.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <painter.h>
-#include <view_cache.h>
 
-#ifdef PROFILE
+#include <class_board_item.h>
+
+//#ifdef PROFILE
 #include <profile.h>
-#endif /* PROFILE  */
+//#endif /* PROFILE  */
 
 using namespace KIGFX;
+
+#define OVL_TREE 128
 
 VIEW_BASE::VIEW_BASE( bool aIsDynamic ) :
     //m_enableOrderModifier( true ),
@@ -62,8 +67,8 @@ VIEW_BASE::VIEW_BASE( bool aIsDynamic ) :
     // pad may be shown on pad, pad hole and solder paste layers). There are usual copper layers
     // (eg. F.Cu, B.Cu, internal and so on) and layers for displaying objects such as texts,
     // silkscreen, pads, vias, etc.
-    for( int i = 0; i < VIEW_MAX_LAYERS; i++ )
-        AddLayer( i );
+    AddTree( DEFAULT_LAYER );
+    AddTree( DEFAULT_OVERLAY );
 
     m_cache = new VIEW_CACHE ( this );
 }
@@ -71,77 +76,96 @@ VIEW_BASE::VIEW_BASE( bool aIsDynamic ) :
 
 VIEW_BASE::~VIEW_BASE()
 {
-    BOOST_FOREACH( LAYER_MAP::value_type& l, m_layers )
-        delete l.second.items;
+    BOOST_FOREACH( TREE_MAP::value_type& l, m_trees )
+        delete l.second;
 }
 
 
-void VIEW_BASE::AddLayer( int aLayer, bool aDisplayOnly )
+void VIEW_BASE::AddTree( int aId )
 {
-    if( m_layers.find( aLayer ) == m_layers.end() )
+    if( m_trees.find( aId ) == m_trees.end() )
     {
-        m_layers[aLayer]                = VIEW_LAYER();
-        m_layers[aLayer].id             = aLayer;
-        m_layers[aLayer].items          = new VIEW_RTREE_NG();
-        m_layers[aLayer].visible        = true;
-        m_layers[aLayer].target         = TARGET_NONCACHED;
+        m_trees[aId] = new VIEW_RTREE_NG();
     }
-
-    //sortLayers();
 }
 
 
 
 void VIEW_BASE::Add( VIEW_ITEM_NG* aItem, int aLayer )
 {
-    VIEW_LAYER& l = m_layers[aLayer];
+    int layers[ 16 ];
+    int count;
 
+    printf("Add %p l %d\n", aItem, aLayer);
+
+    if ( aLayer == DEFAULT_LAYER )
+    {
+        aItem->ngViewGetLayers ( layers, count );
+        if (count)
+            aLayer = layers[0];
+    }
+
+    printf("layer: %d\n", aLayer );
+
+    VIEW_RTREE_NG *rtree = m_trees [aLayer];
     VIEW_RTREE_ENTRY *rtreeEnt = new VIEW_RTREE_ENTRY;
 
     rtreeEnt->item = aItem;
-    rtreeEnt->ent = m_cache->Add(aItem);
+    rtreeEnt->ent = m_cache->Add(aItem, rtreeEnt);
     //rtreeEnt->ent->dirty = true;
 
-    l.items->Insert( rtreeEnt, aItem->ngViewBBox() );
+    //printf(" add bbox %s\n", aItem->ngViewBBox().Format().c_str() );
 
-    rtreeEnt->ent->SetOwner ( l.items );
+    //printf("pre cnt %d\n", rtree->Count() );
+    rtree->Insert( rtreeEnt, aItem->ngViewBBox() );
+    //printf("post cnt %d\n", rtree->Count() );
+
+    rtreeEnt->ent->SetOwner ( rtree );
+
+    MarkTargetDirty( TARGET_CACHED );
+    MarkTargetDirty( TARGET_NONCACHED );
 
 //    MarkTargetDirty( l.target );
 }
 
-void VIEW_BASE::Remove( VIEW_ITEM_NG* aItem, int aLayer )
+void VIEW_BASE::Remove( VIEW_ITEM_NG* aItem )
 
 {
-    //m_needsUpdate.erase( aItem );
-#if 0
 
-    int layers[VIEW::VIEW_MAX_LAYERS], layers_count;
-    aItem->getLayers( layers, layers_count );
 
-    for( int i = 0; i < layers_count; ++i )
+    printf("Remove %p\n", aItem);
+
+    VIEW_CACHE_ENTRY *ent = m_cache->GetEntry ( aItem );
+
+    if(ent == NULL)
     {
-        VIEW_LAYER& l = m_layers[layers[i]];
-        l.items->Remove( aItem );
-        MarkTargetDirty( l.target );
 
-        // Clear the GAL cache
-        int prevGroup = aItem->getGroup( layers[i] );
-
-        if( prevGroup >= 0 )
-            m_gal->DeleteGroup( prevGroup );
+        printf("Strange. Trying to remove nonexistent item %p\n", aItem);
+//        assert(false);
+        return;
     }
 
-    aItem->deleteGroups();
-#endif
+    VIEW_RTREE_ENTRY *rtreeEnt = ent->GetEntry();
 
+    ent->GetOwner()->Remove (  rtreeEnt, ent->GetBBox() );
+
+    m_cache->Remove ( aItem );
+
+    delete rtreeEnt;
+
+    MarkTargetDirty( TARGET_CACHED );
+    MarkTargetDirty( TARGET_NONCACHED );
 }
 
-void VIEW_BASE::Update ( VIEW_ITEM_NG* aItem, int aHint )
+void VIEW_BASE::Update ( VIEW_ITEM_NG* aItem )
 {
+//    SetDirty( aItem, true );
 
+    MarkTargetDirty ( TARGET_CACHED );
+    MarkTargetDirty ( TARGET_NONCACHED );
 }
 
-
+#if 0
 
 // stupid C++... python lambda would do this in one line
 template <class Container>
@@ -164,11 +188,17 @@ struct queryVisitor
     Container&  m_cont;
 };
 
-int VIEW_BASE::Query( const BOX2I& aRect, int aLayer, std::vector<VIEW_RTREE_ENTRY*>& aResult )
+int VIEW_BASE::Query( const BOX2I& aRect, int aTreeId, std::vector<VIEW_RTREE_ENTRY*>& aResult )
 {
     queryVisitor<std::vector<VIEW_RTREE_ENTRY*> > visitor( aResult );
 
-    m_layers[aLayer].items->Query( aRect, visitor );
+    m_trees[aTreeId]->Query( aRect, visitor );
+}
+
+#endif
+int VIEW_BASE::Query( const BOX2I& aRect, int aTreeId, std::vector<VIEW_RTREE_ENTRY*>& aResult )
+{
+
 }
 
 #if 0
@@ -336,7 +366,7 @@ void VIEW_BASE::SetCenter( const VECTOR2D& aCenter )
 }
 
 
-void VIEW_BASE::SetLayerOrder( int aLayer, int aRenderingOrder )
+/*void VIEW_BASE::SetLayerOrder( int aLayer, int aRenderingOrder )
 {
     m_layers[aLayer].renderingOrder = aRenderingOrder;
 
@@ -347,7 +377,7 @@ void VIEW_BASE::SetLayerOrder( int aLayer, int aRenderingOrder )
 int VIEW_BASE::GetLayerOrder( int aLayer ) const
 {
     return m_layers.at( aLayer ).renderingOrder;
-}
+}*/
 
 #if 0
 
@@ -779,6 +809,8 @@ void VIEW_BASE::Redraw()
                    ToWorld( screenSize ) - ToWorld( VECTOR2D( 0, 0 ) ) );
     rect.Normalize();
 
+    rect.SetMaximum();
+
     redrawRect( rect );
 
     // All targets were redrawn, so nothing is dirty
@@ -1079,10 +1111,10 @@ const BOX2I VIEW_BASE::CalculateExtents()
     BOX2I fullScene;
     fullScene.SetMaximum();
 
-    BOOST_FOREACH( VIEW_LAYER& l, m_layers | boost::adaptors::map_values )
+    BOOST_FOREACH( VIEW_RTREE_NG *tree, m_trees| boost::adaptors::map_values )
     {
 
-        l.items->Query( fullScene, v );
+        tree->Query( fullScene, v );
         printf("did %d\n", v.items);
     }
 
@@ -1102,3 +1134,258 @@ boost::shared_ptr<VIEW_OVERLAY> VIEW::MakeOverlay( )
 }
 
 #endif
+
+void VIEW_BASE::drawLayer( RENDER_TARGET aTarget, RENDER_LAYER *aLayer, bool aCacheOnly )
+{
+    m_gal->SetTarget( aTarget );
+    //m_gal->SetTarget( TARGET_NONCACHED );
+
+    //printf("Draw [layer %d cacheonly %d] items %d !\n", aLayer->itemLayer, !!aCacheOnly,  aLayer->dispList->Layer( aLayer->itemLayer ).size());
+
+    BOOST_FOREACH( VIEW_RTREE_ENTRY* rtreeEnt, aLayer->dispList->Layer( aLayer->itemLayer ) )
+    {
+        VIEW_ITEM_NG *item= rtreeEnt->item;
+        VIEW_CACHE_ENTRY* ent = rtreeEnt->ent;
+
+        int lod = 0;
+
+        if( !ent->IsVisible() )
+            continue;
+
+        if( aLayer->lodFunc )
+            lod = aLayer->lodFunc( item );
+
+        if( lod > m_scale && !ent->IsDirty() )
+            continue;
+
+        if( aLayer->cacheIndex >= 0 && ent->TestFlags( VI_CACHEABLE ) )
+        {
+            int grp = ent->GetGroup( aLayer->cacheIndex );
+            if( ent->IsDirty() || grp < 0 )
+            {
+                if( grp >= 0 )
+                    m_gal->DeleteGroup( grp );
+
+                grp = m_gal->BeginGroup();
+                ent->SetGroup( aLayer->cacheIndex, grp );
+
+                if ( !m_painter->Draw( item, aLayer->painterLayer ) )
+                    item->ngViewDraw ( aLayer->painterLayer, this );
+
+                m_gal->EndGroup();
+
+            }
+            if( grp >= 0 && !aCacheOnly )
+                m_gal->DrawGroup( grp );
+        }
+        else if ( !aCacheOnly )
+        {
+            if ( !m_painter->Draw( item, aLayer->painterLayer ) )
+                item->ngViewDraw ( aLayer->painterLayer, this );
+
+        }
+    }
+}
+
+VIEW_BASE::RENDER_LAYER* VIEW_BASE::addLayer(
+        int aSortLayer,
+        int aItemLayer,
+        int aPainterLayer,
+        VIEW_DISP_LIST* aList,
+        int aCacheIndex,
+        boost::function<int (VIEW_ITEM_NG*)> aLODFunc )
+{
+    RENDER_LAYER *lr = new RENDER_LAYER;
+
+    lr->dispList = aList;
+    lr->cacheIndex = aCacheIndex;
+    lr->sortLayer = aSortLayer;
+    lr->itemLayer = aItemLayer;
+    lr->painterLayer = aPainterLayer;
+    lr->lodFunc = aLODFunc;
+    lr->visible = true;
+    lr->onTop = false;
+
+    m_renderOrder.push_back( lr );
+}
+
+
+void VIEW_BASE::Recache()
+{
+
+    PROF_COUNTER cnt( "recache-all", true );
+
+    int count = 0;
+    VIEW_CACHE::CACHE_ENTRIES& cacheMap = m_cache->GetCache();
+
+    for( VIEW_CACHE::CACHE_ENTRIES::iterator i = cacheMap.begin(); i != cacheMap.end(); ++i )
+    {
+            i->second->SetFlags ( VI_DIRTY );
+            for (int j = 0; j < i->second->GetGroupCount(); j ++)
+            {
+                int grp = i->second->GetGroup( j );
+                if (grp >= 0)
+                    m_gal->DeleteGroup ( grp );
+            }
+    }
+
+    BOX2I rect;
+    rect.SetMaximum();
+
+    updateDisplayLists( rect );
+
+    BOOST_FOREACH( RENDER_LAYER* layer, m_renderOrder )
+    {
+        if(layer->cacheIndex >= 0)
+            drawLayer( TARGET_CACHED, layer, true );
+    }
+
+    for( VIEW_CACHE::CACHE_ENTRIES::iterator i = cacheMap.begin(); i != cacheMap.end(); ++i )
+    {
+            i->second->ClearFlags ( VI_DIRTY );
+    }
+
+    //cnt.show();
+    printf( "Updated cache entries : %d buckets %d \n", count, cacheMap.bucket_count() );
+
+}
+
+void VIEW_BASE::redrawRect( const BOX2I& aRect  )
+{
+    setupRenderOrder();
+    //checkGeometryUpdates();
+
+    if( m_needsRecache )
+    {
+        Recache();
+        m_needsRecache = false;
+    }
+
+    PROF_COUNTER cnt( "query-items", true );
+
+    updateDisplayLists ( aRect );
+
+    //cnt.show();
+
+    PROF_COUNTER cnt2( "draw-items", true );
+
+    if (IsTargetDirty ( TARGET_CACHED ) || IsTargetDirty (TARGET_NONCACHED ) )
+    {
+        RENDER_LAYER dummy;
+
+
+        //printf("REdrawOver: %d\n", m_overlayList.Count() );
+        dummy.dispList = &m_defaultList;
+        dummy.cacheIndex = -1;
+        dummy.itemLayer = 0;
+        dummy.painterLayer = 0;
+        dummy.lodFunc = NULL;
+
+        drawLayer( TARGET_NONCACHED, &dummy, false );
+
+        BOOST_FOREACH( RENDER_LAYER* layer, m_renderOrder )
+        {
+            drawLayer( layer->cacheIndex >= 0 ? TARGET_CACHED : TARGET_NONCACHED, layer, false );
+        }
+    }
+
+
+    if( IsTargetDirty ( TARGET_OVERLAY ) )
+    {
+        RENDER_LAYER dummy;
+
+
+        //printf("REdrawOver: %d\n", m_overlayList.Count() );
+        dummy.dispList = &m_overlayList;
+        dummy.cacheIndex = -1;
+        dummy.itemLayer = 0;
+        dummy.painterLayer = 0;
+        dummy.lodFunc = NULL;
+
+        drawLayer( TARGET_OVERLAY, &dummy, false );
+    }
+
+    //cnt2.show();
+};
+
+void VIEW_BASE::Clear()
+{
+    BOOST_FOREACH(VIEW_RTREE_NG *rtree, m_trees | boost::adaptors::map_values)
+    {
+        rtree->RemoveAll();
+    }
+
+    m_cache->Clear();
+
+
+}
+
+
+void VIEW_BASE::SetVisible( const VIEW_ITEM_NG *aItem, bool aShow )
+{
+
+}
+
+void VIEW_BASE::Hide ( const VIEW_ITEM_NG *aItem, bool aShow )
+{
+
+}
+
+bool VIEW_BASE::IsVisible ( const VIEW_ITEM_NG *aItem) const
+{
+    return true;
+}
+
+struct queryVisitor
+{
+    queryVisitor( VIEW_DISP_LIST& aCont) :
+        m_cont( aCont )
+    {
+    }
+
+    bool operator()( VIEW_RTREE_ENTRY* aItem )
+    {
+        m_cont.Add( 0, aItem );
+        //printf("add %p %s\n", aItem->item, typeid(*aItem->item).name());
+        return true;
+    }
+
+    VIEW_DISP_LIST& m_cont;
+};
+
+
+void VIEW_BASE::updateDisplayLists( const BOX2I& aRect )
+{
+    queryVisitor v ( m_defaultList );
+    queryVisitor v2 ( m_overlayList );
+
+    printf("updateDefL\n");
+
+    m_defaultList.Clear();
+    m_overlayList.Clear();
+    m_trees[DEFAULT_LAYER]->Query( aRect, v );
+    m_trees[DEFAULT_OVERLAY]->Query( aRect, v2 );
+
+}
+
+boost::shared_ptr<VIEW_OVERLAY> VIEW_BASE::MakeOverlay( )
+{
+    boost::shared_ptr<VIEW_OVERLAY> ovl( new VIEW_OVERLAY ( this ) );
+
+    Add ( ovl.get(), VIEW_BASE::DEFAULT_OVERLAY );
+
+    return ovl;
+}
+
+void VIEW_BASE::RemoveOverlay ( VIEW_OVERLAY *ovl )
+{
+    printf("Remove Overlay %p\n", ovl);
+
+    Remove ( ovl );
+
+    MarkTargetDirty ( TARGET_OVERLAY );
+
+}
+
+const int  VIEW_BASE::DEFAULT_LAYER = 0;
+const int  VIEW_BASE::DEFAULT_OVERLAY = 255;

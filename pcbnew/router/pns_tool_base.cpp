@@ -31,7 +31,8 @@
 #include <id.h>
 #include <macros.h>
 #include <pcbnew_id.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <pcbcommon.h>
 #include <pcb_painter.h>
 #include <dialogs/dialog_pns_settings.h>
@@ -120,7 +121,7 @@ void PNS_TOOL_BASE::Reset( RESET_REASON aReason )
 
 PNS_ITEM* PNS_TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer )
 {
-    int tl = getView()->GetTopLayer();
+    int tl = F_Cu; //getView()->GetTopLayer();
 
     if( aLayer > 0 )
         tl = aLayer;
@@ -198,13 +199,13 @@ void PNS_TOOL_BASE::highlightNet( bool aEnabled, int aNetcode )
     else
         rs->SetHighlight( false );
 
-    getView()->UpdateAllLayersColor();
+    //getView()->UpdateAllLayersColor();
 }
 
 
 void PNS_TOOL_BASE::updateStartItem( TOOL_EVENT& aEvent )
 {
-    int tl = getView()->GetTopLayer();
+    int tl = F_Cu; //getView()->GetTopLayer();
     VECTOR2I cp = m_ctls->GetCursorPosition();
     VECTOR2I p;
 
@@ -305,4 +306,3 @@ void PNS_TOOL_BASE::updateEndItem( TOOL_EVENT& aEvent )
     if( m_endItem )
         TRACE( 0, "%s, layer : %d", m_endItem->KindStr().c_str() % m_endItem->Layers().Start() );
 }
-

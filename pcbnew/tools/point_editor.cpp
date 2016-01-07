@@ -26,7 +26,8 @@
 #include <boost/bind.hpp>
 
 #include <tool/tool_manager.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <geometry/seg.h>
 #include <confirm.h>
@@ -70,9 +71,10 @@ enum DIMENSION_POINTS
 class EDIT_POINTS_FACTORY
 {
 public:
-    static boost::shared_ptr<EDIT_POINTS> Make( EDA_ITEM* aItem, KIGFX::GAL* aGal )
+    static boost::shared_ptr<EDIT_POINTS> Make( EDA_ITEM* aItem, KIGFX::VIEW_BASE* aView )
     {
-        boost::shared_ptr<EDIT_POINTS> points = boost::make_shared<EDIT_POINTS>( aItem );
+        KIGFX::GAL *gal = aView->GetGAL();
+        boost::shared_ptr<EDIT_POINTS> points = boost::make_shared<EDIT_POINTS>( aItem, aView );
 
         // Generate list of edit points basing on the item type
         switch( aItem->Type() )
@@ -141,7 +143,7 @@ public:
                     }
 
                     points->Line( i ).SetConstraint( new EC_SNAPLINE( points->Line( i ),
-                            boost::bind( &KIGFX::GAL::GetGridPoint, aGal, _1 ) ) );
+                            boost::bind( &KIGFX::GAL::GetGridPoint, gal, _1 ) ) );
                 }
 
                 // The last missing line, connecting the last and the first polygon point
@@ -150,7 +152,7 @@ public:
 
                 points->Line( points->LinesSize() - 1 ).SetConstraint(
                         new EC_SNAPLINE( points->Line( points->LinesSize() - 1 ),
-                        boost::bind( &KIGFX::GAL::GetGridPoint, aGal, _1 ) ) );
+                        boost::bind( &KIGFX::GAL::GetGridPoint, gal, _1 ) ) );
                 break;
             }
 
@@ -245,12 +247,12 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
     {
         Activate();
 
-        KIGFX::VIEW_CONTROLS* controls = getViewControls();
-        KIGFX::VIEW* view = getView();
+        KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
+        KIGFX::VIEW_BASE* view = getView();
         PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
         EDA_ITEM* item = selection.items.GetPickedItem( 0 );
 
-        m_editPoints = EDIT_POINTS_FACTORY::Make( item, getView()->GetGAL() );
+        m_editPoints = EDIT_POINTS_FACTORY::Make( item, getView() );
 
         if( !m_editPoints )
             return 0;
@@ -269,7 +271,7 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
             {
                 break;
             }
-	
+
             if ( !modified )
                 updateEditedPoint( *evt );
 
@@ -315,7 +317,7 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
                 updateItem();
                 updatePoints();
 
-                m_editPoints->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+                view->Update( m_editPoints.get() );
             }
 
             else if( evt->IsAction( &COMMON_ACTIONS::pointEditorUpdate ) )
@@ -357,7 +359,7 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
         if( m_editPoints )
         {
             finishItem();
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            view->Update ( item ); 
             view->Remove( m_editPoints.get() );
             m_editPoints.reset();
         }
@@ -589,7 +591,7 @@ void POINT_EDITOR::updatePoints()
         if( m_editPoints->PointsSize() != (unsigned) outline->GetCornersCount() )
         {
             getView()->Remove( m_editPoints.get() );
-            m_editPoints = EDIT_POINTS_FACTORY::Make( item, getView()->GetGAL() );
+            m_editPoints = EDIT_POINTS_FACTORY::Make( item, getView() );
             getView()->Add( m_editPoints.get() );
         }
         else
@@ -620,7 +622,7 @@ void POINT_EDITOR::updatePoints()
 
 void POINT_EDITOR::setEditedPoint( EDIT_POINT* aPoint )
 {
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    KIGFX::VIEW_CONTROLS_NG* controls = getViewControls();
 
     if( aPoint )
     {

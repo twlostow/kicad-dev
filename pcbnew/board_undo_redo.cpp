@@ -47,6 +47,8 @@
 #include <tools/selection_tool.h>
 #include <tool/tool_manager.h>
 
+#include <view/view_ng.h>
+
 /* Functions to undo and redo edit commands.
  *  commands to undo are stored in CurrentScreen->m_UndoList
  *  commands to redo are stored in CurrentScreen->m_RedoList
@@ -465,7 +467,7 @@ void PCB_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
     BOARD_ITEM* item;
     bool        not_found = false;
     bool        reBuild_ratsnest = false;
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = GetGalCanvas()->GetView();
     RN_DATA* ratsnest = GetBoard()->GetRatsnest();
 
     // Undo in the reverse order of list creation: (this can allow stacked changes
@@ -528,85 +530,51 @@ void PCB_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
         {
             BOARD_ITEM* image = (BOARD_ITEM*) aList->GetPickedItemLink( ii );
 
-            // Remove all pads/drawings/texts, as they become invalid
-            // for the VIEW after SwapData() called for modules
-            if( item->Type() == PCB_MODULE_T )
-            {
-                MODULE* oldModule = static_cast<MODULE*>( item );
-                oldModule->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
-            }
             view->Remove( item );
             ratsnest->Remove( item );
-
             item->SwapData( image );
-
-            // Update all pads/drawings/texts, as they become invalid
-            // for the VIEW after SwapData() called for modules
-            if( item->Type() == PCB_MODULE_T )
-            {
-                MODULE* newModule = static_cast<MODULE*>( item );
-                newModule->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
-            }
             view->Add( item );
             ratsnest->Add( item );
-
             item->ClearFlags( SELECTED );
-            item->ViewUpdate( KIGFX::VIEW_ITEM::LAYERS );
         }
         break;
 
         case UR_NEW:        /* new items are deleted */
             aList->SetPickedItemStatus( UR_DELETED, ii );
             GetBoard()->Remove( item );
-
-            if( item->Type() == PCB_MODULE_T )
-            {
-                MODULE* module = static_cast<MODULE*>( item );
-                module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
-            }
             view->Remove( item );
-
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             break;
 
         case UR_DELETED:    /* deleted items are put in List, as new items */
             aList->SetPickedItemStatus( UR_NEW, ii );
             GetBoard()->Add( item );
-
-            if( item->Type() == PCB_MODULE_T )
-            {
-                MODULE* module = static_cast<MODULE*>( item );
-                module->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1) );
-            }
             view->Add( item );
-
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             build_item_list = true;
             break;
 
         case UR_MOVED:
             item->Move( aRedoCommand ? aList->m_TransformPoint : -aList->m_TransformPoint );
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            view->Update( item );
             ratsnest->Update( item );
             break;
 
         case UR_ROTATED:
             item->Rotate( aList->m_TransformPoint,
                           aRedoCommand ? m_rotationAngle : -m_rotationAngle );
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            view->Update( item );
             ratsnest->Update( item );
             break;
 
         case UR_ROTATED_CLOCKWISE:
             item->Rotate( aList->m_TransformPoint,
                           aRedoCommand ? -m_rotationAngle : m_rotationAngle );
-            item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            view->Update( item );
             ratsnest->Update( item );
             break;
 
         case UR_FLIPPED:
             item->Flip( aList->m_TransformPoint );
-            item->ViewUpdate( KIGFX::VIEW_ITEM::LAYERS );
+            view->Update( item );
             ratsnest->Update( item );
             break;
 

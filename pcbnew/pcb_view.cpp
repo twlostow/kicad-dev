@@ -390,5 +390,18 @@ void PCB_VIEW::SetVisibleLayers ( LSET aLayers )
 
 }
 
+void VIEW_ITEM_NG::ngViewGetLayers( int aLayers[], int& aCount ) const
+{
+    aLayers[0] = VIEW_BASE::DEFAULT_LAYER;
+    aCount = 1;
+}
+
+const BOX2I VIEW_ITEM_NG::ngViewBBox() const
+{
+    BOX2I rect;
+    rect.SetMaximum();
+    return rect;
+}
+
 
 }

@@ -50,6 +50,7 @@
 
 #include <gal/graphics_abstraction_layer.h>
 
+#include <dialogs/dialog_find_filter.h>
 
 /// This is a read only template that is copied and modified before adding to LAYER_WIDGET
 const LAYER_WIDGET::ROW PCB_LAYER_WIDGET::s_render_rows[] = {
@@ -111,6 +112,12 @@ PCB_LAYER_WIDGET::PCB_LAYER_WIDGET( PCB_BASE_FRAME* aParent, wxWindow* aFocusOwn
 
     // install the right click handler into each control at end of ReFill()
     // using installRightLayerClickHandler
+
+    wxPanel *m_FindFilterPanel = new DIALOG_FIND_FILTER ( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+
+    m_notebook->AddPage( m_FindFilterPanel, _( "Find/Filter" ), true );
+
+    Layout();
 }
 
 

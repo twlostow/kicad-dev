@@ -579,6 +579,7 @@ LAYER_WIDGET::LAYER_WIDGET( wxWindow* aParent, wxWindow* aFocusOwner, int aPoint
     m_notebook->Connect( -1, wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED,
         wxNotebookEventHandler( LAYER_WIDGET::OnTabChange ), NULL, this );
 
+
     Layout();
 }
 

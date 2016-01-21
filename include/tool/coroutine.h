@@ -27,8 +27,7 @@
 
 #include <cstdlib>
 
-#include <boost/context/fcontext.hpp>
-#include <boost/version.hpp>
+#include <system/libcontext.h>
 
 #include "delegate.h"
 
@@ -92,10 +91,8 @@ public:
         if( m_saved )
             delete m_saved;
 
-#if BOOST_VERSION >= 105600
         if( m_self )
             delete m_self;
-#endif
 
         if( m_stack )
             free( m_stack );
@@ -156,13 +153,9 @@ public:
         assert( m_saved == NULL );
 
         m_args = &aArgs;
-#if BOOST_VERSION >= 105600
-        m_self = new boost::context::fcontext_t();
-        *m_self = boost::context::make_fcontext( sp, m_stackSize, callerStub );
-#else
-        m_self = boost::context::make_fcontext( sp, m_stackSize, callerStub );
-#endif
-        m_saved = new boost::context::fcontext_t();
+        m_self = new fcontext_t();
+        *m_self = make_fcontext( sp, m_stackSize, callerStub );
+        m_saved = new fcontext_t();
 
         m_running = true;
         // off we go!
@@ -222,14 +215,10 @@ private:
     }
 
     ///> Wrapper for jump_fcontext to assure compatibility between different boost versions
-    static inline intptr_t jump(boost::context::fcontext_t* aOld, boost::context::fcontext_t* aNew,
+    static inline intptr_t jump(fcontext_t* aOld, fcontext_t* aNew,
                                 intptr_t aP, bool aPreserveFPU = true )
     {
-#if BOOST_VERSION >= 105600
-        return boost::context::jump_fcontext( aOld, *aNew, aP, aPreserveFPU );
-#else
-        return boost::context::jump_fcontext( aOld, aNew, aP, aPreserveFPU );
-#endif
+        return jump_fcontext( aOld, *aNew, aP, aPreserveFPU );
     }
 
     template <typename T>
@@ -252,10 +241,10 @@ private:
     ReturnType m_retVal;
 
     ///< saved caller context
-    boost::context::fcontext_t* m_saved;
+    fcontext_t* m_saved;
 
     ///< saved coroutine context
-    boost::context::fcontext_t* m_self;
+    fcontext_t* m_self;
 
     ///< coroutine stack
     void* m_stack;

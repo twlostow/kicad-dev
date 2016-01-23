@@ -213,6 +213,8 @@ public:
     /// @copydoc GAL::DrawCursor()
     virtual void DrawCursor( const VECTOR2D& aCursorPosition );
 
+    virtual void DrawGrid();
+
     /**
      * @brief Function PostPaint
      * posts an event to m_paint_listener.  A post is used so that the actual drawing

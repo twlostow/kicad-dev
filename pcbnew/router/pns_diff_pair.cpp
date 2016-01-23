@@ -473,6 +473,12 @@ void PNS_DP_GATEWAYS::BuildFromPrimitivePair( PNS_DP_PRIMITIVE_PAIR aPair, bool 
                 SHAPE_LINE_CHAIN entryP( p0_p, p0_p + sign * dir, gw_p );
                 SHAPE_LINE_CHAIN entryN( p0_n, p0_n + sign * dir, gw_n );
 
+                PNS_ROUTER::GetInstance()->DisplayDebugLine(entryP, 4, 10000);
+                PNS_ROUTER::GetInstance()->DisplayDebugLine(entryN, 5, 10000);
+
+                drawGw ( gw_p, 2 );
+                drawGw ( gw_n, 3 );
+
                 PNS_DP_GATEWAY gw( gw_p, gw_n, false );
 
                 gw.SetEntryLines( entryP, entryN );

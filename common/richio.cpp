@@ -29,6 +29,7 @@
 
 #include <richio.h>
 
+#include <stdarg.h>
 
 // Fall back to getc() when getc_unlocked() is not available on the target platform.
 #if !defined( HAVE_FGETC_NOLOCK )
@@ -50,7 +51,7 @@ static int vprint( std::string* result, const char* format, va_list ap )
     // see: www.cplusplus.com/reference/cstdio/vsnprintf
     // we make a copy of va_list ap for the second call, if happens
     va_list tmp;
-    va_copy( tmp, ap );
+//    va_copy( tmp, ap );
 
     size_t  len = vsnprintf( msg, sizeof(msg), format, ap );
 
@@ -422,7 +423,7 @@ int OUTPUTFORMATTER::vprint( const char* fmt,  va_list ap )  throw( IO_ERROR )
     // see: www.cplusplus.com/reference/cstdio/vsnprintf
     // we make a copy of va_list ap for the second call, if happens
     va_list tmp;
-    va_copy( tmp, ap );
+//    va_copy( tmp, ap );
     int ret = vsnprintf( &buffer[0], buffer.size(), fmt, ap );
 
     if( ret >= (int) buffer.size() )

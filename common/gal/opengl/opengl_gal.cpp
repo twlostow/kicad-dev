@@ -827,15 +827,11 @@ void OPENGL_GAL::drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     else
         glLineWidth( 2.0 );
 
-    glColor4d( gridColor.r, gridColor.g, gridColor.b, gridColor.a );
-
     glBegin( GL_LINES );
     glVertex3d( aStartPoint.x, aStartPoint.y, layerDepth );
     glVertex3d( aEndPoint.x, aEndPoint.y, layerDepth );
     glEnd();
 
-    // Restore the default color, so textures will be drawn properly
-    glColor4d( 1.0, 1.0, 1.0, 1.0 );
 }
 
 
@@ -1198,4 +1194,106 @@ static void InitTesselatorCallbacks( GLUtesselator* aTesselator )
     gluTessCallback( aTesselator, GLU_TESS_COMBINE_DATA, ( void (CALLBACK*)() )CombineCallback );
     gluTessCallback( aTesselator, GLU_TESS_EDGE_FLAG,    ( void (CALLBACK*)() )EdgeCallback );
     gluTessCallback( aTesselator, GLU_TESS_ERROR,        ( void (CALLBACK*)() )ErrorCallback );
+}
+
+
+void OPENGL_GAL::DrawGrid()
+{
+    if( !gridVisibility )
+        return;
+
+    compositor.SetBuffer( mainBuffer );
+
+    // Draw the grid
+    // For the drawing the start points, end points and increments have
+    // to be calculated in world coordinates
+    VECTOR2D worldStartPoint = screenWorldMatrix * VECTOR2D( 0.0, 0.0 );
+    VECTOR2D worldEndPoint   = screenWorldMatrix * VECTOR2D( screenSize );
+
+    int gridScreenSizeDense  = KiROUND( gridSize.x * worldScale );
+    int gridScreenSizeCoarse = KiROUND( gridSize.x * static_cast<double>( gridTick ) * worldScale );
+
+    // Compute the line marker or point radius of the grid
+    double marker = 2.0 * gridLineWidth / worldScale;
+    double doubleMarker = 2.0 * marker;
+
+    // Check if the grid would not be too dense
+    if( std::max( gridScreenSizeDense, gridScreenSizeCoarse ) > gridDrawThreshold )
+    {
+        // Compute grid variables
+        int gridStartX  = KiROUND( worldStartPoint.x / gridSize.x );
+        int gridEndX    = KiROUND( worldEndPoint.x / gridSize.x );
+        int gridStartY  = KiROUND( worldStartPoint.y / gridSize.y );
+        int gridEndY    = KiROUND( worldEndPoint.y / gridSize.y );
+
+        assert( gridEndX >= gridStartX );
+        assert( gridEndY >= gridStartY );
+
+        // Correct the index, else some lines are not correctly painted
+        gridStartX -= std::abs( gridOrigin.x / gridSize.x ) + 1;
+        gridStartY -= std::abs( gridOrigin.y / gridSize.y ) + 1;
+        gridEndX += std::abs( gridOrigin.x / gridSize.x ) + 1;
+        gridEndY += std::abs( gridOrigin.y / gridSize.y ) + 1;
+
+        // Draw the grid behind all other layers
+
+        SetIsFill( false );
+        SetIsStroke( true );
+        SetStrokeColor( gridColor );
+
+        // Now draw the grid, every coarse grid line gets the double width
+        SetLayerDepth( depthRange.x * 0.8 );
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+        glDisable(GL_DEPTH_TEST);
+        glColor4d( gridColor.r, gridColor.g, gridColor.b, 1.0 );
+
+        if( gridStyle == GRID_STYLE_DOTS )
+        {
+            glEnable(GL_STENCIL_TEST);
+            glColor4f(0.0,0.0,0.0,0.0);
+        }
+
+        glStencilFunc(GL_ALWAYS, 1, 1);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+
+            // Vertical lines
+        for( int j = gridStartY; j < gridEndY; j += 1 )
+        {
+            if( j % gridTick == 0 && gridScreenSizeDense > gridDrawThreshold )
+                SetLineWidth( doubleMarker );
+            else
+                SetLineWidth( marker );
+
+            if( ( j % gridTick == 0 && gridScreenSizeCoarse > gridDrawThreshold )
+                || gridScreenSizeDense > gridDrawThreshold )
+            {
+                drawGridLine( VECTOR2D( gridStartX * gridSize.x, j * gridSize.y + gridOrigin.y ),
+                              VECTOR2D( gridEndX * gridSize.x,   j * gridSize.y + gridOrigin.y ) );
+            }
+        }
+
+        glStencilFunc(GL_NOTEQUAL, 0, 1);
+        glColor4d( gridColor.r, gridColor.g, gridColor.b, 1.0 );
+
+        // Horizontal lines
+        for( int i = gridStartX; i < gridEndX; i += 1 )
+        {
+            if( i % gridTick == 0 && gridScreenSizeDense > gridDrawThreshold )
+                SetLineWidth( doubleMarker );
+            else
+                SetLineWidth( marker );
+
+            if( ( i % gridTick == 0 && gridScreenSizeCoarse > gridDrawThreshold )
+                || gridScreenSizeDense > gridDrawThreshold )
+            {
+                drawGridLine( VECTOR2D( i * gridSize.x + gridOrigin.x, gridStartY * gridSize.y ),
+                              VECTOR2D( i * gridSize.x + gridOrigin.x, gridEndY * gridSize.y ) );
+            }
+        }
+
+        glDisable(GL_STENCIL_TEST);
+        glColor4d( 1.0, 1.0, 1.0, 1.0 );
+        glEnable(GL_DEPTH_TEST);
+    }
 }

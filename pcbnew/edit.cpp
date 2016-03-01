@@ -1662,9 +1662,9 @@ void PCB_BASE_EDIT_FRAME::createArray()
             else
             {
                 if( editingModule )
-                    new_item = module->DuplicateAndAddItem( item, true );
+                    new_item = module->Duplicate( item, true, true );
                 else
-                    new_item = board->DuplicateAndAddItem( item, true );
+                    new_item = board->Duplicate( item, true, true );
 
                 if( new_item )
                 {

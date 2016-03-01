@@ -2683,8 +2683,9 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
 }
 
 
-BOARD_ITEM* BOARD::DuplicateAndAddItem( const BOARD_ITEM* aItem,
-                                        bool aIncrementReferences )
+BOARD_ITEM* BOARD::Duplicate( const BOARD_ITEM* aItem,
+                              bool aIncrementReferences,
+                              bool aAddToBoard )
 {
     BOARD_ITEM* new_item = NULL;
 
@@ -2718,7 +2719,8 @@ BOARD_ITEM* BOARD::DuplicateAndAddItem( const BOARD_ITEM* aItem,
         if( aIncrementReferences )
             new_item->IncrementItemReference();
 
-        Add( new_item );
+        if ( aAddToBoard )
+            Add( new_item );
     }
 
     return new_item;

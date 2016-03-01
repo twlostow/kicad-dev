@@ -294,8 +294,9 @@ public:
      */
     BOARD_ITEM* Remove( BOARD_ITEM* aBoardItem );
 
-    BOARD_ITEM* DuplicateAndAddItem( const BOARD_ITEM* aItem,
-                                     bool aIncrementReferences );
+    BOARD_ITEM* Duplicate( const BOARD_ITEM* aItem,
+                           bool aIncrementReferences,
+                           bool aAddToBoard = false );
 
     /**
      * Function GetNextModuleReferenceWithPrefix

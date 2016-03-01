@@ -55,8 +55,10 @@
 #include <dialogs/dialog_move_exact.h>
 #include <dialogs/dialog_track_via_properties.h>
 
+#include <board_commit.h>
+
 EDIT_TOOL::EDIT_TOOL() :
-    TOOL_INTERACTIVE( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ),
+    PCB_TOOL( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ),
     m_dragging( false ), m_editModules( false ), m_undoInhibit( 0 ),
     m_updateFlag( KIGFX::VIEW_ITEM::NONE )
 {
@@ -366,16 +368,9 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
 
         if( dlg.ShowModal() )
         {
-            RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
-
-            editFrame->OnModify();
-            editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
-            dlg.Apply();
-
-            selection.ForAll<KIGFX::VIEW_ITEM>( boost::bind( &KIGFX::VIEW_ITEM::ViewUpdate, _1,
-                                                             KIGFX::VIEW_ITEM::ALL ) );
-            selection.ForAll<BOARD_ITEM>( boost::bind( &RN_DATA::Update, ratsnest, _1 ) );
-            ratsnest->Recalculate();
+            BOARD_COMMIT commit( this );
+            dlg.Apply( commit );
+            commit.Push ( _("Edit Track/Via Properties" ) );
         }
     }
     else if( selection.Size() == 1 ) // Properties are displayed when there is only one item selected
@@ -747,7 +742,7 @@ int EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
         BOARD_ITEM* new_item = NULL;
 
         if( m_editModules )
-            new_item = editFrame->GetBoard()->m_Modules->DuplicateAndAddItem( item, increment );
+            new_item = editFrame->GetBoard()->m_Modules->Duplicate( item, increment, true );
         else
         {
 #if 0
@@ -756,7 +751,7 @@ int EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
             // so zones are not duplicated
             if( item->Type() != PCB_ZONE_AREA_T )
 #endif
-            new_item = editFrame->GetBoard()->DuplicateAndAddItem( item, increment );
+            new_item = editFrame->GetBoard()->Duplicate( item, increment, true );
         }
 
         if( new_item )
@@ -799,27 +794,19 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
     SELECTION_TOOL* selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     const SELECTION& selection = selTool->GetSelection();
 
+    BOARD_COMMIT commit(this);
+
     // Be sure that there is at least one item that we can modify
     if( !hoverSelection( selection ) )
         return 0;
 
-    bool originalItemsModified = false;
+    SetEditModules ( m_editModules );
 
     // we have a selection to work on now, so start the tool process
 
     PCB_BASE_FRAME* editFrame = getEditFrame<PCB_BASE_FRAME>();
-    editFrame->OnModify();
 
-    if( m_editModules )
-    {
-        // Module editors do their undo point upfront for the whole module
-        editFrame->SaveCopyInUndoList( editFrame->GetBoard()->m_Modules, UR_MODEDIT );
-    }
-    else
-    {
-        // We may also change the original item
-        editFrame->SaveCopyInUndoList( selection.items, UR_CHANGED );
-    }
+    commit.Stage ( selection.items, COMMIT::CHT_MODIFY );
 
     DIALOG_CREATE_ARRAY::ARRAY_OPTIONS* array_opts = NULL;
 
@@ -831,7 +818,6 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
 
     if( ret == wxID_OK && array_opts != NULL )
     {
-        PICKED_ITEMS_LIST newItemList;
 
         for( int i = 0; i < selection.Size(); ++i )
         {
@@ -871,38 +857,17 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
                     // i.e. the ref and value fields of a footprint or zones
                     // therefore newItem can be null
 
-                    if( m_editModules )
-                        newItem = editFrame->GetBoard()->m_Modules->DuplicateAndAddItem( item, increment );
-                    else
+                    if ( !m_editModules )
                     {
-#if 0
-                        // @TODO: see if we allow zone duplication here
-                        // Duplicate zones is especially tricky (overlaping zones must be merged)
-                        // so zones are not duplicated
-                        if( item->Type() == PCB_ZONE_AREA_T )
-                            newItem = NULL;
-                        else
-#endif
-                            newItem = editFrame->GetBoard()->DuplicateAndAddItem( item, increment );
+                        newItem = board()->Duplicate( item, increment, false );
+                    } else {
+                        newItem = board()->m_Modules->Duplicate( item, increment, false );
                     }
 
-                    if( newItem )
-                    {
-                        array_opts->TransformItem( ptN, newItem, rotPoint );
 
-                        m_toolMgr->RunAction( COMMON_ACTIONS::unselectItem, true, newItem );
-
-                        newItemList.PushItem( newItem );
-
-                        if( newItem->Type() == PCB_MODULE_T)
-                        {
-                            static_cast<MODULE*>( newItem )->RunOnChildren( boost::bind( &KIGFX::VIEW::Add,
-                                    getView(), _1 ) );
-                        }
-
-                        editFrame->GetGalCanvas()->GetView()->Add( newItem );
-                        getModel<BOARD>()->GetRatsnest()->Update( newItem );
-                    }
+                    array_opts->TransformItem( ptN, newItem, rotPoint );
+                    m_toolMgr->RunAction( COMMON_ACTIONS::unselectItem, true, newItem );
+                    commit.Add( newItem );
                 }
 
                 // set the number if needed:
@@ -915,7 +880,6 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
                         const wxString padName = array_opts->GetItemNumber( ptN );
                         static_cast<D_PAD*>( newItem )->SetPadName( padName );
 
-                        originalItemsModified = true;
                         break;
                     }
                     case PCB_MODULE_T:
@@ -924,7 +888,6 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
                         MODULE* module = static_cast<MODULE*>( newItem );
                         module->SetReference( cachedString + moduleName );
 
-                        originalItemsModified = true;
                         break;
                     }
                     case PCB_MODULE_TEXT_T:
@@ -934,7 +897,6 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
                         if( text )
                             text->SetText( array_opts->InterpolateNumberIntoString( ptN, cachedString ) );
 
-                        originalItemsModified = true;
                         break;
                     }
                     default:
@@ -945,22 +907,9 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
             }
         }
 
-        if( !m_editModules )
-        {
-            if( originalItemsModified )
-            {
-                // Update the appearance of the original items
-                selection.group->ItemsViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
-            }
-
-            // Add all items as a single undo point for PCB editors
-            // TODO: Can this be merged into the previous undo point (where
-            //       we saved the original items)
-            editFrame->SaveCopyInUndoList( newItemList, UR_NEW );
-        }
     }
 
-    getModel<BOARD>()->GetRatsnest()->Recalculate();
+    commit.Push( _("Create Array" ) );
 
     return 0;
 }

@@ -54,6 +54,9 @@ option( KICAD_SCRIPTING_WXPYTHON
     "Build wxPython implementation for wx interface building in Python and py.shell (default OFF)."
     )
 
+option( KICAD_DLL_EXPORT_ALL_SYMBOLS 
+    "Builds Kicad DLLs with all symbols publicly visible. Enables dynamic linking of Kicad DLLs to external test programs (e.g. to speed up build process, default OFF)" )
+
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
 # ( use -DPYTHON_EXECUTABLE=<python path>/python.exe or python2 )
@@ -74,10 +77,13 @@ set( KICAD_REPO_NAME "product" CACHE STRING "Name of the tree from which this bu
 
 
 # Global setting: exports are explicit
-set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
-set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
-
-
+if( KICAD_DLL_EXPORT_ALL_SYMBOLS )
+	set( CMAKE_CXX_VISIBILITY_PRESET "default" )
+	set( CMAKE_VISIBILITY_INLINES_HIDDEN OFF )
+else ()
+	set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
+	set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
+endif()
 # Global setting: build everything position independent
 set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 
@@ -98,9 +104,9 @@ if( POLICY CMP0063 )
     endif()
 else()
     if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY AND NOT APPLE )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY}hidden" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY}${CMAKE_CXX_VISIBILITY_PRESET}" )
     endif()
-    if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN AND NOT APPLE )
+    if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN AND CMAKE_VISIBILITY_INLINES_HIDDEN AND NOT APPLE )
         set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN}" )
     endif()
 endif()

@@ -842,7 +842,7 @@ void S3D_FILENAME_RESOLVER::checkEnvVarPath( const wxString& aPath )
     if( lpath.m_pathexp.empty() )
         return;
 
-    m_Paths.insert( sPL, lpath );
+//    m_Paths.insert( sPL, lpath );
     return;
 }
 

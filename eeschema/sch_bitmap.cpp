@@ -136,7 +136,7 @@ bool SCH_BITMAP::Load( LINE_READER& aLine, wxString& aErrorMsg )
 {
     char* line = aLine.Line();
 
-    if( strnicmp( line, "$Bitmap", 7 ) != 0 )
+    if( strncasecmp( line, "$Bitmap", 7 ) != 0 )
     {
         aErrorMsg.Printf( wxT( "Eeschema file bitmap image load error at line %d, aborted" ),
                           aLine.LineNumber() );
@@ -151,24 +151,24 @@ bool SCH_BITMAP::Load( LINE_READER& aLine, wxString& aErrorMsg )
 
         line = aLine.Line();
 
-        if( strnicmp( line, "Pos", 3 ) == 0 )
+        if( strncasecmp( line, "Pos", 3 ) == 0 )
         {
             sscanf( line + 3, "%d %d", &m_Pos.x, &m_Pos.y );
             continue;
         }
 
-        if( strnicmp( line, "Scale", 5 ) == 0 )
+        if( strncasecmp( line, "Scale", 5 ) == 0 )
         {
             sscanf( line + 5, "%lf", &m_Image->m_Scale );
             continue;
         }
 
-        if( strnicmp( line, "Data", 4 ) == 0 )
+        if( strncasecmp( line, "Data", 4 ) == 0 )
         {
             m_Image->LoadData( aLine, aErrorMsg );
         }
 
-        if( strnicmp( line, "$EndBitmap", 4 ) == 0 )
+        if( strncasecmp( line, "$EndBitmap", 4 ) == 0 )
             break;
     }
 

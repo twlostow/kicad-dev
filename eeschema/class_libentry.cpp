@@ -886,7 +886,7 @@ bool LIB_PART::Load( LINE_READER& aLineReader, wxString& aErrorMsg )
         {
             p = strtok( line, " \t\n" );
 
-            if( p && stricmp( p, "ENDDEF" ) == 0 )
+            if( p && strcasecmp( p, "ENDDEF" ) == 0 )
                 break;
         }
 
@@ -1144,7 +1144,7 @@ bool LIB_PART::LoadFootprints( LINE_READER& aLineReader, wxString& aErrorMsg )
 
         p = strtok( line, " \t\r\n" );
 
-        if( stricmp( p, "$ENDFPLIST" ) == 0 )
+        if( strcasecmp( p, "$ENDFPLIST" ) == 0 )
             break;
 
         m_FootprintList.Add( FROM_UTF8( p ) );

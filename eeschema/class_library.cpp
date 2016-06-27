@@ -544,7 +544,7 @@ bool PART_LIB::Load( wxString& aErrorMsg )
     {
         char * line = reader.Line();
 
-        if( type == LIBRARY_TYPE_EESCHEMA && strnicmp( line, "$HEADER", 7 ) == 0 )
+        if( type == LIBRARY_TYPE_EESCHEMA && strncasecmp( line, "$HEADER", 7 ) == 0 )
         {
             if( !LoadHeader( reader ) )
             {
@@ -557,7 +557,7 @@ bool PART_LIB::Load( wxString& aErrorMsg )
 
         wxString msg;
 
-        if( strnicmp( line, "DEF", 3 ) == 0 )
+        if( strncasecmp( line, "DEF", 3 ) == 0 )
         {
             // Read one DEF/ENDDEF part entry from library:
             LIB_PART* part = new LIB_PART( wxEmptyString, this );
@@ -622,10 +622,10 @@ bool PART_LIB::LoadHeader( LINE_READER& aLineReader )
         text = strtok( line, " \t\r\n" );
         data = strtok( NULL, " \t\r\n" );
 
-        if( stricmp( text, "TimeStamp" ) == 0 )
+        if( strcasecmp( text, "TimeStamp" ) == 0 )
             timeStamp = atol( data );
 
-        if( stricmp( text, "$ENDHEADER" ) == 0 )
+        if( strcasecmp( text, "$ENDHEADER" ) == 0 )
             return true;
     }
 
@@ -660,7 +660,7 @@ bool PART_LIB::LoadDocs( wxString& aErrorMsg )
         return false;
     }
 
-    if( strnicmp( line, DOCFILE_IDENT, 10 ) != 0 )
+    if( strncasecmp( line, DOCFILE_IDENT, 10 ) != 0 )
     {
         aErrorMsg.Printf( _( "File '%s' is not a valid component library document file." ),
                           GetChars( fn.GetFullPath() ) );

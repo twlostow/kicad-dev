@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar 28 2015)
+// C++ code generated with wxFormBuilder (version Jun 24 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -55,6 +55,7 @@ class DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_FBP : public DIALOG_SHIM
 		wxStaticText* m_staticTextTimeStamp;
 		wxTextCtrl* m_textCtrlTimeStamp;
 		wxStaticLine* m_staticline1;
+		wxButton* spiceFieldsButton;
 		wxButton* defaultsButton;
 		wxListCtrl* fieldListCtrl;
 		wxButton* addFieldButton;
@@ -87,6 +88,7 @@ class DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_FBP : public DIALOG_SHIM
 		virtual void OnCloseDialog( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnTestChipName( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSelectChipName( wxCommandEvent& event ) { event.Skip(); }
+		virtual void EditSpiceFields( wxCommandEvent& event ) { event.Skip(); }
 		virtual void SetInitCmp( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnListItemDeselected( wxListEvent& event ) { event.Skip(); }
 		virtual void OnListItemSelected( wxListEvent& event ) { event.Skip(); }
@@ -100,7 +102,7 @@ class DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_FBP : public DIALOG_SHIM
 	
 	public:
 		
-		DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_FBP( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Component Properties"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 688,586 ), long style = wxCAPTION|wxCLOSE_BOX|wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU ); 
+		DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_FBP( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Component Properties"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 928,741 ), long style = wxCAPTION|wxCLOSE_BOX|wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU ); 
 		~DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_FBP();
 	
 };

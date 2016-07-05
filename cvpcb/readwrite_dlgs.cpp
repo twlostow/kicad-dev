@@ -167,7 +167,8 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles( const std::string& aNetlist )
         return false;
 
     LoadProjectFile();
-    LoadFootprintFiles();
+    if( !LoadFootprintFiles() )
+       return false;
 
     BuildFOOTPRINTS_LISTBOX();
     BuildLIBRARY_LISTBOX();

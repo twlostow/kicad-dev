@@ -11,7 +11,7 @@ include_directories(
 
 set( PCBNEW_PNS_SRCS
     time_limit.cpp
-
+    pns_kicad_iface.cpp
     pns_algo_base.cpp
     pns_diff_pair.cpp
     pns_diff_pair_placer.cpp

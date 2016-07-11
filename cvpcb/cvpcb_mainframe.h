@@ -1,6 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
+ * Copyright (C) CERN 2016 Michele Castellana, <michele.castellana@cern.ch>
  * Copyright (C) 2016 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 1992-2016 KiCad Developers, see AUTHORS.txt for contributors.
  *
@@ -41,12 +42,10 @@
 
 /*  Forward declarations of all top-level window classes. */
 class wxAuiToolBar;
-class FOOTPRINTS_LISTBOX;
 class COMPONENTS_LISTBOX;
-class LIBRARY_LISTBOX;
 class DISPLAY_FOOTPRINTS_FRAME;
 class COMPONENT;
-class FP_LIB_TABLE;
+class FOOTPRINTS_TREE;
 
 namespace CV { struct IFACE; }
 
@@ -63,9 +62,8 @@ class CVPCB_MAINFRAME : public KIWAY_PLAYER
     NETLIST                   m_netlist;
     int                       m_filteringOptions;
     wxAuiToolBar*             m_mainToolBar;
-    FOOTPRINTS_LISTBOX*       m_footprintListBox;
-    LIBRARY_LISTBOX*          m_libListBox;
     COMPONENTS_LISTBOX*       m_compListBox;
+    FOOTPRINTS_TREE*          m_panelTree;
     wxTextCtrl*               m_tcFilterString;
 
 public:
@@ -94,6 +92,9 @@ public:
      * @return a pointer on the Footprint Viewer frame, if exists, or NULL
      */
     DISPLAY_FOOTPRINTS_FRAME* GetFootprintViewerFrame();
+
+    void SetFootprints( FOOTPRINT_LIST& aList, COMPONENT* aComponent,
+                     const wxString &aFootPrintFilterPattern, int aFilterType );
 
     /**
      * Function OnSelectComponent
@@ -174,8 +175,7 @@ public:
     void             SetNewPkg( const wxString& aFootprintName );
 
     void             BuildCmpListBox();
-    void             BuildFOOTPRINTS_LISTBOX();
-    void             BuildLIBRARY_LISTBOX();
+    void             BuildFOOTPRINTS_TREE();
 
     /**
      * Create or Update the frame showing the current highlighted footprint
@@ -290,9 +290,9 @@ private:
     void OnUpdateKeepOpenOnSave( wxUpdateUIEvent& event );
     void OnFilterFPbyKeywords( wxUpdateUIEvent& event );
     void OnFilterFPbyPinCount( wxUpdateUIEvent& event );
-    void OnFilterFPbyLibrary( wxUpdateUIEvent& event );
     void OnFilterFPbyKeyName( wxUpdateUIEvent& event );
 
+    void             BuildLIBRARY_TREE();
     /**
      * read the .equ files and populate the list of equvalents
      * @param aList the list to populate

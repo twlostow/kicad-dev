@@ -5,6 +5,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
+ * Copyright (C) CERN 2016 Michele Castellana, <michele.castellana@cern.ch>
  * Copyright (C) 2015 Jean-Pierre Charras, jean-pierre.charras
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
  * Copyright (C) 1992-2011 KiCad Developers, see AUTHORS.txt for contributors.
@@ -164,14 +165,14 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles( const std::string& aNetlist )
     ReadSchematicNetlist( aNetlist );
 
     if( m_compListBox == NULL )
-        return false;
+       BuildCmpListBox();
 
     LoadProjectFile();
     if( !LoadFootprintFiles() )
        return false;
 
-    BuildFOOTPRINTS_LISTBOX();
-    BuildLIBRARY_LISTBOX();
+    BuildLIBRARY_TREE();
+    BuildFOOTPRINTS_TREE();
 
     m_compListBox->Clear();
     m_undefinedComponentCnt = 0;
@@ -345,9 +346,9 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles( const std::string& aNetlist )
     {
         COMPONENT* component = m_netlist.GetComponent( i );
 
-        msg.Printf( CMP_FORMAT, m_compListBox->GetCount() + 1,
-                    GetChars( component->GetReference() ),
-                    GetChars( component->GetValue() ),
+        msg.Printf( CMP_FORMAT, m_compListBox->GetCount() + 1,\
+                    GetChars( component->GetReference() ),\
+                    GetChars( component->GetValue() ),\
                     GetChars( FROM_UTF8( component->GetFPID().Format().c_str() ) ) );
 
         m_compListBox->AppendLine( msg );

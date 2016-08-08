@@ -62,27 +62,19 @@ void LIB_EDIT_FRAME::ReCreateMenuBar()
     // Menu File:
     wxMenu* fileMenu = new wxMenu;
 
-    // Select current library
+    // Save all libraries
     AddMenuItem( fileMenu,
-                 ID_LIBEDIT_SELECT_CURRENT_LIB,
-                 _( "&Current Library" ),
-                 _( "Select working library" ),
-                 KiBitmap( library_xpm ) );
-    fileMenu->AppendSeparator();
-
+                 ID_LIBEDIT_SAVE_ALL_LIBS,
+                 _( "&Save All Libraries\tCtrl+S" ),
+                 _( "Save all library changes" ),
+                 KiBitmap( save_xpm ) );
+    
     // Save current library
     AddMenuItem( fileMenu,
                  ID_LIBEDIT_SAVE_CURRENT_LIB,
-                 _( "&Save Current Library\tCtrl+S" ),
-                 _( "Save the current active library" ),
+                 _( "&Save Selected Library\tCtrl+S" ),
+                 _( "Save the current selected library" ),
                  KiBitmap( save_xpm ) );
-
-    // Save current library as...
-    AddMenuItem( fileMenu,
-                 ID_LIBEDIT_SAVE_CURRENT_LIB_AS,
-                 _( "Save Current Library &As" ),
-                 _( "Save current active library as..." ),
-                 KiBitmap( save_as_xpm ) );
 
     // Separator
     fileMenu->AppendSeparator();

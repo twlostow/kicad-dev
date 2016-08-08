@@ -23,6 +23,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
+#define wxID_SEARCHABLE_TREE 1000
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class SEARCH_TREE_BASE
@@ -45,6 +46,8 @@ class SEARCH_TREE_BASE : public wxPanel
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnTextChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnLeftDClick( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnLeftDown( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnRightClick( wxMouseEvent& event ) { event.Skip(); }
 		
 	
 	public:

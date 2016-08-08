@@ -469,6 +469,22 @@ public:
         return *this;
     }
 
+    EDA_PANEINFO& DockableFramePane()
+    {
+        DefaultPane();
+        CloseButton( false );
+        TopDockable( true );
+        BottomDockable( true );
+        LeftDockable( true );
+        RightDockable( true );
+        Gripper( true );
+        DockFixed( false );
+        Movable( true );
+        Resizable( true );
+        return *this;
+    }
+
+
     /**
      * Function MessageToolbarPane
      * Change *this to a message pane for KiCad.

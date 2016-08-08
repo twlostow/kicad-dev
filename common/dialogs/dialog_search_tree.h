@@ -48,21 +48,23 @@ class SEARCH_TREE : public SEARCH_TREE_BASE
    static const wxString FilterFootprintEntry;
 	private:
       using SEARCH_TREE_BASE::m_tree;
-      wxTreeItemId FindItem( const wxTreeItemId& root, const wxString& aSearchFor ) const;
       const long m_style;
       bool m_hasPreview;
-      unsigned m_pinCount;
       wxArrayString m_keywords;
-      void SelectItem( const wxTreeItemId& item );
-      void SelectItems( const wxArrayTreeItemIds& items );
+      unsigned m_pinCount;
+      wxTreeItemId m_lastAddedElem;
+      wxTreeItemId FindItem( const wxTreeItemId& aRoot, const wxString& aSearchFor ) const;
+      void SelectItem( const wxTreeItemId& aItem );
+      void SelectItems( const wxArrayTreeItemIds& aItems );
 
 	protected:
       int m_filteringOptions;
       wxString m_filterPattern;
       bool MatchKeywords( const wxString& aSearchFor ) const;
 		virtual wxArrayTreeItemIds GetSelected() const;
+      wxTreeItemId AddLibrary( const wxString& aLibrary );
       // Depth First Search
-		wxTreeItemId FindItem( const wxString& aSearchFor ) const;
+      wxTreeItemId FindItem( const wxString& aSearchFor, const wxString& aParent = wxEmptyString ) const;
       // First layer of the tree
       wxTreeItemId FindLibrary( const wxString& aSearchFor ) const;
       /* 
@@ -73,24 +75,20 @@ class SEARCH_TREE : public SEARCH_TREE_BASE
       wxBoxSizer* GetSizerForPreviews() const;
       wxTreeCtrl* GetTree() const;
       unsigned GetPinCount();
-      void SetPreview( bool val, const wxString& text = wxString("Preview") );
+      void SetPreview( bool aVal, const wxString& aText = wxString("Preview") );
+      bool HasPreview() const;
 
 		/*
        * Virtual event handlers, override them in your derived class
        * By default they do nothing.
        */
-		virtual void OnTextChanged( wxCommandEvent& event );
-		virtual void OnLeftDClick( wxMouseEvent& event );
+		virtual void OnTextChanged( wxCommandEvent& aEvent );
+		virtual void OnLeftDClick( wxMouseEvent& aEvent );
       /*
        * If you override this methods you MUST call this function.
        * The idea is that every class save its own internal.
        */
       virtual void LoadSettings( wxConfigBase* aCfg );
-      /*
-       * This function will be called when the widget needs to update itself
-       * this is the only context-dependant method;
-       */
-      virtual void Update() = 0;
 
 	public:
       enum FILTER {
@@ -98,12 +96,17 @@ class SEARCH_TREE : public SEARCH_TREE_BASE
           FILTERING_BY_PIN_COUNT          = 0x0002,
           FILTERING_BY_NAMES              = 0x0001
       };
+      /*
+       * This function will be called when the widget needs to update itself
+       * this is the only context-dependant method;
+       */
+      virtual void Update() = 0;
 		unsigned int GetCount() const;
       void ExpandAll();
       void ExpandSelected();
       void Expand( const wxString& aElem );
       void ResetTree();
-      void SelectItem( const wxString& item );
+      void SelectItem( const wxString& aItem, const wxString& aParent = wxEmptyString );
       virtual void SaveSettings( wxConfigBase* aCfg );
       int GetFilteringOptions() const;
       bool IsSelected( const wxString& aSearchFor ) const;
@@ -111,13 +114,19 @@ class SEARCH_TREE : public SEARCH_TREE_BASE
       void SetPinCount( unsigned aNum );
       // Insert as child of the root node
       void InsertLibrary( const wxString& aLibrary );
+      void RemoveLibrary( const wxString& aLibrary );
       // Insert as child of the corresponding library
-      void InsertAsChildOf( const wxString& aFootprint, const wxString& parent );
+      void InsertAsChildOf( const wxString& aElem, const wxString& aParent, const wxString& aGrandPa = wxEmptyString );
+      void RemoveLastAdded();
       virtual const wxArrayString GetSelectedLibraries() const;
       virtual const wxArrayString GetSelectedElements() const;
-      void OnFiltering( bool apply, SEARCH_TREE::FILTER filter );
-		SEARCH_TREE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = 0 );
+      void OnFiltering( bool aApply, SEARCH_TREE::FILTER aFilter );
+		SEARCH_TREE( wxWindow* aParent, wxWindowID aId = wxID_ANY, const wxPoint& aPos = wxDefaultPosition, const wxSize& aSize = wxSize( 500,300 ), long aStyle = 0 );
 		~SEARCH_TREE();
+      // The following functions are needed to handle a wxTreeEvent
+      wxString GetText( const wxTreeItemId& aElem ) const;
+      bool IsLibrary( const wxTreeItemId& aElem ) const;
+      wxString GetLibrary( const wxTreeItemId& aElem ) const;
 
 };
 

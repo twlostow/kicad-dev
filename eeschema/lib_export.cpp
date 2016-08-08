@@ -128,7 +128,7 @@ void LIB_EDIT_FRAME::OnExportPart( wxCommandEvent& event )
 
     std::unique_ptr<PART_LIB> temp_lib( new PART_LIB( LIBRARY_TYPE_EESCHEMA, fn.GetFullPath() ) );
 
-    SaveOnePart( temp_lib.get() );
+    SaveOnePart( part );
 
     bool result = false;
 

@@ -60,6 +60,7 @@ set( EESCHEMA_DLGS
     dialogs/dialog_sch_sheet_props_base.cpp
     dialogs/dialog_schematic_find.cpp
     dialogs/dialog_schematic_find_base.cpp
+    dialogs/dialog_eeschema_tree.cpp
     )
 
 set( EESCHEMA_WIDGETS

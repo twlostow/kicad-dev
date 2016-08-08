@@ -24,43 +24,128 @@
 const wxString SEARCH_TREE::FilterFootprintEntry = "FilterFootprint";
 
 SEARCH_TREE::SEARCH_TREE( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
-   : SEARCH_TREE_BASE( parent, id , pos, size, style ), m_filteringOptions(UNFILTERED), m_filterPattern(),
-   m_style( wxTR_DEFAULT_STYLE | style), m_hasPreview(false), m_keywords(), m_pinCount(0)
+   : SEARCH_TREE_BASE( parent, id , pos, size, style ), m_style(wxTR_DEFAULT_STYLE | style), m_hasPreview(false),
+   m_keywords(), m_pinCount(0), m_lastAddedElem(), m_filteringOptions(UNFILTERED), m_filterPattern()
 {
     GetSizerForLabels()->Show( m_hasPreview );
-    GetSizerForLabels()->Show( m_hasPreview );
+    GetSizerForPreviews()->Show( m_hasPreview );
     wxFont guiFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
     SetFont( wxFont( guiFont.GetPointSize(),
              wxFONTFAMILY_MODERN,
              wxFONTSTYLE_NORMAL,
              wxFONTWEIGHT_NORMAL ) );
+    // Add a fake root node
+    GetTree()->AddRoot("Hidden root");
 }
 
 SEARCH_TREE::~SEARCH_TREE()
 {
 }
+wxString SEARCH_TREE::GetLibrary( const wxTreeItemId& aElem ) const
+{
+    if( !aElem.IsOk() ||
+          aElem == GetTree()->GetRootItem() )
+        return wxEmptyString;
+    if(IsLibrary(aElem))
+       return GetTree()->GetItemText(aElem);
+    for(wxTreeItemId tmp = aElem;
+          tmp.IsOk(); tmp = GetTree()->GetItemParent(tmp))
+    {
+        if( IsLibrary(tmp) )
+            return GetTree()->GetItemText((tmp));
+    }
+    return wxEmptyString;
+}
+
+bool SEARCH_TREE::HasPreview() const
+{
+   return m_hasPreview;
+}
+
+wxString SEARCH_TREE::GetText( const wxTreeItemId& aElem ) const
+{
+   return GetTree()->GetItemText(aElem);
+}
+
+bool SEARCH_TREE::IsLibrary( const wxTreeItemId& aElem ) const
+{
+    return GetTree()->GetItemParent(aElem) == GetTree()->GetRootItem();
+}
+void SEARCH_TREE::RemoveLibrary( const wxString& aLibrary )
+{
+    wxTreeItemId root = GetTree()->GetRootItem();
+    if( !root.IsOk() )
+        return;
+    wxTreeItemId elem = FindLibrary( aLibrary );
+    if( elem.IsOk() )
+        GetTree()->Delete( elem );
+}
 
 void SEARCH_TREE::InsertLibrary( const wxString& aLibrary )
 {
-    assert( GetTree() );
     wxTreeItemId root = GetTree()->GetRootItem();
-    assert( root.IsOk() );
+    if( !root.IsOk() )
+        return;
     if( !FindLibrary( aLibrary ).IsOk() )
-    {
-        std::cerr << aLibrary << " added" << std::endl;
         GetTree()->InsertItem( root, 0, aLibrary );
+}
+wxTreeItemId SEARCH_TREE::AddLibrary( const wxString& aLibrary )
+{
+    wxTreeItemId root = GetTree()->GetRootItem();
+    if( !root.IsOk() )
+        return wxTreeItemId();
+    if( !FindLibrary( aLibrary ).IsOk() )
+        return GetTree()->InsertItem( root, 0, aLibrary );
+    wxTreeItemId dummy;
+    return dummy;
+}
+
+void SEARCH_TREE::RemoveLastAdded()
+{
+    if(m_lastAddedElem.IsOk())
+        GetTree()->Delete(m_lastAddedElem);
+}
+// aGranPa == wxEmptyString means basically to insert a part
+void SEARCH_TREE::InsertAsChildOf( const wxString& aElem, const wxString& aParent, const wxString& aGrandPa )
+{
+    if( !aGrandPa.empty() )
+    {
+        wxTreeItemId libId = FindLibrary( aGrandPa );
+        if( libId.IsOk() )
+        {
+            wxTreeItemId comp = FindItem( libId, aParent );
+            if( comp.IsOk() )
+            {
+                wxTreeItemId new_elem = GetTree()->InsertItem( comp, 0, aElem );
+                if( new_elem.IsOk() )
+                    m_lastAddedElem = new_elem;
+            }
+        }
+    }
+    else
+    {
+        wxTreeItemId parent = FindItem( aParent );
+        if( parent.IsOk() )
+        {
+            wxTreeItemId new_elem = GetTree()->InsertItem( parent, 0, aElem );
+            if( new_elem.IsOk() )
+                m_lastAddedElem = new_elem;
+        }
     }
 }
 
-void SEARCH_TREE::InsertAsChildOf( const wxString& aFootprint, const wxString& aLibrary )
+/*
+void SEARCH_TREE::Remove( const wxString& aElem, const wxString& aParent )
 {
-    wxTreeItemId library = FindItem( aLibrary );
-    if( library.IsOk() )
+    wxTreeItemId libId = FindLibrary( aParent );
+    if( libId.IsOk() )
     {
-        GetTree()->InsertItem( library, 0, aFootprint );
-        return;
+        wxTreeItemId comp = FindItem( libId, aParent );
+        if( comp.IsOk() )
+            GetTree()->Delete( comp );
     }
 }
+*/
 void SEARCH_TREE::SetPinCount( unsigned aNum )
 {
     if(m_pinCount == aNum)
@@ -75,13 +160,13 @@ unsigned SEARCH_TREE::GetPinCount()
     return m_pinCount;
 }
 
-void SEARCH_TREE::SetPreview( bool val, const wxString& title )
+void SEARCH_TREE::SetPreview( bool aVal, const wxString& aTitle )
 {
-    if( m_hasPreview == val)
+    if( m_hasPreview == aVal )
         return;
     assert(m_staticDefaultText);
-    m_staticDefaultText->SetLabelText(title);
-    m_hasPreview = val;
+    m_staticDefaultText->SetLabelText(aTitle);
+    m_hasPreview = aVal;
     GetSizerForLabels()->Show( m_hasPreview );
     GetSizerForPreviews()->Show( m_hasPreview );
 }
@@ -112,9 +197,9 @@ void SEARCH_TREE::OnTextChanged( wxCommandEvent& aEvent )
     m_filterPattern = m_text->GetValue();
     Update();
 }
-void SEARCH_TREE::OnLeftDClick( wxMouseEvent& event )
+void SEARCH_TREE::OnLeftDClick( wxMouseEvent& aEvent )
 {
-    event.Skip();
+    aEvent.Skip();
 }
 void SEARCH_TREE::SetFilteringKeywords( const wxArrayString aFilter )
 {
@@ -124,13 +209,12 @@ void SEARCH_TREE::SetFilteringKeywords( const wxArrayString aFilter )
         Update();
 }
 
-void SEARCH_TREE::OnFiltering( bool apply, SEARCH_TREE::FILTER filter )
+void SEARCH_TREE::OnFiltering( bool aApply, SEARCH_TREE::FILTER aFilter )
 {
-    if( apply )
-        m_filteringOptions |= filter;
+    if( aApply )
+        m_filteringOptions |= aFilter;
     else
-        m_filteringOptions &= ~filter;
-
+        m_filteringOptions &= ~aFilter;
     Update();
 }
 
@@ -151,13 +235,14 @@ wxTreeItemId SEARCH_TREE::FindLibrary( const wxString& aSearchFor ) const
 {
     wxTreeItemIdValue cookie;
     wxTreeItemId root = m_tree->GetRootItem();
-    assert(root.IsOk());
+    if( !root.IsOk() )
+        return wxTreeItemId();
     wxTreeItemId item = m_tree->GetFirstChild( root, cookie );
-    while( item.IsOk() ) {
+    while( item.IsOk() )
+    {
         wxString sData = m_tree->GetItemText(item);
-        if( aSearchFor.CompareTo(sData) == 0 ) {
+        if( aSearchFor.CompareTo(sData) == 0 )
             return item;
-        }
         item = m_tree->GetNextChild( root, cookie);
     }
     /* Not found */
@@ -179,7 +264,8 @@ const wxArrayString SEARCH_TREE::GetSelectedElements() const
           ++num )
     {
         assert( elems[num].IsOk() );
-        if( m_tree->GetItemParent( elems[num] ) != m_tree->GetRootItem() )
+        if( elems[num] != m_tree->GetRootItem() &&
+              m_tree->GetItemParent( elems[num] ) != m_tree->GetRootItem() )
             ret_val.Add( m_tree->GetItemText(elems[num]) );
     }
     return ret_val;
@@ -210,9 +296,7 @@ void SEARCH_TREE::ExpandSelected()
         for( wxTreeItemId tmp = m_tree->GetItemParent(elems[num]);
               tmp.IsOk() && tmp != m_tree->GetRootItem();
               tmp = m_tree->GetItemParent(tmp) )
-        {
             m_tree->Expand(tmp);
-        }
     }
 }
 
@@ -225,9 +309,21 @@ const wxArrayString SEARCH_TREE::GetSelectedLibraries() const
           ++num )
     {
         assert( elems[num].IsOk() );
-        if( m_tree->GetItemParent( elems[num] ) == m_tree->GetRootItem() )
-           ret_val.Add( m_tree->GetItemText(elems[num]) );
+        if(elems[num] == m_tree->GetRootItem())
+           continue;
+        wxTreeItemId tmp = elems[num];
+        while( m_tree->GetItemParent( tmp ) != m_tree->GetRootItem() )
+        {
+            tmp = m_tree->GetItemParent(tmp);
+            assert( tmp.IsOk() );
+        }
+        if( ret_val.Index( m_tree->GetItemText( tmp ) ) == wxNOT_FOUND )
+            ret_val.Add( m_tree->GetItemText( tmp ) );
     }
+    assert( elems.GetCount() >= ret_val.GetCount() );
+    assert( elems.empty() ||
+          (elems.GetCount() == 1 && elems[0] == m_tree->GetRootItem() ) ||
+          !ret_val.empty() );
     return ret_val;
 }
 
@@ -236,7 +332,6 @@ wxArrayTreeItemIds SEARCH_TREE::GetSelected() const
     wxArrayTreeItemIds elems;
     if( m_style & wxTR_MULTIPLE )
     {
-        assert(false);
         m_tree->GetSelections( elems );
     }
     else
@@ -244,38 +339,40 @@ wxArrayTreeItemIds SEARCH_TREE::GetSelected() const
         wxTreeItemId tmp = m_tree->GetSelection();
         if(tmp.IsOk())
             elems.Add(tmp);
+        else
+            assert(elems.empty());
     }
     return elems;
 };
 
-void SEARCH_TREE::SelectItems( const wxArrayTreeItemIds& items )
+void SEARCH_TREE::SelectItems( const wxArrayTreeItemIds& aItems )
 {
-    for( const auto& elem : items )
+    for( const auto& elem : aItems )
         SelectItem( elem );
 }
-bool SEARCH_TREE::IsSelected( const wxString& item ) const
+bool SEARCH_TREE::IsSelected( const wxString& aItem ) const
 {
-   wxTreeItemId tmp = FindItem(item);
-   if( tmp.IsOk() && GetTree()->IsSelected(tmp))
-       return true;
-   return false;
+    wxTreeItemId tmp = FindItem(aItem);
+    if( tmp.IsOk() && GetTree()->IsSelected(tmp) )
+        return true;
+    return false;
 }
-void SEARCH_TREE::SelectItem( const wxString& item )
+void SEARCH_TREE::SelectItem( const wxString& aItem, const wxString& aParent )
 {
-    SelectItem(FindItem(item));
+    SelectItem(FindItem(aItem, aParent));
 }
-void SEARCH_TREE::SelectItem( const wxTreeItemId& item)
+void SEARCH_TREE::SelectItem( const wxTreeItemId& aItem)
 {
-    if(!item.IsOk())
+    if(!aItem.IsOk())
         return;
-    m_tree->SelectItem(item);
+    m_tree->SelectItem(aItem);
     ExpandSelected();
 }
 
-wxTreeItemId SEARCH_TREE::FindItem( const wxTreeItemId& root, const wxString& aSearchFor ) const
+wxTreeItemId SEARCH_TREE::FindItem( const wxTreeItemId& aRoot, const wxString& aSearchFor ) const
 {
     wxTreeItemIdValue cookie;
-    wxTreeItemId item = m_tree->GetFirstChild( root, cookie );
+    wxTreeItemId item = m_tree->GetFirstChild( aRoot, cookie );
     while( item.IsOk() )
     {
         wxString sData = m_tree->GetItemText(item);
@@ -290,9 +387,8 @@ wxTreeItemId SEARCH_TREE::FindItem( const wxTreeItemId& root, const wxString& aS
                 return search;
             }
         }
-        item = m_tree->GetNextChild( root, cookie);
+        item = m_tree->GetNextChild( aRoot, cookie);
     }
-    /* Not found */
     wxTreeItemId dummy;
     return dummy;
 }
@@ -306,22 +402,25 @@ void SEARCH_TREE::Expand(const wxString& aElem )
         m_tree->Expand(lib);
 }
 
-wxTreeItemId SEARCH_TREE::FindItem( const wxString& aSearchFor ) const
+wxTreeItemId SEARCH_TREE::FindItem( const wxString& aSearchFor, const wxString& aParent ) const
 {
     wxTreeItemIdValue cookie;
     wxTreeItemId root = m_tree->GetRootItem();
-    assert(root.IsOk());
+    if( !root.IsOk() )
+        return wxTreeItemId();
     wxTreeItemId item = m_tree->GetFirstChild( root, cookie );
     while( item.IsOk() )
     {
         wxString sData = m_tree->GetItemText(item);
-        if( aSearchFor.CompareTo(sData) == 0 )
+        if( aParent.empty() && aSearchFor.CompareTo(sData) == 0 )
         {
             return item;
         }
         if( m_tree->ItemHasChildren( item ) )
         {
-            wxTreeItemId search = FindItem( item, aSearchFor );
+            wxTreeItemId search;
+            if( !aParent.empty() && aParent.CompareTo(sData) == 0 )
+                search = FindItem( item, aSearchFor );
             if( search.IsOk() )
             {
                 return search;
@@ -329,7 +428,6 @@ wxTreeItemId SEARCH_TREE::FindItem( const wxString& aSearchFor ) const
         }
         item = m_tree->GetNextChild( root, cookie);
     }
-    /* Not found */
     wxTreeItemId dummy;
     return dummy;
 }

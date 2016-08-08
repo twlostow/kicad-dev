@@ -425,6 +425,11 @@ public:
     {
         return isModified;
     }
+    
+    void SetModified()
+    {
+        isModified = true;
+    }
 
     bool IsCache() const { return isCache; }
 

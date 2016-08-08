@@ -7,7 +7,8 @@ include_directories(
     ../pcbnew
     ../pcbnew/dialogs
     ../polygon
-    ../common
+    ../common/dialogs
+    ../kicad
     ${GLM_INCLUDE_DIR}
     ${INC_AFTER}
     )

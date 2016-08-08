@@ -34,6 +34,7 @@
 
 #include <ki_mutex.h>
 #include <kicad_string.h>
+#include <richio.h>
 
 
 #define USE_FPI_LAZY            0   // 1:yes lazy,  0:no early

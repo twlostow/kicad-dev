@@ -5,7 +5,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) CERN 2016 Michele Castellana, <michele.castellana@cern.ch>
+ * Copyright (C) CERN 2016
+ * @author Michele Castellana <michele.castellana@cern.ch>
  * Copyright (C) 2015 Jean-Pierre Charras, jean-pierre.charras
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
  * Copyright (C) 1992-2011 KiCad Developers, see AUTHORS.txt for contributors.
@@ -44,6 +45,7 @@
 #include <listview_classes.h>
 #include <wildcards_and_files_ext.h>
 #include <fp_conflict_assignment_selector.h>
+#include <dialog_footprints_tree.h>
 
 
 void CVPCB_MAINFRAME::SetNewPkg( const wxString& aFootprintName )
@@ -168,11 +170,8 @@ bool CVPCB_MAINFRAME::ReadNetListAndLinkFiles( const std::string& aNetlist )
        BuildCmpListBox();
 
     LoadProjectFile();
-    if( !LoadFootprintFiles() )
+    if( !LoadFootprints() )
        return false;
-
-    BuildLIBRARY_TREE();
-    BuildFOOTPRINTS_TREE();
 
     m_compListBox->Clear();
     m_undefinedComponentCnt = 0;

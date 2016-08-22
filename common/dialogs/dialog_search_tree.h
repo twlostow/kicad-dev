@@ -67,7 +67,7 @@ class SEARCH_TREE : public SEARCH_TREE_BASE
       wxTreeItemId FindItem( const wxString& aSearchFor, const wxString& aParent = wxEmptyString ) const;
       // First layer of the tree
       wxTreeItemId FindLibrary( const wxString& aSearchFor ) const;
-      /* 
+      /*
        * Interface methods for children classes in order to decouple their implementation
        * with respect to the base class
        */
@@ -127,6 +127,8 @@ class SEARCH_TREE : public SEARCH_TREE_BASE
       wxString GetText( const wxTreeItemId& aElem ) const;
       bool IsLibrary( const wxTreeItemId& aElem ) const;
       wxString GetLibrary( const wxTreeItemId& aElem ) const;
+
+      void SetItemModified( wxTreeItemId& aItem );
 
 };
 

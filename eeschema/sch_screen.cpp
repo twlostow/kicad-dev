@@ -565,6 +565,8 @@ void SCH_SCREEN::Draw( EDA_DRAW_PANEL* aCanvas, wxDC* aDC, GR_DRAWMODE aDrawMode
      * their SCH_SCREEN::Draw() draws nothing
      */
 
+     printf("Screen::Draw [%p]\n", this );
+
     CheckComponentsToPartsLinks();
 
     for( SCH_ITEM* item = m_drawList.begin(); item; item = item->Next() )

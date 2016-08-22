@@ -685,6 +685,8 @@ public:
      */
     void SVG_PlotComponent( const wxString& aFullFileName );
 
+    SCH_SCREEN *m_dummyScreen;
+
     DECLARE_EVENT_TABLE()
 };
 

@@ -39,8 +39,9 @@
 #include <lib_draw_item.h>
 #include <lib_collectors.h>
 #include <unordered_set>
+#include <memory>
 
-
+class LIB_MANAGER;
 class SCH_EDIT_FRAME;
 class PART_LIB;
 class LIB_PART;
@@ -54,6 +55,8 @@ class EESCHEMA_TREE;
  */
 class LIB_EDIT_FRAME : public SCH_BASE_FRAME
 {
+    std::unique_ptr < LIB_MANAGER > m_libMgr;
+
     LIB_PART*       m_my_part;
     wxString        m_my_part_lib;
     LIB_PART*       m_tempCopyComponent;    ///< temp copy of a part during edit, I own it here.
@@ -133,6 +136,8 @@ class LIB_EDIT_FRAME : public SCH_BASE_FRAME
     LIB_ITEM* locateItem( const wxPoint& aPosition, const KICAD_T aFilterList[] );
 
 public:
+
+    friend class LIB_MANAGER;
 
     LIB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent );
 

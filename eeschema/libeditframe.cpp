@@ -203,13 +203,14 @@ public:
         LIB_PART *m_part;
         LIB_PART *m_copy;
         SCH_SCREEN *m_screen;
-        LIBRARY *m_lib;
+        PART_LIB *m_lib;
     };
 
     std::vector<LIBRARY> m_libs;
     std::vector<PART> m_parts;
-
     std::map<LIB_PART*, SCH_SCREEN* > m_screenMap;
+
+    PART *m_currentPart;
 
     LIB_EDIT_FRAME *m_frame;
 
@@ -217,7 +218,7 @@ public:
         m_frame ( aFrame )
 
     {
-
+        m_currentPart = nullptr;
     }
 
     void LoadLibs( PART_LIBS *aLibs )
@@ -233,17 +234,31 @@ public:
             lib.m_isExternalFile = false;
 
             m_libs.push_back( lib );
+
+            wxArrayString names;
+            lib.m_lib->GetEntryNames( names );
+
+            for ( auto name : names )
+            {
+                PART part;
+                part.m_part = lib.m_lib->FindPart( name );
+                part.m_copy = nullptr;
+                part.m_screen = nullptr;
+                part.m_lib = lib.m_lib;
+
+
+                m_parts.push_back(part);
+
+                printf("add part %p\n", part);
+
+            }
+
         }
     }
 
     void ModifyPart ( LIB_PART *aPart )
     {
 
-    }
-
-    void ModifyLib ( PART_LIB *aLib )
-    {
-        
     }
 
     void OpenExternalLib ( const wxFileName& aName )
@@ -263,19 +278,20 @@ public:
 
     void EditPart( LIB_PART *aPart )
     {
-        auto it = m_screenMap.find(aPart);
+        for ( PART& part : m_parts)
+            if(part.m_part == aPart)
+            {
+                if(!part.m_copy)
+                {
+                    part.m_copy = new LIB_PART ( *aPart );
+                    part.m_screen = new SCH_SCREEN ( &m_frame->Kiway() );
 
-        if (it == m_screenMap.end() )
-        {
-            SCH_SCREEN *scr = new SCH_SCREEN( &m_frame->Kiway() );
+                    m_currentPart = &part;
+                }
+                m_frame->SetScreen(part.m_screen);
 
-            //scr->m_Center = true;
-            //scr->SetMaxUndoItems( m_frame->m_UndoRedoCountMax );
-            //scr->SetGrid( ID_POPUP_GRID_LEVEL_1000 + m_frame->m_LastGridSizeId  );
-            //m_frame->SetScreen ( scr );
+            }
 
-            m_screenMap[ aPart ] = scr;
-        }
     }
 
     void NewPart ( LIB_PART *aPart, PART_LIB *aLibrary )
@@ -304,6 +320,8 @@ LIB_EDIT_FRAME::LIB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_my_part = NULL;
     m_tempCopyComponent = NULL;
     m_is_new = false;
+    m_libMgr.reset ( new LIB_MANAGER ( this ) );
+    m_libMgr->LoadLibs( Prj().SchLibs() );
 
     // Delayed initialization
     if( m_textSize == -1 )
@@ -417,6 +435,7 @@ LIB_EDIT_FRAME::LIB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
 void LIB_EDIT_FRAME::Rename( wxTreeEvent& aEvent )
 {
+#if 0
     if( !aEvent.IsAllowed() )
         return;
     wxString new_name = aEvent.GetLabel();
@@ -448,7 +467,9 @@ void LIB_EDIT_FRAME::Rename( wxTreeEvent& aEvent )
         else
             aEvent.Veto();
     }
+#endif
 }
+
 wxFileName LIB_EDIT_FRAME::CreateLib()
 {
     wxFileName fn = m_panelTree->GetFirstLibraryNameAvailable();
@@ -502,6 +523,7 @@ void LIB_EDIT_FRAME::EditLibs( wxCommandEvent& aEvent )
             break;
         case ID_LIBEDIT_CUT:
             {
+                #if 0
                 assert(m_panelTree->GetSelectedLibraries().GetCount() == 1);
                 PART_LIB* found_lib = GetCurLib();
                 if( found_lib )
@@ -519,10 +541,12 @@ void LIB_EDIT_FRAME::EditLibs( wxCommandEvent& aEvent )
                             wxMessageBox( _( "Component not found" ), _("Error"), wxOK | wxICON_EXCLAMATION | wxCENTRE );
                     }
                 }
+                #endif
             }
             break;
         case ID_LIBEDIT_PASTE:
             {
+                #if 0
                 assert(m_panelTree->GetSelectedLibraries().GetCount() == 1);
                 PART_LIB* found_lib = GetCurLib();
                 if( found_lib )
@@ -538,6 +562,7 @@ void LIB_EDIT_FRAME::EditLibs( wxCommandEvent& aEvent )
                 }
                 else
                     wxMessageBox( _( "Destination library not found" ), _("Error"), wxOK | wxICON_EXCLAMATION | wxCENTRE );
+                #endif
             }
             break;
     }
@@ -546,9 +571,6 @@ void LIB_EDIT_FRAME::EditLibs( wxCommandEvent& aEvent )
 void LIB_EDIT_FRAME::PopulateTree()
 {
     PART_LIBS* libs = Prj().SchLibs();
-
-    LIB_MANAGER mgr ( this );
-    mgr.LoadLibs( libs );
 
     if( libs )
        m_panelTree->LoadFootprints(libs);
@@ -767,12 +789,14 @@ void LIB_EDIT_FRAME::OnUpdateRedo( wxUpdateUIEvent& aEvent )
 
 void LIB_EDIT_FRAME::SaveSelectedLibrary( wxCommandEvent& aEvent )
 {
+    #if 0
     PART_LIB* cur_lib = GetCurLib();
     if( !cur_lib )
        return;
     SaveLibrary( cur_lib );
     if( m_newLibs.find(cur_lib) != m_newLibs.end() )
         m_newLibs.erase(cur_lib);
+    #endif
 }
 void LIB_EDIT_FRAME::OnSaveSelectedLib( wxUpdateUIEvent& aEvent )
 {

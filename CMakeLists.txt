@@ -79,6 +79,10 @@ option( KICAD_INSTALL_DEMOS
     "Install kicad demos and examples (default ON)"
     ON )
 
+option( KICAD_BUILD_TESTS
+    "Builds C++ tests (default OFF)"
+    )
+
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
 # ( use -DPYTHON_EXECUTABLE=<python path>/python.exe or python2 )
@@ -88,7 +92,7 @@ option( KICAD_INSTALL_DEMOS
 # KICAD_SCRIPTING_MODULES requires KICAD_SCRIPTING enable it here if KICAD_SCRIPTING_MODULES is ON
 if ( KICAD_SCRIPTING_MODULES AND NOT KICAD_SCRIPTING )
     message(STATUS "Changing KICAD_SCRIPTING to ON as needed by KICAD_SCRIPTING_MODULES")
-    set ( KICAD_SCRIPTING ON )
+     set ( KICAD_SCRIPTING ON )
 endif()
 
 # same with KICAD_SCRIPTING_ACTION_MENUS
@@ -97,13 +101,20 @@ if ( KICAD_SCRIPTING_ACTION_MENU AND NOT KICAD_SCRIPTING )
     set ( KICAD_SCRIPTING ON )
 endif()
 
+
 option( BUILD_GITHUB_PLUGIN "Build the GITHUB_PLUGIN for pcbnew." ON )
 
 option( KICAD_SPICE "Build Kicad with internal Spice simulator." OFF )
 
-# Global setting: exports are explicit
-set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
-set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
+
+# Global setting: exports are explicit by default
+if ( KICAD_BUILD_TESTS )
+    set( CMAKE_CXX_VISIBILITY_PRESET "default" )
+    set( CMAKE_VISIBILITY_INLINES_HIDDEN OFF )
+else()
+    set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
+    set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
+endif()
 
 
 # Global setting: build everything position independent
@@ -125,11 +136,13 @@ if( POLICY CMP0063 )
         cmake_policy( SET CMP0063 NEW )
     endif()
 else()
-    if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY AND NOT APPLE )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY}hidden" )
-    endif()
-    if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN AND NOT APPLE )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN}" )
+    if( CMAKE_CXX_VISIBILITY_PRESET STREQUAL "hidden" )
+        if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY AND NOT APPLE )
+            set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY}hidden" )
+        endif()
+        if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN AND NOT APPLE )
+            set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN}" )
+        endif()
     endif()
 endif()
 
@@ -190,6 +203,7 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
     endif()
 endif()
+
 
 
 #================================================
@@ -552,7 +566,7 @@ find_package( Pixman 1.0 REQUIRED )
 #
 # Note: Prior to Boost 1.59, the Boost context library is not built when compiling on windows
 #       with GCC.  You must patch the Boost sources.
-find_package( Boost 1.54.0 REQUIRED COMPONENTS context system )
+find_package( Boost 1.54.0 REQUIRED COMPONENTS context system thread unit_test_framework )
 
 # Include MinGW resource compiler.
 include( MinGWResourceCompiler )
@@ -858,6 +872,9 @@ add_subdirectory( kicad )               # should follow pcbnew, eeschema
 add_subdirectory( tools )
 add_subdirectory( utils )
 add_subdirectory( qa )
+if ( KICAD_BUILD_TESTS )
+    add_subdirectory( tests )
+endif()
 
 # Resources
 if ( KICAD_INSTALL_DEMOS )

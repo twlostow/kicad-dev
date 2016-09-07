@@ -75,6 +75,10 @@ option( KICAD_INSTALL_DEMOS
     "Install kicad demos and examples (default ON)"
     ON )
 
+option( KICAD_BUILD_TESTS
+    "Builds C++ tests (default OFF)"
+    )
+
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
 # ( use -DPYTHON_EXECUTABLE=<python path>/python.exe or python2 )
@@ -95,9 +99,14 @@ option( KICAD_SPICE "Build Kicad with internal Spice simulator." OFF )
 set( KICAD_REPO_NAME "unknown" CACHE STRING "Name of the tree from which this build came." )
 
 
-# Global setting: exports are explicit
-set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
-set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
+# Global setting: exports are explicit by default
+if ( KICAD_BUILD_TESTS )
+    set( CMAKE_CXX_VISIBILITY_PRESET "default" )
+    set( CMAKE_VISIBILITY_INLINES_HIDDEN OFF )
+else()
+    set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
+    set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
+endif()
 
 
 # Global setting: build everything position independent
@@ -119,11 +128,13 @@ if( POLICY CMP0063 )
         cmake_policy( SET CMP0063 NEW )
     endif()
 else()
-    if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY AND NOT APPLE )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY}hidden" )
-    endif()
-    if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN AND NOT APPLE )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN}" )
+    if( CMAKE_CXX_VISIBILITY_PRESET STREQUAL "hidden" )
+        if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY AND NOT APPLE )
+            set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY}hidden" )
+        endif()
+        if( CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN AND NOT APPLE )
+            set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN}" )
+        endif()
     endif()
 endif()
 
@@ -529,7 +540,7 @@ find_package( Cairo 1.8.8 REQUIRED )
 #
 # Note: Prior to Boost 1.59, the Boost context library is not built when compiling on windows
 #       with GCC.  You must patch the Boost sources.
-find_package( Boost 1.54.0 REQUIRED COMPONENTS context system thread )
+find_package( Boost 1.54.0 REQUIRED COMPONENTS context system thread unit_test_framework )
 
 # Include MinGW resource compiler.
 include( MinGWResourceCompiler )
@@ -835,6 +846,9 @@ add_subdirectory( kicad )               # should follow pcbnew, eeschema
 add_subdirectory( tools )
 add_subdirectory( utils )
 add_subdirectory( qa )
+if ( KICAD_BUILD_TESTS )
+    add_subdirectory( tests )
+endif()
 
 # Resources
 if ( KICAD_INSTALL_DEMOS )

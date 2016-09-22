@@ -92,7 +92,7 @@ public:
     void LoadDisplayOptions( const DISPLAY_OPTIONS* aOptions );
 
     /// @copydoc RENDER_SETTINGS::GetColor()
-    virtual const COLOR4D& GetColor( const VIEW_ITEM* aItem, int aLayer ) const;
+    virtual const COLOR4D& GetColor( const VIEW_ITEM_NG* aItem, int aLayer ) const;
 
     /**
      * Function GetLayerColor
@@ -197,7 +197,7 @@ public:
     }
 
     /// @copydoc PAINTER::Draw()
-    virtual bool Draw( const VIEW_ITEM* aItem, int aLayer );
+    virtual bool Draw( const VIEW_ITEM_NG* aItem, int aLayer );
 
 protected:
     PCB_RENDER_SETTINGS m_pcbSettings;
@@ -218,4 +218,3 @@ protected:
 } // namespace KIGFX
 
 #endif /* __CLASS_PAINTER_H */
-

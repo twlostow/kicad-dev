@@ -46,6 +46,7 @@
 #include <wildcards_and_files_ext.h>
 #include <kiway.h>
 
+#include <view/view_ng.h>
 
 static bool RecreateCmpFile( BOARD * aBrd, const wxString& aFullCmpFileName );
 

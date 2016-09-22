@@ -69,6 +69,8 @@
 #include "tools/picker_tool.h"
 #include "tools/common_actions.h"
 
+#include <view/view_ng.h>
+
 
 BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_MENU_RANGE( ID_POPUP_PCB_ITEM_SELECTION_START, ID_POPUP_PCB_ITEM_SELECTION_END,
@@ -827,9 +829,10 @@ bool FOOTPRINT_EDIT_FRAME::IsElementVisible( int aElement ) const
 
 void FOOTPRINT_EDIT_FRAME::SetElementVisibility( int aElement, bool aNewState )
 {
-    GetGalCanvas()->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aElement ), aNewState );
+    //GetGalCanvas()->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aElement ), aNewState );
     GetBoard()->SetElementVisibility( aElement, aNewState );
     m_Layers->SetRenderState( aElement, aNewState );
+    //GetGalCanvas()->GetView()->UpdateAll();
 }
 
 

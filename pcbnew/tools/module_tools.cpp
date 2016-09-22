@@ -28,7 +28,8 @@
 #include <tool/tool_manager.h>
 
 #include <class_draw_panel_gal.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <view/view_group.h>
 #include <pcb_painter.h>
 #include <origin_viewitem.h>
@@ -133,7 +134,7 @@ int MODULE_TOOLS::PlacePad( const TOOL_EVENT& aEvent )
         if( evt->IsMotion() )
         {
             pad->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-            preview.ViewUpdate();
+            m_view->Update( &preview );
         }
 
         else if( evt->Category() == TC_COMMAND )
@@ -141,12 +142,12 @@ int MODULE_TOOLS::PlacePad( const TOOL_EVENT& aEvent )
             if( evt->IsAction( &COMMON_ACTIONS::rotate ) )
             {
                 pad->Rotate( pad->GetPosition(), m_frame->GetRotationAngle() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+	            m_view->Update( &preview );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::flip ) )
             {
                 pad->Flip( pad->GetPosition() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+	            m_view->Update( &preview );
             }
             else if( evt->IsCancel() || evt->IsActivate() )
             {
@@ -446,7 +447,7 @@ int MODULE_TOOLS::PasteItems( const TOOL_EVENT& aEvent )
         if( evt->IsMotion() )
         {
             pastedModule->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-            preview.ViewUpdate();
+            m_view->Update( &preview );
         }
 
         else if( evt->Category() == TC_COMMAND )
@@ -454,12 +455,12 @@ int MODULE_TOOLS::PasteItems( const TOOL_EVENT& aEvent )
             if( evt->IsAction( &COMMON_ACTIONS::rotate ) )
             {
                 pastedModule->Rotate( pastedModule->GetPosition(), m_frame->GetRotationAngle() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+	            m_view->Update( &preview );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::flip ) )
             {
                 pastedModule->Flip( pastedModule->GetPosition() );
-                preview.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+	            m_view->Update( &preview );
             }
             else if( evt->IsCancel() || evt->IsActivate() )
             {
@@ -537,17 +538,7 @@ int MODULE_TOOLS::ModuleTextOutlines( const TOOL_EVENT& aEvent )
     for( LAYER_NUM layer : layers )
         settings->SetSketchMode( layer, enable );
 
-    for( MODULE* module = getModel<BOARD>()->m_Modules; module; module = module->Next() )
-    {
-        for( BOARD_ITEM* item = module->GraphicalItems(); item; item = item ->Next() )
-        {
-            if( item->Type() == PCB_MODULE_TEXT_T )
-                item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
-        }
-
-        module->Reference().ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
-        module->Value().ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
-    }
+	m_view->UpdateAll();
 
     m_frame->GetGalCanvas()->Refresh();
 
@@ -571,14 +562,7 @@ int MODULE_TOOLS::ModuleEdgeOutlines( const TOOL_EVENT& aEvent )
     for( LAYER_NUM layer : layers )
         settings->SetSketchMode( layer, enable );
 
-    for( MODULE* module = getModel<BOARD>()->m_Modules; module; module = module->Next() )
-    {
-        for( BOARD_ITEM* item = module->GraphicalItems(); item; item = item ->Next() )
-        {
-            if( item->Type() == PCB_MODULE_EDGE_T )
-                item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
-        }
-    }
+	m_view->UpdateAll();
 
     m_frame->GetGalCanvas()->Refresh();
 

@@ -22,23 +22,68 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef __VIEW_H
-#define __VIEW_H
+#ifndef __VIEW_NG_H
+#define __VIEW_NG_H
 
 #include <vector>
 #include <set>
-#include <unordered_map>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/unordered/unordered_set.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 #include <math/box2.h>
 #include <gal/definitions.h>
 
-namespace KIGFX
+
+namespace KIGFX {
+
+class   PAINTER;
+class   GAL;
+class   VIEW_ITEM_NG;
+class   VIEW_GROUP;
+class   VIEW_RTREE_NG;
+class   VIEW_OVERLAY;
+class   VIEW_CACHE;
+class   VIEW_RTREE_ENTRY;
+
+
+class VIEW_DISP_LIST
 {
-class PAINTER;
-class GAL;
-class VIEW_ITEM;
-class VIEW_GROUP;
-class VIEW_RTREE;
+public:
+    typedef std::vector<VIEW_RTREE_ENTRY*> ENTRIES;
+
+    VIEW_DISP_LIST()
+    {
+        m_layers.reserve( 64 );
+
+        for( int i = 0; i < 64; i++ )
+            m_layers.push_back( ENTRIES() );
+    }
+
+    void Add( int layer, VIEW_RTREE_ENTRY* ent )
+    {
+        m_layers[layer].push_back( ent );
+    }
+
+
+    void Clear()
+    {
+        for( unsigned int i = 0; i< m_layers.size(); i++ )
+            m_layers[i].clear();
+    }
+
+
+    ENTRIES& Layer( int layer )
+    {
+        return m_layers[ layer ];
+    }
+
+
+private:
+    std::vector<ENTRIES> m_layers;
+};
 
 /**
  * Class VIEW.
@@ -55,34 +100,59 @@ class VIEW_RTREE;
  * The VIEW class also provides fast methods for finding all visible objects that are within a given
  * rectangular area, useful for object selection/hit testing.
  */
-class VIEW
+class VIEW_BASE
 {
 public:
     friend class VIEW_ITEM;
 
-    typedef std::pair<VIEW_ITEM*, int> LAYER_ITEM_PAIR;
+    struct RENDER_LAYER
+    {
+        VIEW_DISP_LIST* dispList;
+        int cacheIndex;
+        int itemLayer;
+        int painterLayer;
+        int sortLayer;
+        bool visible;
+        bool onTop;
+        boost::function<int (VIEW_ITEM_NG*)> lodFunc;
+    };
 
+    enum UPDATE_FLAGS
+    {
+        NONE = 0x00,            /// No updates are required
+        APPEARANCE  = 0x01,     /// Visibility flag has changed
+        GEOMETRY    = 0x04,     /// Position or shape has changed
+        ALL         = 0xff
+    };
+
+    static const int    DEFAULT_LAYER ;
+    static const int    DEFAULT_OVERLAY ;
     /**
      * Constructor.
      * @param aIsDynamic decides whether we are creating a static or a dynamic VIEW.
      */
-    VIEW( bool aIsDynamic = true );
+    VIEW_BASE( bool aIsDynamic = true );
 
-    ~VIEW();
+    virtual ~VIEW_BASE();
 
     /**
      * Function Add()
      * Adds a VIEW_ITEM to the view.
      * @param aItem: item to be added. No ownership is given
      */
-    void Add( VIEW_ITEM* aItem );
+    virtual void Add( VIEW_ITEM_NG* aItem, int aLayer = DEFAULT_LAYER );
+
+    void UpdateAll() {};
 
     /**
      * Function Remove()
      * Removes a VIEW_ITEM from the view.
      * @param aItem: item to be removed. Caller must dispose the removed item if necessary
      */
-    void Remove( VIEW_ITEM* aItem );
+    virtual void Remove( VIEW_ITEM_NG* aItem );
+
+
+    virtual void Update( VIEW_ITEM_NG* aItem );
 
     /**
      * Function Query()
@@ -93,24 +163,19 @@ public:
      *  first).
      * @return Number of found items.
      */
-    int Query( const BOX2I& aRect, std::vector<LAYER_ITEM_PAIR>& aResult ) const;
+    // virtual int Query( const BOX2I& aRect, std::vector<LAYER_ITEM_PAIR>& aResult ) const;
 
-    /**
-     * Function SetRequired()
-     * Marks the aRequiredId layer as required for the aLayerId layer. In order to display the
-     * layer, all of its required layers have to be enabled.
-     * @param aLayerId is the id of the layer for which we enable/disable the required layer.
-     * @param aRequiredId is the id of the required layer.
-     * @param aRequired tells if the required layer should be added or removed from the list.
-     */
-    void SetRequired( int aLayerId, int aRequiredId, bool aRequired = true );
+// virtual int Query( const BOX2I& aRect, std::vector<LAYER_ITEM_PAIR>& aResult ) const;
+    virtual int Query( const BOX2I& aRect, int aLayer, std::vector<VIEW_RTREE_ENTRY*>& aResult );
+
 
     /**
      * Function CopySettings()
      * Copies layers and visibility settings from another view.
      * @param aOtherView: view from which settings will be copied.
      */
-    void CopySettings( const VIEW* aOtherView );
+
+    // virtual void CopySettings( const VIEW_BASE* aOtherView );
 
     /*
      *  Convenience wrappers for adding multiple items
@@ -135,6 +200,7 @@ public:
         return m_gal;
     }
 
+
     /**
      * Function SetPainter()
      * Sets the painter object used by the view for drawing VIEW_ITEMS.
@@ -143,6 +209,7 @@ public:
     {
         m_painter = aPainter;
     }
+
 
     /**
      * Function GetPainter()
@@ -153,6 +220,7 @@ public:
     {
         return m_painter;
     }
+
 
     /**
      * Function SetViewport()
@@ -187,6 +255,7 @@ public:
         SetScale( aScale, m_center );
     }
 
+
     /**
      * Function SetScale()
      * Sets the scaling factor, zooming around a given anchor point.
@@ -205,6 +274,7 @@ public:
         return m_scale;
     }
 
+
     /**
      * Function SetBoundary()
      * Sets limits for view area.
@@ -215,6 +285,7 @@ public:
         m_boundary = aBoundary;
     }
 
+
     /**
      * Function GetBoundary()
      * @return Current view area boundary.
@@ -223,6 +294,7 @@ public:
     {
         return m_boundary;
     }
+
 
     /**
      * Function SetScaleLimits()
@@ -234,9 +306,10 @@ public:
     {
         wxASSERT_MSG( aMaximum > aMinimum, wxT( "I guess you passed parameters in wrong order" ) );
 
-        m_minScale = aMinimum;
-        m_maxScale = aMaximum;
+        m_minScale  = aMinimum;
+        m_maxScale  = aMaximum;
     }
+
 
     /**
      * Function SetCenter()
@@ -255,6 +328,7 @@ public:
     {
         return m_center;
     }
+
 
     /**
      * Function ToWorld()
@@ -301,7 +375,7 @@ public:
      * @param aDisplayOnly: layer is display-only (example: selection boxes, floating hints/menus).
      * Objects belonging to this layer are not taken into account by Query() method.
      */
-    void AddLayer( int aLayer, bool aDisplayOnly = false );
+    void AddTree( int aId );
 
     /**
      * Function ClearLayer()
@@ -315,138 +389,6 @@ public:
      * Removes all items from the view.
      */
     void Clear();
-
-    /**
-     * Function SetLayerVisible()
-     * Controls the visibility of a particular layer.
-     * @param aLayer: the layer to show/hide.
-     * @param aVisible: the obvious.
-     */
-    inline void SetLayerVisible( int aLayer, bool aVisible = true )
-    {
-        wxASSERT( aLayer < (int) m_layers.size() );
-
-        if( m_layers[aLayer].visible != aVisible )
-        {
-            // Target has to be redrawn after changing its visibility
-            MarkTargetDirty( m_layers[aLayer].target );
-            m_layers[aLayer].visible = aVisible;
-        }
-    }
-
-    /**
-     * Function IsLayerVisible()
-     * Returns information about visibility of a particular layer.
-     * @param aLayer: true if the layer is visible, false otherwise
-     */
-    inline bool IsLayerVisible( int aLayer ) const
-    {
-        wxASSERT( aLayer < (int) m_layers.size() );
-
-        return m_layers.at( aLayer ).visible;
-    }
-
-    inline void SetLayerDisplayOnly( int aLayer, bool aDisplayOnly = true )
-    {
-        wxASSERT( aLayer < (int) m_layers.size() );
-
-        m_layers[aLayer].displayOnly = aDisplayOnly;
-    }
-
-    /**
-     * Function SetLayerTarget()
-     * Changes the rendering target for a particular layer.
-     * @param aLayer is the layer.
-     * @param aTarget is the rendering target.
-     */
-    inline void SetLayerTarget( int aLayer, RENDER_TARGET aTarget )
-    {
-        wxASSERT( aLayer < (int) m_layers.size() );
-
-        m_layers[aLayer].target = aTarget;
-    }
-
-    /**
-     * Function SetLayerOrder()
-     * Sets rendering order of a particular layer. Lower values are rendered first.
-     * @param aLayer: the layer
-     * @param aRenderingOrder: arbitrary number denoting the rendering order.
-     */
-    void SetLayerOrder( int aLayer, int aRenderingOrder );
-
-    /**
-     * Function GetLayerOrder()
-     * Returns rendering order of a particular layer. Lower values are rendered first.
-     * @param aLayer: the layer
-     * @return Rendering order of a particular layer.
-     */
-    int GetLayerOrder( int aLayer ) const;
-
-    /**
-     * Function SortLayers()
-     * Changes the order of given layer ids, so after sorting the order corresponds to layers
-     * rendering order (descending, ie. order in which layers should be drawn - from the bottom to
-     * the top).
-     * @param aLayers stores id of layers to be sorted.
-     * @param aCount stores the number of layers.
-     */
-    void SortLayers( int aLayers[], int& aCount ) const;
-
-    /**
-     * Function UpdateLayerColor()
-     * Applies the new coloring scheme held by RENDER_SETTINGS in case that it has changed.
-     * @param aLayer is a number of the layer to be updated.
-     * @see RENDER_SETTINGS
-     */
-    void UpdateLayerColor( int aLayer );
-
-    /**
-     * Function UpdateAllLayersColor()
-     * Applies the new coloring scheme to all layers. The used scheme is held by RENDER_SETTINGS.
-     * @see RENDER_SETTINGS
-     */
-    void UpdateAllLayersColor();
-
-    /**
-     * Function ChangeLayerDepth()
-     * Changes the depth of items on the given layer.
-     * @param aLayer is a number of the layer to be updated.
-     * @param aDepth is the new depth.
-     */
-    void ChangeLayerDepth( int aLayer, int aDepth );
-
-    /**
-     * Function SetTopLayer()
-     * Sets given layer to be displayed on the top or sets back the default order of layers.
-     * @param aLayer: the layer or -1 in case when no particular layer should
-     * be displayed on the top.
-     */
-    void SetTopLayer( int aLayer, bool aEnabled = true );
-
-    /**
-     * Function EnableTopLayer()
-     * Enables or disables display of the top layer. When disabled - layers are rendered as usual
-     * with no influence from SetTopLayer function. Otherwise on the top there is displayed the
-     * layer set previously with SetTopLayer function.
-     * @param aEnable whether to enable or disable display of the top layer.
-     */
-    void EnableTopLayer( bool aEnable );
-
-    int GetTopLayer() const;
-
-    /**
-     * Function ClearTopLayers()
-     * Removes all layers from the on-the-top set (they are no longer displayed over the rest of
-     * layers).
-     */
-    void ClearTopLayers();
-
-    /**
-     * Function UpdateLayerOrder()
-     * Does everything that is needed to apply the rendering order of layers. It has to be called
-     * after modification of renderingOrder field of LAYER.
-     */
-    void UpdateAllLayersOrder();
 
     /**
      * Function ClearTargets()
@@ -463,8 +405,10 @@ public:
     /**
      * Function RecacheAllItems()
      * Rebuilds GAL display lists.
+     * @param aForceNow decides if every item should be instantly recached. Otherwise items are
+     * going to be recached when they become visible.
      */
-    void RecacheAllItems();
+    void Recache();
 
     /**
      * Function IsDynamic()
@@ -475,6 +419,7 @@ public:
     {
         return m_dynamic;
     }
+
 
     /**
      * Function IsDirty()
@@ -492,6 +437,7 @@ public:
         return false;
     }
 
+
     /**
      * Function IsTargetDirty()
      * Returns true if any of layers belonging to the target or the target itself should be
@@ -505,6 +451,7 @@ public:
         return m_dirtyTargets[aTarget];
     }
 
+
     /**
      * Function MarkTargetDirty()
      * Sets or clears target 'dirty' flag.
@@ -517,6 +464,8 @@ public:
         m_dirtyTargets[aTarget] = true;
     }
 
+
+#if 0
     /// Returns true if the layer is cached
     inline bool IsCached( int aLayer ) const
     {
@@ -526,12 +475,13 @@ public:
         {
             return m_layers.at( aLayer ).target == TARGET_CACHED;
         }
-        catch( std::out_of_range )
-        {
+        catch( std::out_of_range ) {
             return false;
         }
     }
 
+
+#endif
     /**
      * Function MarkDirty()
      * Forces redraw of view on the next rendering.
@@ -542,15 +492,17 @@ public:
             m_dirtyTargets[i] = true;
     }
 
+
     /**
      * Function MarkForUpdate()
      * Adds an item to a list of items that are going to be refreshed upon the next frame rendering.
      * @param aItem is the item to be refreshed.
      */
-    void MarkForUpdate( VIEW_ITEM* aItem )
+    void MarkForUpdate( VIEW_ITEM_NG* aItem )
     {
-        m_needsUpdate.push_back( aItem );
+        m_needsUpdate.insert( aItem );
     }
+
 
     /**
      * Function UpdateItems()
@@ -558,40 +510,77 @@ public:
      */
     void UpdateItems();
 
-    const BOX2I CalculateExtents() ;
+    const BOX2I CalculateExtents();
+
+    boost::shared_ptr<VIEW_OVERLAY> MakeOverlay();
 
     static const int VIEW_MAX_LAYERS = 256;      ///< maximum number of layers that may be shown
 
-private:
-    struct VIEW_LAYER
-    {
-        bool                    visible;         ///< is the layer to be rendered?
-        bool                    displayOnly;     ///< is the layer display only?
-        VIEW_RTREE*             items;           ///< R-tree indexing all items on this layer.
-        int                     renderingOrder;  ///< rendering order of this layer
-        int                     id;              ///< layer ID
-        RENDER_TARGET           target;          ///< where the layer should be rendered
-        std::set<int>           requiredLayers;  ///< layers that have to be enabled to show the layer
-    };
+    void SetVisible( const VIEW_ITEM_NG *aItem, bool aShow = true );
+    void Hide ( const VIEW_ITEM_NG *aItem, bool aShow = true );
+    bool IsVisible ( const VIEW_ITEM_NG *aItem) const;
+
+
+    void RemoveOverlay ( VIEW_OVERLAY *ovl );
+    /**
+     * Function SetLayerOrder()
+     * Sets rendering order of a particular layer. Lower values are rendered first.
+     * @param aLayer: the layer
+     * @param aRenderingOrder: arbitrary number denoting the rendering order.
+     */
+    // void SetLayerOrder( int aLayer, int aRenderingOrder );
+
+    /**
+     * Function GetLayerOrder()
+     * Returns rendering order of a particular layer. Lower values are rendered first.
+     * @param aLayer: the layer
+     * @return Rendering order of a particular layer.
+     */
+    // int GetLayerOrder( int aLayer ) const;
+
+protected:
+
+    void drawLayer( RENDER_TARGET aTarget, RENDER_LAYER *aLayer, bool aCacheOnly );
+
+    std::vector<RENDER_LAYER *> m_renderOrder;
+
+    RENDER_LAYER* addLayer(
+            int aSortLayer,
+            int aItemLayer,
+            int aPainterLayer,
+            VIEW_DISP_LIST* aList,
+            int aCacheIndex = -1,
+            boost::function<int (VIEW_ITEM_NG*)> aLODFunc = NULL );
+
+    virtual void setupRenderOrder() {};
+
+
+/*    struct VIEW_LAYER
+ *   {
+ *       bool                    visible;         ///< is the layer to be rendered?
+ *       VIEW_RTREE_NG*          items;           ///< R-tree indexing all items on this layer.
+ *       int                     id;              ///< layer ID
+ *       RENDER_TARGET           target;          ///< where the layer should be rendered
+ *       int renderingOrder;
+ *   }; */
+
+    VIEW_CACHE* m_cache;
 
     // Convenience typedefs
-    typedef std::unordered_map<int, VIEW_LAYER>     LAYER_MAP;
-    typedef LAYER_MAP::iterator                     LAYER_MAP_ITER;
-    typedef std::vector<VIEW_LAYER*>                LAYER_ORDER;
-    typedef std::vector<VIEW_LAYER*>::iterator      LAYER_ORDER_ITER;
+    typedef boost::unordered_map<int, VIEW_RTREE_NG*>   TREE_MAP;
+    typedef TREE_MAP::iterator                          TREE_MAP_ITER;
 
     // Function objects that need to access VIEW/VIEW_ITEM private/protected members
     struct clearLayerCache;
     struct recacheItem;
     struct drawItem;
     struct unlinkItem;
-    struct updateItemsColor;
-    struct changeItemsDepth;
+// struct updateItemsColor;
+    // struct changeItemsDepth;
     struct extentsVisitor;
 
-
-    ///* Redraws contents within rect aRect
-    void redrawRect( const BOX2I& aRect );
+    /// Redraws contents within rect aRect
+    virtual void redrawRect( const BOX2I& aRect );
 
     inline void markTargetClean( int aTarget )
     {
@@ -599,6 +588,7 @@ private:
 
         m_dirtyTargets[aTarget] = false;
     }
+
 
     /**
      * Function draw()
@@ -610,7 +600,7 @@ private:
      * @param aImmediate dictates the way of drawing - it allows to force immediate drawing mode
      * for cached items.
      */
-    void draw( VIEW_ITEM* aItem, int aLayer, bool aImmediate = false );
+    void draw( VIEW_ITEM_NG* aItem, int aLayer, bool aImmediate = false );
 
     /**
      * Function draw()
@@ -620,7 +610,7 @@ private:
      * @param aImmediate dictates the way of drawing - it allows to force immediate drawing mode
      * for cached items.
      */
-    void draw( VIEW_ITEM* aItem, bool aImmediate = false );
+    void draw( VIEW_ITEM_NG* aItem, bool aImmediate = false );
 
     /**
      * Function draw()
@@ -632,12 +622,11 @@ private:
      */
     void draw( VIEW_GROUP* aGroup, bool aImmediate = false );
 
-    ///* Sorts m_orderedLayers when layer rendering order has changed
-    void sortLayers();
-
     ///* Clears cached GAL group numbers (*ONLY* numbers stored in VIEW_ITEMs, not group objects
     ///* used by GAL)
     void clearGroupCache();
+
+    virtual void updateDisplayLists( const BOX2I& aRect );
 
     /**
      * Function invalidateItem()
@@ -645,40 +634,41 @@ private:
      * @param aItem is the item to be updated.
      * @param aUpdateFlags determines the way an item is refreshed.
      */
-    void invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags );
+    void invalidateItem( VIEW_ITEM_NG* aItem, int aUpdateFlags );
 
     /// Updates colors that are used for an item to be drawn
-    void updateItemColor( VIEW_ITEM* aItem, int aLayer );
+    // void updateItemColor( VIEW_ITEM* aItem, int aLayer );
 
     /// Updates all informations needed to draw an item
-    void updateItemGeometry( VIEW_ITEM* aItem, int aLayer );
+    // void updateItemGeometry( VIEW_ITEM* aItem, int aLayer );
 
     /// Updates bounding box of an item
-    void updateBbox( VIEW_ITEM* aItem );
+    // void updateBbox( VIEW_ITEM* aItem );
 
     /// Updates set of layers that an item occupies
-    void updateLayers( VIEW_ITEM* aItem );
+    // void updateLayers( VIEW_ITEM* aItem );
 
     /// Determines rendering order of layers. Used in display order sorting function.
-    static bool compareRenderingOrder( VIEW_LAYER* aI, VIEW_LAYER* aJ )
-    {
-        return aI->renderingOrder > aJ->renderingOrder;
-    }
-
-    /// Checks if every layer required by the aLayerId layer is enabled.
-    bool areRequiredLayersEnabled( int aLayerId ) const;
-
-    ///* Whether to use rendering order modifier or not
-    bool m_enableOrderModifier;
+    /*static bool compareRenderingOrder( VIEW_LAYER* aI, VIEW_LAYER* aJ )
+     *  {
+     *   return aI->renderingOrder > aJ->renderingOrder;
+     *  }
+     *
+     *  /// Checks if every layer required by the aLayerId layer is enabled.
+     *  bool areRequiredLayersEnabled( int aLayerId ) const;
+     *
+     *  /// Whether to use rendering order modifier or not
+     *  bool m_enableOrderModifier;
+     */
 
     /// Contains set of possible displayed layers and its properties
-    LAYER_MAP m_layers;
+    TREE_MAP m_trees;
 
     /// Sorted list of pointers to members of m_layers
-    LAYER_ORDER m_orderedLayers;
+    // LAYER_ORDER m_orderedLayers;
 
     /// Stores set of layers that are displayed on the top
-    std::set<unsigned int> m_topLayers;
+// std::set<unsigned int> m_topLayers;
 
     /// Center point of the VIEW (the point at which we are looking at)
     VECTOR2D m_center;
@@ -708,12 +698,15 @@ private:
     /// Flags to mark targets as dirty, so they have to be redrawn on the next refresh event
     bool m_dirtyTargets[TARGETS_NUMBER];
 
-    /// Rendering order modifier for layers that are marked as top layers
-    static const int TOP_LAYER_MODIFIER;
-
     /// Items to be updated
-    std::vector<VIEW_ITEM*> m_needsUpdate;
+    boost::unordered_set<VIEW_ITEM_NG*> m_needsUpdate;
+
+    bool m_needsRecache;
+
+    VIEW_DISP_LIST m_defaultList;
+    VIEW_DISP_LIST m_overlayList;
+
 };
-} // namespace KIGFX
+}    // namespace KIGFX
 
 #endif

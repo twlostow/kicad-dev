@@ -345,6 +345,10 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
             new_gal = new KIGFX::CAIRO_GAL( this, this, this );
             break;
 
+        case GAL_TYPE_WXDC:
+            new_gal = new KIGFX::WXDC_GAL( this, this, this );
+            break;
+
         default:
             assert( false );
             // warn about unhandled GAL canvas type, but continue with the fallback option

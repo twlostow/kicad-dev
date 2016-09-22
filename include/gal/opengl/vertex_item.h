@@ -95,6 +95,7 @@ private:
      */
     inline void setSize( unsigned int aSize )
     {
+        //printf("Vi %p setsize %d\n", this, aSize);
         m_size = aSize;
     }
 };

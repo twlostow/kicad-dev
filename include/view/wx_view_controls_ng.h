@@ -28,27 +28,27 @@
  * @brief WX_VIEW_CONTROLS class definition.
  */
 
-#ifndef __WX_VIEW_CONTROLS_H
-#define __WX_VIEW_CONTROLS_H
+#ifndef __WX_VIEW_CONTROLS_NG_H
+#define __WX_VIEW_CONTROLS_NG_H
 
 #include <wx/wx.h>
 #include <wx/event.h>
 
-#include <view/view_controls.h>
+#include <view/view_controls_ng.h>
 
 class EDA_DRAW_PANEL_GAL;
 
 namespace KIGFX
 {
 /**
- * Class WX_VIEW_CONTROLS
+ * Class WX_VIEW_CONTROLS_NG
  * is a specific implementation of class VIEW_CONTROLS for wxWidgets library.
  */
-class WX_VIEW_CONTROLS : public VIEW_CONTROLS, public wxEvtHandler
+class WX_VIEW_CONTROLS_NG : public VIEW_CONTROLS_NG, public wxEvtHandler
 {
 public:
-    WX_VIEW_CONTROLS( VIEW* aView, wxScrolledCanvas* aParentPanel );
-    ~WX_VIEW_CONTROLS()
+    WX_VIEW_CONTROLS_NG( VIEW_BASE* aView, wxScrolledCanvas* aParentPanel );
+    ~WX_VIEW_CONTROLS_NG()
     {}
 
     /// Handler functions
@@ -106,7 +106,7 @@ public:
     static const wxEventType EVT_REFRESH_MOUSE;
 
 private:
-    /// Possible states for WX_VIEW_CONTROLS
+    /// Possible states for WX_VIEW_CONTROLS_NG
     enum STATE
     {
         IDLE = 1,           /// Nothing is happening

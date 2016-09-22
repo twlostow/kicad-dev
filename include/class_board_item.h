@@ -331,8 +331,6 @@ public:
 
     static std::string FormatInternalUnits( const wxSize& aSize );
 
-    /// @copydoc VIEW_ITEM::ViewGetLayers()
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
 };
 
 #endif /* BOARD_ITEM_STRUCT_H */

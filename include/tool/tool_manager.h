@@ -218,16 +218,16 @@ public:
      * These are made available to the tool. Called by the parent frame (PCB_EDIT_FRAME)
      * when the board is set up.
      */
-    void SetEnvironment( EDA_ITEM* aModel, KIGFX::VIEW* aView,
-            KIGFX::VIEW_CONTROLS* aViewControls, wxWindow* aFrame );
+    void SetEnvironment( EDA_ITEM* aModel, KIGFX::VIEW_BASE* aView,
+            KIGFX::VIEW_CONTROLS_NG* aViewControls, wxWindow* aFrame );
 
     /* Accessors for the environment objects (view, model, etc.) */
-    KIGFX::VIEW* GetView() const
+    KIGFX::VIEW_BASE* GetView() const
     {
         return m_view;
     }
 
-    inline KIGFX::VIEW_CONTROLS* GetViewControls() const
+    inline KIGFX::VIEW_CONTROLS_NG* GetViewControls() const
     {
         return m_viewControls;
     }
@@ -444,8 +444,8 @@ private:
     ACTION_MANAGER* m_actionMgr;
 
     EDA_ITEM* m_model;
-    KIGFX::VIEW* m_view;
-    KIGFX::VIEW_CONTROLS* m_viewControls;
+    KIGFX::VIEW_BASE* m_view;
+    KIGFX::VIEW_CONTROLS_NG* m_viewControls;
     wxWindow* m_editFrame;
 
     /// Queue that stores events to be processed at the end of the event processing cycle.

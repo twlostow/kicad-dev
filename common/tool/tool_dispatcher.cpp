@@ -28,8 +28,8 @@
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
 #include <tools/common_actions.h>
-#include <view/view.h>
-#include <view/wx_view_controls.h>
+#include <view/view_ng.h>
+#include <view/wx_view_controls_ng.h>
 
 #include <class_draw_panel_gal.h>
 #include <pcbnew_id.h>
@@ -142,7 +142,7 @@ void TOOL_DISPATCHER::ResetState()
 }
 
 
-KIGFX::VIEW* TOOL_DISPATCHER::getView()
+KIGFX::VIEW_BASE* TOOL_DISPATCHER::getView()
 {
     return static_cast<EDA_DRAW_FRAME*>( m_toolMgr->GetEditFrame() )->GetGalCanvas()->GetView();
 }
@@ -258,7 +258,7 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
         type == wxEVT_LEFT_DCLICK || type == wxEVT_MIDDLE_DCLICK || type == wxEVT_RIGHT_DCLICK ||
         // Event issued whem mouse retains position in screen coordinates,
         // but changes in world coordinates (e.g. autopanning)
-        type == KIGFX::WX_VIEW_CONTROLS::EVT_REFRESH_MOUSE )
+        type == KIGFX::WX_VIEW_CONTROLS_NG::EVT_REFRESH_MOUSE )
     {
         wxMouseEvent* me = static_cast<wxMouseEvent*>( &aEvent );
         int mods = decodeModifiers( me );

@@ -32,15 +32,16 @@
 
 #include <set>
 #include <algorithm>
+#include <view/view_item_ng.h>
 #include <view/view_group.h>
-#include <view/view.h>
+#include <view/view_ng.h>
 #include <painter.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <layers_id_colors_and_visibility.h>
 
 using namespace KIGFX;
 
-VIEW_GROUP::VIEW_GROUP( VIEW* aView ) :
+VIEW_GROUP::VIEW_GROUP( VIEW_BASE* aView ) :
     m_layer( ITEM_GAL_LAYER( GP_OVERLAY ) )
 {
     m_view = aView;
@@ -52,24 +53,21 @@ VIEW_GROUP::~VIEW_GROUP()
 }
 
 
-void VIEW_GROUP::Add( VIEW_ITEM* aItem )
+void VIEW_GROUP::Add( VIEW_ITEM_NG* aItem )
 {
     m_items.insert( aItem );
-    ViewUpdate();
 }
 
 
-void VIEW_GROUP::Remove( VIEW_ITEM* aItem )
+void VIEW_GROUP::Remove( VIEW_ITEM_NG* aItem )
 {
     m_items.erase( aItem );
-    ViewUpdate();
 }
 
 
 void VIEW_GROUP::Clear()
 {
     m_items.clear();
-    ViewUpdate();
 }
 
 
@@ -79,7 +77,7 @@ unsigned int VIEW_GROUP::GetSize() const
 }
 
 
-const BOX2I VIEW_GROUP::ViewBBox() const
+const BOX2I VIEW_GROUP::ngViewBBox() const
 {
     BOX2I maxBox;
 
@@ -87,43 +85,40 @@ const BOX2I VIEW_GROUP::ViewBBox() const
     return maxBox;
 }
 
-
-void VIEW_GROUP::ViewDraw( int aLayer, GAL* aGal ) const
+void VIEW_GROUP::ngViewGetLayers( int aLayers[], int& aCount ) const
 {
-    PAINTER* painter = m_view->GetPainter();
-
-    // Draw all items immediately (without caching)
-    for( VIEW_ITEM* item : m_items )
-    {
-        aGal->PushDepth();
-
-        int layers[VIEW::VIEW_MAX_LAYERS], layers_count;
-        item->ViewGetLayers( layers, layers_count );
-        m_view->SortLayers( layers, layers_count );
-
-        for( int i = 0; i < layers_count; i++ )
-        {
-            if( m_view->IsCached( layers[i] ) && m_view->IsLayerVisible( layers[i] ) )
-            {
-                aGal->AdvanceDepth();
-
-                if( !painter->Draw( item, layers[i] ) )
-                    item->ViewDraw( layers[i], aGal ); // Alternative drawing method
-            }
-        }
-
-        aGal->PopDepth();
-    }
-}
-
-
-void VIEW_GROUP::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    // Everything is displayed on a single layer
-    aLayers[0] = m_layer;
+    aLayers[0] = VIEW_BASE::DEFAULT_OVERLAY;
     aCount = 1;
 }
 
+void VIEW_GROUP::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
+{
+    PAINTER* painter = aView->GetPainter();
+    GAL *gal = aView->GetGAL();
+
+    // Draw all items immediately (without caching)
+    for( VIEW_ITEM_NG* item : m_items )
+    {
+        gal->PushDepth();
+
+        int layers[VIEW::VIEW_MAX_LAYERS], layers_count;
+        item->ngViewGetLayers( layers, layers_count );
+
+        for( int i = 0; i < layers_count; i++ )
+        {
+            gal->AdvanceDepth();
+
+            if( !painter->Draw( item, layers[i] ) )
+                item->ngViewDraw( layers[i], aView ); // Alternative drawing method
+        }
+
+        gal->PopDepth();
+    }
+}
+
+#if 0
+
+#endif
 
 void VIEW_GROUP::FreeItems()
 {
@@ -131,33 +126,34 @@ void VIEW_GROUP::FreeItems()
     {
         delete item;
     }
-
-    Clear();
+    m_items.clear();
 }
 
+#if 0
 
 void VIEW_GROUP::ItemsSetVisibility( bool aVisible )
 {
-    std::set<VIEW_ITEM*>::const_iterator it, it_end;
+/*    std::set<VIEW_ITEM*>::const_iterator it, it_end;
 
     for( it = m_items.begin(), it_end = m_items.end(); it != it_end; ++it )
-        (*it)->ViewSetVisible( aVisible );
+        (*it)->ViewSetVisible( aVisible );*/
 }
 
 
 void VIEW_GROUP::ItemsViewUpdate( VIEW_ITEM::VIEW_UPDATE_FLAGS aFlags )
 {
-    std::set<VIEW_ITEM*>::const_iterator it, it_end;
+/*    std::set<VIEW_ITEM*>::const_iterator it, it_end;
 
     for( it = m_items.begin(), it_end = m_items.end(); it != it_end; ++it )
-        (*it)->ViewUpdate( aFlags );
+        (*it)->ViewUpdate( aFlags );*/
 }
+#endif
 
 
 void VIEW_GROUP::updateBbox()
 {
     // Save the used VIEW, as it used nulled during Remove()
-    VIEW* view = m_view;
+    VIEW_BASE* view = m_view;
 
     // Reinsert the group, so the bounding box can be updated
     view->Remove( this );

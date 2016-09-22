@@ -382,6 +382,7 @@ void PCB_DRAW_PANEL_GAL::setDefaultLayerOrder()
 
 void PCB_DRAW_PANEL_GAL::setDefaultLayerDeps()
 {
+#if 0
     for( LAYER_NUM i = 0; (unsigned) i < sizeof( GAL_LAYER_ORDER ) / sizeof( LAYER_NUM ); ++i )
     {
         LAYER_NUM layer = GAL_LAYER_ORDER[i];
@@ -438,4 +439,6 @@ void PCB_DRAW_PANEL_GAL::setDefaultLayerDeps()
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( WORKSHEET ) );
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( GRID_VISIBLE ) );
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( DRC_VISIBLE ) );
+#endif
+
 }

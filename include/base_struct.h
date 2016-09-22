@@ -37,7 +37,7 @@
 #include <colors.h>
 #include <bitmaps.h>
 #include <richio.h>
-#include <view/view_item.h>
+#include <view/view_item_ng.h>
 #include <class_eda_rect.h>
 #include <functional>
 
@@ -153,7 +153,7 @@ typedef unsigned STATUS_FLAGS;
  * is a base class for most all the KiCad significant classes, used in
  * schematics and boards.
  */
-class EDA_ITEM : public KIGFX::VIEW_ITEM
+class EDA_ITEM : public KIGFX::VIEW_ITEM_NG
 {
 private:
 
@@ -229,12 +229,12 @@ public:
     inline bool IsBrightened() const { return m_Flags & BRIGHTENED; }
 
     inline void SetWireImage() { SetFlags( IS_WIRE_IMAGE ); }
-    inline void SetSelected() { SetFlags( SELECTED ); ViewUpdate( COLOR ); }
-    inline void SetHighlighted() { SetFlags( HIGHLIGHTED ); ViewUpdate( COLOR ); }
+    inline void SetSelected() { SetFlags( SELECTED ); }
+    inline void SetHighlighted() { SetFlags( HIGHLIGHTED ); }
     inline void SetBrightened() { SetFlags( BRIGHTENED ); }
 
-    inline void ClearSelected() { ClearFlags( SELECTED ); ViewUpdate( COLOR ); }
-    inline void ClearHighlighted() { ClearFlags( HIGHLIGHTED ); ViewUpdate( COLOR ); }
+    inline void ClearSelected() { ClearFlags( SELECTED ); }
+    inline void ClearHighlighted() { ClearFlags( HIGHLIGHTED ); }
     inline void ClearBrightened() { ClearFlags( BRIGHTENED ); }
 
     void SetModified();
@@ -484,11 +484,8 @@ public:
     EDA_ITEM& operator=( const EDA_ITEM& aItem );
 
     /// @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ViewBBox() const;
-
-    /// @copydoc VIEW_ITEM::ViewGetLayers()
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
-
+    virtual const BOX2I ngViewBBox() const;
+    
 #if defined(DEBUG)
 
     /**

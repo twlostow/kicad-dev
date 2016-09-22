@@ -186,8 +186,8 @@ void PCB_EDIT_FRAME::Process_Config( wxCommandEvent& event )
 
             if( dlg.ShowModal() == 1 && IsGalCanvasActive() )
             {
-                for( MODULE* module = GetBoard()->m_Modules; module; module = module->Next() )
-                    module->ViewUpdate();
+                //for( MODULE* module = GetBoard()->m_Modules; module; module = module->Next() )
+                    //module->ViewUpdate();
 
                 GetGalCanvas()->Refresh();
             }

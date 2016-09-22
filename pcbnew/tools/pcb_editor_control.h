@@ -29,6 +29,7 @@
 
 namespace KIGFX {
     class ORIGIN_VIEWITEM;
+    class PCB_VIEW;
 }
 
 class PCB_EDIT_FRAME;
@@ -105,6 +106,8 @@ public:
     void SetTransitions();
 
 private:
+    KIGFX::PCB_VIEW *m_view;
+
     ///> Pointer to the currently used edit frame.
     PCB_EDIT_FRAME* m_frame;
 

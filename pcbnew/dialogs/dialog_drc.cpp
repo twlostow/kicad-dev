@@ -37,6 +37,8 @@
 #include <class_board_design_settings.h>
 #include <class_draw_panel_gal.h>
 
+#include <view/view_ng.h>
+
 /* class DIALOG_DRC_CONTROL: a dialog to set DRC parameters (clearance, min cooper size)
  * and run DRC tests
  */

@@ -32,6 +32,8 @@
 #include <deque>
 
 #include "edit_constraints.h"
+#include <view/view_ng.h>
+
 
 #include <memory>
 
@@ -309,7 +311,7 @@ public:
      *
      * @param aParent is the item to which EDIT_POINTs are related.
      */
-    EDIT_POINTS( EDA_ITEM* aParent );
+    EDIT_POINTS( EDA_ITEM* aParent, KIGFX::VIEW_BASE *aView );
 
     /**
      * Function FindPoint()
@@ -492,19 +494,19 @@ public:
     }
 
     ///> @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ViewBBox() const
+    virtual const BOX2I ngViewBBox() const
     {
-        return m_parent->ViewBBox();
+        return m_parent->ngViewBBox();
     }
 
     ///> @copydoc VIEW_ITEM::ViewDraw()
-    virtual void ViewDraw( int aLayer, KIGFX::GAL* aGal ) const;
+    virtual void ngViewDraw( int aLayer, KIGFX::VIEW_BASE* aView ) const;
 
     ///> @copydoc VIEW_ITEM::ViewGetLayers()
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const
+    virtual void ngViewGetLayers( int aLayers[], int& aCount ) const
     {
         aCount = 1;
-        aLayers[0] = ITEM_GAL_LAYER( GP_OVERLAY );
+        aLayers[0] = KIGFX::VIEW_BASE::DEFAULT_OVERLAY;
     }
 
 #if defined(DEBUG)
@@ -522,6 +524,7 @@ public:
     }
 
 private:
+    KIGFX::VIEW_BASE *m_view;
     EDA_ITEM* m_parent;                 ///< Parent of the EDIT_POINTs
     std::deque<EDIT_POINT> m_points;    ///< EDIT_POINTs for modifying m_parent
     std::deque<EDIT_LINE> m_lines;      ///< EDIT_LINEs for modifying m_parent

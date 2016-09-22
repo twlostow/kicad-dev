@@ -126,7 +126,7 @@ private:
     std::vector<BUTTON_STATE*> m_buttons;
 
     ///> Returns the instance of VIEW, used by the application.
-    KIGFX::VIEW* getView();
+    KIGFX::VIEW_BASE* getView();
 
     ///> Instance of tool manager that cooperates with the dispatcher.
     TOOL_MANAGER* m_toolMgr;

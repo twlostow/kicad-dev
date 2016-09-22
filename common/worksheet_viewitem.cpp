@@ -33,6 +33,7 @@
 #include <painter.h>
 #include <layers_id_colors_and_visibility.h>
 #include <class_page_info.h>
+#include <view/view_ng.h>
 
 using namespace KIGFX;
 
@@ -44,18 +45,18 @@ WORKSHEET_VIEWITEM::WORKSHEET_VIEWITEM( const PAGE_INFO* aPageInfo, const TITLE_
 void WORKSHEET_VIEWITEM::SetPageInfo( const PAGE_INFO* aPageInfo )
 {
     m_pageInfo = aPageInfo;
-    ViewUpdate( GEOMETRY );
+    //ViewUpdate( GEOMETRY );
 }
 
 
 void WORKSHEET_VIEWITEM::SetTitleBlock( const TITLE_BLOCK* aTitleBlock )
 {
     m_titleBlock = aTitleBlock;
-    ViewUpdate( GEOMETRY );
+    //ViewUpdate( GEOMETRY );
 }
 
 
-const BOX2I WORKSHEET_VIEWITEM::ViewBBox() const
+const BOX2I WORKSHEET_VIEWITEM::ngViewBBox() const
 {
     BOX2I bbox;
 
@@ -74,9 +75,10 @@ const BOX2I WORKSHEET_VIEWITEM::ViewBBox() const
 }
 
 
-void WORKSHEET_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
+void WORKSHEET_VIEWITEM::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
 {
-    RENDER_SETTINGS* settings = m_view->GetPainter()->GetSettings();
+    GAL *gal = aView->GetGAL();
+    RENDER_SETTINGS* settings = aView->GetPainter()->GetSettings();
     wxString fileName( m_fileName.c_str(), wxConvUTF8 );
     wxString sheetName( m_sheetName.c_str(), wxConvUTF8 );
     WS_DRAW_ITEM_LIST drawList;
@@ -102,19 +104,19 @@ void WORKSHEET_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
         switch( item->GetType() )
         {
         case WS_DRAW_ITEM_BASE::wsg_line:
-            draw( static_cast<const WS_DRAW_ITEM_LINE*>( item ), aGal );
+            draw( static_cast<const WS_DRAW_ITEM_LINE*>( item ), gal );
             break;
 
         case WS_DRAW_ITEM_BASE::wsg_rect:
-            draw( static_cast<const WS_DRAW_ITEM_RECT*>( item ), aGal );
+            draw( static_cast<const WS_DRAW_ITEM_RECT*>( item ), gal );
             break;
 
         case WS_DRAW_ITEM_BASE::wsg_poly:
-            draw( static_cast<const WS_DRAW_ITEM_POLYGON*>( item ), aGal );
+            draw( static_cast<const WS_DRAW_ITEM_POLYGON*>( item ), gal );
             break;
 
         case WS_DRAW_ITEM_BASE::wsg_text:
-            draw( static_cast<const WS_DRAW_ITEM_TEXT*>( item ), aGal );
+            draw( static_cast<const WS_DRAW_ITEM_TEXT*>( item ), gal );
             break;
 
         case WS_DRAW_ITEM_BASE::wsg_bitmap:
@@ -125,16 +127,8 @@ void WORKSHEET_VIEWITEM::ViewDraw( int aLayer, GAL* aGal ) const
     }
 
     // Draw gray line that outlines the sheet size
-    drawBorder( aGal );
+    drawBorder( gal );
 }
-
-
-void WORKSHEET_VIEWITEM::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aCount = 1;
-    aLayers[0] = ITEM_GAL_LAYER( WORKSHEET );
-}
-
 
 void WORKSHEET_VIEWITEM::draw( const WS_DRAW_ITEM_LINE* aItem, GAL* aGal ) const
 {
@@ -208,4 +202,10 @@ void WORKSHEET_VIEWITEM::drawBorder( GAL* aGal ) const
     aGal->SetStrokeColor( COLOR4D( 0.4, 0.4, 0.4, 1.0 ) );
     aGal->SetIsFill( false );
     aGal->DrawRectangle( origin, end );
+}
+
+void WORKSHEET_VIEWITEM::ngViewGetLayers( int aLayers[], int& aCount ) const
+{
+    aLayers[0] = VIEW_BASE::DEFAULT_LAYER;
+    aCount = 1;
 }

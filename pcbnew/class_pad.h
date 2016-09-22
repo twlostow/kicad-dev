@@ -536,14 +536,8 @@ public:
         return (D_PAD*) Clone();
     }
 
-    /// @copydoc VIEW_ITEM::ViewGetLayers()
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
-
-    /// @copydoc VIEW_ITEM::ViewGetLOD()
-    virtual unsigned int ViewGetLOD( int aLayer ) const;
-
-    /// @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ViewBBox() const;
+    /// @copydoc VIEW_ITEM::ngViewBBox()
+    virtual const BOX2I ngViewBBox() const;
 
     /**
      * Function CopyNetlistSettings

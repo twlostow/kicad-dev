@@ -38,24 +38,25 @@ BRIGHT_BOX::BRIGHT_BOX( BOARD_ITEM* aItem ) :
 }
 
 
-void BRIGHT_BOX::ViewDraw( int aLayer, GAL* aGal ) const
+void BRIGHT_BOX::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
 {
-    aGal->SetIsStroke( true );
-    aGal->SetIsFill( false );
-    aGal->SetLineWidth( LINE_WIDTH );
-    aGal->SetStrokeColor( BOX_COLOR );
+    GAL *gal = aView->GetGAL();
+
+    gal->SetIsStroke( true );
+    gal->SetIsFill( false );
+    gal->SetLineWidth( LINE_WIDTH );
+    gal->SetStrokeColor( BOX_COLOR );
 
     if( m_item->Type() == PCB_TRACE_T )
     {
         const TRACK* track = static_cast<const TRACK*>( m_item );
 
-        aGal->DrawSegment( track->GetStart(), track->GetEnd(), track->GetWidth() );
+        gal->DrawSegment( track->GetStart(), track->GetEnd(), track->GetWidth() );
     }
     else
     {
-        BOX2I box = m_item->ViewBBox();
+        BOX2I box = m_item->ngViewBBox();
 
-        aGal->DrawRectangle( box.GetOrigin(), box.GetOrigin() + box.GetSize() );
+        gal->DrawRectangle( box.GetOrigin(), box.GetOrigin() + box.GetSize() );
     }
 }
-

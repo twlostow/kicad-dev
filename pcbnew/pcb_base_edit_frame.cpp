@@ -28,6 +28,8 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <class_board.h>
 
+#include <view/view_ng.h>
+
 void PCB_BASE_EDIT_FRAME::SetRotationAngle( int aRotationAngle )
 {
     wxCHECK2_MSG( aRotationAngle > 0 && aRotationAngle <= 900, aRotationAngle = 900,

@@ -26,7 +26,7 @@
 #define __ORIGIN_VIEWITEM_H
 
 #include <math/box2.h>
-#include <view/view.h>
+#include <view/view_ng.h>
 #include <class_board_item.h>
 #include <layers_id_colors_and_visibility.h>
 #include <gal/color4d.h>
@@ -48,13 +48,13 @@ public:
                      MARKER_STYLE aStyle = CIRCLE_X, int aSize = 16,
                      const VECTOR2D& aPosition = VECTOR2D( 0, 0 ) );
 
-    const BOX2I ViewBBox() const;
+    const BOX2I ngViewBBox() const;
 
-    void ViewDraw( int aLayer, KIGFX::GAL* aGal ) const;
+    void ngViewDraw( int aLayer, VIEW_BASE* aView ) const;
 
-    void ViewGetLayers( int aLayers[], int& aCount ) const
+	void ngViewGetLayers( int aLayers[], int& aCount ) const
     {
-        aLayers[0] = ITEM_GAL_LAYER( GP_OVERLAY );
+        aLayers[0] = VIEW_BASE::DEFAULT_OVERLAY;
         aCount = 1;
     }
 

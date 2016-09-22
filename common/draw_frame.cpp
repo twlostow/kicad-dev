@@ -48,8 +48,8 @@
 
 #include <wx/fontdlg.h>
 #include <wx/snglinst.h>
-#include <view/view.h>
-#include <view/view_controls.h>
+#include <view/view_ng.h>
+#include <view/view_controls_ng.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
@@ -662,7 +662,7 @@ const wxString EDA_DRAW_FRAME::GetZoomLevelIndicator() const
     if( IsGalCanvasActive() )
     {
         KIGFX::GAL* gal = m_galCanvas->GetGAL();
-        KIGFX::VIEW* view = m_galCanvas->GetView();
+        KIGFX::VIEW_BASE* view = m_galCanvas->GetView();
         double zoomFactor = gal->GetWorldScale() / gal->GetZoomFactor();
         level = m_zoomLevelCoeff * zoomFactor * view->GetScale();
     }
@@ -1093,7 +1093,7 @@ void EDA_DRAW_FRAME::AdjustScrollBars( const wxPoint& aCenterPositionIU )
 
 void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
 {
-    KIGFX::VIEW* view = GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = GetGalCanvas()->GetView();
     KIGFX::GAL* gal = GetGalCanvas()->GetGAL();
 
     // Display the same view after canvas switching
@@ -1343,4 +1343,3 @@ void EDA_DRAW_FRAME::GeneralControlKeyMovement( int aHotKey, wxPoint *aPos,
         break;
     }
 }
-

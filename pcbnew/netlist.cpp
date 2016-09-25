@@ -50,6 +50,7 @@ using namespace std::placeholders;
 #include <pcbnew.h>
 #include <io_mgr.h>
 
+#include <view/view.h>
 #include <tool/tool_manager.h>
 #include <tools/common_actions.h>
 
@@ -66,7 +67,7 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
 {
     wxString        msg;
     NETLIST         netlist;
-    KIGFX::VIEW*    view = GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE*    view = GetGalCanvas()->GetView();
     BOARD*          board = GetBoard();
     std::vector<MODULE*> newFootprints;
     // keep trace of the initial baord area, if we want to place new footprints
@@ -110,7 +111,7 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
         // Remove old modules
         for( MODULE* module = board->m_Modules; module; module = module->Next() )
         {
-            module->RunOnChildren( std::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+            //module->RunOnChildren( std::bind( &KIGFX::VIEW_BASE::Remove, view, _1 ) );
             view->Remove( module );
         }
     }
@@ -157,9 +158,9 @@ void PCB_EDIT_FRAME::ReadPcbNetlist( const wxString& aNetlistFileName,
     // Reload modules
     for( MODULE* module = board->m_Modules; module; module = module->Next() )
     {
-        module->RunOnChildren( std::bind( &KIGFX::VIEW::Add, view, _1 ) );
+        //module->RunOnChildren( std::bind( &KIGFX::VIEW_BASE::Add, view, _1 ) );
         view->Add( module );
-        module->ViewUpdate();
+        //module->ViewUpdate();
     }
 
     if( aDeleteUnconnectedTracks && board->m_Track )

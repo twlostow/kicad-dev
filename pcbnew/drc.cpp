@@ -40,7 +40,7 @@
 #include <class_zone.h>
 #include <class_pcb_text.h>
 #include <class_draw_panel_gal.h>
-#include <view/view_ng.h>
+#include <view/view.h>
 #include <geometry/seg.h>
 #include <ratsnest_data.h>
 

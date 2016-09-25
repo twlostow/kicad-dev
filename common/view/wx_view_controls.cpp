@@ -37,7 +37,7 @@ using namespace KIGFX;
 
 const wxEventType WX_VIEW_CONTROLS::EVT_REFRESH_MOUSE = wxNewEventType();
 
-WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW* aView, wxScrolledCanvas* aParentPanel ) :
+WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW_BASE* aView, wxScrolledCanvas* aParentPanel ) :
     VIEW_CONTROLS( aView ), m_state( IDLE ), m_parentPanel( aParentPanel ), m_scrollScale( 1.0, 1.0 )
 {
     m_parentPanel->Connect( wxEVT_MOTION,

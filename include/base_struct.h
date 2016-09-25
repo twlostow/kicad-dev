@@ -37,7 +37,7 @@
 #include <colors.h>
 #include <bitmaps.h>
 #include <richio.h>
-#include <view/view_item_ng.h>
+#include <view/view_item.h>
 #include <class_eda_rect.h>
 #include <functional>
 
@@ -153,7 +153,7 @@ typedef unsigned STATUS_FLAGS;
  * is a base class for most all the KiCad significant classes, used in
  * schematics and boards.
  */
-class EDA_ITEM : public KIGFX::VIEW_ITEM_NG
+class EDA_ITEM : public KIGFX::VIEW_ITEM
 {
 private:
 
@@ -485,7 +485,7 @@ public:
 
     /// @copydoc VIEW_ITEM::ViewBBox()
     virtual const BOX2I ngViewBBox() const;
-    
+
 #if defined(DEBUG)
 
     /**

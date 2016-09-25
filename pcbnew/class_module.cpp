@@ -827,6 +827,7 @@ void MODULE::RunOnChildren( std::function<void (BOARD_ITEM*)> aFunction )
 }
 
 
+#if 0
 void MODULE::ViewUpdate( int aUpdateFlags )
 {
     if( !m_view )
@@ -847,7 +848,8 @@ void MODULE::ViewUpdate( int aUpdateFlags )
     m_Reference->ViewUpdate( aUpdateFlags );
     m_Value->ViewUpdate( aUpdateFlags );
 }
-
+#endif
+#if 0
 
 void MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
 {
@@ -870,7 +872,6 @@ void MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
     }
 }
 
-
 unsigned int MODULE::ViewGetLOD( int aLayer ) const
 {
     int layer = ( m_Layer == F_Cu ) ? MOD_FR_VISIBLE :
@@ -883,13 +884,13 @@ unsigned int MODULE::ViewGetLOD( int aLayer ) const
     return std::numeric_limits<unsigned int>::max();
 }
 
-
 const BOX2I MODULE::ViewBBox() const
 {
     EDA_RECT fpRect = GetFootprintRect();
 
     return BOX2I( VECTOR2I( fpRect.GetOrigin() ), VECTOR2I( fpRect.GetSize() ) );
 }
+#endif
 
 
 bool MODULE::IsLibNameValid( const wxString & aName )

@@ -483,11 +483,11 @@ wxString DIMENSION::GetSelectMenuText() const
 }
 
 
-const BOX2I DIMENSION::ngViewBBox() const
+const BOX2I DIMENSION::ViewBBox() const
 {
     BOX2I dimBBox = BOX2I( VECTOR2I( GetBoundingBox().GetPosition() ),
                            VECTOR2I( GetBoundingBox().GetSize() ) );
-    dimBBox.Merge( m_Text.ngViewBBox() );
+    dimBBox.Merge( m_Text.ViewBBox() );
 
     return dimBBox;
 }

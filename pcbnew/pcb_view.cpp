@@ -12,7 +12,7 @@
 #include <cstdio>
 #include "pcb_view.h"
 
-#include <view/view_rtree_ng.h>
+#include <view/view_rtree.h>
 
 namespace KIGFX {
 PCB_VIEW::PCB_VIEW() :
@@ -41,7 +41,7 @@ PCB_VIEW::~PCB_VIEW()
 }
 
 
-static int netnameLOD( VIEW_ITEM_NG* item )
+static int netnameLOD( VIEW_ITEM* item )
 {
     BOARD_ITEM* bitem = static_cast<BOARD_ITEM*> (item);
 
@@ -311,7 +311,7 @@ void PCB_VIEW::setupRenderOrder()
 }
 
 
-void PCB_VIEW::Add( VIEW_ITEM_NG* aItem, int aLayer )
+void PCB_VIEW::Add( VIEW_ITEM* aItem, int aLayer )
 {
     if (BOARD_ITEM *bitem = dynamic_cast <BOARD_ITEM *> (aItem))
     {
@@ -361,7 +361,7 @@ void PCB_VIEW::Add( VIEW_ITEM_NG* aItem, int aLayer )
     }
 }
 
-void PCB_VIEW::Remove( VIEW_ITEM_NG* aItem )
+void PCB_VIEW::Remove( VIEW_ITEM* aItem )
 {
     if(MODULE *mod = dynamic_cast <MODULE *> (aItem))
     {
@@ -372,7 +372,7 @@ void PCB_VIEW::Remove( VIEW_ITEM_NG* aItem )
     VIEW_BASE::Remove ( aItem );
 }
 
-void PCB_VIEW::Update( VIEW_ITEM_NG* aItem )
+void PCB_VIEW::Update( VIEW_ITEM* aItem )
 {
     VIEW_BASE::Update ( aItem );
 }
@@ -388,19 +388,6 @@ void PCB_VIEW::SetVisibleLayers ( LSET aLayers )
     m_visibleLayers = aLayers;
     MarkDirty();
 
-}
-
-void VIEW_ITEM_NG::ngViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aLayers[0] = VIEW_BASE::DEFAULT_LAYER;
-    aCount = 1;
-}
-
-const BOX2I VIEW_ITEM_NG::ngViewBBox() const
-{
-    BOX2I rect;
-    rect.SetMaximum();
-    return rect;
 }
 
 

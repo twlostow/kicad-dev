@@ -122,7 +122,7 @@ void TOOL_BASE::Reset( RESET_REASON aReason )
 
 ITEM* TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer )
 {
-    int tl = getView()->GetTopLayer();
+    int tl = 0; //getView()->GetTopLayer();
 
     if( aLayer > 0 )
         tl = aLayer;
@@ -202,13 +202,13 @@ void TOOL_BASE::highlightNet( bool aEnabled, int aNetcode )
     else
         rs->SetHighlight( false );
 
-    getView()->UpdateAllLayersColor();
+    //getView()->UpdateAllLayersColor();
 }
 
 
 void TOOL_BASE::updateStartItem( TOOL_EVENT& aEvent )
 {
-    int tl = getView()->GetTopLayer();
+    int tl = 0;// getView()->GetTopLayer();
     VECTOR2I cp = m_ctls->GetCursorPosition();
     VECTOR2I p;
 

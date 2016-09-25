@@ -43,6 +43,8 @@ using namespace std::placeholders;
 #include <class_board.h>
 #include <class_module.h>
 
+#include <pcb_view.h>
+
 // Few constants to avoid using bare numbers for point indices
 enum SEG_POINTS
 {
@@ -247,7 +249,7 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
         Activate();
 
         KIGFX::VIEW_CONTROLS* controls = getViewControls();
-        KIGFX::VIEW* view = getView();
+        KIGFX::PCB_VIEW* view = static_cast<KIGFX::PCB_VIEW*>(getView());
         PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
         EDA_ITEM* item = selection.items.GetPickedItem( 0 );
 
@@ -620,7 +622,7 @@ void POINT_EDITOR::updatePoints()
         break;
     }
 
-    m_editPoints->ViewUpdate();
+    //m_editPoints->ViewUpdate();
 }
 
 

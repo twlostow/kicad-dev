@@ -59,7 +59,7 @@
 
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
- 
+
 const wxChar PCB_BASE_FRAME::CANVAS_TYPE_KEY[] = wxT( "canvas_type" );
 
 // Configuration entry names.
@@ -452,8 +452,8 @@ void PCB_BASE_FRAME::OnTogglePadDrawMode( wxCommandEvent& aEvent )
         BOARD* board = GetBoard();
         for( MODULE* module = board->m_Modules; module; module = module->Next() )
         {
-            for( D_PAD* pad = module->Pads(); pad; pad = pad->Next() )
-                pad->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            /*for( D_PAD* pad = module->Pads(); pad; pad = pad->Next() )
+                pad->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );*/
         }
     }
 
@@ -973,7 +973,7 @@ void PCB_BASE_FRAME::UseGalCanvas( bool aEnable )
         if( m_toolManager )
             m_toolManager->ResetTools( TOOL_BASE::GAL_SWITCH );
 
-        galCanvas->GetView()->RecacheAllItems();
+        //galCanvas->GetView()->RecacheAllItems();
         galCanvas->SetEventDispatcher( m_toolDispatcher );
         galCanvas->StartDrawing();
     }

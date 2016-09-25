@@ -32,7 +32,7 @@ using namespace KIGFX;
 void VIEW_ITEM::ViewRelease()
 {
     if( m_view && m_view->IsDynamic() )
-        m_view->Remove( this );
+        m_view->Remove  ( this );
 }
 
 

@@ -162,7 +162,7 @@ void PCB_RENDER_SETTINGS::LoadDisplayOptions( const DISPLAY_OPTIONS* aOptions )
 }
 
 
-const COLOR4D& PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM_NG* aItem, int aLayer ) const
+const COLOR4D& PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
 {
     int netCode = -1;
     const EDA_ITEM* item = static_cast<const EDA_ITEM*>( aItem );
@@ -217,7 +217,7 @@ PCB_PAINTER::PCB_PAINTER( GAL* aGal ) :
 }
 
 
-bool PCB_PAINTER::Draw( const VIEW_ITEM_NG* aItem, int aLayer )
+bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 {
     const EDA_ITEM* item = static_cast<const EDA_ITEM*>( aItem );
 

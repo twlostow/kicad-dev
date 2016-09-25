@@ -178,7 +178,10 @@ public:
     virtual wxString GetShownText() const;
 
     /// @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ngViewBBox() const;
+    virtual const BOX2I ViewBBox() const;
+
+    /// @copydoc VIEW_ITEM::ViewGetLayers()
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
 
 
 #if defined(DEBUG)

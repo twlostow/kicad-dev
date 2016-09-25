@@ -282,8 +282,8 @@ set( COMMON_SRCS
     kicad_curl/kicad_curl.cpp
     kicad_curl/kicad_curl_easy.cpp
     view/view_ng.cpp
-    view/view.cpp
-    view/view_item.cpp
+#    view/view.cpp
+#    view/view_item.cpp
     view/view_group.cpp
 
     math/math_util.cpp

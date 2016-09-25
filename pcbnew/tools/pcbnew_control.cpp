@@ -88,7 +88,7 @@ void PCBNEW_CONTROL::Reset( RESET_REASON aReason )
 
 int PCBNEW_CONTROL::ZoomInOut( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW* view = m_frame->GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = m_frame->GetGalCanvas()->GetView();
     KIGFX::VIEW_CONTROLS* ctls = getViewControls();
     double zoomScale = 1.0;
 
@@ -108,7 +108,7 @@ int PCBNEW_CONTROL::ZoomInOut( const TOOL_EVENT& aEvent )
 
 int PCBNEW_CONTROL::ZoomInOutCenter( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW* view = getView();
+    KIGFX::VIEW_BASE* view = getView();
     double zoomScale = 1.0;
 
     if( aEvent.IsAction( &COMMON_ACTIONS::zoomInCenter ) )
@@ -137,7 +137,7 @@ int PCBNEW_CONTROL::ZoomCenter( const TOOL_EVENT& aEvent )
 
 int PCBNEW_CONTROL::ZoomFitScreen( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW* view = getView();
+    KIGFX::VIEW_BASE* view = getView();
     EDA_DRAW_PANEL_GAL* galCanvas = m_frame->GetGalCanvas();
     BOARD* board = getModel<BOARD>();
     board->ComputeBoundingBox();
@@ -176,7 +176,7 @@ int PCBNEW_CONTROL::ZoomPreset( const TOOL_EVENT& aEvent )
 {
     unsigned int idx = aEvent.Parameter<long>();
     std::vector<double>& zoomList = m_frame->GetScreen()->m_ZoomList;
-    KIGFX::VIEW* view = m_frame->GetGalCanvas()->GetView();
+    KIGFX::VIEW_BASE* view = m_frame->GetGalCanvas()->GetView();
     KIGFX::GAL* gal = m_frame->GetGalCanvas()->GetGAL();
 
     m_frame->SetPresetZoom( idx );
@@ -213,8 +213,8 @@ int PCBNEW_CONTROL::TrackDisplayMode( const TOOL_EVENT& aEvent )
 
     for( TRACK* track = getModel<BOARD>()->m_Track; track; track = track->Next() )
     {
-        if( track->Type() == PCB_TRACE_T )
-            track->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        //if( track->Type() == PCB_TRACE_T )
+            //track->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
     }
 
     m_frame->GetGalCanvas()->Refresh();
@@ -237,8 +237,8 @@ int PCBNEW_CONTROL::PadDisplayMode( const TOOL_EVENT& aEvent )
 
     for( MODULE* module = getModel<BOARD>()->m_Modules; module; module = module->Next() )
     {
-        for( D_PAD* pad = module->Pads(); pad; pad = pad->Next() )
-            pad->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        //for( D_PAD* pad = module->Pads(); pad; pad = pad->Next() )
+            //pad->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
     }
 
     m_frame->GetGalCanvas()->Refresh();
@@ -261,8 +261,8 @@ int PCBNEW_CONTROL::ViaDisplayMode( const TOOL_EVENT& aEvent )
 
     for( TRACK* track = getModel<BOARD>()->m_Track; track; track = track->Next() )
     {
-        if( track->Type() == PCB_VIA_T )
-            track->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        //if( track->Type() == PCB_VIA_T )
+            //track->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
     }
 
     m_frame->GetGalCanvas()->Refresh();
@@ -292,8 +292,8 @@ int PCBNEW_CONTROL::ZoneDisplayMode( const TOOL_EVENT& aEvent )
     settings->LoadDisplayOptions( displ_opts );
 
     BOARD* board = getModel<BOARD>();
-    for( int i = 0; i < board->GetAreaCount(); ++i )
-        board->GetArea( i )->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+    //for( int i = 0; i < board->GetAreaCount(); ++i )
+        //board->GetArea( i )->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
 
     m_frame->GetGalCanvas()->Refresh();
 
@@ -414,7 +414,7 @@ int PCBNEW_CONTROL::LayerAlphaInc( const TOOL_EVENT& aEvent )
     {
         currentColor.a += 0.05;
         settings->SetLayerColor( currentLayer, currentColor );
-        m_frame->GetGalCanvas()->GetView()->UpdateLayerColor( currentLayer );
+        //m_frame->GetGalCanvas()->GetView()->UpdateLayerColor( currentLayer );
     }
 
     return 0;
@@ -435,7 +435,7 @@ int PCBNEW_CONTROL::LayerAlphaDec( const TOOL_EVENT& aEvent )
     {
         currentColor.a -= 0.05;
         settings->SetLayerColor( currentLayer, currentColor );
-        m_frame->GetGalCanvas()->GetView()->UpdateLayerColor( currentLayer );
+        //m_frame->GetGalCanvas()->GetView()->UpdateLayerColor( currentLayer );
     }
 
     return 0;
@@ -502,7 +502,7 @@ int PCBNEW_CONTROL::CursorControl( const TOOL_EVENT& aEvent )
     }
 
     // Handler cursor movement
-    KIGFX::VIEW* view = getView();
+    KIGFX::VIEW_BASE* view = getView();
     newCursor = view->ToScreen( newCursor );
     newCursor.x = KiROUND( newCursor.x );
     newCursor.y = KiROUND( newCursor.y );
@@ -553,7 +553,7 @@ int PCBNEW_CONTROL::CursorControl( const TOOL_EVENT& aEvent )
 int PCBNEW_CONTROL::PanControl( const TOOL_EVENT& aEvent )
 {
     long type = aEvent.Parameter<long>();
-    KIGFX::VIEW* view = getView();
+    KIGFX::VIEW_BASE* view = getView();
     GRID_HELPER gridHelper( m_frame );
     VECTOR2D center = view->GetCenter();
     VECTOR2I gridSize = gridHelper.GetGrid() * 10;
@@ -624,7 +624,7 @@ int PCBNEW_CONTROL::GridPrev( const TOOL_EVENT& aEvent )
 }
 
 
-static bool setOrigin( KIGFX::VIEW* aView, PCB_BASE_FRAME* aFrame,
+static bool setOrigin( KIGFX::VIEW_BASE* aView, PCB_BASE_FRAME* aFrame,
                        KIGFX::ORIGIN_VIEWITEM* aItem, const VECTOR2D& aPoint )
 {
     aFrame->SetGridOrigin( wxPoint( aPoint.x, aPoint.y ) );

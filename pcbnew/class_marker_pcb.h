@@ -112,13 +112,13 @@ public:
     BITMAP_DEF GetMenuImage() const { return  drc_xpm; }
 
     ///> @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ngViewBBox() const
+    virtual const BOX2I ViewBBox() const
     {
-        return GetParent()->ngViewBBox();
+        return GetParent()->ViewBBox();
     }
 
     ///> @copydoc VIEW_ITEM::ViewGetLayers()
-
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const { ShowDummy( os ); } // override
 #endif

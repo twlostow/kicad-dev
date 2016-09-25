@@ -33,7 +33,7 @@
 #ifndef VIEW_GROUP_H_
 #define VIEW_GROUP_H_
 
-#include <view/view_item_ng.h>
+#include <view/view_item.h>
 #include <deque>
 
 namespace KIGFX
@@ -41,15 +41,15 @@ namespace KIGFX
 
 class VIEW_BASE;
 
-class VIEW_GROUP : public VIEW_ITEM_NG
+class VIEW_GROUP : public VIEW_ITEM
 {
 public:
     VIEW_GROUP( VIEW_BASE* aView = NULL );
     virtual ~VIEW_GROUP();
 
     /// Helper typedefs
-    typedef std::set<VIEW_ITEM_NG*>::const_iterator const_iter;
-    typedef std::set<VIEW_ITEM_NG*>::iterator iter;
+    typedef std::set<VIEW_ITEM*>::const_iterator const_iter;
+    typedef std::set<VIEW_ITEM*>::iterator iter;
 
     /**
      * Function Add()
@@ -57,7 +57,7 @@ public:
      *
      * @param aItem is the item to be added.
      */
-    virtual void Add( VIEW_ITEM_NG* aItem );
+    virtual void Add( VIEW_ITEM* aItem );
 
     /**
      * Function Remove()
@@ -65,7 +65,7 @@ public:
      *
      * @param aItem is the item to be removed.
      */
-    virtual void Remove( VIEW_ITEM_NG* aItem );
+    virtual void Remove( VIEW_ITEM* aItem );
 
     /**
      * Function Clear()
@@ -105,7 +105,7 @@ public:
      *
      * @return The current bounding box
      */
-    virtual const BOX2I ngViewBBox() const;
+    virtual const BOX2I ViewBBox() const override;
 
     /**
      * Function ViewDraw()
@@ -114,7 +114,7 @@ public:
      * @param aLayer is the layer which should be drawn.
      * @param aGal is the GAL that should be used for drawing.
      */
-    virtual void ngViewDraw( int aLayer, VIEW_BASE* aView ) const;
+    virtual void ViewDraw( int aLayer, VIEW_BASE* aView ) const override;
 
     /**
      * Function SetLayer()
@@ -126,7 +126,7 @@ public:
     inline virtual void SetLayer( int aLayer )
     {
         m_layer = aLayer;
-        ViewUpdate();
+//        ViewUpdate();
     }
 
     /**
@@ -162,7 +162,7 @@ public:
      */
     //virtual void ItemsViewUpdate( VIEW_ITEM::VIEW_UPDATE_FLAGS aFlags );
 
-    virtual void ngViewGetLayers( int aLayers[], int& aCount ) const;
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
 
 protected:
@@ -174,7 +174,7 @@ private:
     void updateBbox();
 
     /// Container for storing VIEW_ITEMs
-    std::set<VIEW_ITEM_NG*> m_items;
+    std::set<VIEW_ITEM*> m_items;
 };
 } // namespace KIGFX
 

@@ -22,8 +22,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef __VIEW_RTREE_NG_H
-#define __VIEW_RTREE_NG_H
+#ifndef __VIEW_RTREE_H
+#define __VIEW_RTREE_H
 
 #include <math/box2.h>
 
@@ -33,7 +33,7 @@
 namespace KIGFX
 {
 
-  class VIEW_ITEM_NG;
+  class VIEW_ITEM;
   class VIEW_CACHE_ENTRY;
 
 struct VIEW_RTREE_ENTRY {
@@ -48,18 +48,18 @@ struct VIEW_RTREE_ENTRY {
       return item != aOther.item;
   }
 
-  VIEW_ITEM_NG *item;
+  VIEW_ITEM *item;
   VIEW_CACHE_ENTRY *ent;
 };
 
-typedef RTree<VIEW_RTREE_ENTRY*, int, 2, float> VIEW_RTREE_BASE_NG;
+typedef RTree<VIEW_RTREE_ENTRY*, int, 2, float> VIEW_RTREE_BASE;
 
 /**
  * Class VIEW_RTREE -
  * Implements an R-tree for fast spatial indexing of VIEW items.
  * Non-owning.
  */
-class VIEW_RTREE_NG : public VIEW_RTREE_BASE_NG
+class VIEW_RTREE : public VIEW_RTREE_BASE
 {
 public:
 
@@ -72,7 +72,7 @@ public:
         const int       mmin[2] = { bbox.GetX(), bbox.GetY() };
         const int       mmax[2] = { bbox.GetRight(), bbox.GetBottom() };
 
-        VIEW_RTREE_BASE_NG::Insert( mmin, mmax, aItem );
+        VIEW_RTREE_BASE::Insert( mmin, mmax, aItem );
     }
 
     /**
@@ -85,7 +85,7 @@ public:
         const int       mmin[2] = { bbox.GetX(), bbox.GetY() };
         const int       mmax[2] = { bbox.GetRight(), bbox.GetBottom() };
 
-        VIEW_RTREE_BASE_NG::Remove( mmin, mmax, aItem );
+        VIEW_RTREE_BASE::Remove( mmin, mmax, aItem );
     }
 
     /**
@@ -99,7 +99,7 @@ public:
         const int   mmin[2] = { aBounds.GetX(), aBounds.GetY() };
         const int   mmax[2] = { aBounds.GetRight(), aBounds.GetBottom() };
 
-        VIEW_RTREE_BASE_NG::Search( mmin, mmax, aVisitor );
+        VIEW_RTREE_BASE::Search( mmin, mmax, aVisitor );
     }
 
 private:

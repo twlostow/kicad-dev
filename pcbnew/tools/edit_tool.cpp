@@ -60,7 +60,7 @@ using namespace std::placeholders;
 
 EDIT_TOOL::EDIT_TOOL() :
     PCB_TOOL( "pcbnew.InteractiveEdit" ), m_selectionTool( NULL ),
-    m_dragging( false ), m_updateFlag( KIGFX::VIEW_ITEM::NONE )
+    m_dragging( false ) /*, m_updateFlag( KIGFX::VIEW_ITEM::NONE ) */
 {
 }
 
@@ -68,7 +68,7 @@ EDIT_TOOL::EDIT_TOOL() :
 void EDIT_TOOL::Reset( RESET_REASON aReason )
 {
     m_dragging = false;
-    m_updateFlag = KIGFX::VIEW_ITEM::NONE;
+    //m_updateFlag = KIGFX::VIEW_ITEM::NONE;
 
     if( aReason != RUN )
         m_commit.reset( new BOARD_COMMIT( this ) );
@@ -154,7 +154,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
     bool lockOverride = false;
 
     // By default, modified items need to update their geometry
-    m_updateFlag = KIGFX::VIEW_ITEM::GEOMETRY;
+    //m_updateFlag = KIGFX::VIEW_ITEM::GEOMETRY;
 
     controls->ShowCursor( true );
 
@@ -247,7 +247,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
                 }
             }
 
-            selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //selection.group->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
             m_toolMgr->RunAction( COMMON_ACTIONS::editModifiedSelection, true );
         }
 
@@ -265,7 +265,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
                 Flip( aEvent );
 
                 // Flip causes change of layers
-                enableUpdateFlag( KIGFX::VIEW_ITEM::LAYERS );
+                //enableUpdateFlag( KIGFX::VIEW_ITEM::LAYERS );
             }
             else if( evt->IsAction( &COMMON_ACTIONS::remove ) )
             {
@@ -308,7 +308,7 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 // Update dragging offset (distance between cursor and the first dragged item)
                 m_offset = selection.Item<BOARD_ITEM>( 0 )->GetPosition() - modPoint;
-                selection.group->ViewUpdate( KIGFX::VIEW_ITEM::ALL );
+                //selection.group->ViewUpdate( KIGFX::VIEW_ITEM::ALL );
                 updateRatsnest( true );
             }
         }
@@ -508,8 +508,8 @@ int EDIT_TOOL::MoveExact( const TOOL_EVENT& aEvent )
             item->Move( translation );
             item->Rotate( rotPoint, rotation );
 
-            if( !m_dragging )
-                item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //if( !m_dragging )
+                //item->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
 
         m_commit->Push( _( "Move exact" ) );

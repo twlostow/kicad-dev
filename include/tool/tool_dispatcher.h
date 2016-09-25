@@ -34,7 +34,7 @@ class PCB_BASE_FRAME;
 
 namespace KIGFX
 {
-class VIEW;
+class VIEW_BASE;
 };
 
 /**

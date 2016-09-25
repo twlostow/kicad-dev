@@ -180,6 +180,7 @@ set( PCBNEW_AUTOROUTER_SRCS
     )
 
 set( PCBNEW_CLASS_SRCS
+  pcb_view.cpp
     board_commit.cpp
     tool_modview.cpp
     modview_frame.cpp

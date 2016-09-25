@@ -757,7 +757,7 @@ void TRACK::ViewGetLayers( int aLayers[], int& aCount ) const
 }
 
 
-unsigned int TRACK::ViewGetLOD( int aLayer ) const
+/*unsigned int TRACK::ViewGetLOD( int aLayer ) const
 {
     // Netnames will be shown only if zoom is appropriate
     if( IsNetnameLayer( aLayer ) )
@@ -767,7 +767,7 @@ unsigned int TRACK::ViewGetLOD( int aLayer ) const
 
     // Other layers are shown without any conditions
     return 0;
-}
+}*/
 
 
 void VIA::Draw( EDA_DRAW_PANEL* panel, wxDC* aDC, GR_DRAWMODE aDrawMode, const wxPoint& aOffset )

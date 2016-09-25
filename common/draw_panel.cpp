@@ -38,7 +38,7 @@
 #include <class_draw_panel_gal.h>
 #include <class_base_screen.h>
 #include <draw_frame.h>
-#include <view/view_controls_ng.h>
+#include <view/view_controls.h>
 
 #include <kicad_device_context.h>
 

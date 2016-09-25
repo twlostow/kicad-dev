@@ -57,7 +57,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
 {
     // Objects potentially interested in changes:
     PICKED_ITEMS_LIST undoList;
-    KIGFX::VIEW* view = m_toolMgr->GetView();
+    KIGFX::VIEW_BASE* view = m_toolMgr->GetView();
     BOARD* board = (BOARD*) m_toolMgr->GetModel();
     PCB_BASE_FRAME* frame = (PCB_BASE_FRAME*) m_toolMgr->GetEditFrame();
     RN_DATA* ratsnest = board->GetRatsnest();
@@ -117,7 +117,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
                     if( boardItem->Type() == PCB_MODULE_T )
                     {
                         MODULE* mod = static_cast<MODULE*>( boardItem );
-                        mod->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+                        mod->RunOnChildren( boost::bind( &KIGFX::VIEW_BASE::Add, view, _1 ) );
                     }
                 }
                 else
@@ -220,7 +220,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
 
                     MODULE* module = static_cast<MODULE*>( boardItem );
                     module->ClearFlags();
-                    module->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+                    module->RunOnChildren( boost::bind( &KIGFX::VIEW_BASE::Remove, view, _1 ) );
 
                     view->Remove( module );
 
@@ -249,7 +249,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
                     undoList.PushItem( itemWrapper );
                 }
 
-                boardItem->ViewUpdate( KIGFX::VIEW_ITEM::ALL );
+                view->Update( boardItem );
                 ratsnest->Update( boardItem );
                 break;
             }
@@ -290,7 +290,7 @@ EDA_ITEM* BOARD_COMMIT::parentObject( EDA_ITEM* aItem ) const
 void BOARD_COMMIT::Revert()
 {
     PICKED_ITEMS_LIST undoList;
-    KIGFX::VIEW* view = m_toolMgr->GetView();
+    KIGFX::VIEW_BASE* view = m_toolMgr->GetView();
     BOARD* board = (BOARD*) m_toolMgr->GetModel();
     RN_DATA* ratsnest = board->GetRatsnest();
 
@@ -306,7 +306,7 @@ void BOARD_COMMIT::Revert()
             if( item->Type() == PCB_MODULE_T )
             {
                 MODULE* oldModule = static_cast<MODULE*>( item );
-                oldModule->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+                oldModule->RunOnChildren( boost::bind( &KIGFX::VIEW_BASE::Remove, view, _1 ) );
             }
 
             view->Remove( item );
@@ -318,7 +318,7 @@ void BOARD_COMMIT::Revert()
             {
                 MODULE* newModule = static_cast<MODULE*>( item );
                 newModule->RunOnChildren( boost::bind( &EDA_ITEM::ClearFlags, _1, SELECTED ) );
-                newModule->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+                newModule->RunOnChildren( boost::bind( &KIGFX::VIEW_BASE::Add, view, _1 ) );
             }
 
             view->Add( item );
@@ -330,7 +330,7 @@ void BOARD_COMMIT::Revert()
             if( item->Type() == PCB_MODULE_T )
             {
                 MODULE* oldModule = static_cast<MODULE*>( item );
-                oldModule->RunOnChildren( boost::bind( &KIGFX::VIEW::Remove, view, _1 ) );
+                oldModule->RunOnChildren( boost::bind( &KIGFX::VIEW_BASE::Remove, view, _1 ) );
             }
 
             view->Remove( item );
@@ -346,7 +346,7 @@ void BOARD_COMMIT::Revert()
             {
                 MODULE* newModule = static_cast<MODULE*>( item );
                 newModule->RunOnChildren( boost::bind( &EDA_ITEM::ClearFlags, _1, SELECTED ) );
-                newModule->RunOnChildren( boost::bind( &KIGFX::VIEW::Add, view, _1 ) );
+                newModule->RunOnChildren( boost::bind( &KIGFX::VIEW_BASE::Add, view, _1 ) );
             }
 
             view->Add( item );

@@ -26,50 +26,50 @@
 
 #include <wx/wx.h>
 
-#include <view/view_ng.h>
-#include <view/wx_view_controls_ng.h>
+#include <view/view.h>
+#include <view/wx_view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_dispatcher.h>
 
 using namespace KIGFX;
 
-const wxEventType WX_VIEW_CONTROLS_NG::EVT_REFRESH_MOUSE = wxNewEventType();
+const wxEventType WX_VIEW_CONTROLS::EVT_REFRESH_MOUSE = wxNewEventType();
 
-WX_VIEW_CONTROLS_NG::WX_VIEW_CONTROLS_NG( VIEW_BASE* aView, wxScrolledCanvas* aParentPanel ) :
-    VIEW_CONTROLS_NG( aView ), m_state( IDLE ), m_parentPanel( aParentPanel ), m_scrollScale( 1.0, 1.0 )
+WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW_BASE* aView, wxScrolledCanvas* aParentPanel ) :
+    VIEW_CONTROLS( aView ), m_state( IDLE ), m_parentPanel( aParentPanel ), m_scrollScale( 1.0, 1.0 )
 {
     m_parentPanel->Connect( wxEVT_MOTION,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onMotion ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onMotion ), NULL, this );
 #ifdef USE_OSX_MAGNIFY_EVENT
     m_parentPanel->Connect( wxEVT_MAGNIFY,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onMagnify ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onMagnify ), NULL, this );
 #endif
     m_parentPanel->Connect( wxEVT_MOUSEWHEEL,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onWheel ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onWheel ), NULL, this );
     m_parentPanel->Connect( wxEVT_MIDDLE_UP,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onButton ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onButton ), NULL, this );
     m_parentPanel->Connect( wxEVT_MIDDLE_DOWN,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onButton ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onButton ), NULL, this );
     m_parentPanel->Connect( wxEVT_LEFT_UP,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onButton ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onButton ), NULL, this );
     m_parentPanel->Connect( wxEVT_LEFT_DOWN,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onButton ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onButton ), NULL, this );
 #if defined _WIN32 || defined _WIN64
     m_parentPanel->Connect( wxEVT_ENTER_WINDOW,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onEnter ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onEnter ), NULL, this );
 #endif
     m_parentPanel->Connect( wxEVT_LEAVE_WINDOW,
-                            wxMouseEventHandler( WX_VIEW_CONTROLS_NG::onLeave ), NULL, this );
+                            wxMouseEventHandler( WX_VIEW_CONTROLS::onLeave ), NULL, this );
     m_parentPanel->Connect( wxEVT_SCROLLWIN_THUMBTRACK,
-                            wxScrollWinEventHandler( WX_VIEW_CONTROLS_NG::onScroll ), NULL, this );
+                            wxScrollWinEventHandler( WX_VIEW_CONTROLS::onScroll ), NULL, this );
 
     m_panTimer.SetOwner( this );
     this->Connect( wxEVT_TIMER,
-                   wxTimerEventHandler( WX_VIEW_CONTROLS_NG::onTimer ), NULL, this );
+                   wxTimerEventHandler( WX_VIEW_CONTROLS::onTimer ), NULL, this );
 }
 
 
-void WX_VIEW_CONTROLS_NG::onMotion( wxMouseEvent& aEvent )
+void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
 {
     bool isAutoPanning = false;
 
@@ -92,7 +92,7 @@ void WX_VIEW_CONTROLS_NG::onMotion( wxMouseEvent& aEvent )
 }
 
 
-void WX_VIEW_CONTROLS_NG::onWheel( wxMouseEvent& aEvent )
+void WX_VIEW_CONTROLS::onWheel( wxMouseEvent& aEvent )
 {
     const double wheelPanSpeed = 0.001;
 
@@ -168,7 +168,7 @@ void WX_VIEW_CONTROLS_NG::onWheel( wxMouseEvent& aEvent )
 
 
 #ifdef USE_OSX_MAGNIFY_EVENT
-void WX_VIEW_CONTROLS_NG::onMagnify( wxMouseEvent& aEvent )
+void WX_VIEW_CONTROLS::onMagnify( wxMouseEvent& aEvent )
 {
     // Scale based on the magnification from our underlying magnification event.
     VECTOR2D anchor = m_view->ToWorld( VECTOR2D( aEvent.GetX(), aEvent.GetY() ) );
@@ -179,7 +179,7 @@ void WX_VIEW_CONTROLS_NG::onMagnify( wxMouseEvent& aEvent )
 #endif
 
 
-void WX_VIEW_CONTROLS_NG::onButton( wxMouseEvent& aEvent )
+void WX_VIEW_CONTROLS::onButton( wxMouseEvent& aEvent )
 {
     switch( m_state )
     {
@@ -208,13 +208,13 @@ void WX_VIEW_CONTROLS_NG::onButton( wxMouseEvent& aEvent )
 }
 
 
-void WX_VIEW_CONTROLS_NG::onEnter( wxMouseEvent& aEvent )
+void WX_VIEW_CONTROLS::onEnter( wxMouseEvent& aEvent )
 {
     m_parentPanel->SetFocus();
 }
 
 
-void WX_VIEW_CONTROLS_NG::onLeave( wxMouseEvent& aEvent )
+void WX_VIEW_CONTROLS::onLeave( wxMouseEvent& aEvent )
 {
     if( m_cursorCaptured )
     {
@@ -251,7 +251,7 @@ void WX_VIEW_CONTROLS_NG::onLeave( wxMouseEvent& aEvent )
 }
 
 
-void WX_VIEW_CONTROLS_NG::onTimer( wxTimerEvent& aEvent )
+void WX_VIEW_CONTROLS::onTimer( wxTimerEvent& aEvent )
 {
     switch( m_state )
     {
@@ -299,7 +299,7 @@ void WX_VIEW_CONTROLS_NG::onTimer( wxTimerEvent& aEvent )
 }
 
 
-void WX_VIEW_CONTROLS_NG::onScroll( wxScrollWinEvent& aEvent )
+void WX_VIEW_CONTROLS::onScroll( wxScrollWinEvent& aEvent )
 {
     VECTOR2D center = m_view->GetCenter();
     const BOX2I& boundary = m_view->GetBoundary();
@@ -314,18 +314,18 @@ void WX_VIEW_CONTROLS_NG::onScroll( wxScrollWinEvent& aEvent )
 }
 
 
-void WX_VIEW_CONTROLS_NG::SetGrabMouse( bool aEnabled )
+void WX_VIEW_CONTROLS::SetGrabMouse( bool aEnabled )
 {
     if( aEnabled && !m_grabMouse )
         m_parentPanel->CaptureMouse();
     else if( !aEnabled && m_grabMouse )
         m_parentPanel->ReleaseMouse();
 
-    VIEW_CONTROLS_NG::SetGrabMouse( aEnabled );
+    VIEW_CONTROLS::SetGrabMouse( aEnabled );
 }
 
 
-VECTOR2I WX_VIEW_CONTROLS_NG::GetMousePosition() const
+VECTOR2I WX_VIEW_CONTROLS::GetMousePosition() const
 {
     wxPoint msp = wxGetMousePosition();
     wxPoint winp = m_parentPanel->GetScreenPosition();
@@ -334,7 +334,7 @@ VECTOR2I WX_VIEW_CONTROLS_NG::GetMousePosition() const
 }
 
 
-VECTOR2D WX_VIEW_CONTROLS_NG::GetCursorPosition() const
+VECTOR2D WX_VIEW_CONTROLS::GetCursorPosition() const
 {
     if( m_forceCursorPosition )
     {
@@ -352,7 +352,7 @@ VECTOR2D WX_VIEW_CONTROLS_NG::GetCursorPosition() const
 }
 
 
-void WX_VIEW_CONTROLS_NG::WarpCursor( const VECTOR2D& aPosition, bool aWorldCoordinates,
+void WX_VIEW_CONTROLS::WarpCursor( const VECTOR2D& aPosition, bool aWorldCoordinates,
                                     bool aWarpView ) const
 {
     if( aWorldCoordinates )
@@ -381,7 +381,7 @@ void WX_VIEW_CONTROLS_NG::WarpCursor( const VECTOR2D& aPosition, bool aWorldCoor
 }
 
 
-void WX_VIEW_CONTROLS_NG::CenterOnCursor() const
+void WX_VIEW_CONTROLS::CenterOnCursor() const
 {
     const VECTOR2I& screenSize = m_view->GetGAL()->GetScreenPixelSize();
     VECTOR2I screenCenter( screenSize / 2 );
@@ -394,7 +394,7 @@ void WX_VIEW_CONTROLS_NG::CenterOnCursor() const
 }
 
 
-bool WX_VIEW_CONTROLS_NG::handleAutoPanning( const wxMouseEvent& aEvent )
+bool WX_VIEW_CONTROLS::handleAutoPanning( const wxMouseEvent& aEvent )
 {
     VECTOR2D p( aEvent.GetX(), aEvent.GetY() );
 
@@ -455,7 +455,7 @@ bool WX_VIEW_CONTROLS_NG::handleAutoPanning( const wxMouseEvent& aEvent )
 }
 
 
-void WX_VIEW_CONTROLS_NG::UpdateScrollbars()
+void WX_VIEW_CONTROLS::UpdateScrollbars()
 {
     const BOX2D viewport = m_view->GetViewport();
     const BOX2I& boundary = m_view->GetBoundary();

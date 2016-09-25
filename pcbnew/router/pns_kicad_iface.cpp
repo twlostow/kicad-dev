@@ -288,7 +288,7 @@ bool PNS_PCBNEW_RULE_RESOLVER::DpNetPair( PNS::ITEM* aItem, int& aNetP, int& aNe
 class PNS_PCBNEW_DEBUG_DECORATOR: public PNS::DEBUG_DECORATOR
 {
 public:
-    PNS_PCBNEW_DEBUG_DECORATOR( KIGFX::VIEW* aView = NULL ): PNS::DEBUG_DECORATOR(),
+    PNS_PCBNEW_DEBUG_DECORATOR( KIGFX::VIEW_BASE* aView = NULL ): PNS::DEBUG_DECORATOR(),
         m_view( NULL ), m_items( NULL )
     {
         SetView( aView );
@@ -300,7 +300,7 @@ public:
         delete m_items;
     }
 
-    void SetView( KIGFX::VIEW* aView )
+    void SetView( KIGFX::VIEW_BASE* aView )
     {
         Clear();
         delete m_items;
@@ -313,7 +313,7 @@ public:
         m_items = new KIGFX::VIEW_GROUP( m_view );
         m_items->SetLayer( ITEM_GAL_LAYER( GP_OVERLAY ) );
         m_view->Add( m_items );
-        m_items->ViewSetVisible( true );
+        //m_items->ViewSetVisible( true );
     }
 
     void AddPoint( VECTOR2I aP, int aColor ) override
@@ -379,8 +379,8 @@ public:
 
         pitem->Line( aLine, aWidth, aType );
         m_items->Add( pitem ); // Should not be needed, as m_items has been passed as a parent group in alloc;
-        pitem->ViewSetVisible( true );
-        m_items->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
+        //pitem->ViewSetVisible( true );
+        //m_items->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
     }
 
     void Clear() override
@@ -388,12 +388,12 @@ public:
         if( m_view && m_items )
         {
             m_items->FreeItems();
-            m_items->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        //    m_items->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
     }
 
 private:
-    KIGFX::VIEW* m_view;
+    KIGFX::VIEW_BASE* m_view;
     KIGFX::VIEW_GROUP* m_items;
 };
 
@@ -767,15 +767,15 @@ void PNS_KICAD_IFACE::SyncWorld( PNS::NODE *aWorld )
 
 void PNS_KICAD_IFACE::EraseView()
 {
-    for( auto item : m_hiddenItems )
-        item->ViewSetVisible( true );
+    //for( auto item : m_hiddenItems )
+    //    item->ViewSetVisible( true );
 
     m_hiddenItems.clear();
 
     if( m_previewItems )
     {
         m_previewItems->FreeItems();
-        m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+        //m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
     }
 
     if( m_debugDecorator )
@@ -797,8 +797,8 @@ void PNS_KICAD_IFACE::DisplayItem( const PNS::ITEM* aItem, int aColor, int aClea
 
     m_previewItems->Add( pitem );
 
-    pitem->ViewSetVisible( true );
-    m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
+    //pitem->ViewSetVisible( true );
+    //m_previewItems->ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY | KIGFX::VIEW_ITEM::APPEARANCE );
 }
 
 
@@ -808,11 +808,11 @@ void PNS_KICAD_IFACE::HideItem( PNS::ITEM* aItem )
 
     if( parent )
     {
-        if( parent->ViewIsVisible() )
-            m_hiddenItems.insert( parent );
+        //if( parent->ViewIsVisible() )
+        //    m_hiddenItems.insert( parent );
 
-        parent->ViewSetVisible( false );
-        parent->ViewUpdate( KIGFX::VIEW_ITEM::APPEARANCE );
+        //parent->ViewSetVisible( false );
+        //parent->ViewUpdate( KIGFX::VIEW_ITEM::APPEARANCE );
     }
 }
 
@@ -885,7 +885,7 @@ void PNS_KICAD_IFACE::Commit()
 }
 
 
-void PNS_KICAD_IFACE::SetView( KIGFX::VIEW *aView )
+void PNS_KICAD_IFACE::SetView( KIGFX::VIEW_BASE *aView )
 {
     wxLogTrace( "PNS", "SetView %p", aView );
 
@@ -899,7 +899,7 @@ void PNS_KICAD_IFACE::SetView( KIGFX::VIEW *aView )
     m_previewItems = new KIGFX::VIEW_GROUP( m_view );
     m_previewItems->SetLayer( ITEM_GAL_LAYER( GP_OVERLAY ) );
     m_view->Add( m_previewItems );
-    m_previewItems->ViewSetVisible( true );
+    //m_previewItems->ViewSetVisible( true );
 
     delete m_debugDecorator;
     m_debugDecorator = new PNS_PCBNEW_DEBUG_DECORATOR();

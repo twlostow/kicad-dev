@@ -44,6 +44,7 @@
 #include <profile.h>
 #endif /* PROFILE */
 
+#include <pcb_view.h>
 
 EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWindowId,
                                         const wxPoint& aPosition, const wxSize& aSize,
@@ -74,7 +75,7 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
 
     m_painter = new KIGFX::PCB_PAINTER( m_gal );
 
-    m_view = new KIGFX::VIEW( true );
+    m_view = new KIGFX::PCB_VIEW( );
     m_view->SetPainter( m_painter );
     m_view->SetGAL( m_gal );
 
@@ -301,15 +302,15 @@ void EDA_DRAW_PANEL_GAL::SetHighContrastLayer( LAYER_ID aLayer )
     rSettings->ClearActiveLayers();
     rSettings->SetActiveLayer( aLayer );
 
-    m_view->UpdateAllLayersColor();
+    //m_view->UpdateAllLayersColor();
 }
 
 
 void EDA_DRAW_PANEL_GAL::SetTopLayer( LAYER_ID aLayer )
 {
-    m_view->ClearTopLayers();
-    m_view->SetTopLayer( aLayer );
-    m_view->UpdateAllLayersOrder();
+    //m_view->ClearTopLayers();
+    //m_view->SetTopLayer( aLayer );
+    //m_view->UpdateAllLayersOrder();
 }
 
 
@@ -345,9 +346,9 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
             new_gal = new KIGFX::CAIRO_GAL( this, this, this );
             break;
 
-        case GAL_TYPE_WXDC:
-            new_gal = new KIGFX::WXDC_GAL( this, this, this );
-            break;
+        //case GAL_TYPE_WXDC:
+        //    new_gal = new KIGFX::WXDC_GAL( this, this, this );
+        //    break;
 
         default:
             assert( false );

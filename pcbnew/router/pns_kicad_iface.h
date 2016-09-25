@@ -33,7 +33,7 @@ class BOARD;
 class BOARD_COMMIT;
 namespace KIGFX
 {
-    class VIEW;
+    class VIEW_BASE;
 };
 
 class PNS_KICAD_IFACE : public PNS::ROUTER_IFACE {
@@ -45,7 +45,7 @@ public:
     void SetHostFrame( PCB_EDIT_FRAME* aFrame );
 
     void SetBoard( BOARD* aBoard );
-    void SetView( KIGFX::VIEW* aView );
+    void SetView( KIGFX::VIEW_BASE* aView );
     void SyncWorld( PNS::NODE* aWorld );
     void EraseView();
     void HideItem( PNS::ITEM* aItem );
@@ -67,7 +67,7 @@ private:
     std::unique_ptr< PNS::SEGMENT > syncTrack( TRACK* aTrack );
     std::unique_ptr< PNS::VIA >     syncVia( VIA* aVia );
 
-    KIGFX::VIEW* m_view;
+    KIGFX::VIEW_BASE* m_view;
     KIGFX::VIEW_GROUP* m_previewItems;
     std::unordered_set<BOARD_CONNECTED_ITEM*> m_hiddenItems;
 

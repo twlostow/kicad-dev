@@ -32,9 +32,9 @@
 
 #include <set>
 #include <algorithm>
-#include <view/view_item_ng.h>
+#include <view/view_item.h>
 #include <view/view_group.h>
-#include <view/view_ng.h>
+#include <view/view.h>
 #include <painter.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <layers_id_colors_and_visibility.h>
@@ -53,13 +53,13 @@ VIEW_GROUP::~VIEW_GROUP()
 }
 
 
-void VIEW_GROUP::Add( VIEW_ITEM_NG* aItem )
+void VIEW_GROUP::Add( VIEW_ITEM* aItem )
 {
     m_items.insert( aItem );
 }
 
 
-void VIEW_GROUP::Remove( VIEW_ITEM_NG* aItem )
+void VIEW_GROUP::Remove( VIEW_ITEM* aItem )
 {
     m_items.erase( aItem );
 }
@@ -77,7 +77,7 @@ unsigned int VIEW_GROUP::GetSize() const
 }
 
 
-const BOX2I VIEW_GROUP::ngViewBBox() const
+const BOX2I VIEW_GROUP::ViewBBox() const
 {
     BOX2I maxBox;
 
@@ -85,31 +85,31 @@ const BOX2I VIEW_GROUP::ngViewBBox() const
     return maxBox;
 }
 
-void VIEW_GROUP::ngViewGetLayers( int aLayers[], int& aCount ) const
+void VIEW_GROUP::ViewGetLayers( int aLayers[], int& aCount ) const
 {
     aLayers[0] = VIEW_BASE::DEFAULT_OVERLAY;
     aCount = 1;
 }
 
-void VIEW_GROUP::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
+void VIEW_GROUP::ViewDraw( int aLayer, VIEW_BASE* aView ) const
 {
     PAINTER* painter = aView->GetPainter();
     GAL *gal = aView->GetGAL();
 
     // Draw all items immediately (without caching)
-    for( VIEW_ITEM_NG* item : m_items )
+    for( VIEW_ITEM* item : m_items )
     {
         gal->PushDepth();
 
-        int layers[VIEW::VIEW_MAX_LAYERS], layers_count;
-        item->ngViewGetLayers( layers, layers_count );
+        int layers[VIEW_BASE::VIEW_MAX_LAYERS], layers_count;
+        item->ViewGetLayers( layers, layers_count );
 
         for( int i = 0; i < layers_count; i++ )
         {
             gal->AdvanceDepth();
 
             if( !painter->Draw( item, layers[i] ) )
-                item->ngViewDraw( layers[i], aView ); // Alternative drawing method
+                item->ViewDraw( layers[i], aView ); // Alternative drawing method
         }
 
         gal->PopDepth();

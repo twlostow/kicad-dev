@@ -1,15 +1,18 @@
 #ifndef __VIEW_OVERLAY_H
 #define __VIEW_OVERLAY_H
 
-#include <view/view_ng.h>
-#include <view/view_item_ng.h>
+#include <view/view.h>
+#include <view/view_item.h>
 #include <gal/graphics_abstraction_layer.h>
 
 
 namespace KIGFX
 {
 
-class VIEW_OVERLAY : public VIEW_ITEM_NG, public GAL_API_BASE
+struct VIEW_OVERLAY {};
+
+#if 0
+class VIEW_OVERLAY : public VIEW_ITEM, public GAL_API_BASE
 {
 public:
     VIEW_OVERLAY( VIEW_BASE *aView );
@@ -263,7 +266,7 @@ private:
     std::vector<int> m_requestedGroups;
     int m_currentGroup;
 };
-
+#endif
 } // namespace KIGFX
 
 

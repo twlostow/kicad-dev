@@ -119,7 +119,7 @@ void ROUTER_PREVIEW_ITEM::Update( const PNS::ITEM* aItem )
     if( aItem->Marker() & PNS::MK_VIOLATION )
         m_color = COLOR4D( 0, 1, 0, 1 );
 
-    ViewSetVisible( true );
+    //ViewSetVisible( true );
 }
 
 
@@ -156,8 +156,10 @@ void ROUTER_PREVIEW_ITEM::drawLineChain( const SHAPE_LINE_CHAIN& aL, KIGFX::GAL*
 }
 
 
-void ROUTER_PREVIEW_ITEM::ViewDraw( int aLayer, KIGFX::GAL* aGal ) const
+void ROUTER_PREVIEW_ITEM::ViewDraw( int aLayer, KIGFX::VIEW_BASE* aView ) const
 {
+    KIGFX::GAL *aGal = aView->GetGAL();
+
     //col.Brighten(0.7);
     aGal->SetLayerDepth( m_depth );
 
@@ -274,7 +276,7 @@ void ROUTER_PREVIEW_ITEM::Line( const SHAPE_LINE_CHAIN& aLine, int aWidth, int a
     m_depth = -1024;        // TODO gal->GetMinDepth()
     m_shape = aLine.Clone();
 
-    ViewSetVisible( true );
+    //ViewSetVisible( true );
 }
 
 

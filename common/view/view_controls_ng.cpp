@@ -24,19 +24,19 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <view/view_ng.h>
-#include <view/view_controls_ng.h>
+#include <view/view.h>
+#include <view/view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
 
 using namespace KIGFX;
 
-void VIEW_CONTROLS_NG::ShowCursor( bool aEnabled )
+void VIEW_CONTROLS::ShowCursor( bool aEnabled )
 {
     m_view->GetGAL()->SetCursorEnabled( aEnabled );
 }
 
 
-void VIEW_CONTROLS_NG::Reset()
+void VIEW_CONTROLS::Reset()
 {
     SetSnapping( false );
     SetAutoPan( false );

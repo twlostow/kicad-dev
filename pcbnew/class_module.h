@@ -557,8 +557,11 @@ public:
      */
     void RunOnChildren( std::function<void (BOARD_ITEM*)> aFunction );
 
+    /// @copydoc VIEW_ITEM::ViewGetLayers()
+    //virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
+
     /// @copydoc VIEW_ITEM::ViewBBox()
-    virtual const BOX2I ngViewBBox() const;
+    //virtual const BOX2I ViewBBox() const;
 
     /**
      * Function CopyNetlistSettings

@@ -31,7 +31,7 @@
 namespace KIGFX
 {
     class VIEW_BASE;
-    class VIEW_CONTROLS_NG;
+    class VIEW_CONTROLS;
 }
 class BOARD;
 class PCB_BASE_EDIT_FRAME;
@@ -158,7 +158,7 @@ private:
     int getSegmentWidth( unsigned int aLayer ) const;
 
     KIGFX::VIEW_BASE* m_view;
-    KIGFX::VIEW_CONTROLS_NG* m_controls;
+    KIGFX::VIEW_CONTROLS* m_controls;
     BOARD* m_board;
     PCB_BASE_EDIT_FRAME* m_frame;
 

@@ -44,7 +44,7 @@ EDIT_POINTS::EDIT_POINTS( EDA_ITEM* aParent ) :
 
 EDIT_POINT* EDIT_POINTS::FindPoint( const VECTOR2I& aLocation )
 {
-    float size = m_view->ToWorld( EDIT_POINT::POINT_SIZE );
+    float size = 1.0; //m_view->ToWorld( EDIT_POINT::POINT_SIZE );
 
     std::deque<EDIT_POINT>::iterator pit, pitEnd;
     for( pit = m_points.begin(), pitEnd = m_points.end(); pit != pitEnd; ++pit )
@@ -203,6 +203,7 @@ EDIT_LINE* EDIT_POINTS::Next( const EDIT_LINE& aLine )
 }
 
 
+#if 0
 void EDIT_POINTS::ViewDraw( int aLayer, KIGFX::GAL* aGal ) const
 {
     aGal->SetFillColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
@@ -223,3 +224,4 @@ void EDIT_POINTS::ViewDraw( int aLayer, KIGFX::GAL* aGal ) const
 
     aGal->PopDepth();
 }
+#endif

@@ -27,6 +27,7 @@
 #include "selection_area.h"
 #include "common_actions.h"
 
+#include <pcb_view.h>
 
 ZOOM_TOOL::ZOOM_TOOL() :
         TOOL_INTERACTIVE( "pcbnew.Control.zoomTool" )
@@ -90,13 +91,13 @@ bool ZOOM_TOOL::selectRegion()
         {
             area.SetOrigin( evt->DragOrigin() );
             area.SetEnd( evt->Position() );
-            area.ViewSetVisible( true );
-            area.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
+            //area.ViewSetVisible( true );
+            //area.ViewUpdate( KIGFX::VIEW_ITEM::GEOMETRY );
         }
 
         if( evt->IsMouseUp( BUT_LEFT ) )
         {
-            area.ViewSetVisible( false );
+            //area.ViewSetVisible( false );
             auto selectionBox = area.ViewBBox();
 
             VECTOR2D screenSize = view->ToWorld( canvas->GetClientSize(), false );
@@ -118,7 +119,7 @@ bool ZOOM_TOOL::selectRegion()
         }
     }
 
-    area.ViewSetVisible( false );
+    //area.ViewSetVisible( false );
     view->Remove( &area );
     getViewControls()->SetAutoPan( false );
 

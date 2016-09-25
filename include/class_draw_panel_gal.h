@@ -45,8 +45,8 @@ namespace KIGFX
 {
 class GAL;
 class VIEW_BASE;
-class WX_VIEW_CONTROLS_NG;
-class VIEW_CONTROLS_NG;
+class WX_VIEW_CONTROLS;
+class VIEW_CONTROLS;
 class PAINTER;
 };
 
@@ -109,9 +109,9 @@ public:
      * Returns a pointer to the VIEW_CONTROLS instance used in the panel.
      * @return The instance of VIEW_CONTROLS.
      */
-    KIGFX::VIEW_CONTROLS_NG* GetViewControls() const
+    KIGFX::VIEW_CONTROLS* GetViewControls() const
     {
-        return (KIGFX::VIEW_CONTROLS_NG*)( m_viewControls );
+        return (KIGFX::VIEW_CONTROLS*)( m_viewControls );
     }
 
     /// @copydoc wxWindow::Refresh()
@@ -240,7 +240,7 @@ protected:
     KIGFX::PAINTER*          m_painter;
 
     /// Control for VIEW (moving, zooming, etc.)
-    KIGFX::WX_VIEW_CONTROLS_NG* m_viewControls;
+    KIGFX::WX_VIEW_CONTROLS* m_viewControls;
 
     /// Currently used GAL
     GAL_TYPE                 m_backend;

@@ -219,7 +219,7 @@ public:
      * when the board is set up.
      */
     void SetEnvironment( EDA_ITEM* aModel, KIGFX::VIEW_BASE* aView,
-            KIGFX::VIEW_CONTROLS_NG* aViewControls, wxWindow* aFrame );
+            KIGFX::VIEW_CONTROLS* aViewControls, wxWindow* aFrame );
 
     /* Accessors for the environment objects (view, model, etc.) */
     KIGFX::VIEW_BASE* GetView() const
@@ -227,7 +227,7 @@ public:
         return m_view;
     }
 
-    inline KIGFX::VIEW_CONTROLS_NG* GetViewControls() const
+    inline KIGFX::VIEW_CONTROLS* GetViewControls() const
     {
         return m_viewControls;
     }
@@ -445,7 +445,7 @@ private:
 
     EDA_ITEM* m_model;
     KIGFX::VIEW_BASE* m_view;
-    KIGFX::VIEW_CONTROLS_NG* m_viewControls;
+    KIGFX::VIEW_CONTROLS* m_viewControls;
     wxWindow* m_editFrame;
 
     /// Queue that stores events to be processed at the end of the event processing cycle.

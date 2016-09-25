@@ -26,7 +26,7 @@
 #define __ORIGIN_VIEWITEM_H
 
 #include <math/box2.h>
-#include <view/view_ng.h>
+#include <view/view.h>
 #include <class_board_item.h>
 #include <layers_id_colors_and_visibility.h>
 #include <gal/color4d.h>
@@ -86,7 +86,7 @@ public:
     inline void SetPosition( const VECTOR2D& aPosition )
     {
         m_position = aPosition;
-        ViewUpdate();
+        //ViewUpdate();
     }
 
     inline const VECTOR2D& GetPosition() const

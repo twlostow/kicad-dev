@@ -38,7 +38,7 @@ BRIGHT_BOX::BRIGHT_BOX( BOARD_ITEM* aItem ) :
 }
 
 
-void BRIGHT_BOX::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
+void BRIGHT_BOX::ViewDraw( int aLayer, VIEW_BASE* aView ) const
 {
     GAL *gal = aView->GetGAL();
 
@@ -55,7 +55,7 @@ void BRIGHT_BOX::ngViewDraw( int aLayer, VIEW_BASE* aView ) const
     }
     else
     {
-        BOX2I box = m_item->ngViewBBox();
+        BOX2I box = m_item->ViewBBox();
 
         gal->DrawRectangle( box.GetOrigin(), box.GetOrigin() + box.GetSize() );
     }

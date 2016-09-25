@@ -44,4 +44,3 @@ SPICE_SIMULATOR* SPICE_SIMULATOR::CreateInstance( const std::string& )
 
     return NULL;
 }
-

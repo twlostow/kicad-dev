@@ -35,8 +35,8 @@
 #include <wx/event.h>
 #include <wx/clipbrd.h>
 
-#include <view/view_ng.h>
-#include <view/view_controls_ng.h>
+#include <view/view.h>
+#include <view/view_controls.h>
 
 #include <tool/tool_base.h>
 #include <tool/tool_interactive.h>
@@ -763,7 +763,7 @@ TOOL_ID TOOL_MANAGER::MakeToolId( const std::string& aToolName )
 
 
 void TOOL_MANAGER::SetEnvironment( EDA_ITEM* aModel, KIGFX::VIEW_BASE* aView,
-                                   KIGFX::VIEW_CONTROLS_NG* aViewControls, wxWindow* aFrame )
+                                   KIGFX::VIEW_CONTROLS* aViewControls, wxWindow* aFrame )
 {
     m_model = aModel;
     m_view = aView;

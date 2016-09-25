@@ -22,16 +22,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef __VIEW_NG_H
-#define __VIEW_NG_H
+#ifndef __VIEW_H
+#define __VIEW_H
 
 #include <vector>
 #include <set>
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <unordered_map>
+#include <unordered_set>
+#include <memory>
+//#include <boost/bind.hpp>
+//#include <boost/function.hpp>
 
 #include <math/box2.h>
 #include <gal/definitions.h>
@@ -41,9 +41,9 @@ namespace KIGFX {
 
 class   PAINTER;
 class   GAL;
-class   VIEW_ITEM_NG;
+class   VIEW_ITEM;
 class   VIEW_GROUP;
-class   VIEW_RTREE_NG;
+class   VIEW_RTREE;
 class   VIEW_OVERLAY;
 class   VIEW_CACHE;
 class   VIEW_RTREE_ENTRY;
@@ -114,7 +114,7 @@ public:
         int sortLayer;
         bool visible;
         bool onTop;
-        boost::function<int (VIEW_ITEM_NG*)> lodFunc;
+        std::function<int (VIEW_ITEM*)> lodFunc;
     };
 
     enum UPDATE_FLAGS
@@ -140,7 +140,12 @@ public:
      * Adds a VIEW_ITEM to the view.
      * @param aItem: item to be added. No ownership is given
      */
-    virtual void Add( VIEW_ITEM_NG* aItem, int aLayer = DEFAULT_LAYER );
+    virtual void Add( VIEW_ITEM* aItem, int aLayer );
+
+    void Add( VIEW_ITEM* aItem )
+    {
+        Add ( aItem, DEFAULT_LAYER );
+    }
 
     void UpdateAll() {};
 
@@ -149,10 +154,10 @@ public:
      * Removes a VIEW_ITEM from the view.
      * @param aItem: item to be removed. Caller must dispose the removed item if necessary
      */
-    virtual void Remove( VIEW_ITEM_NG* aItem );
+    virtual void Remove( VIEW_ITEM* aItem );
 
 
-    virtual void Update( VIEW_ITEM_NG* aItem );
+    virtual void Update( VIEW_ITEM* aItem );
 
     /**
      * Function Query()
@@ -498,7 +503,7 @@ public:
      * Adds an item to a list of items that are going to be refreshed upon the next frame rendering.
      * @param aItem is the item to be refreshed.
      */
-    void MarkForUpdate( VIEW_ITEM_NG* aItem )
+    void MarkForUpdate( VIEW_ITEM* aItem )
     {
         m_needsUpdate.insert( aItem );
     }
@@ -512,13 +517,13 @@ public:
 
     const BOX2I CalculateExtents();
 
-    boost::shared_ptr<VIEW_OVERLAY> MakeOverlay();
+    std::shared_ptr<VIEW_OVERLAY> MakeOverlay();
 
     static const int VIEW_MAX_LAYERS = 256;      ///< maximum number of layers that may be shown
 
-    void SetVisible( const VIEW_ITEM_NG *aItem, bool aShow = true );
-    void Hide ( const VIEW_ITEM_NG *aItem, bool aShow = true );
-    bool IsVisible ( const VIEW_ITEM_NG *aItem) const;
+    void SetVisible( const VIEW_ITEM *aItem, bool aShow = true );
+    void Hide ( const VIEW_ITEM *aItem, bool aShow = true );
+    bool IsVisible ( const VIEW_ITEM *aItem) const;
 
 
     void RemoveOverlay ( VIEW_OVERLAY *ovl );
@@ -550,7 +555,7 @@ protected:
             int aPainterLayer,
             VIEW_DISP_LIST* aList,
             int aCacheIndex = -1,
-            boost::function<int (VIEW_ITEM_NG*)> aLODFunc = NULL );
+            std::function<int (VIEW_ITEM*)> aLODFunc = NULL );
 
     virtual void setupRenderOrder() {};
 
@@ -558,7 +563,7 @@ protected:
 /*    struct VIEW_LAYER
  *   {
  *       bool                    visible;         ///< is the layer to be rendered?
- *       VIEW_RTREE_NG*          items;           ///< R-tree indexing all items on this layer.
+ *       VIEW_RTREE*          items;           ///< R-tree indexing all items on this layer.
  *       int                     id;              ///< layer ID
  *       RENDER_TARGET           target;          ///< where the layer should be rendered
  *       int renderingOrder;
@@ -567,7 +572,7 @@ protected:
     VIEW_CACHE* m_cache;
 
     // Convenience typedefs
-    typedef boost::unordered_map<int, VIEW_RTREE_NG*>   TREE_MAP;
+    typedef std::unordered_map<int, VIEW_RTREE*>   TREE_MAP;
     typedef TREE_MAP::iterator                          TREE_MAP_ITER;
 
     // Function objects that need to access VIEW/VIEW_ITEM private/protected members
@@ -600,7 +605,7 @@ protected:
      * @param aImmediate dictates the way of drawing - it allows to force immediate drawing mode
      * for cached items.
      */
-    void draw( VIEW_ITEM_NG* aItem, int aLayer, bool aImmediate = false );
+    void draw( VIEW_ITEM* aItem, int aLayer, bool aImmediate = false );
 
     /**
      * Function draw()
@@ -610,7 +615,7 @@ protected:
      * @param aImmediate dictates the way of drawing - it allows to force immediate drawing mode
      * for cached items.
      */
-    void draw( VIEW_ITEM_NG* aItem, bool aImmediate = false );
+    void draw( VIEW_ITEM* aItem, bool aImmediate = false );
 
     /**
      * Function draw()
@@ -634,7 +639,7 @@ protected:
      * @param aItem is the item to be updated.
      * @param aUpdateFlags determines the way an item is refreshed.
      */
-    void invalidateItem( VIEW_ITEM_NG* aItem, int aUpdateFlags );
+    void invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags );
 
     /// Updates colors that are used for an item to be drawn
     // void updateItemColor( VIEW_ITEM* aItem, int aLayer );
@@ -699,7 +704,7 @@ protected:
     bool m_dirtyTargets[TARGETS_NUMBER];
 
     /// Items to be updated
-    boost::unordered_set<VIEW_ITEM_NG*> m_needsUpdate;
+    std::unordered_set<VIEW_ITEM*> m_needsUpdate;
 
     bool m_needsRecache;
 

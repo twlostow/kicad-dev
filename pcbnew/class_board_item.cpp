@@ -189,6 +189,12 @@ std::string BOARD_ITEM::FormatInternalUnits( const wxSize& aSize )
 }
 
 
+/*void BOARD_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
+{
+    // Basic fallback
+    aCount = 1;
+    aLayers[0] = m_Layer;
+}*/
 
 int BOARD_ITEM::getTrailingInt( wxString aStr )
 {

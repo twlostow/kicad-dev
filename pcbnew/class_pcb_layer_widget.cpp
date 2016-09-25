@@ -303,7 +303,7 @@ void PCB_LAYER_WIDGET::SyncLayerVisibilities()
         LAYER_ID layerId = ToLAYER_ID( getDecodedId( w->GetId() ) );
 
         // this does not fire a UI event
-        SetLayerVisible( layerId, board->IsLayerVisible( layerId ) );
+        //SetLayerVisible( layerId, board->IsLayerVisible( layerId ) );
     }
 }
 
@@ -408,10 +408,10 @@ void PCB_LAYER_WIDGET::OnLayerColorChange( int aLayer, EDA_COLOR_T aColor )
 
     if( myframe->IsGalCanvasActive() )
     {
-        KIGFX::VIEW* view = myframe->GetGalCanvas()->GetView();
-        view->GetPainter()->GetSettings()->ImportLegacyColors( myframe->GetBoard()->GetColorsSettings() );
-        view->UpdateLayerColor( aLayer );
-        view->UpdateLayerColor( GetNetnameLayer( aLayer ) );
+        //KIGFX::VIEW* view = myframe->GetGalCanvas()->GetView();
+        //view->GetPainter()->GetSettings()->ImportLegacyColors( myframe->GetBoard()->GetColorsSettings() );
+        //view->UpdateLayerColor( aLayer );
+        //view->UpdateLayerColor( GetNetnameLayer( aLayer ) );
     }
 
     myframe->GetCanvas()->Refresh();
@@ -466,8 +466,8 @@ void PCB_LAYER_WIDGET::OnLayerVisible( int aLayer, bool isVisible, bool isFinal 
 
     EDA_DRAW_PANEL_GAL* galCanvas = myframe->GetGalCanvas();
 
-    if( galCanvas )
-        galCanvas->GetView()->SetLayerVisible( aLayer, isVisible );
+    //if( galCanvas )
+        //galCanvas->GetView()->SetLayerVisible( aLayer, isVisible );
 
     if( isFinal )
         myframe->GetCanvas()->Refresh();
@@ -480,9 +480,9 @@ void PCB_LAYER_WIDGET::OnRenderColorChange( int aId, EDA_COLOR_T aColor )
 
     if( myframe->GetGalCanvas() )
     {
-        KIGFX::VIEW* view = myframe->GetGalCanvas()->GetView();
-        view->GetPainter()->GetSettings()->ImportLegacyColors( myframe->GetBoard()->GetColorsSettings() );
-        view->UpdateLayerColor( aId );
+        //KIGFX::VIEW* view = myframe->GetGalCanvas()->GetView();
+        //view->GetPainter()->GetSettings()->ImportLegacyColors( myframe->GetBoard()->GetColorsSettings() );
+        //view->UpdateLayerColor( aId );
     }
 
     myframe->GetCanvas()->Refresh();
@@ -510,10 +510,10 @@ void PCB_LAYER_WIDGET::OnRenderEnable( int aId, bool isEnabled )
         if( aId == GRID_VISIBLE )
         {
             galCanvas->GetGAL()->SetGridVisibility( myframe->IsGridVisible() );
-            galCanvas->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
+        //    galCanvas->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
         }
-        else
-            galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), isEnabled );
+        //else
+        //    galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), isEnabled );
     }
 
     if( galCanvas && myframe->IsGalCanvasActive() )

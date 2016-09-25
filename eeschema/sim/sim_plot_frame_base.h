@@ -44,7 +44,7 @@ class wxListView;
 class SIM_PLOT_FRAME_BASE : public KIWAY_PLAYER
 {
 	private:
-	
+
 	protected:
 		wxMenuBar* m_mainMenu;
 		wxMenu* m_fileMenu;
@@ -76,7 +76,7 @@ class SIM_PLOT_FRAME_BASE : public KIWAY_PLAYER
 		wxListCtrl* m_cursors;
 		wxStaticBoxSizer* sbSizer4;
 		wxBoxSizer* m_tuneSizer;
-		
+
 		// Virtual event handlers, overide them in your derived class
 		virtual void menuNewPlot( wxCommandEvent& event ) { event.Skip(); }
 		virtual void menuOpenWorkbook( wxCommandEvent& event ) { event.Skip(); }
@@ -95,26 +95,26 @@ class SIM_PLOT_FRAME_BASE : public KIWAY_PLAYER
 		virtual void onPlotClose( wxAuiNotebookEvent& event ) { event.Skip(); }
 		virtual void onSignalDblClick( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onSignalRClick( wxListEvent& event ) { event.Skip(); }
-		
-	
+
+
 	public:
-		
+
 		SIM_PLOT_FRAME_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Simulation Workbook"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,700 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL, const wxString& name = wxT("SIM_PLOT_FRAME") );
-		
+
 		~SIM_PLOT_FRAME_BASE();
-		
+
 		void m_splitterPlotOnIdle( wxIdleEvent& )
 		{
 			m_splitterPlot->SetSashPosition( 700 );
 			m_splitterPlot->Disconnect( wxEVT_IDLE, wxIdleEventHandler( SIM_PLOT_FRAME_BASE::m_splitterPlotOnIdle ), NULL, this );
 		}
-		
+
 		void m_splitterConsoleOnIdle( wxIdleEvent& )
 		{
 			m_splitterConsole->SetSashPosition( 500 );
 			m_splitterConsole->Disconnect( wxEVT_IDLE, wxIdleEventHandler( SIM_PLOT_FRAME_BASE::m_splitterConsoleOnIdle ), NULL, this );
 		}
-	
+
 };
 
 #endif //__SIM_PLOT_FRAME_BASE_H__

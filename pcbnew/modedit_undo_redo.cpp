@@ -36,7 +36,7 @@
 #include <protos.h>
 #include <module_editor_frame.h>
 
-#include <view/view_ng.h>
+#include <view/view.h>
 
 
 void FOOTPRINT_EDIT_FRAME::SaveCopyInUndoList( BOARD_ITEM*    aItem,

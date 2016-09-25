@@ -31,6 +31,7 @@
 #include <tool/tool_interactive.h>
 #include <wxPcbStruct.h>
 #include <class_board.h>
+#include <pcb_view.h>
 
 /**
  * Class PCB_TOOL
@@ -77,7 +78,7 @@ public:
     }
 
 protected:
-    KIGFX::VIEW* view() const { return getView(); }
+    KIGFX::VIEW_BASE* view() const { return getView(); }
     PCB_EDIT_FRAME* frame() const { return getEditFrame<PCB_EDIT_FRAME>(); }
     BOARD* board() const { return getModel<BOARD>(); }
 

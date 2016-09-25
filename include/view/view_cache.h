@@ -35,9 +35,9 @@
 namespace KIGFX {
 class GAL_GROUP;
 class VIEW_CACHE;
-class VIEW_ITEM_NG;
+class VIEW_ITEM;
 class VIEW_BASE;
-class VIEW_RTREE_NG;
+class VIEW_RTREE;
 
 #define VI_VISIBLE      0x1
 #define VI_HIDDEN       0x2
@@ -85,7 +85,7 @@ public:
     }
 
 
-    void SetOwner( VIEW_RTREE_NG* aOwner )
+    void SetOwner( VIEW_RTREE* aOwner )
     {
         m_owner = aOwner;
         // m_item = aItem;
@@ -143,7 +143,7 @@ public:
     }
 
 
-    VIEW_RTREE_NG *GetOwner() const
+    VIEW_RTREE *GetOwner() const
     {
         return m_owner;
     }
@@ -187,7 +187,7 @@ private:
     BOX2I m_bbox;
     int* m_cachedGroups;
     int m_numCachedGroups;
-    VIEW_RTREE_NG* m_owner;
+    VIEW_RTREE* m_owner;
     VIEW_RTREE_ENTRY *m_entry;
     int m_flags;
 };
@@ -195,7 +195,7 @@ private:
 class VIEW_CACHE
 {
 public:
-    typedef boost::unordered_map<VIEW_ITEM_NG*, VIEW_CACHE_ENTRY*> CACHE_ENTRIES;
+    typedef boost::unordered_map<VIEW_ITEM*, VIEW_CACHE_ENTRY*> CACHE_ENTRIES;
 
     VIEW_CACHE( VIEW_BASE * aParent ) :
         m_view( aParent ) {
@@ -205,7 +205,7 @@ public:
         Clear();
     }
 
-    VIEW_CACHE_ENTRY* Add( VIEW_ITEM_NG* aItem, VIEW_RTREE_ENTRY *rtreeEnt )
+    VIEW_CACHE_ENTRY* Add( VIEW_ITEM* aItem, VIEW_RTREE_ENTRY *rtreeEnt )
     {
         VIEW_CACHE_ENTRY* ent;
 
@@ -222,14 +222,14 @@ public:
             ent = m_cache[aItem];
         }
 
-        ent->SetBBox( aItem->ngViewBBox() );
+        ent->SetBBox( aItem->ViewBBox() );
         ent->SetFlags( VI_DIRTY );
         ent->SetEntry ( rtreeEnt );
 
         return ent;
     }
 
-    void Remove ( VIEW_ITEM_NG *aItem )
+    void Remove ( VIEW_ITEM *aItem )
     {
 
         VIEW_CACHE_ENTRY *ent = m_cache[ aItem ];
@@ -238,7 +238,7 @@ public:
         m_cache.erase (aItem );
     }
 
-    VIEW_CACHE_ENTRY* GetEntry( VIEW_ITEM_NG* aItem )
+    VIEW_CACHE_ENTRY* GetEntry( VIEW_ITEM* aItem )
     {
         CACHE_ENTRIES::iterator i = m_cache.find(aItem);
 
@@ -249,12 +249,12 @@ public:
     }
 
 
-/*  void SetVisible( VIEW_ITEM_NG *aItem, bool aVisible )
+/*  void SetVisible( VIEW_ITEM *aItem, bool aVisible )
  *  {
  *   m_cache[aItem]->visible = aVisible;
  *  }
  *
- *  void SetDirty( VIEW_ITEM_NG *aItem, bool aDirty )
+ *  void SetDirty( VIEW_ITEM *aItem, bool aDirty )
  *  {
  *   m_cache[aItem]->dirty = aDirty;
  *  }*/
@@ -267,7 +267,7 @@ public:
 
     void SetDirty( bool dirty )
     {
-        for( boost::unordered_map<VIEW_ITEM_NG*, VIEW_CACHE_ENTRY*>::iterator i = m_cache.begin();
+        for( boost::unordered_map<VIEW_ITEM*, VIEW_CACHE_ENTRY*>::iterator i = m_cache.begin();
              i != m_cache.end();
              ++i )
         {

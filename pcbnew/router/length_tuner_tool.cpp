@@ -26,8 +26,8 @@
 
 #include <wxPcbStruct.h>
 #include <pcbnew_id.h>
-#include <view/view_ng.h>
-#include <view/view_controls_ng.h>
+#include <view/view.h>
+#include <view/view_controls.h>
 #include <pcb_painter.h>
 #include <dialogs/dialog_pns_settings.h>
 #include <dialogs/dialog_pns_length_tuning_settings.h>
@@ -172,7 +172,7 @@ void LENGTH_TUNER_TOOL::performTuning()
         return;
     }
 
-    PNS::MEANDER_PLACER_BASE* placer = static_cast<PNS::MEANDER_PLACER_BASE*>( 
+    PNS::MEANDER_PLACER_BASE* placer = static_cast<PNS::MEANDER_PLACER_BASE*>(
         m_router->Placer() );
 
     placer->UpdateSettings( m_savedMeanderSettings );

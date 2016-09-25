@@ -346,7 +346,7 @@ void ROUTER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
 
 int ROUTER_TOOL::getStartLayer( const PNS::ITEM* aItem )
 {
-    int tl = getView()->GetTopLayer();
+    int tl = 0;// getView()->GetTopLayer();
 
     if( m_startItem )
     {

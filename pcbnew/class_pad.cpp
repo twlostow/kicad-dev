@@ -910,7 +910,7 @@ EDA_ITEM* D_PAD::Clone() const
 }
 
 
-void D_PAD::ViewGetLayers( int aLayers[], int& aCount ) const
+/*void D_PAD::ViewGetLayers( int aLayers[], int& aCount ) const
 {
     aCount = 0;
 
@@ -957,8 +957,9 @@ void D_PAD::ViewGetLayers( int aLayers[], int& aCount ) const
     }
 #endif
 }
+*/
 
-
+#if 0
 unsigned int D_PAD::ViewGetLOD( int aLayer ) const
 {
     // Netnames will be shown only if zoom is appropriate
@@ -975,7 +976,7 @@ unsigned int D_PAD::ViewGetLOD( int aLayer ) const
     // Other layers are shown without any conditions
     return 0;
 }
-
+#endif
 
 const BOX2I D_PAD::ViewBBox() const
 {

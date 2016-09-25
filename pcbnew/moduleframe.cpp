@@ -69,7 +69,7 @@
 #include "tools/picker_tool.h"
 #include "tools/common_actions.h"
 
-#include <view/view_ng.h>
+#include <view/view.h>
 
 
 BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )

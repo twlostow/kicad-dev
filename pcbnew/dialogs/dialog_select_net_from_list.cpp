@@ -87,7 +87,7 @@ void PCB_EDIT_FRAME::ListNetsAndSelect( wxCommandEvent& event )
         KIGFX::RENDER_SETTINGS* render = GetGalCanvas()->GetView()->GetPainter()->GetSettings();
         render->SetHighlight( true, net->GetNet() );
 
-        GetGalCanvas()->GetView()->UpdateAllLayersColor();
+        //GetGalCanvas()->GetView()->UpdateAllLayersColor();
         GetGalCanvas()->Refresh();
     }
     else

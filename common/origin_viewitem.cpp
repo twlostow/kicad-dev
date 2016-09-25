@@ -25,7 +25,7 @@
 #include <origin_viewitem.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <class_track.h>
-#include <view/view_ng.h>
+#include <view/view.h>
 
 using namespace KIGFX;
 

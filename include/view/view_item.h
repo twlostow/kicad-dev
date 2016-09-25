@@ -27,8 +27,8 @@
  * @brief VIEW_ITEM class definition.
  */
 
-#ifndef __VIEW_ITEM_NG_H
-#define __VIEW_ITEM_NG_H
+#ifndef __VIEW_ITEM_H
+#define __VIEW_ITEM_H
 
 #include <vector>
 #include <bitset>
@@ -38,6 +38,8 @@
 
 namespace KIGFX
 {
+
+class VIEW_ITEM_DATA;
 // Forward declarations
 class VIEW_BASE;
 class PAINTER;
@@ -52,16 +54,16 @@ class PAINTER;
  * VIEW_ITEM objects are never owned by a VIEW. A single VIEW_ITEM can belong to any number of
  * static VIEWs, but only one dynamic VIEW due to storage of only one VIEW reference.
  */
-class VIEW_ITEM_NG
+class VIEW_ITEM
 {
 public:
 
-    VIEW_ITEM_NG() {}
+    VIEW_ITEM() {}
 
     /**
      * Destructor. For dynamic views, removes the item from the view.
      */
-    virtual ~VIEW_ITEM_NG()
+    virtual ~VIEW_ITEM()
     {
 
     }
@@ -71,7 +73,7 @@ public:
      * returns the bounding box of the item covering all its layers.
      * @return BOX2I - the current bounding box
      */
-    virtual const BOX2I ngViewBBox() const;/*
+    virtual const BOX2I ViewBBox() const;/*
     {
       return BOX2I();
     }*/
@@ -89,12 +91,15 @@ public:
      * @param aLayer: current drawing layer
      * @param aGal: pointer to the GAL device we are drawing on
      */
-    virtual void ngViewDraw( int aLayer, VIEW_BASE* aView ) const
+    virtual void ViewDraw( int aLayer, VIEW_BASE* aView ) const
     {}
 
-    virtual void ngViewGetLayers( int aLayers[], int& aCount ) const;
-    
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const;
+
 protected:
+
+private:
+    VIEW_ITEM_DATA *m_viewData;
 
 
 };

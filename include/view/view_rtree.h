@@ -29,9 +29,30 @@
 
 #include <geometry/rtree.h>
 
+
 namespace KIGFX
 {
-typedef RTree<VIEW_ITEM*, int, 2, float> VIEW_RTREE_BASE;
+
+  class VIEW_ITEM;
+  class VIEW_CACHE_ENTRY;
+
+struct VIEW_RTREE_ENTRY {
+
+  bool operator== ( const VIEW_RTREE_ENTRY& aOther ) const
+  {
+      return item == aOther.item;
+  }
+
+  bool operator!= ( const VIEW_RTREE_ENTRY& aOther ) const
+  {
+      return item != aOther.item;
+  }
+
+  VIEW_ITEM *item;
+  VIEW_CACHE_ENTRY *ent;
+};
+
+typedef RTree<VIEW_RTREE_ENTRY*, int, 2, float> VIEW_RTREE_BASE;
 
 /**
  * Class VIEW_RTREE -
@@ -46,9 +67,8 @@ public:
      * Function Insert()
      * Inserts an item into the tree. Item's bounding box is taken via its ViewBBox() method.
      */
-    void Insert( VIEW_ITEM* aItem )
+    void Insert(  VIEW_RTREE_ENTRY* aItem, const BOX2I& bbox )
     {
-        const BOX2I&    bbox    = aItem->ViewBBox();
         const int       mmin[2] = { bbox.GetX(), bbox.GetY() };
         const int       mmax[2] = { bbox.GetRight(), bbox.GetBottom() };
 
@@ -60,13 +80,10 @@ public:
      * Removes an item from the tree. Removal is done by comparing pointers, attepmting to remove a copy
      * of the item will fail.
      */
-    void Remove( VIEW_ITEM* aItem )
+    void Remove( VIEW_RTREE_ENTRY* aItem, const BOX2I& bbox )
     {
-        // const BOX2I&    bbox    = aItem->ViewBBox();
-
-        // FIXME: use cached bbox or ptr_map to speed up pointer <-> node lookups.
-        const int       mmin[2] = { INT_MIN, INT_MIN };
-        const int       mmax[2] = { INT_MAX, INT_MAX };
+        const int       mmin[2] = { bbox.GetX(), bbox.GetY() };
+        const int       mmax[2] = { bbox.GetRight(), bbox.GetBottom() };
 
         VIEW_RTREE_BASE::Remove( mmin, mmax, aItem );
     }

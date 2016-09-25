@@ -28,8 +28,8 @@
 #include <tool/tool_manager.h>
 
 #include <class_draw_panel_gal.h>
-#include <view/view_ng.h>
-#include <view/view_controls_ng.h>
+#include <view/view.h>
+#include <view/view_controls.h>
 #include <view/view_group.h>
 #include <pcb_painter.h>
 #include <origin_viewitem.h>
@@ -427,7 +427,7 @@ int MODULE_TOOLS::PasteItems( const TOOL_EVENT& aEvent )
     KIGFX::VIEW_GROUP preview( m_view );
     pastedModule->SetParent( m_board );
     pastedModule->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-    pastedModule->RunOnChildren( std::bind( &KIGFX::VIEW_GROUP::Add, 
+    pastedModule->RunOnChildren( std::bind( &KIGFX::VIEW_GROUP::Add,
                                                 std::ref( preview ),  _1 ) );
     preview.Add( pastedModule );
     m_view->Add( &preview );

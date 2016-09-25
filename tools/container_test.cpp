@@ -22,6 +22,8 @@ public:
     {}
 
 
+  wxString GetClass() const { return ""; }
+
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const
     {

@@ -10,7 +10,7 @@
  */
 
 #include <gal/graphics_abstraction_layer.h>
-#include <view/view_ng.h>
+#include <view/view.h>
 #include <pcb_painter.h>
 #include <pad_shapes.h>
 #include <profile.h>
@@ -23,8 +23,6 @@
 
 #include <set>
 
-#include <boost/foreach.hpp>
-#include <boost/bind.hpp>
 
 namespace KIGFX {
 
@@ -55,9 +53,9 @@ public:
     ~PCB_VIEW();
 
 
-    virtual void Add( VIEW_ITEM_NG* aItem, int aLayer = DEFAULT_LAYER );
-    virtual void Remove( VIEW_ITEM_NG* aItem );
-    virtual void Update( VIEW_ITEM_NG* aItem );
+    virtual void Add( VIEW_ITEM* aItem, int aLayer = DEFAULT_LAYER );
+    virtual void Remove( VIEW_ITEM* aItem );
+    virtual void Update( VIEW_ITEM* aItem );
 
     virtual void updateDisplayLists( const BOX2I& aRect );
     virtual void setupRenderOrder();

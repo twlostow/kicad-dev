@@ -48,8 +48,8 @@
 
 #include <wx/fontdlg.h>
 #include <wx/snglinst.h>
-#include <view/view_ng.h>
-#include <view/view_controls_ng.h>
+#include <view/view.h>
+#include <view/view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
@@ -1116,7 +1116,7 @@ void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
 
         // Transfer EDA_DRAW_PANEL settings
         GetGalCanvas()->GetViewControls()->EnableCursorWarping( !m_canvas->GetEnableZoomNoCenter() );
-        GetGalCanvas()->GetViewControls()->EnableMousewheelPan( m_canvas->GetEnableMousewheelPan() );
+        //GetGalCanvas()->GetViewControls()->EnableMousewheelPan( m_canvas->GetEnableMousewheelPan() );
         GetToolManager()->RunAction( "pcbnew.Control.switchCursor" );
     }
     else if( m_galCanvasActive )

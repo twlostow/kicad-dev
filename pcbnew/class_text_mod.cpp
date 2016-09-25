@@ -419,7 +419,7 @@ void TEXTE_MODULE::ViewGetLayers( int aLayers[], int& aCount ) const
 }
 
 
-unsigned int TEXTE_MODULE::ViewGetLOD( int aLayer ) const
+/*unsigned int TEXTE_MODULE::ViewGetLOD( int aLayer ) const
 {
     const int MAX = std::numeric_limits<unsigned int>::max();
 
@@ -441,7 +441,7 @@ unsigned int TEXTE_MODULE::ViewGetLOD( int aLayer ) const
         return MAX;
 
     return 0;
-}
+} */
 
 
 wxString TEXTE_MODULE::GetShownText() const

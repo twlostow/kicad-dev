@@ -943,8 +943,8 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
     }
 
     /// @todo LEGACY tracks might have changed their nets, so we need to refresh labels in GAL
-    for( TRACK* track = m_Pcb->m_Track; track; track = track->Next() )
-        track->ViewUpdate();
+    //for( TRACK* track = m_Pcb->m_Track; track; track = track->Next() )
+        //track->ViewUpdate();
 
     // Sort the track list by net codes:
     RebuildTrackChain( m_Pcb );

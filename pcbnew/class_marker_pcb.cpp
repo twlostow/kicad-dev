@@ -135,3 +135,9 @@ wxString MARKER_PCB::GetSelectMenuText() const
 
     return text;
 }
+
+void MARKER_PCB::ViewGetLayers( int aLayers[], int& aCount ) const
+{
+    aCount = 1;
+    aLayers[0] = ITEM_GAL_LAYER( DRC_VISIBLE );
+}

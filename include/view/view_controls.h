@@ -27,12 +27,12 @@
  */
 
 /**
- * @file VIEW_CONTROLS_NG.h
- * @brief VIEW_CONTROLS_NG class definition.
+ * @file VIEW_CONTROLS.h
+ * @brief VIEW_CONTROLS class definition.
  */
 
-#ifndef __VIEW_CONTROLS_NG_H
-#define __VIEW_CONTROLS_NG_H
+#ifndef __VIEW_CONTROLS_H
+#define __VIEW_CONTROLS_H
 
 #include <math/box2.h>
 
@@ -41,21 +41,21 @@ namespace KIGFX
 class VIEW_BASE;
 
 /**
- * Class VIEW_CONTROLS_NG
+ * Class VIEW_CONTROLS
  * is an interface for classes handling user events controlling the view behaviour
  * (such as zooming, panning, mouse grab, etc.)
  */
-class VIEW_CONTROLS_NG
+class VIEW_CONTROLS
 {
 public:
-    VIEW_CONTROLS_NG( VIEW_BASE* aView ) : m_view( aView ),
+    VIEW_CONTROLS( VIEW_BASE* aView ) : m_view( aView ),
         m_forceCursorPosition( false ), m_cursorCaptured( false ), m_snappingEnabled( false ),
         m_grabMouse( false ), m_autoPanEnabled( false ), m_autoPanMargin( 0.1 ),
         m_autoPanSpeed( 0.15 ), m_warpCursor( false ), m_enableMousewheelPan( false )
     {
     }
 
-    virtual ~VIEW_CONTROLS_NG()
+    virtual ~VIEW_CONTROLS()
     {}
 
     /**
@@ -223,7 +223,7 @@ public:
 
     /**
      * Function Reset()
-     * Restores the default VIEW_CONTROLS_NG settings.
+     * Restores the default VIEW_CONTROLS settings.
      */
     virtual void Reset();
 

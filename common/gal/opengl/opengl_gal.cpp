@@ -228,7 +228,7 @@ void OPENGL_GAL::BeginDrawing()
     glShadeModel( GL_FLAT );
 
     // Enable the depth buffer
-    glEnable( GL_DEPTH_TEST );
+    glDisable( GL_DEPTH_TEST );
     glDepthFunc( GL_LESS );
 
     // Setup blending, required for transparent objects
@@ -388,6 +388,8 @@ void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndP
     {
         // Filled tracks
         currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
+
+        //printf("fill color %.1f %.1f %.1f %.1f\n",fillColor.r, fillColor.g, fillColor.b, fillColor.a);
 
         SetLineWidth( aWidth );
         drawLineQuad( aStartPoint, aEndPoint );
@@ -949,7 +951,7 @@ void OPENGL_GAL::DrawGrid()
     if( gridStyle == GRID_STYLE_DOTS )
         glDisable( GL_STENCIL_TEST );
 
-    glEnable( GL_DEPTH_TEST );
+    //glEnable( GL_DEPTH_TEST );
     glEnable( GL_TEXTURE_2D );
 }
 

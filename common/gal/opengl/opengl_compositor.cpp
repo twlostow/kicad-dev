@@ -229,11 +229,14 @@ void OPENGL_COMPOSITOR::DrawBuffer( unsigned int aBufferHandle )
     assert( m_initialized );
     assert( aBufferHandle != 0 && aBufferHandle <= usedBuffers() );
 
+    printf("drawBuffer %d\n", aBufferHandle);
+
     // Switch to the main framebuffer and blit the scene
     bindFb( DIRECT_RENDERING );
 
     // Depth test has to be disabled to make transparency working
     glDisable( GL_DEPTH_TEST );
+    glDisable(GL_BLEND);
     glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
 
     // Enable texturing and bind the main texture

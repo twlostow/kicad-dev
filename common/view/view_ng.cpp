@@ -49,6 +49,9 @@ using namespace KIGFX;
 
 #define OVL_TREE 128
 
+
+
+
 VIEW_BASE::VIEW_BASE( bool aIsDynamic ) :
     //m_enableOrderModifier( true ),
     m_scale( 4.0 ),
@@ -1217,6 +1220,7 @@ VIEW_BASE::RENDER_LAYER* VIEW_BASE::addLayer(
 
 void VIEW_BASE::Recache()
 {
+    return ;
 
     PROF_COUNTER cnt( "recache-all", true );
 

@@ -273,12 +273,14 @@ void GPU_NONCACHED_MANAGER::EndDrawing()
     {
         GLfloat* shaders = (GLfloat*) ( vertices ) + ShaderOffset / sizeof(GLfloat);
 
-        m_shader->Use();
+        m_shader->Deactivate();
         glEnableVertexAttribArray( m_shaderAttrib );
         glVertexAttribPointer( m_shaderAttrib, ShaderStride, GL_FLOAT, GL_FALSE,
                                VertexSize, shaders );
     }
-
+    m_shader->Deactivate();
+    glDisable(GL_DEPTH_TEST);
+    printf("draw-noncachde %d\n", m_container->GetSize() );
     glDrawArrays( GL_TRIANGLES, 0, m_container->GetSize() );
 
 #ifdef __WXDEBUG__

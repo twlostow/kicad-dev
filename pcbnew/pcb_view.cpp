@@ -127,8 +127,10 @@ struct queryVisitor
     VIEW_DISP_LIST& m_cont;
 };
 
+
 void PCB_VIEW::SetBoard( BOARD* aBoard )
 {
+
     m_board = aBoard;
 
     printf("SetBoard: %p\n", aBoard );
@@ -147,7 +149,7 @@ void PCB_VIEW::SetBoard( BOARD* aBoard )
 
 
 
-    for( BOARD_ITEM* drawing = aBoard->m_Drawings; drawing; drawing = drawing->Next() )
+    for( auto drawing : aBoard->Drawings() )
         VIEW_BASE::Add( drawing, L_GRAPHICS );
 
 // for( int i = 0; i < aBoard->GetAreaCount(); ++i )

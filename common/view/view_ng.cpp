@@ -799,6 +799,7 @@ void VIEW_BASE::ClearTargets()
 
 void VIEW_BASE::Redraw()
 {
+    printf("redraw?\n");
 #ifdef PROFILE
     prof_counter totalRealTime;
     prof_start( &totalRealTime );
@@ -1138,6 +1139,9 @@ boost::shared_ptr<VIEW_OVERLAY> VIEW::MakeOverlay( )
 void VIEW_BASE::drawLayer( RENDER_TARGET aTarget, RENDER_LAYER *aLayer, bool aCacheOnly )
 {
     m_gal->SetTarget( aTarget );
+//    m_gal->BeginDrawing();
+
+    //m_gal->BeginUpdate();
     //m_gal->SetTarget( TARGET_NONCACHED );
 
     //printf("Draw [layer %d cacheonly %d] items %d !\n", aLayer->itemLayer, !!aCacheOnly,  aLayer->dispList->Layer( aLayer->itemLayer ).size());
@@ -1185,6 +1189,7 @@ void VIEW_BASE::drawLayer( RENDER_TARGET aTarget, RENDER_LAYER *aLayer, bool aCa
 
         }
     }
+    //m_gal->EndUpdate();
 }
 
 VIEW_BASE::RENDER_LAYER* VIEW_BASE::addLayer(
@@ -1234,11 +1239,13 @@ void VIEW_BASE::Recache()
 
     updateDisplayLists( rect );
 
+    m_gal->BeginUpdate();
     BOOST_FOREACH( RENDER_LAYER* layer, m_renderOrder )
     {
         if(layer->cacheIndex >= 0)
             drawLayer( TARGET_CACHED, layer, true );
     }
+    m_gal->EndUpdate();
 
     for( VIEW_CACHE::CACHE_ENTRIES::iterator i = cacheMap.begin(); i != cacheMap.end(); ++i )
     {
@@ -1273,6 +1280,7 @@ void VIEW_BASE::redrawRect( const BOX2I& aRect  )
     {
         RENDER_LAYER dummy;
 
+        cnt2.start();
 
         //printf("REdrawOver: %d\n", m_overlayList.Count() );
         dummy.dispList = &m_defaultList;
@@ -1281,12 +1289,19 @@ void VIEW_BASE::redrawRect( const BOX2I& aRect  )
         dummy.painterLayer = 0;
         dummy.lodFunc = NULL;
 
+        //prof_start(&cnt2);
+
         drawLayer( TARGET_NONCACHED, &dummy, false );
 
+        //m_gal->BeginDrawing();
         BOOST_FOREACH( RENDER_LAYER* layer, m_renderOrder )
         {
-            drawLayer( layer->cacheIndex >= 0 ? TARGET_CACHED : TARGET_NONCACHED, layer, false );
+            drawLayer( /*layer->cacheIndex >= 0 ? TARGET_CACHED : */ TARGET_NONCACHED, layer, false );
         }
+
+        cnt2.show();
+        //m_gal->EndDrawing();
+
     }
 
 

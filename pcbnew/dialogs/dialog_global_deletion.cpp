@@ -151,7 +151,7 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
 
         masque_layer &= layers_filter;
 
-        for( item = pcb->m_Drawings; item; item = nextitem )
+        for( item = pcb->DrawingsList(); item; item = nextitem )
         {
             nextitem = item->Next();
 
@@ -166,7 +166,7 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
     {
         LSET del_text_layers = layers_filter;
 
-        for( item = pcb->m_Drawings; item; item = nextitem )
+        for( item = pcb->DrawingsList(); item; item = nextitem )
         {
             nextitem = item->Next();
 

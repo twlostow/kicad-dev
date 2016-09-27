@@ -795,7 +795,7 @@ int PCBNEW_CONTROL::AppendBoard( const TOOL_EVENT& aEvent )
 
     // Other items are appended to the item list, so keep trace to the last existing item is enough
     MODULE* module = board->m_Modules.GetLast();
-    BOARD_ITEM* drawing = board->m_Drawings.GetLast();
+    BOARD_ITEM* drawing = board->DrawingsList().GetLast();
     int zonescount = board->GetAreaCount();
 
     // Keep also the count of copper layers, to adjust if necessary
@@ -850,7 +850,7 @@ int PCBNEW_CONTROL::AppendBoard( const TOOL_EVENT& aEvent )
         m_toolMgr->RunAction( COMMON_ACTIONS::selectItem, true, module );
     }
 
-    drawing = drawing ? drawing->Next() : board->m_Drawings;
+    drawing = drawing ? drawing->Next() : board->DrawingsList();
 
     for( ; drawing; drawing = drawing->Next() )
     {

@@ -1280,7 +1280,7 @@ void VIEW_BASE::redrawRect( const BOX2I& aRect  )
 
     PROF_COUNTER cnt2( "draw-items", true );
 
-    if (IsTargetDirty ( TARGET_CACHED ) || IsTargetDirty (TARGET_NONCACHED ) )
+    //if (IsTargetDirty ( TARGET_CACHED ) || IsTargetDirty (TARGET_NONCACHED ) )
     {
         RENDER_LAYER dummy;
 

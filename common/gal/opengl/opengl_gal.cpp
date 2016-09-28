@@ -210,7 +210,7 @@ void OPENGL_GAL::BeginDrawing()
     glViewport( 0, 0, (GLsizei) screenSize.x * scaleFactor, (GLsizei) screenSize.y * scaleFactor );
 
     // Create the screen transformation
-    glOrtho( 0, (GLint) screenSize.x, 0, (GLsizei) screenSize.y, -depthRange.x, -depthRange.y );
+    glOrtho( 0, (GLint) screenSize.x, 0, (GLsizei) screenSize.y, -1000.0, 1000.0 ); //depthRange.x, -depthRange.y );
 
     if( !isFramebufferInitialized )
     {
@@ -232,7 +232,7 @@ void OPENGL_GAL::BeginDrawing()
     glDepthFunc( GL_LESS );
 
     // Setup blending, required for transparent objects
-    glEnable( GL_BLEND );
+    glDisable( GL_BLEND );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     glMatrixMode( GL_MODELVIEW );
@@ -257,11 +257,11 @@ void OPENGL_GAL::BeginDrawing()
 
     // Remove all previously stored items
     nonCachedManager->Clear();
-    overlayManager->Clear();
+    //overlayManager->Clear();
 
     cachedManager->BeginDrawing();
     nonCachedManager->BeginDrawing();
-    overlayManager->BeginDrawing();
+    //overlayManager->BeginDrawing();
 
     if( !isBitmapFontInitialized )
     {
@@ -320,13 +320,13 @@ void OPENGL_GAL::EndDrawing()
 #endif /* __WXDEBUG__ */
 
     // Cached & non-cached containers are rendered to the same buffer
-    compositor->SetBuffer( mainBuffer );
+    compositor->SetBuffer( OPENGL_COMPOSITOR::DIRECT_RENDERING  );
     nonCachedManager->EndDrawing();
     cachedManager->EndDrawing();
 
     // Overlay container is rendered to a different buffer
     compositor->SetBuffer( overlayBuffer );
-    overlayManager->EndDrawing();
+//    overlayManager->EndDrawing();
 
     // Be sure that the framebuffer is not colorized (happens on specific GPU&drivers combinations)
     glColor4d( 1.0, 1.0, 1.0, 1.0 );
@@ -388,8 +388,6 @@ void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndP
     {
         // Filled tracks
         currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
-
-        //printf("fill color %.1f %.1f %.1f %.1f\n",fillColor.r, fillColor.g, fillColor.b, fillColor.a);
 
         SetLineWidth( aWidth );
         drawLineQuad( aStartPoint, aEndPoint );
@@ -868,7 +866,7 @@ void OPENGL_GAL::DrawGrid()
         return;
 
     SetTarget( TARGET_NONCACHED );
-    compositor->SetBuffer( mainBuffer );
+    compositor->SetBuffer( OPENGL_COMPOSITOR::DIRECT_RENDERING  );
 
     // Draw the grid
     // For the drawing the start points, end points and increments have
@@ -951,7 +949,7 @@ void OPENGL_GAL::DrawGrid()
     if( gridStyle == GRID_STYLE_DOTS )
         glDisable( GL_STENCIL_TEST );
 
-    //glEnable( GL_DEPTH_TEST );
+    glDisable( GL_DEPTH_TEST );
     glEnable( GL_TEXTURE_2D );
 }
 
@@ -1150,7 +1148,7 @@ void OPENGL_GAL::ClearTarget( RENDER_TARGET aTarget )
     default:
     case TARGET_CACHED:
     case TARGET_NONCACHED:
-        compositor->SetBuffer( mainBuffer );
+        compositor->SetBuffer( OPENGL_COMPOSITOR::DIRECT_RENDERING /*mainBuffer*/ );
         break;
 
     case TARGET_OVERLAY:
@@ -1161,7 +1159,7 @@ void OPENGL_GAL::ClearTarget( RENDER_TARGET aTarget )
     compositor->ClearBuffer();
 
     // Restore the previous state
-    compositor->SetBuffer( oldTarget );
+    compositor->SetBuffer( OPENGL_COMPOSITOR::DIRECT_RENDERING );
 }
 
 

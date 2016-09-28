@@ -255,6 +255,8 @@ void GPU_NONCACHED_MANAGER::EndDrawing()
     prof_start( &totalRealTime );
 #endif /* __WXDEBUG__ */
 
+    printf("*** container size %d\n", m_container->GetSize());
+
     if( m_container->GetSize() == 0 )
         return;
 

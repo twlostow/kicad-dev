@@ -92,6 +92,8 @@ bool VERTEX_MANAGER::Vertex( GLfloat aX, GLfloat aY, GLfloat aZ )
     // flag to avoid hanging by calling DisplayError too many times:
     static bool show_err = true;
 
+    //printf("v %.1f %.1f %.1f %d %d %d %d\n", aX, aY, aZ, m_color[0],m_color[1],m_color[2],m_color[3]);
+
     // Obtain the pointer to the vertex in the currently used container
     VERTEX* newVertex;
 

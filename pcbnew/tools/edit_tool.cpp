@@ -186,11 +186,13 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
 
             if( m_dragging && evt->Category() == TC_MOUSE )
             {
-                m_cursor = grid.BestSnapAnchor( evt->Position(), item );
+                m_cursor = evt->Position(); //grid.BestSnapAnchor( evt->Position(), item );
                 controls->ForceCursorPosition( true, m_cursor );
 
                 wxPoint movement = wxPoint( m_cursor.x, m_cursor.y ) - item->GetPosition();
                 totalMovement += movement;
+
+                //printf("")
 
                 // Drag items to the current cursor position
                 for( unsigned int i = 0; i < selection.items.GetCount(); ++i )

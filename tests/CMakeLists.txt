@@ -24,4 +24,4 @@ endfunction( add_test_case )
 
 add_subdirectory ( pns )
 add_subdirectory ( connectivity )
-add_subdirectory ( windowed )
+#add_subdirectory ( windowed )

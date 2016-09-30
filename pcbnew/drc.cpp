@@ -43,6 +43,7 @@
 #include <view/view.h>
 #include <geometry/seg.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
@@ -206,7 +207,7 @@ void DRC::RunTests( wxTextCtrl* aMessages )
         }
 
         m_pcbEditorFrame->Compile_Ratsnest( NULL, true );
-        m_pcb->GetRatsnest()->ProcessBoard();
+        //m_pcb->GetRatsnest()->ProcessBoard();
     }
 
     // someone should have cleared the two lists before calling this.
@@ -559,6 +560,25 @@ void DRC::testTracks( wxWindow *aActiveWindow, bool aShowProgressBar )
 
 void DRC::testUnconnected()
 {
+    std::vector<CN_DISJOINT_NET_ENTRY> report;
+
+    auto connectivity = m_pcb->GetConnectivity();
+
+    connectivity->CheckConnectivity( report );
+
+    printf("Connectivity: %d unconnected\n", report.size());
+
+    for( auto ent : report )
+    {
+    /*    DRC_ITEM* uncItem = new DRC_ITEM( DRCE_UNCONNECTED_PADS,
+                                          msg,
+                                          padEnd->GetSelectMenuText(),
+                                          padStart->GetPosition(), padEnd->GetPosition() );*/
+
+    }
+
+
+#if 0
     if( (m_pcb->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK) == 0 )
     {
         wxClientDC dc( m_pcbEditorFrame->GetCanvas() );
@@ -589,6 +609,8 @@ void DRC::testUnconnected()
 
         m_unconnected.push_back( uncItem );
     }
+#endif
+
 }
 
 

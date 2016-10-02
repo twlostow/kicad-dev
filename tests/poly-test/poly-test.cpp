@@ -165,7 +165,7 @@ struct PointHash
         //int x1 = m_bbox.GetPosition().x + m_bbox.GetWidth() + 1;
 
         m_outline.SetClosed(true);
-        m_outline.Simplify();
+        //m_outline.Simplify();
         //printf("PC : %d\n", m_outline.PointCount());
 
         //if ( m_outline.SegmentCount() < 3)
@@ -185,45 +185,15 @@ struct PointHash
         while( !pendingEdges.empty() )
         {
             auto iter = pendingEdges.begin();
-            int n_erased = 0;
+            int ref_index = *iter;
             vector<Edge> visited;
             printf("pending: %d\n", pendingEdges.size() );
 
 
-            while ( n_erased == 0 )
-            {
-                int ref_index = *iter;
-                iter++;
-                visited.clear();
-
-                int ref_y = ( m_outline.CSegment(ref_index).A.y + m_outline.CSegment(ref_index).B.y ) / 2;
+            int ref_y = ( m_outline.CSegment(ref_index).A.y + m_outline.CSegment(ref_index).B.y ) / 2;
 
 
 
-                for (int i=0; i< m_outline.PointCount(); i++)
-                {
-                    const VECTOR2I& pi = m_outline.CPoint(i + 1);
-                    const VECTOR2I& pj = m_outline.CPoint(i);
-
-
-                    if (pi.y< ref_y && pj.y>=ref_y ||   pj.y< ref_y && pi.y>=ref_y)
-                    {
-                        double xp = (double) pi.x+(double)(ref_y-pi.y)/(double)(pj.y-pi.y)*(double)(pj.x-pi.x);
-
-
-                        if (pendingEdges.find(i) != pendingEdges.end())
-                        {
-                            pendingEdges.erase(i);
-                            n_erased++;
-                        }
-
-                        visited.push_back( Edge ( i, (int) xp ) );
-                    }
-                }
-
-            }
-
-            #if 0
             for (int j = 0; j < m_outline.SegmentCount(); j++)
             {
 
@@ -232,12 +202,12 @@ struct PointHash
                 int y_min = std::min(edge.A.y, edge.B.y);
                 int y_max = std::max(edge.A.y, edge.B.y);
 
-                /*if (y_min == y_max)
+                if (y_min == y_max)
                 {
                     pendingEdges.erase(j);
                     leading[j] = 0;
                     continue;
-                }*/
+                }
 
                 if ( ref_y < y_min )
                     continue;
@@ -251,15 +221,19 @@ struct PointHash
 
             //    printf("s %d ref_y: %d min %d max %d\n", j, ref_y, y_min, y_max );
 
-                OPT_VECTOR2I ip_v = edge.IntersectLines ( SEG( VECTOR2I( 0, ref_y), VECTOR2I(1, ref_y )) );
+                int xx;
+                if ( edge.A.y == ref_y && edge.B.y == ref_y )
+                    xx = edge.A.x;
+                else
+                    xx = edge.IntersectLines ( SEG( VECTOR2I( 0, ref_y), VECTOR2I(1, ref_y )) ) -> x;
 
                 if (pendingEdges.find(j) != pendingEdges.end())
                     pendingEdges.erase(j);
 
-                visited.push_back( Edge ( j, ip_v->x ) );
+                visited.push_back( Edge ( j, xx ) );
 
             }
-            #endif
+//            #endif
 
             std::sort ( visited.begin(), visited.end(), [] ( const Edge& a, const Edge&b ) { return a.ip < b.ip; } );
 

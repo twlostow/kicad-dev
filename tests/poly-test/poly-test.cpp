@@ -89,9 +89,7 @@ struct PointHash
     enum HashFlag {
         EMPTY = 1,
         FULL = 2,
-        PARTIAL= 4,
-        LEADING = 8,
-        IN_USE = 16
+        PARTIAL= 4
     };
 
     struct Edge {
@@ -100,10 +98,8 @@ struct PointHash
                 index = aIndex;
                 ip = aIp;
                 flags = 0;
-                leading = false;
         }
 
-        bool leading;
         int ip;
         int seq;
         int flags;
@@ -111,17 +107,26 @@ struct PointHash
     };
 
     using EdgeList = std::vector<Edge> ;
-
+    vector<int> m_leading;
     vector<EdgeList> m_grid;
     vector<EdgeList> h_edges;
     vector<EdgeList> v_edges;
+
+    EdgeList m_sortedEdges;
+
+
+    bool Contains( VECTOR2I p ) const
+    {
+
+    }
 
     const EdgeList fillList ( int x, int y )
     {
             int px      = (int) ( (double) x / (double)m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
             int py      = (int) ( (double) y / (double)m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
             int px_next      = (int) ( (double) (x+1) / (double)m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
-            int py_next      = (int) ( (double) (y+1 )/ (double)m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+            int py_next      = (int) ( (double) (y+1) / (double)m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+
 
             int k;
             auto CompareLo = [](  const Edge& e, int ip ) {
@@ -131,25 +136,78 @@ struct PointHash
                 return (ip > e.ip);
             };
 
-            auto first_h = std::lower_bound( h_edges[y].begin(), h_edges[y].end(), px, CompareLo );
-            auto last_h = std::upper_bound( h_edges[y].begin(), h_edges[y].end(), px_next, CompareHi );
-            auto first_v = std::lower_bound( v_edges[x].begin(), v_edges[x].end(), py, CompareLo );
-            auto last_v = std::upper_bound( v_edges[x].begin(), v_edges[x].end(), py_next, CompareHi );
+            struct CompareEdges
+            {
+                bool operator() ( const Edge& a, const Edge& b ) const
+                {
+                    return a.index < b.index;
+                }
+            };
+
+
+            //auto first_h = std::lower_bound( h_edges[y].begin(), h_edges[y].end(), px, CompareLo );
+            //auto last_h = std::upper_bound( h_edges[y].begin(), h_edges[y].end(), px_next, CompareHi );
+            //auto first_v = std::lower_bound( v_edges[x].begin(), v_edges[x].end(), py, CompareLo );
+            //auto last_v = std::upper_bound( v_edges[x].begin(), v_edges[x].end(), py_next, CompareHi );
 
             EdgeList rv;
 
-            set<int> usedEdges;
+            set<Edge, CompareEdges> usedEdges;
 
-            for ( auto i = first_h ; i <= last_h; ++i )
+            for( auto e : v_edges[x] )
             {
-                    rv.push_back(*i);
-                    usedEdges.insert(i->index);
+                if ( e.ip >= py && e.ip <= py_next )
+                    usedEdges.insert(e);
             }
-            for ( auto i = first_v ; i <= last_v; ++i )
+            for( auto e : v_edges[x+1] )
             {
-                if( usedEdges.find( i->index ) == usedEdges.end() )
-                    rv.push_back(*i);
+                if ( e.ip >= py && e.ip <= py_next )
+                    usedEdges.insert(e);
             }
+            for( auto e : h_edges[y] )
+            {
+                if ( e.ip >= px && e.ip <= px_next )
+                    usedEdges.insert(e);
+            }
+            for( auto e : h_edges[y+1] )
+            {
+                if ( e.ip >= px && e.ip <= px_next )
+                    usedEdges.insert(e);
+            }
+
+            //for ( auto i = first_h ; i <= last_h; ++i )
+            //{
+            //        usedEdges.insert(*i);
+            //        usedEdges.insert(i->index);
+            //}
+            //for ( auto i = first_v ; i <= last_v; ++i )
+            //{
+                //if( usedEdges.find( i->index ) == usedEdges.end() )
+                //{
+            //        usedEdges.insert(*i);
+            //        usedEdges.insert(i->index);
+                //}
+            //}
+
+            #if 1
+            for( int i = 0; i < m_outline.SegmentCount(); i++)
+            {
+                    const SEG& s = m_outline.CSegment(i);
+
+                    if(s.A.x >= px && s.A.y >= py && s.A.x <= px_next && s.A.y <= py_next)
+                    {
+                //        if( usedEdges.find( i ) == usedEdges.end() )
+                //        {
+                            usedEdges.insert( Edge( i, 0 ) );
+                //            usedEdges.insert(i);
+                //        }
+                    }
+            }
+            #endif
+//            printf("cell (%d, %d): %d edges\n", x, y, usedEdges.size());
+
+            for ( auto e: usedEdges )
+                rv.push_back(e);
 
             return rv;
     }
@@ -172,22 +230,21 @@ struct PointHash
         //return ;
 
         set<int> pendingEdges;
-        vector<int> leading;
 
         for ( int i = 0; i < m_outline.PointCount(); i++)
         {
             pendingEdges.insert(i);
-            leading.push_back(0);
+            m_leading.push_back(0);
         }
 
-        printf("PC %d\n", pendingEdges.size());
+        //printf("PC %d\n", pendingEdges.size());
 
         while( !pendingEdges.empty() )
         {
             auto iter = pendingEdges.begin();
             int ref_index = *iter;
             vector<Edge> visited;
-            printf("pending: %d\n", pendingEdges.size() );
+        //    printf("pending: %d\n", pendingEdges.size() );
 
 
             int ref_y = ( m_outline.CSegment(ref_index).A.y + m_outline.CSegment(ref_index).B.y ) / 2;
@@ -205,7 +262,7 @@ struct PointHash
                 if (y_min == y_max)
                 {
                     pendingEdges.erase(j);
-                    leading[j] = 0;
+                    m_leading[j] = 0;
                     continue;
                 }
 
@@ -239,46 +296,34 @@ struct PointHash
 
             bool l = true;
 
-            printf("vsize %d\n", visited.size());
+            //printf("vsize %d\n", visited.size());
             int prev = INT_MAX;
             bool prev_duplicate= false;
 
             for (int i = 0; i < visited.size(); i++)
             {
 
-                leading[visited[i].index] = l ? 1 : 2;
+                m_leading[visited[i].index] = l ? 1 : 2;
                 l = !l;
             }
 
         }
 
-        FILE *f=fopen("log.log","wb");
-        fprintf(f,"group crappy-polygon 0\n");
 
-        for (int i = 0; i<m_outline.SegmentCount();i++)
-        {
-            const SEG& edge = m_outline.CSegment(i);
-
-            fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", leading[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
-
-
-        }
-        fprintf(f,"endgroup\n");
-        fclose(f);
 
         for(int k = 0; k <= gridSize; k++)
         {
 
             int px      = (int) ( (double) k / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
             int py      = (int) ( (double) k / gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+            int px_next      = (int) ( (double) (k+1) / (double)m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
+            int py_next      = (int) ( (double) (k+1 )/ (double)m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
 
             v_edges.push_back ( EdgeList() );
             h_edges.push_back ( EdgeList() );
 
             SEG ref_v ( VECTOR2I(px, py), VECTOR2I(px, py + 1) );
             SEG ref_h ( VECTOR2I(px, py), VECTOR2I(px + 1, py) );
-
-
 
             for (int i = 0; i < m_outline.SegmentCount(); i++)
             {
@@ -325,21 +370,48 @@ struct PointHash
             //std::sort ( v_edges[k].begin(), v_edges[k].end() );
         }
 
-        return;
+
+        FILE *f=fopen("log.log","wb");
+        fprintf(f,"group crappy-polygon 0\n");
+
+        for(int i = 0; i < m_outline.SegmentCount(); i++)
+        {
+            const SEG& edge = m_outline.CSegment(i);
+            fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", m_leading[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+        }
+
+        fprintf(f,"endgroup\n");
+
 
         for(int y = 0; y < gridSize; y++)
             for(int x = 0; x < gridSize; x++)
             {
                 const EdgeList l = fillList ( x, y );
-
                 m_grid.push_back(l);
 
-                //printf("cell (%d,%d) edges: %d\n", x,y,l.size());
-
-/*                int px      = (int) ( (double) x / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
+                int px      = (int) ( (double) x / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
                 int px_next = (int) ( (double) (x+1) / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
                 int py      = (int) ( (double) y / gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
                 int py_next = (int) ( (double) (y+1) / gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+
+                fprintf(f,"group crappy-polygon 0\n");
+                fprintf(f,"item 0 cell 0 0 0 0 0 line 0 0 linechain 4 1 %d %d %d %d %d %d %d %d\n",px, py, px_next, py, px_next, py_next, px, py_next);
+
+                for ( auto e : l )
+                {
+
+                    const SEG& edge = m_outline.CSegment(e.index);
+
+                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", m_leading[e.index], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+
+
+                }
+
+                fprintf(f,"endgroup\n");
+/*
+                //printf("cell (%d,%d) edges: %d\n", x,y,l.size());
+
+
 
                 //printf("try %d %d\n", px, py);
 
@@ -407,6 +479,9 @@ struct PointHash
 
 
             }
+
+            fclose(f);
+
 #if 0
 
             int full = 0, empty = 0, partial = 0;
@@ -562,15 +637,13 @@ int main( int argc, char* argv[] ) {
             const SHAPE_POLY_SET& polys = zone->GetFilledPolysList();
             for(int o = 0; o < polys.OutlineCount(); o++)
             {
-  //CALLGRIND_START_INSTRUMENTATION;
-                if( polys.COutline(o).PointCount() > 50 )
+                if(  polys.COutline(o).PointCount() > 20000 )
                 {
-                    PointHash p (polys.COutline(o), 32);
+                    PointHash p (polys.COutline(o), 32 );
                     return 0;
                 }
-    //            CALLGRIND_STOP_INSTRUMENTATION;
-  //CALLGRIND_DUMP_STATS;
             }
+
 
     }
 

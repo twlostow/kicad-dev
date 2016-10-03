@@ -15,19 +15,14 @@
 #include <deque>
 #include <stdarg.h>
 
-using namespace std;
-/**
- * Function SortPadsByXCoord
- * is used by GetSortedPadListByXCoord to Sort a pad list by x coordinate value.
- * This function is used to build ordered pads lists
- */
+using std::shared_ptr;
 
 
 template <class T>
-class IntrusiveList
+class INTRUSIVE_LIST
 {
 public:
-    IntrusiveList<T>()
+    INTRUSIVE_LIST<T>()
     {
         m_prev  = nullptr;
         m_next  = nullptr;
@@ -37,7 +32,6 @@ public:
 
     T* ListRemove()
     {
-        // printf("prev %p next %p\n", m_prev, m_next);
         if( m_prev )
             m_prev->m_next = m_next;
 
@@ -46,20 +40,23 @@ public:
 
         m_root->m_count--;
 
-        T *rv=  nullptr;
+        T* rv = nullptr;
 
         if( m_prev )
             rv = m_prev;
         else if( m_next )
             rv = m_next;
 
-        m_root = nullptr;
-        m_prev = nullptr;
-        m_next = nullptr;
+        m_root  = nullptr;
+        m_prev  = nullptr;
+        m_next  = nullptr;
         return rv;
     }
 
-    int ListSize() const { return m_root ? m_root->m_count : 0; }
+    int ListSize() const
+    {
+        return m_root ? m_root->m_count : 0;
+    }
 
     void ListInsert( T* item )
     {
@@ -69,9 +66,9 @@ public:
         if( m_next )
             m_next->m_prev = item;
 
-        item->m_prev    = (T*) this;
-        item->m_next    = m_next;
-        item->m_root    = m_root;
+        item->m_prev = (T*) this;
+        item->m_next = m_next;
+        item->m_root = m_root;
         m_root->m_count++;
 
         m_next = item;
@@ -82,68 +79,141 @@ public:
 
 private:
     int m_count;
-    T* m_prev, * m_next, * m_root;
-    // IntrusiveListBase<T> *m_list;
+    T* m_prev;
+    T* m_next;
+    T* m_root;
 };
 
-struct CnItem : public IntrusiveList<CnItem>
+class CN_ITEM : public INTRUSIVE_LIST<CN_ITEM>
 {
-    BOARD_CONNECTED_ITEM* m_item;
-    vector<CnItem*> m_connected;
+private:
+    BOARD_CONNECTED_ITEM* m_parent;
+    std::vector<CN_ITEM*> m_connected;
+    bool m_visited;
+    bool m_canChangeNet;
 
-    bool    m_visited;
-    bool    m_new;
-    bool    m_canChangeNet;
-
-    CnItem()
+public:
+    CN_ITEM( BOARD_CONNECTED_ITEM *aParent, bool aCanChangeNet )
     {
-        m_new = true;
-        m_canChangeNet = false;
+        m_parent = aParent;
+        m_canChangeNet = aCanChangeNet;
         m_visited = false;
-        m_item = nullptr;
     }
 
-    void Connect( CnItem* aOther )
+    BOARD_CONNECTED_ITEM *Parent() const
+    {
+        return m_parent;
+    }
+
+    void Connect( CN_ITEM* aOther )
     {
         m_connected.push_back( aOther );
     }
-};
 
-struct CnPoint
-{
-public:
-    CnPoint()
+    const std::vector<CN_ITEM*>& ConnectedItems()  const
     {
-        m_valid = true;
+        return m_connected;
     }
 
+    void ClearConnections()
+    {
+        m_connected.clear();
+    }
+
+    void SetVisited ( bool aVisited )
+    {
+        m_visited = aVisited;
+    }
+
+    bool Visited() const
+    {
+        return m_visited;
+    }
+
+    bool CanChangeNet() const
+    {
+            return m_canChangeNet;
+    }
+
+    static void Connect( CN_ITEM* a, CN_ITEM* b )
+    {
+       a->m_connected.push_back( b );
+       b->m_connected.push_back( a );
+    }
+};
+
+class CN_ANCHOR
+{
+public:
+    CN_ANCHOR( const VECTOR2I& aPos, CN_ITEM* aItem )
+    {
+        m_valid = true;
+        m_pos   = aPos;
+        m_item  = aItem;
+    }
+
+    bool operator<( const CN_ANCHOR& aOther ) const
+    {
+        if( m_pos.x == aOther.m_pos.x )
+            return m_pos.y < aOther.m_pos.y;
+        else
+            return m_pos.x < aOther.m_pos.x;
+    }
+
+    CN_ITEM* Item() const
+    {
+        return m_item;
+    }
+
+    BOARD_CONNECTED_ITEM *Parent() const
+    {
+        return m_item->Parent();
+    }
+
+    const VECTOR2I& Pos() const
+    {
+        return m_pos;
+    }
+
+private:
+
     bool m_valid;
-    VECTOR2I    m_pos;
-    CnItem*     m_item;
+    VECTOR2I m_pos;
+    CN_ITEM* m_item;
 };
 
 
-static bool sortByXthenYCoord( const CnPoint& ref, const CnPoint& comp )
+class CN_LIST
 {
-    if( ref.m_pos.x == comp.m_pos.x )
-        return ref.m_pos.y < comp.m_pos.y;
-
-    return ref.m_pos.x < comp.m_pos.x;
-}
-
-
-struct CnList
-{
+private:
     bool m_dirty;
-    vector<CnItem*> m_items;
-    vector<CnPoint> m_anchors;
+    std::vector<CN_ANCHOR> m_anchors;
 
-    CnList()
+protected:
+
+    std::vector<CN_ITEM*> m_items;
+
+    void setDirty( bool aDirty = true )
+    {
+        m_dirty = aDirty;
+    }
+
+    void addAnchor( VECTOR2I pos, CN_ITEM* item )
+    {
+        m_anchors.push_back( CN_ANCHOR( pos, item ) );
+    }
+
+    using ITER = decltype(m_items)::iterator;
+
+public:
+    CN_LIST()
     {
         m_dirty = false;
-    };    // shared_ptr<BOARD> aBoard ) : m_board(aBoard){};
+    };
 
-    void setDirty( bool aDirty = true ) { m_dirty = aDirty; }
+    ITER begin() { return m_items.begin(); };
+    ITER end() { return m_items.end(); };
+
 
     template <class T>
     void FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc );
@@ -153,58 +223,49 @@ struct CnList
 
     void ClearConnections()
     {
-        for ( auto anchor : m_anchors )
-            anchor.m_item->m_connected.clear();
+        for( auto& anchor : m_anchors )
+            anchor.Item()->ClearConnections();
     }
 
-
-    void addAnchor( VECTOR2I pos, CnItem* item )
+    int Size() const
     {
-        CnPoint p;
-
-        p.m_pos     = pos;
-        p.m_item    = item;
-
-        m_anchors.push_back( p );
+        return m_items.size();
     }
 
-
-    void Remove ( CnItem *aItem )
+    void Remove( CN_ITEM* aItem )
     {
-        auto i =  std::find (m_items.begin(), m_items.end(), aItem );
-        assert ( i != m_items.end() );
-        m_items.erase ( i );
+        auto i = std::find( m_items.begin(), m_items.end(), aItem );
+
+        assert( i != m_items.end() );
+        m_items.erase( i );
         setDirty();
     }
 
-    void Remove ( BOARD_CONNECTED_ITEM *aItem )
+    void Remove( BOARD_CONNECTED_ITEM* aItem )
     {
         m_items.erase(
-            std::remove_if(
-                m_items.begin(), m_items.end(),
-                    [aItem](CnItem* item) { return item->m_item == aItem;}),
-                m_items.end());
+                std::remove_if(
+                        m_items.begin(), m_items.end(),
+                        [aItem]( CN_ITEM* item ) { return item->Parent() == aItem; } ),
+                m_items.end() );
 
         m_anchors.erase(
-                    std::remove_if(
+                std::remove_if(
                         m_anchors.begin(), m_anchors.end(),
-                            [aItem](CnPoint& p) { return p.m_item->m_item == aItem;}),
-                        m_anchors.end());
+                        [aItem]( CN_ANCHOR& p ) { return p.Parent() == aItem; } ),
+                m_anchors.end() );
 
 
-
-                        setDirty();
+        setDirty();
     }
-
-
 };
 
 
-// vector<CnPoint*> m_candidates;
-// vector<CnCluster> m_clusters;
+// vector<CN_ANCHOR*> m_candidates;
+// vector<CN_CLUSTER> m_clusters;
 
 template <class T>
-void CnList::FindNearby( BOX2I aBBox, T aFunc )
+void CN_LIST::FindNearby( BOX2I aBBox, T aFunc )
 {
     for( auto p : m_anchors )
         aFunc( p );
@@ -212,7 +273,7 @@ void CnList::FindNearby( BOX2I aBBox, T aFunc )
 
 
 template <class T>
-void CnList::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
+void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
 {
     /* Search items in m_Candidates that position is <= aDistMax from aPosition
      * (Rectilinear distance)
@@ -225,7 +286,7 @@ void CnList::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
 
     if( m_dirty )
     {
-        sort( m_anchors.begin(), m_anchors.end(), sortByXthenYCoord );
+        sort( m_anchors.begin(), m_anchors.end() );
         m_dirty = false;
     }
 
@@ -244,15 +305,15 @@ void CnList::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
 
         delta /= 2;
 
-        CnPoint& p = m_anchors[idx];
+        CN_ANCHOR& p = m_anchors[idx];
 
-        int dist = p.m_pos.x - aPosition.x;
+        int dist = p.Pos().x - aPosition.x;
 
-        if( abs( dist ) <= aDistMax )
+        if( std::abs( dist ) <= aDistMax )
         {
             break;                              // A good entry point is found. The list can be scanned from this point.
         }
-        else if( p.m_pos.x < aPosition.x )      // We should search after this point
+        else if( p.Pos().x < aPosition.x )      // We should search after this point
         {
             idx += delta;
 
@@ -278,13 +339,13 @@ void CnList::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
 
     for( int ii = idx; ii <= idxmax; ii++ )
     {
-        CnPoint& p = m_anchors[ii];
-        diff = p.m_pos - aPosition;;
+        CN_ANCHOR& p = m_anchors[ii];
+        diff = p.Pos() - aPosition;;
 
-        if( abs( diff.x ) > aDistMax )
+        if( std::abs( diff.x ) > aDistMax )
             break; // Exit: the distance is to long, we cannot find other candidates
 
-        if( abs( diff.y ) > aDistMax )
+        if( std::abs( diff.y ) > aDistMax )
             continue; // the y distance is to long, but we can find other candidates
 
         // We have here a good candidate: add it
@@ -294,8 +355,8 @@ void CnList::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
     // search previous candidates in list
     for(  int ii = idx - 1; ii >=0; ii-- )
     {
-        CnPoint& p = m_anchors[ii];
-        diff = p.m_pos - aPosition;
+        CN_ANCHOR& p = m_anchors[ii];
+        diff = p.Pos() - aPosition;
 
         if( abs( diff.x ) > aDistMax )
             break;
@@ -314,32 +375,31 @@ using namespace std;
 shared_ptr<BOARD> m_board;
 
 
-struct CnPadList : public CnList
+struct CN_PAD_LIST : public CN_LIST
 {
-    CnItem* Add( D_PAD* pad )
-    {
-        auto item = new CnItem;
 
-        item->m_item = pad;
-        item->m_canChangeNet = false;
+    CN_ITEM* Add( D_PAD* pad )
+    {
+        auto item = new CN_ITEM( pad, false );
+
+        // item->m_item = pad;
+        // item->m_canChangeNet = false;
         addAnchor( pad->ShapePos(), item );
         m_items.push_back( item );
 
         setDirty();
         return item;
     };
-
-
 };
 
-struct CnTrackList : public CnList
+struct CN_TRACK_LIST : public CN_LIST
 {
-    CnItem* Add( TRACK* track )
+    CN_ITEM* Add( TRACK* track )
     {
-        auto item = new CnItem;
+        auto item = new CN_ITEM( track, true );
 
-        item->m_item = track;
-        item->m_canChangeNet = true;
+        // item->m_item = track;
+        // item->m_canChangeNet = true;
         m_items.push_back( item );
 
         addAnchor( track->GetStart(), item );
@@ -349,68 +409,52 @@ struct CnTrackList : public CnList
     };
 };
 
-/*(CnViaList( shared_ptr<BOARD> aBoard )
- *  {
- */
-struct CnViaList : public CnList
+struct CN_VIA_LIST : public CN_LIST
 {
-    CnItem* Add( VIA* via )
+    CN_ITEM* Add( VIA* via )
     {
-        auto item = new CnItem;
-
-        item->m_item = via;
-        item->m_canChangeNet = true;
+        auto item = new CN_ITEM( via, true );
         m_items.push_back( item );
-
         addAnchor( via->GetStart(), item );
         setDirty();
         return item;
     };
-
 };
 
-/*for( int i = 0; i<aBoard->GetAreaCount(); i++ )
- *  {
- *   ZONE_CONTAINER *zone = aBoard->GetArea(i);
- *
- *   zone->ClearFilledPolysList();
- *   zone->UnFill();
- *
- *   // Cannot fill keepout zones:
- *   if( zone->GetIsKeepout() )
- *       continue;
- *
- *   zone->BuildFilledSolidAreasPolygons( aBoard.get() );
- *
- *   const SHAPE_POLY_SET& polys = zone->RawPolysList();
- *
- *   for(int j = 0; j < polys.OutlineCount(); j++)
- *   {
- */
-
-struct CnZone : public CnItem
+class CN_ZONE : public CN_ITEM
 {
+public:
+    CN_ZONE ( BOARD_CONNECTED_ITEM *aParent, bool aCanChangeNet, int aSubpolyIndex ) :
+        CN_ITEM (aParent, aCanChangeNet ),
+        m_subpolyIndex ( aSubpolyIndex )
+    {
+
+    }
+
+    int SubpolyIndex() const
+    {
+        return m_subpolyIndex;
+    }
+
+private:
     int m_subpolyIndex;
 };
 
-struct CnZoneList : public CnList
+struct CN_ZONE_LIST : public CN_LIST
 {
-    CnZoneList()
+    CN_ZONE_LIST()
     {
     }
 
-    const vector<CnItem*> Add( ZONE_CONTAINER* zone )
+    const std::vector<CN_ITEM*> Add( ZONE_CONTAINER* zone )
     {
         const SHAPE_POLY_SET& polys = zone->GetFilledPolysList();
 
-        vector<CnItem*> rv;
+        vector<CN_ITEM*> rv;
 
         for( int j = 0; j < polys.OutlineCount(); j++ )
         {
-            CnZone* zitem = new CnZone;
-            zitem->m_subpolyIndex = j;
-            zitem->m_item = zone;
-            zitem->m_canChangeNet = false;
+            CN_ZONE* zitem = new CN_ZONE( zone, false, j );
             m_items.push_back( zitem );
             rv.push_back( zitem );
             setDirty();
@@ -418,59 +462,18 @@ struct CnZoneList : public CnList
 
         return rv;
     };
-
-
-
 };
 
-
-#if 0
-
-void CnList::Build()
+class CN_CLUSTER
 {
-    for( auto mod : m_board->Modules() )
-        for( auto pad : mod->PadsIter() )
-        {
-            auto item = new CnItem;
-            item->m_item = pad;
-            // item->m_net = -1;
-            m_items.push_back( item );
-        }
+private:
 
-
-}
-
-
-for( auto track : m_board->Tracks() )
-{
-    auto item = new CnItem;
-    item->m_item = track;
-    m_items.push_back( item );
-}
-
-for( auto item : m_items )
-    for( int i = 0; i < item->anchorCount(); i++ )
-    {
-        CnPoint* p = new CnPoint;
-        p->m_item   = item;
-        p->m_pos    = item->anchor( i );
-        m_anchors.push_back( p );
-    }
-
-
-
-
-sort( m_candidates.begin(), m_candidates.end(), sortByXthenYCoord );
-
-printf( "amnchors : %d\n", m_candidates.size() );
-}
-* /
-#endif
-
-class CnCluster
-{
+    bool m_conflicting;
+    int m_originNet;
+    CN_ITEM* m_originPad;
+    std::vector<CN_ITEM*> m_items;
 public:
-    CnCluster()
+    CN_CLUSTER()
     {
         m_items.reserve( 64 );
         m_originPad = nullptr;
@@ -493,27 +496,29 @@ public:
         if( !m_originPad )
             return "<none>";
         else
-            return m_originPad->m_item->GetNetname();
+            return m_originPad->Parent()->GetNetname();
     }
 
-    bool Contains ( CnItem *aItem )
+    bool Contains( CN_ITEM* aItem )
     {
         return std::find( m_items.begin(), m_items.end(), aItem ) != m_items.end();
     }
 
-    bool Contains ( BOARD_CONNECTED_ITEM *aItem )
+    bool Contains( BOARD_CONNECTED_ITEM* aItem )
     {
-        for ( auto item : m_items )
-            if ( item->m_item == aItem )
+        for( auto item : m_items )
+            if( item->Parent() == aItem )
                 return true;
+
+
         return false;
     }
 
     void Dump()
     {
         for( auto item : m_items )
-            printf( " - item : %p bitem : %p type : %d inet %s\n", item, item->m_item,
-                    item->m_item->Type(), (const char*) item->m_item->GetNetname().c_str() );
+            printf( " - item : %p bitem : %p type : %d inet %s\n", item, item->Parent(),
+                    item->Parent()->Type(), (const char*) item->Parent()->GetNetname().c_str() );
     }
 
     int Size() const
@@ -536,157 +541,150 @@ public:
         return m_conflicting;
     }
 
-    void Add( CnItem* item )
+    void Add( CN_ITEM* item )
     {
         m_items.push_back( item );
 
         // printf("cluster %p add %p\n", this, item );
 
-        if( item->m_item->Type() == PCB_PAD_T )
+        if( item->Parent()->Type() == PCB_PAD_T )
         {
             if( !m_originPad )
             {
                 m_originPad = item;
-                m_originNet = item->m_item->GetNetCode();
+                m_originNet = item->Parent()->GetNetCode();
             }
 
-            if( m_originPad && item->m_item->GetNetCode() != m_originNet )
+            if( m_originPad && item->Parent()->GetNetCode() != m_originNet )
             {
                 m_conflicting = true;
             }
         }
     }
 
-    bool m_conflicting;
-    int m_originNet;
-    CnItem* m_originPad;
+    using ITER = decltype(m_items)::iterator;
 
-    vector<CnItem*> m_items;
+    ITER begin() { return m_items.begin(); };
+    ITER end() { return m_items.end(); };
+
+
 };
 
-class CnConnectivity
+class CN_CONNECTIVITY
 {
-    vector<CnCluster*> m_clusters;
+    vector<CN_CLUSTER*> m_clusters;
 
 public:
 
-    CnConnectivity()
+    CN_CONNECTIVITY()
     {
-        padList = new CnPadList();
-        trackList = new CnTrackList();
-        viaList     = new CnViaList();
-        zoneList    = new CnZoneList();
+
     }
 
     void searchConnections( bool aIncludeZones = false )
     {
-        auto connect = []( CnItem* a, CnItem* b )
-                       {
-                           a->m_connected.push_back( b );
-                           b->m_connected.push_back( a );
-                       };
 
-        padList->ClearConnections();
-        viaList->ClearConnections();
-        trackList->ClearConnections();
-        zoneList->ClearConnections();
+
+        padList.ClearConnections();
+        viaList.ClearConnections();
+        trackList.ClearConnections();
+        zoneList.ClearConnections();
 
         PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
 
-        for( auto padItem : padList->m_items )
+        for( auto padItem : padList )
         {
-            auto pad = static_cast<D_PAD*> ( padItem->m_item );
-            auto findFunc = [&] ( const CnPoint& point )
+            auto pad = static_cast<D_PAD*> ( padItem->Parent() );
+            auto findFunc = [&] ( const CN_ANCHOR& point )
                             {
-                                if( pad == point.m_item->m_item )
+                                if( pad == point.Item()->Parent() )
                                     return;
 
                                 if( !( pad->GetLayerSet() &
-                                       point.m_item->m_item->GetLayerSet() ).any() )
+                                       point.Item()->Parent()->GetLayerSet() ).any() )
                                     return;
 
-                                if( pad->HitTest( wxPoint( point.m_pos.x, point.m_pos.y ) ) )
-                                    connect( padItem, point.m_item );
+                                if( pad->HitTest( wxPoint( point.Pos().x, point.Pos().y ) ) )
+                                    CN_ITEM::Connect( padItem, point.Item() );
                             };
 
-            padList->FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
-            trackList->FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
-            viaList->FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
+            padList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
+            trackList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
+            viaList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
         }
 
-        for( auto trackItem : trackList->m_items )
+        for( auto& trackItem : trackList )
         {
-            auto track = static_cast<TRACK*> ( trackItem->m_item );
+            auto track = static_cast<TRACK*> ( trackItem->Parent() );
             int dist_max = track->GetWidth() / 2;
 
-            auto findFunc = [&] ( const CnPoint& point )
+            auto findFunc = [&] ( const CN_ANCHOR& point )
                             {
-                                if( track == point.m_item->m_item )
+                                BOARD_CONNECTED_ITEM *parent = point.Item()->Parent();
+                                if( track == parent )
                                     return;
 
-                                if( !( track->GetLayerSet() &
-                                       point.m_item->m_item->GetLayerSet() ).any() )
+                                if( !( track->GetLayerSet() & parent->GetLayerSet() ).any() )
                                     return;
 
-                                const VECTOR2I d_start( VECTOR2I( track->GetStart() ) -
-                                        point.m_pos );
-                                const VECTOR2I d_end( VECTOR2I( track->GetEnd() ) - point.m_pos );
+                                const VECTOR2I d_start( VECTOR2I( track->GetStart() ) - point.Pos() );
+                                const VECTOR2I d_end( VECTOR2I( track->GetEnd() ) - point.Pos() );
 
                                 if( d_start.EuclideanNorm() < dist_max
                                     || d_end.EuclideanNorm() < dist_max )
-                                    connect( trackItem, point.m_item );
+                                    CN_ITEM::Connect( trackItem, point.Item() );
                             };
 
-            trackList->FindNearby( track->GetStart(), dist_max, findFunc );
-            trackList->FindNearby( track->GetEnd(), dist_max, findFunc );
+            trackList.FindNearby( track->GetStart(), dist_max, findFunc );
+            trackList.FindNearby( track->GetEnd(), dist_max, findFunc );
         }
 
-        for( auto viaItem : viaList->m_items )
+        for( auto& viaItem : viaList )
         {
-            auto via = static_cast<VIA*> ( viaItem->m_item );
+            auto via = static_cast<VIA*> ( viaItem->Parent() );
             int dist_max = via->GetWidth() / 2;
 
-            auto findFunc = [&] ( const CnPoint& point )
+            auto findFunc = [&] ( const CN_ANCHOR& point )
                             {
-                                if( via == point.m_item->m_item )
+                                if( via == point.Item()->Parent() )
                                     return;
 
                                 if( !( via->GetLayerSet() &
-                                       point.m_item->m_item->GetLayerSet() ).any() )
+                                       point.Item()->Parent()->GetLayerSet() ).any() )
                                     return;
 
-                                if( via->HitTest( wxPoint( point.m_pos.x, point.m_pos.y ) ) )
-                                    connect( point.m_item, viaItem );
+                                if( via->HitTest( wxPoint( point.Pos().x, point.Pos().y ) ) )
+                                    CN_ITEM::Connect( point.Item(), viaItem );
                             };
 
-            viaList->FindNearby( via->GetStart(), dist_max, findFunc );
-            trackList->FindNearby( via->GetStart(), dist_max, findFunc );
+            viaList.FindNearby( via->GetStart(), dist_max, findFunc );
+            trackList.FindNearby( via->GetStart(), dist_max, findFunc );
         }
 
         if( aIncludeZones )
         {
-            for( auto zi : zoneList->m_items )
+            for( auto& zi : zoneList )
             {
-                auto zoneItem = static_cast<CnZone*> (zi );
-                auto zone = static_cast<ZONE_CONTAINER*> ( zoneItem->m_item );
+                auto zoneItem = static_cast<CN_ZONE*> ( zi );
+                auto zone = static_cast<ZONE_CONTAINER*> ( zoneItem->Parent() );
                 auto& polys = zone->GetFilledPolysList();
 
-                auto findFunc = [&] ( const CnPoint& point )
+                auto findFunc = [&] ( const CN_ANCHOR& point )
                                 {
-                                    if( point.m_item->m_item->GetNetCode() != zone->GetNetCode() )
+                                    if( point.Item()->Parent()->GetNetCode() != zone->GetNetCode() )
                                         return;
 
                                     if( !( zone->GetLayerSet() &
-                                           point.m_item->m_item->GetLayerSet() ).any() )
+                                           point.Item()->Parent()->GetLayerSet() ).any() )
                                         return;
 
-                                    if( polys.Contains( point.m_pos, zoneItem->m_subpolyIndex ) )
-                                        connect( zoneItem, point.m_item );
+                                    if( polys.Contains( point.Pos(), zoneItem->SubpolyIndex() ) )
+                                        CN_ITEM::Connect( zoneItem, point.Item() );
                                 };
 
-                viaList->FindNearby( BOX2I(), findFunc );
-                trackList->FindNearby( BOX2I(), findFunc );
-                padList->FindNearby(  BOX2I(), findFunc );
+                viaList.FindNearby( BOX2I(), findFunc );
+                trackList.FindNearby( BOX2I(), findFunc );
+                padList.FindNearby(  BOX2I(), findFunc );
             }
         }
 
@@ -695,62 +693,41 @@ public:
 
     void searchClusters( bool aIncludeZones = false )
     {
-        PROF_COUNTER cnt( "search-clusters" ); cnt.start();
 
-        CnItem* head = padList->m_items[0];
-        int n = 0;
+        std::deque<CN_ITEM*> Q;
+        CN_ITEM* head = nullptr;
+        m_clusters.clear();
 
-        for( auto item : padList->m_items )
+        PROF_COUNTER cnt( "search-clusters" );
+        cnt.start();
+
+        auto addToSearchList = [&head] ( CN_ITEM *aItem )
         {
-            item->m_visited = false;
+                aItem->SetVisited( false );
 
-            if( item != head )
-                head->ListInsert( item );
+                if ( !head )
+                    head = aItem;
+                else
+                    head->ListInsert( aItem );
+        };
 
-            n++;
-        }
-
-        for( auto item : trackList->m_items )
-        {
-            item->m_visited = false;
-
-            if( item != head ) head->ListInsert( item );
-
-            n++;
-        }
-
-        for( auto item : viaList->m_items )
-        {
-            item->m_visited = false;
-
-            if( item != head ) head->ListInsert( item );
-
-            n++;
-        }
+        std::for_each( padList.begin(), padList.end(), addToSearchList );
+        std::for_each( trackList.begin(), trackList.end(), addToSearchList );
+        std::for_each( viaList.begin(), viaList.end(), addToSearchList );
 
         if (aIncludeZones)
         {
-        for( auto item : zoneList->m_items )
-        {
-            item->m_visited = false;
-
-            if( item != head ) head->ListInsert( item );
-
-            n++;
-        }
+            std::for_each( zoneList.begin(), zoneList.end(), addToSearchList );
         }
 
-
-        m_clusters.clear();
-        std::deque<CnItem*> Q;
 
         while( head )
         {
-            auto cluster = new CnCluster();
+            auto cluster = new CN_CLUSTER();
 
             Q.clear();
-            CnItem* root = head;
-            root->m_visited = true;
+            CN_ITEM* root = head;
+            root->SetVisited ( true );
 
             head = root->ListRemove();
 
@@ -758,16 +735,16 @@ public:
 
             while( Q.size() )
             {
-                CnItem* current = Q.front();
+                CN_ITEM* current = Q.front();
 
                 Q.pop_front();
                 cluster->Add( current );
 
-                for( CnItem* n : current->m_connected )
+                for( auto n : current->ConnectedItems() )
                 {
-                    if( !n->m_visited )
+                    if( !n->Visited() )
                     {
-                        n->m_visited    = true;
+                        n->SetVisited( true );
                         Q.push_back( n );
                         head = n->ListRemove();
                     }
@@ -779,23 +756,22 @@ public:
 
         cnt.show();
 
-        n = 0;
 
-        sort( m_clusters.begin(), m_clusters.end(), []( CnCluster* a, CnCluster* b ) {
+        std::sort( m_clusters.begin(), m_clusters.end(), []( CN_CLUSTER* a, CN_CLUSTER* b ) {
             return a->OriginNet() < b->OriginNet();
         } );
 
         int n_items = 0;
-
+        int n = 0;
         for( auto cl : m_clusters )
         {
-            // printf("cluster %d: net %d [%s], %d items, conflict: %d, orphan: %d \n", n, cl->OriginNet(), (const char *) cl->OriginNetName(), cl->Size(), !!cl->IsConflicting(), !!cl->IsOrphaned()  );
-            // cl->Dump();
+             printf("cluster %d: net %d [%s], %d items, conflict: %d, orphan: %d \n", n, cl->OriginNet(), (const char *) cl->OriginNetName(), cl->Size(), !!cl->IsConflicting(), !!cl->IsOrphaned()  );
+             cl->Dump();
             n++;
             n_items += cl->Size();
         }
 
-        printf( "all cluster items : %d\n", n_items );
+//        printf( "all cluster items : %d\n", n_items );
     }
 
     void SetBoard( shared_ptr<BOARD> aBoard )
@@ -823,22 +799,24 @@ public:
             for( auto pad : mod->PadsIter() )
                 Add( pad );
 
-        m_board =aBoard;
+
+
+        m_board = aBoard;
 
         printf( "zones : %lu, pads : %lu vias : %lu tracks : %lu\n",
-                zoneList->m_items.size(), padList->m_items.size(),
-                viaList->m_items.size(), trackList->m_items.size() );
+                zoneList.Size(), padList.Size(),
+                viaList.Size(), trackList.Size() );
     }
 
     template <class Container, class BItem>
-    void add( Container* c, BItem* brditem )
+    void add( Container& c, BItem* brditem )
     {
-        auto item = c->Add( brditem );
+        auto item = c.Add( brditem );
 
         m_itemMap.insert( ItemMapPair( brditem, item ) );
     }
 
-    void Remove ( BOARD_CONNECTED_ITEM *aItem )
+    void Remove( BOARD_CONNECTED_ITEM* aItem )
     {
         switch( aItem->Type() )
         {
@@ -858,7 +836,7 @@ public:
         case PCB_ZONE_AREA_T:
         case PCB_ZONE_T:
 
-            zoneList->Remove ( aItem );
+            zoneList.Remove( aItem );
 
             break;
 
@@ -887,7 +865,7 @@ public:
         case PCB_ZONE_AREA_T:
         case PCB_ZONE_T:
 
-            for( auto zitem : zoneList->Add( static_cast<ZONE_CONTAINER*>(aItem) ) )
+            for( auto zitem : zoneList.Add( static_cast<ZONE_CONTAINER*>(aItem) ) )
             {
                 m_itemMap.insert( ItemMapPair( aItem, zitem ) );
             }
@@ -907,24 +885,24 @@ public:
     {
         int net;
         wxString netname;
-        BOARD_CONNECTED_ITEM *a, *b;
+        BOARD_CONNECTED_ITEM* a, * b;
         VECTOR2I anchorA, anchorB;
     };
 
 // PUBLIC API
-    void PropagateNets();
-    void FindIsolatedCopperIslands( ZONE_CONTAINER *aZone, std::vector<int>& aIslands );
-    bool CheckConnectivity( vector<CnDisjointNetEntry>& aReport );
+    void    PropagateNets();
+    void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
+    bool    CheckConnectivity( vector<CnDisjointNetEntry>& aReport );
 
 
-    CnPadList* padList;
-    CnTrackList* trackList;
-    CnViaList* viaList;
-    CnZoneList* zoneList;
+    CN_PAD_LIST padList;
+    CN_TRACK_LIST trackList;
+    CN_VIA_LIST viaList;
+    CN_ZONE_LIST zoneList;
 
-    using ItemMapPair = pair <BOARD_ITEM*, CnItem*>;
+    using ItemMapPair = pair <BOARD_ITEM*, CN_ITEM*>;
 
-    unordered_multimap<BOARD_ITEM*, CnItem*> m_itemMap;
+    unordered_multimap<BOARD_ITEM*, CN_ITEM*> m_itemMap;
 };
 
 
@@ -949,13 +927,14 @@ void loadBoard( string name )
     }
 }
 
+
 void saveBoard( shared_ptr<BOARD> board, string name )
 {
     PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD ) );
 
     try
     {
-        pi->Save( name, board.get(),  NULL );
+        pi->Save( name, board.get(), NULL );
     }
     catch( const IO_ERROR& ioe )
     {
@@ -968,7 +947,7 @@ void saveBoard( shared_ptr<BOARD> board, string name )
 }
 
 
-class CONNECTIVITY_DATA : public CnConnectivity
+class CONNECTIVITY_DATA
 {
     // add , remove, modify
     // PropageteNets()
@@ -979,18 +958,17 @@ class CONNECTIVITY_DATA : public CnConnectivity
     // OrphanCount()
     // UnconnectedCount()
     // ConflictCount()
+private:
+    CN_CONNECTIVITY *m_pimpl;
 };
 
-void CnConnectivity::update()
+void CN_CONNECTIVITY::update()
 {
-
 }
 
 
-void CnConnectivity::propagateConnections()
+void CN_CONNECTIVITY::propagateConnections()
 {
-
-
     for( auto cluster : m_clusters )
     {
         if( cluster->IsConflicting() )
@@ -999,18 +977,19 @@ void CnConnectivity::propagateConnections()
         }
         else if( cluster->IsOrphaned() )
         {
-            printf( "Skipping orphaned cluster %p [net: %s]\n", cluster, (const char *)cluster->OriginNetName() );
+            printf( "Skipping orphaned cluster %p [net: %s]\n", cluster,
+                    (const char*) cluster->OriginNetName() );
         }
         else if( cluster->HasValidNet() )
         {
             // normal cluster: just propagate from the pads
             int n_changed = 0;
 
-            for( auto item : cluster->m_items )
+            for( auto item : *cluster )
             {
-                if( item->m_canChangeNet )
+                if( item->CanChangeNet() )
                 {
-                    item->m_item->SetNetCode( cluster->OriginNet() );
+                    item->Parent()->SetNetCode( cluster->OriginNet() );
                     n_changed++;
                 }
             }
@@ -1029,77 +1008,82 @@ void CnConnectivity::propagateConnections()
 }
 
 
-void CnConnectivity::PropagateNets()
+void CN_CONNECTIVITY::PropagateNets()
 {
     searchConnections( false );
     searchClusters( false );
     propagateConnections();
 }
 
-void CnConnectivity::FindIsolatedCopperIslands( ZONE_CONTAINER *aZone, std::vector<int>& aIslands )
-{
-    //auto range = m_itemMap.equal_range( (BOARD_ITEM *)aZone );
-    aIslands.clear();
-    zoneList->Remove ( aZone );
-    Add ( aZone );
 
-    //zoneList->Remove ( aZone );
+void CN_CONNECTIVITY::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands )
+{
+    // auto range = m_itemMap.equal_range( (BOARD_ITEM *)aZone );
+    aIslands.clear();
+    zoneList.Remove( aZone );
+    Add( aZone );
+
+    // zoneList->Remove ( aZone );
     searchConnections( true );
     searchClusters( true );
 
-    for ( auto cluster : m_clusters )
+    for( auto cluster : m_clusters )
         if( cluster->Contains( aZone ) && cluster->IsOrphaned() )
         {
-            //printf("cluster %p found orphaned : %d\n", cluster, !!cluster->IsOrphaned());
-            for ( auto z: cluster->m_items )
+            // printf("cluster %p found orphaned : %d\n", cluster, !!cluster->IsOrphaned());
+            for( auto z : *cluster )
             {
-                if ( z -> m_item == aZone )
+                if( z->Parent() == aZone )
                 {
-
-                    aIslands.push_back ( static_cast<CnZone*>(z) -> m_subpolyIndex);
-
+                    aIslands.push_back( static_cast<CN_ZONE*>(z)->SubpolyIndex() );
                 }
             }
         }
 
-        printf ("Found isolated islands : ");
-        for ( auto c : aIslands)
-            printf("%d ", c);
-        printf("\n");
 
+
+    printf( "Found isolated islands : " );
+
+    for( auto c : aIslands )
+        printf( "%d ", c );
+
+    printf( "\n" );
 }
 
 
-bool CnConnectivity::CheckConnectivity( vector<CnDisjointNetEntry>& aReport )
+bool CN_CONNECTIVITY::CheckConnectivity( vector<CnDisjointNetEntry>& aReport )
 {
     searchConnections( true );
     searchClusters( true );
 
     int maxNetCode = 0;
 
-    for ( auto cluster : m_clusters )
-        maxNetCode = std::max(maxNetCode, cluster->OriginNet() );
+    for( auto cluster : m_clusters )
+        maxNetCode = std::max( maxNetCode, cluster->OriginNet() );
 
-    for( int net = 1; net <= maxNetCode; net++)
+    for( int net = 1; net <= maxNetCode; net++ )
     {
         int count = 0;
         wxString name;
 
-        for ( auto cluster : m_clusters )
+        for( auto cluster : m_clusters )
             if( cluster->OriginNet() == net )
             {
                 name = cluster->OriginNetName();
                 count++;
             }
 
-        if ( count > 1 )
-            printf("Net %d [%s] is not completely routed (%d disjoint clusters).\n", net, (const char *)name, count );
 
+
+        if( count > 1 )
+            printf( "Net %d [%s] is not completely routed (%d disjoint clusters).\n", net,
+                    (const char*) name, count );
     }
 };
 
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[] )
+{
     if( argc < 2 )
     {
         printf( "usage : %s board_file\n", argv[0] );
@@ -1108,38 +1092,37 @@ int main( int argc, char* argv[] ) {
 
     loadBoard( argv[1] );
 
-    CnConnectivity conns;
+    CN_CONNECTIVITY conns;
 
     conns.SetBoard( m_board );
 
     vector<int> islands;
-    vector<CnConnectivity::CnDisjointNetEntry> report;
+    vector<CN_CONNECTIVITY::CnDisjointNetEntry> report;
 
     conns.PropagateNets();
 
-    #if 1
-    for( int i = 0; i <m_board->GetAreaCount(); i++)
+#if 0
+    for( int i = 0; i <m_board->GetAreaCount(); i++ )
     {
-            ZONE_CONTAINER *zone =  m_board->GetArea(i);
-            conns.FindIsolatedCopperIslands( zone, islands );
+        ZONE_CONTAINER* zone = m_board->GetArea( i );
+        conns.FindIsolatedCopperIslands( zone, islands );
 
 
-            std::sort (islands.begin(), islands.end(),  std::greater<int>() );
+        std::sort( islands.begin(), islands.end(), std::greater<int>() );
 
-            for ( auto idx : islands )
-            {
-            //    printf("Delete poly %d/%d\n", idx, zone->FilledPolysList().OutlineCount());
-                zone->FilledPolysList().DeletePolygon( idx );
-            }
+        for( auto idx : islands )
+        {
+            // printf("Delete poly %d/%d\n", idx, zone->FilledPolysList().OutlineCount());
+            zone->FilledPolysList().DeletePolygon( idx );
+        }
 
-            conns.Remove ( zone );
-            conns.Add ( zone );
+        conns.Remove( zone );
+        conns.Add( zone );
     }
-    #endif
 
-    conns.CheckConnectivity(report);
+    conns.CheckConnectivity( report );
 
-    saveBoard( m_board, "tmp.kicad_pcb");
+    saveBoard( m_board, "tmp.kicad_pcb" );
     return 0;
     // conns.propagateNets();
 
@@ -1154,4 +1137,6 @@ int main( int argc, char* argv[] ) {
      *  }*/
     // lst.Build();
     // lst.searchConnections();
+    #endif
+    return 0;
 }

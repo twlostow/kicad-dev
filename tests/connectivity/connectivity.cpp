@@ -570,121 +570,127 @@ public:
 
 };
 
-class CN_CONNECTIVITY
+class CN_CONNECTIVITY_IMPL
 {
     vector<CN_CLUSTER*> m_clusters;
 
 public:
 
-    CN_CONNECTIVITY()
+    CN_CONNECTIVITY_IMPL()
     {
 
     }
 
     void searchConnections( bool aIncludeZones = false )
     {
+        auto checkForConnection = [] ( const CN_ANCHOR& point, CN_ITEM *aRefItem, int aMaxDist = 0)
+                        {
+                            const auto parent = aRefItem->Parent();
 
+                            if( parent == point.Item()->Parent() )
+                                return;
+
+                            if( !( parent->GetLayerSet() &
+                                   point.Item()->Parent()->GetLayerSet() ).any() )
+                                return;
+
+                            switch ( parent->Type() )
+                            {
+                                case PCB_PAD_T:
+                                case PCB_VIA_T:
+
+                                    if( parent->HitTest( wxPoint( point.Pos().x, point.Pos().y ) ) )
+                                        CN_ITEM::Connect( aRefItem, point.Item() );
+
+                                    break;
+                                case PCB_TRACE_T:
+                                {
+                                    const auto track = static_cast<TRACK*> ( parent );
+
+                                    const VECTOR2I d_start( VECTOR2I( track->GetStart() ) - point.Pos() );
+                                    const VECTOR2I d_end( VECTOR2I( track->GetEnd() ) - point.Pos() );
+
+                                    if( d_start.EuclideanNorm() < aMaxDist
+                                        || d_end.EuclideanNorm() < aMaxDist )
+                                        CN_ITEM::Connect( aRefItem, point.Item() );
+                                    break;
+
+                                }
+
+                                case PCB_ZONE_T:
+                                case PCB_ZONE_AREA_T:
+                                {
+                                    const auto zone = static_cast<ZONE_CONTAINER*> ( parent );
+                                    auto zoneItem = static_cast<CN_ZONE*> ( aRefItem );
+                                    const auto& polys = zone->GetFilledPolysList();
+
+                                    if( point.Item()->Parent()->GetNetCode() != parent->GetNetCode() )
+                                        return;
+
+                                    if( !( zone->GetLayerSet() &
+                                                               point.Item()->Parent()->GetLayerSet() ).any() )
+                                                            return;
+
+                                                        if( polys.Contains( point.Pos(), zoneItem->SubpolyIndex() ) )
+                                                            CN_ITEM::Connect( zoneItem, point.Item() );
+                                    break;
+
+                                }
+                                default :
+                                    printf("unhandled_type %d\n", parent->Type() );
+                                    assert ( false );
+                            }
+                        };
+
+        PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
 
         padList.ClearConnections();
         viaList.ClearConnections();
         trackList.ClearConnections();
         zoneList.ClearConnections();
 
-        PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
+        using namespace std::placeholders;
 
         for( auto padItem : padList )
         {
             auto pad = static_cast<D_PAD*> ( padItem->Parent() );
-            auto findFunc = [&] ( const CN_ANCHOR& point )
-                            {
-                                if( pad == point.Item()->Parent() )
-                                    return;
+            auto searchPads = std::bind( checkForConnection, _1, padItem );
 
-                                if( !( pad->GetLayerSet() &
-                                       point.Item()->Parent()->GetLayerSet() ).any() )
-                                    return;
-
-                                if( pad->HitTest( wxPoint( point.Pos().x, point.Pos().y ) ) )
-                                    CN_ITEM::Connect( padItem, point.Item() );
-                            };
-
-            padList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
-            trackList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
-            viaList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), findFunc );
+            padList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
+            trackList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
+            viaList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
         }
 
         for( auto& trackItem : trackList )
         {
             auto track = static_cast<TRACK*> ( trackItem->Parent() );
             int dist_max = track->GetWidth() / 2;
+            auto searchTracks = std::bind( checkForConnection, _1, trackItem, dist_max );
 
-            auto findFunc = [&] ( const CN_ANCHOR& point )
-                            {
-                                BOARD_CONNECTED_ITEM *parent = point.Item()->Parent();
-                                if( track == parent )
-                                    return;
-
-                                if( !( track->GetLayerSet() & parent->GetLayerSet() ).any() )
-                                    return;
-
-                                const VECTOR2I d_start( VECTOR2I( track->GetStart() ) - point.Pos() );
-                                const VECTOR2I d_end( VECTOR2I( track->GetEnd() ) - point.Pos() );
-
-                                if( d_start.EuclideanNorm() < dist_max
-                                    || d_end.EuclideanNorm() < dist_max )
-                                    CN_ITEM::Connect( trackItem, point.Item() );
-                            };
-
-            trackList.FindNearby( track->GetStart(), dist_max, findFunc );
-            trackList.FindNearby( track->GetEnd(), dist_max, findFunc );
+            trackList.FindNearby( track->GetStart(), dist_max, searchTracks );
+            trackList.FindNearby( track->GetEnd(), dist_max, searchTracks );
         }
 
         for( auto& viaItem : viaList )
         {
             auto via = static_cast<VIA*> ( viaItem->Parent() );
             int dist_max = via->GetWidth() / 2;
+            auto searchVias = std::bind( checkForConnection, _1, viaItem, dist_max );
 
-            auto findFunc = [&] ( const CN_ANCHOR& point )
-                            {
-                                if( via == point.Item()->Parent() )
-                                    return;
-
-                                if( !( via->GetLayerSet() &
-                                       point.Item()->Parent()->GetLayerSet() ).any() )
-                                    return;
-
-                                if( via->HitTest( wxPoint( point.Pos().x, point.Pos().y ) ) )
-                                    CN_ITEM::Connect( point.Item(), viaItem );
-                            };
-
-            viaList.FindNearby( via->GetStart(), dist_max, findFunc );
-            trackList.FindNearby( via->GetStart(), dist_max, findFunc );
+            viaList.FindNearby( via->GetStart(), dist_max, searchVias );
+            trackList.FindNearby( via->GetStart(), dist_max, searchVias );
         }
 
         if( aIncludeZones )
         {
-            for( auto& zi : zoneList )
+            for( auto& zoneItem : zoneList )
             {
-                auto zoneItem = static_cast<CN_ZONE*> ( zi );
-                auto zone = static_cast<ZONE_CONTAINER*> ( zoneItem->Parent() );
-                auto& polys = zone->GetFilledPolysList();
+                auto searchZones = std::bind( checkForConnection, _1, zoneItem );
 
-                auto findFunc = [&] ( const CN_ANCHOR& point )
-                                {
-                                    if( point.Item()->Parent()->GetNetCode() != zone->GetNetCode() )
-                                        return;
-
-                                    if( !( zone->GetLayerSet() &
-                                           point.Item()->Parent()->GetLayerSet() ).any() )
-                                        return;
-
-                                    if( polys.Contains( point.Pos(), zoneItem->SubpolyIndex() ) )
-                                        CN_ITEM::Connect( zoneItem, point.Item() );
-                                };
-
-                viaList.FindNearby( BOX2I(), findFunc );
-                trackList.FindNearby( BOX2I(), findFunc );
-                padList.FindNearby(  BOX2I(), findFunc );
+                // fixme: use bounding boxes
+                viaList.FindNearby( BOX2I(), searchZones );
+                trackList.FindNearby( BOX2I(), searchZones );
+                padList.FindNearby(  BOX2I(), searchZones );
             }
         }
 
@@ -765,8 +771,8 @@ public:
         int n = 0;
         for( auto cl : m_clusters )
         {
-             printf("cluster %d: net %d [%s], %d items, conflict: %d, orphan: %d \n", n, cl->OriginNet(), (const char *) cl->OriginNetName(), cl->Size(), !!cl->IsConflicting(), !!cl->IsOrphaned()  );
-             cl->Dump();
+             //printf("cluster %d: net %d [%s], %d items, conflict: %d, orphan: %d \n", n, cl->OriginNet(), (const char *) cl->OriginNetName(), cl->Size(), !!cl->IsConflicting(), !!cl->IsOrphaned()  );
+             //cl->Dump();
             n++;
             n_items += cl->Size();
         }
@@ -959,15 +965,15 @@ class CONNECTIVITY_DATA
     // UnconnectedCount()
     // ConflictCount()
 private:
-    CN_CONNECTIVITY *m_pimpl;
+    CN_CONNECTIVITY_IMPL *m_pimpl;
 };
 
-void CN_CONNECTIVITY::update()
+void CN_CONNECTIVITY_IMPL::update()
 {
 }
 
 
-void CN_CONNECTIVITY::propagateConnections()
+void CN_CONNECTIVITY_IMPL::propagateConnections()
 {
     for( auto cluster : m_clusters )
     {
@@ -1008,7 +1014,7 @@ void CN_CONNECTIVITY::propagateConnections()
 }
 
 
-void CN_CONNECTIVITY::PropagateNets()
+void CN_CONNECTIVITY_IMPL::PropagateNets()
 {
     searchConnections( false );
     searchClusters( false );
@@ -1016,7 +1022,7 @@ void CN_CONNECTIVITY::PropagateNets()
 }
 
 
-void CN_CONNECTIVITY::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands )
+void CN_CONNECTIVITY_IMPL::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands )
 {
     // auto range = m_itemMap.equal_range( (BOARD_ITEM *)aZone );
     aIslands.clear();
@@ -1051,7 +1057,7 @@ void CN_CONNECTIVITY::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vec
 }
 
 
-bool CN_CONNECTIVITY::CheckConnectivity( vector<CnDisjointNetEntry>& aReport )
+bool CN_CONNECTIVITY_IMPL::CheckConnectivity( vector<CnDisjointNetEntry>& aReport )
 {
     searchConnections( true );
     searchClusters( true );
@@ -1092,16 +1098,16 @@ int main( int argc, char* argv[] )
 
     loadBoard( argv[1] );
 
-    CN_CONNECTIVITY conns;
+    CN_CONNECTIVITY_IMPL conns;
 
     conns.SetBoard( m_board );
 
     vector<int> islands;
-    vector<CN_CONNECTIVITY::CnDisjointNetEntry> report;
+    vector<CN_CONNECTIVITY_IMPL::CnDisjointNetEntry> report;
 
     conns.PropagateNets();
 
-#if 0
+#if 1
     for( int i = 0; i <m_board->GetAreaCount(); i++ )
     {
         ZONE_CONTAINER* zone = m_board->GetArea( i );

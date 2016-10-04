@@ -89,7 +89,8 @@ struct PointHash
     enum HashFlag {
         EMPTY = 1,
         FULL = 2,
-        PARTIAL= 4
+        LEADING = 3,
+        TRAILING = 4
     };
 
     struct Edge {
@@ -108,6 +109,7 @@ struct PointHash
 
     using EdgeList = std::vector<Edge> ;
     vector<int> m_leading;
+    vector<int> m_gridFlags;
     vector<EdgeList> m_grid;
     vector<EdgeList> h_edges;
     vector<EdgeList> v_edges;
@@ -120,7 +122,7 @@ struct PointHash
 
     }
 
-    const EdgeList fillList ( int x, int y )
+    const EdgeList fillList ( int x, int y, int flag )
     {
             int px      = (int) ( (double) x / (double)m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
             int py      = (int) ( (double) y / (double)m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
@@ -164,15 +166,33 @@ struct PointHash
                 if ( e.ip >= py && e.ip <= py_next )
                     usedEdges.insert(e);
             }
+
+            int ip_min = px_next, t_min = 0;
+
             for( auto e : h_edges[y] )
             {
                 if ( e.ip >= px && e.ip <= px_next )
+                {
+                    if (e.ip < ip_min)
+                    {
+                        ip_min = e.ip;
+                        t_min = m_leading[e.index];
+                    }
                     usedEdges.insert(e);
+                }
             }
+
             for( auto e : h_edges[y+1] )
             {
                 if ( e.ip >= px && e.ip <= px_next )
+                {
+                    if (e.ip < ip_min)
+                    {
+                        ip_min = e.ip;
+                        t_min = m_leading[e.index];
+                    }
                     usedEdges.insert(e);
+                }
             }
 
             //for ( auto i = first_h ; i <= last_h; ++i )
@@ -196,6 +216,11 @@ struct PointHash
 
                     if(s.A.x >= px && s.A.y >= py && s.A.x <= px_next && s.A.y <= py_next)
                     {
+                        if (s.A.x < ip_min)
+                        {
+                            ip_min = s.A.x;
+                            t_min = m_leading[i];
+                        }
                 //        if( usedEdges.find( i ) == usedEdges.end() )
                 //        {
                             usedEdges.insert( Edge( i, 0 ) );
@@ -203,13 +228,37 @@ struct PointHash
                 //        }
                     }
             }
+
+
+
             #endif
-//            printf("cell (%d, %d): %d edges\n", x, y, usedEdges.size());
+            printf("cell (%d, %d): %d edges (%.1f%%) [%d]\n", x, y, usedEdges.size(), 100.0 * (double)usedEdges.size()/(double)m_outline.SegmentCount(), t_min);
 
             for ( auto e: usedEdges )
                 rv.push_back(e);
 
             return rv;
+    }
+
+    VECTOR2I grid2poly( VECTOR2I p )
+    {
+        int px      = (int) ( (double) p.x / m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
+        int py      = (int) ( (double) p.y / m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+
+        return VECTOR2I(px, py);
+    }
+
+    VECTOR2I poly2grid( VECTOR2I p )
+    {
+        int px      =  (int) ( (double)(p.x - m_bbox.GetPosition().x) * m_gridSize / (double) m_bbox.GetWidth() );
+        int py      =  (int) ( (double)(p.y - m_bbox.GetPosition().y) * m_gridSize / (double) m_bbox.GetHeight() );
+
+        if ( px < 0 ) px = 0;
+        if ( px >= m_gridSize ) px = m_gridSize - 1;
+        if ( py < 0 ) py = 0;
+        if ( py >= m_gridSize ) py = m_gridSize - 1;
+
+        return VECTOR2I(px, py);
     }
 
     PointHash( const SHAPE_LINE_CHAIN& aPolyOutline, int gridSize )
@@ -309,8 +358,49 @@ struct PointHash
 
         }
 
+        for(int y = 0; y < gridSize; y++)
+            for(int x = 0; x < gridSize; x++)
+            {
+                m_grid.push_back( EdgeList() );
+            }
 
+        for (int i = 0; i < m_outline.SegmentCount(); i++)
+        {
+            const SEG& edge = m_outline.CSegment(i);
+            auto dir = edge.B - edge.A;
 
+            double l = edge.Length();
+            double delta = (double) std::max( m_bbox.GetWidth(), m_bbox.GetHeight() ) / (double) m_gridSize;
+            int steps = (int)(2.0 * l / delta);
+
+            printf("edge %d : %d steps\n", i, steps);
+
+            double dx = (double)dir.x / steps;
+            double dy = (double)dir.y / steps;
+
+            VECTOR2I p_prev;
+
+            auto p = poly2grid ( edge.A );
+            m_grid[ m_gridSize * p.y + p.x ].push_back( Edge (i, 0 ));
+            p = poly2grid ( edge.B );
+            m_grid[ m_gridSize * p.y + p.x ].push_back( Edge (i, 0 ));
+
+            for(int j = 0; j < steps; j++ )
+            {
+                auto p = poly2grid ( VECTOR2I ( edge.A.x + (double) j * dx, edge.A.y + (double) j * dy ) );
+
+                if( j > 0 && p != p_prev )
+                {
+                    printf("scan (%d, %d)\n", p.x, p.y);
+
+                    m_grid[ m_gridSize * p.y + p.x ].push_back( Edge (i, 0 ));
+                }
+            }
+            //for ( )
+
+        }
+
+#if 0
         for(int k = 0; k <= gridSize; k++)
         {
 
@@ -370,14 +460,20 @@ struct PointHash
             //std::sort ( v_edges[k].begin(), v_edges[k].end() );
         }
 
+#endif
 
         FILE *f=fopen("log.log","wb");
         fprintf(f,"group crappy-polygon 0\n");
+
+
+
 
         for(int i = 0; i < m_outline.SegmentCount(); i++)
         {
             const SEG& edge = m_outline.CSegment(i);
             fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", m_leading[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+
+
         }
 
         fprintf(f,"endgroup\n");
@@ -386,8 +482,10 @@ struct PointHash
         for(int y = 0; y < gridSize; y++)
             for(int x = 0; x < gridSize; x++)
             {
-                const EdgeList l = fillList ( x, y );
-                m_grid.push_back(l);
+                int flag = 0;
+                //const EdgeList l = fillList ( x, y, flag );
+                //m_grid.push_back(l);
+                m_gridFlags.push_back(flag);
 
                 int px      = (int) ( (double) x / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
                 int px_next = (int) ( (double) (x+1) / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
@@ -397,7 +495,7 @@ struct PointHash
                 fprintf(f,"group crappy-polygon 0\n");
                 fprintf(f,"item 0 cell 0 0 0 0 0 line 0 0 linechain 4 1 %d %d %d %d %d %d %d %d\n",px, py, px_next, py, px_next, py_next, px, py_next);
 
-                for ( auto e : l )
+                for ( auto e : m_grid[m_gridSize * y + x] )
                 {
 
                     const SEG& edge = m_outline.CSegment(e.index);
@@ -639,8 +737,11 @@ int main( int argc, char* argv[] ) {
             {
                 if(  polys.COutline(o).PointCount() > 20000 )
                 {
-                    PointHash p (polys.COutline(o), 32 );
-                    return 0;
+                    PROF_COUNTER cnt ("build-poly"); cnt.start();
+                    PointHash p (polys.COutline(o), 8 );
+                    cnt.show();
+
+                //    return 0;
                 }
             }
 

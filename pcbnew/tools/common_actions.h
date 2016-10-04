@@ -69,6 +69,7 @@ public:
     // Edit Tool
     /// Activation of the edit tool
     static TOOL_ACTION editActivate;
+    static TOOL_ACTION drag;
 
     /// Rotation of selected objects
     static TOOL_ACTION rotate;

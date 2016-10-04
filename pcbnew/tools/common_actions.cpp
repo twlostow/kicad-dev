@@ -100,6 +100,10 @@ TOOL_ACTION COMMON_ACTIONS::editActivate( "pcbnew.InteractiveEdit",
         AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_MOVE_ITEM ),
         _( "Move" ), _( "Moves the selected item(s)" ), move_xpm, AF_ACTIVATE );
 
+TOOL_ACTION COMMON_ACTIONS::drag( "pcbnew.InteractiveEdit.dragItem",
+        AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_DRAG_TRACK_KEEP_SLOPE ),
+        _( "Drag" ), _( "Drags the selected item(s)" ), drag_track_segment_xpm );
+
 TOOL_ACTION COMMON_ACTIONS::duplicate( "pcbnew.InteractiveEdit.duplicate",
         AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_DUPLICATE_ITEM ),
         _( "Duplicate" ), _( "Duplicates the selected item(s)" ), duplicate_module_xpm );

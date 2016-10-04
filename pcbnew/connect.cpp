@@ -38,8 +38,12 @@
 // Helper classes to handle connection points
 #include <connect.h>
 
+const bool g_UseLegacyConnectionAlgo = false;
+
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb );
 extern void Merge_SubNets_Connected_By_CopperAreas( BOARD* aPcb, int aNetcode );
+
+
 
 // Local functions
 static void RebuildTrackChain( BOARD* pcb );

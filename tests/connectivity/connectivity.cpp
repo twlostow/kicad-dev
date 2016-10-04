@@ -1,3 +1,7 @@
+// TODO: overlapping zones on the same layer
+// TODO: improve point-in-polygon performance
+// TODO: RN_NET could operate on CN_CLUSTERs
+
 #include <class_board.h>
 #include <class_pad.h>
 #include <class_module.h>
@@ -734,6 +738,12 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
                         }
                     };
 
+    auto checkInterZoneConnection = [] ( const CN_ANCHOR& point, CN_ITEM *aRefZone )
+    {
+//        SHAPE_LINE_CHAIN& outline_a = static_cast<CN_ZONE*> aZone;
+    };
+
+
     PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
 
     m_padList.ClearConnections();
@@ -783,6 +793,8 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
             m_viaList.FindNearby( BOX2I(), searchZones );
             m_trackList.FindNearby( BOX2I(), searchZones );
             m_padList.FindNearby(  BOX2I(), searchZones );
+            m_zoneList.FindNearby(  BOX2I(),  std::bind( checkInterZoneConnection, _1, zoneItem ) );
+
         }
     }
 
@@ -896,51 +908,6 @@ void CN_CONNECTIVITY_IMPL::SetBoard( BOARD* aBoard )
 }
 
 
-using namespace std;
-
-shared_ptr<BOARD> m_board;
-
-
-// for( auto mod : aBoard->Modules() )
-// for( auto pad : mod->PadsIter() )
-
-void loadBoard( string name )
-{
-    PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD ) );
-
-    try
-    {
-        m_board.reset( pi->Load( name, NULL, NULL ) );
-    }
-    catch( const IO_ERROR& ioe )
-    {
-        wxString msg = wxString::Format( _( "Error loading board.\n%s" ),
-                ioe.What() );
-
-        fprintf( stderr, "%s\n", (const char*) msg.mb_str() );
-        exit( -1 );
-    }
-}
-
-
-void saveBoard( shared_ptr<BOARD> board, string name )
-{
-    PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD ) );
-
-    try
-    {
-        pi->Save( name, board.get(), NULL );
-    }
-    catch( const IO_ERROR& ioe )
-    {
-        wxString msg = wxString::Format( _( "Error saving board.\n%s" ),
-                ioe.What() );
-
-        fprintf( stderr, "%s\n", (const char*) msg.mb_str() );
-        exit( -1 );
-    }
-}
-
 
 class CONNECTIVITY_DATA
 {
@@ -1041,7 +1008,7 @@ void CN_CONNECTIVITY_IMPL::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std
     wxLogTrace( "CN", "Found %d isolated islands\n", aIslands.size() );
 }
 
-bool CN_CONNECTIVITY_IMPL::CheckConnectivity( vector<DISJOINT_NET_ENTRY>& aReport )
+bool CN_CONNECTIVITY_IMPL::CheckConnectivity( std::vector<DISJOINT_NET_ENTRY>& aReport )
 {
     searchConnections( true );
     searchClusters( true );
@@ -1069,6 +1036,47 @@ bool CN_CONNECTIVITY_IMPL::CheckConnectivity( vector<DISJOINT_NET_ENTRY>& aRepor
     }
 };
 
+using namespace std;
+
+shared_ptr<BOARD> m_board;
+
+void loadBoard( string name )
+{
+    PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD ) );
+
+    try
+    {
+        m_board.reset( pi->Load( name, NULL, NULL ) );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        wxString msg = wxString::Format( _( "Error loading board.\n%s" ),
+                ioe.What() );
+
+        fprintf( stderr, "%s\n", (const char*) msg.mb_str() );
+        exit( -1 );
+    }
+}
+
+
+void saveBoard( shared_ptr<BOARD> board, string name )
+{
+    PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD ) );
+
+    try
+    {
+        pi->Save( name, board.get(), NULL );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        wxString msg = wxString::Format( _( "Error saving board.\n%s" ),
+                ioe.What() );
+
+        fprintf( stderr, "%s\n", (const char*) msg.mb_str() );
+        exit( -1 );
+    }
+}
+
 
 int main( int argc, char* argv[] )
 {
@@ -1089,18 +1097,16 @@ int main( int argc, char* argv[] )
 
     conns.PropagateNets();
 
-#if 1
     for( int i = 0; i <m_board->GetAreaCount(); i++ )
     {
         ZONE_CONTAINER* zone = m_board->GetArea( i );
         conns.FindIsolatedCopperIslands( zone, islands );
 
-
         std::sort( islands.begin(), islands.end(), std::greater<int>() );
 
         for( auto idx : islands )
         {
-            // printf("Delete poly %d/%d\n", idx, zone->FilledPolysList().OutlineCount());
+            printf("Delete poly %d/%d\n", idx, zone->FilledPolysList().OutlineCount());
             zone->FilledPolysList().DeletePolygon( idx );
         }
 
@@ -1111,20 +1117,5 @@ int main( int argc, char* argv[] )
     conns.CheckConnectivity( report );
 
     saveBoard( m_board, "tmp.kicad_pcb" );
-    return 0;
-    // conns.propagateNets();
-
-    /*{
-     *   PROF_COUNTER cnt ("build-pad-list"); cnt.start();
-     *   m_padList.Build( )
-     *   cnt.show();
-     *  }
-     *  {
-     *   PROF_COUNTER cnt ("build-track-via-list"); cnt.start();
-     *   cnt.show();
-     *  }*/
-    // lst.Build();
-    // lst.searchConnections();
-    #endif
     return 0;
 }

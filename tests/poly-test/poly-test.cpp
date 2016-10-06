@@ -97,16 +97,16 @@ struct POLY_GRID_PARTITION
 
     const VECTOR2I grid2poly( const VECTOR2I &p ) const
     {
-        int px      = (int) ( (double) p.x / m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
-        int py      = (int) ( (double) p.y / m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+        int px      = (int) floor( (double) p.x / m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
+        int py      = (int) floor( (double) p.y / m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
 
         return VECTOR2I(px, py);
     }
 
     const VECTOR2I poly2grid( const VECTOR2I &p ) const
     {
-        int px      =  (int) ( (double)(p.x - m_bbox.GetPosition().x) * m_gridSize / (double) m_bbox.GetWidth() );
-        int py      =  (int) ( (double)(p.y - m_bbox.GetPosition().y) * m_gridSize / (double) m_bbox.GetHeight() );
+        int px      =  (int) floor( (double)(p.x - m_bbox.GetPosition().x) * m_gridSize / (double) m_bbox.GetWidth() );
+        int py      =  (int) floor( (double)(p.y - m_bbox.GetPosition().y) * m_gridSize / (double) m_bbox.GetHeight() );
 
         if ( px < 0 ) px = 0;
         if ( px >= m_gridSize ) px = m_gridSize - 1;
@@ -151,16 +151,14 @@ struct POLY_GRID_PARTITION
             else if (dir.Dot(ref_h) < 0)
                 flags |= TRAIL_H;
 
-            /*if (dir.Dot(ref_v) > 0)
-                flags |= LEAD_V;
-            else if (dir.Dot(ref_v) < 0)
-                flags |= TRAIL_V;*/
-
             m_flags.push_back( flags );
 
+            if( !flags )
+                continue;
             double l = edge.Length();
-            double delta = (double) std::max( m_bbox.GetWidth(), m_bbox.GetHeight() ) / (double) m_gridSize;
-            int steps = (int)(2.0 * l / delta);
+
+            double delta = (double) std::min( m_bbox.GetWidth(), m_bbox.GetHeight() ) / (double) m_gridSize;
+            int steps = (int)(3.0 * l / delta);
 
             //printf("edge %d : %d steps\n", i, steps);
 
@@ -174,7 +172,7 @@ struct POLY_GRID_PARTITION
             p = poly2grid ( edge.B );
             m_grid[ m_gridSize * p.y + p.x ].push_back( i );
 
-            for(int j = 0; j < steps; j++ )
+            for(int j = 0; j <= steps; j++ )
             {
                 auto p = poly2grid ( VECTOR2I ( edge.A.x + (double) j * dx, edge.A.y + (double) j * dy ) );
 
@@ -197,7 +195,7 @@ struct POLY_GRID_PARTITION
             fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", m_flags[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
         }
 
-        int np = 200;
+        int np = 50;
         for(int y = 0; y < np; y++)
             for(int x = 0; x < np; x++)
             {
@@ -211,7 +209,7 @@ struct POLY_GRID_PARTITION
             }
 
         fprintf(f,"endgroup\n");
-
+        return;
         for(int y = 0; y < gridSize; y++)
             for(int x = 0; x < gridSize; x++)
             {
@@ -259,53 +257,67 @@ struct POLY_GRID_PARTITION
         {
             dist_max = INT_MAX;
             nearest = -1;
+            nearest_prev = -1;
         };
 
+        int dist_prev;
         int dist_max;
+        int nearest_prev;
         int nearest;
     };
 
-    template<class swapCoordsType>
-        void scanCell ( ScanState& state, const EdgeList& cell, const VECTOR2I& aP, int flagMask ) const
+   void scanCell ( ScanState& state, const EdgeList& cell, const VECTOR2I& aP ) const
+    {
+        for ( auto index : cell )
         {
-            swapCoordsType swp;
+            const SEG& edge = m_outline.CSegment(index);
 
-            for ( auto index : cell )
+            if ( edge.A.y == edge.B.y )  // horizontal edge
+                    continue;
+
+            if ( inRange ( edge.A.y, edge.B.y, aP.y ) )
             {
-                const SEG& edge = m_outline.CSegment(index);
+                    int dist = 0;
 
-                if ( swp(edge.A).y == swp(edge.B).y )  // horizontal edge
-                    continue;
+                    if( edge.A.y == aP.y )
+                    {
+                        //printf("v0\n");
+                        dist = - (aP.x - edge.A.x);
+                    } else if (edge.B.y == aP.y)
+                    {
+                        //printf("v1\n");
+                        dist = - (aP.x - edge.B.x);
+                    } else {
+                        const VECTOR2I  e( edge.B - edge.A );
+                        const VECTOR2I  ff( 1 , 0 );
+                        const VECTOR2I  ac( aP - edge.A );
 
-                if ( ( m_flags[index] & flagMask ) == 0)
-                    continue;
+                        auto d = ff.Cross( e );
+                        auto q = e.Cross( ac );
 
-                if ( inRange ( swp(edge.A).y, swp(edge.B).y, swp(aP).y ) )
-                {
-                    SEG t ( VECTOR2I( aP.x, aP.y ), VECTOR2I( aP.x + 1, aP.y )  );
+                        using ecoord = VECTOR2I::extended_type;
 
-                    const VECTOR2I  e( edge.B - edge.A );
-                    const VECTOR2I  ff( swp ( VECTOR2I( 1 , 0 ) ) );
-                    const VECTOR2I  ac( aP - edge.A );
-
-                    auto d = ff.Cross( e );
-                    auto p = ff.Cross( ac );
-                    auto q = e.Cross( ac );
-
-                    using ecoord = VECTOR2I::extended_type;
-
-                    auto dist = rescale( q, (ecoord) 1, d );
-                    //printf("dist %d\n", dist);
-
+                        dist = rescale( q, (ecoord) 1, d );
+                        }
                     if (dist == 0)
                     {
+                        if( state.nearest_prev < 0 || state.nearest != index)
+                        {
+                            state.dist_prev = state.dist_max;
+                            state.nearest_prev = state.nearest;
+                        }
                         state.nearest = index;
                         state.dist_max = 0;
                         return;
                     }
 
-                    if( dist != 0 && std::abs(dist) < std::abs(state.dist_max) )
+                    if( dist != 0 && std::abs(dist) <= std::abs(state.dist_max) )
                     {
+                        if( state.nearest_prev < 0 || state.nearest != index)
+                        {
+                            state.dist_prev = state.dist_max;
+                            state.nearest_prev = state.nearest;
+                        }
                         state.dist_max = dist;
                         state.nearest = index;
                     }
@@ -313,43 +325,28 @@ struct POLY_GRID_PARTITION
             }
         }
 
-    int ContainsPoint ( const VECTOR2I& aP ) const
+        SEG nearestEdge;
+
+    int ContainsPoint ( const VECTOR2I& aP )// const
     {
         const auto gridPoint = poly2grid (aP);
 
-        struct directCoords
-        {
-             const VECTOR2I operator() ( const VECTOR2I &p ) { return p; };
-        };
-        struct reverseCoords
-        {
-             const VECTOR2I operator() ( const VECTOR2I &p ) { return VECTOR2I(p.y, p.x); };
-        };
+
 
         if (!m_bbox.Contains(aP))
             return false;
-
-            int flag = 0;
-            int dist_max = INT_MAX;
-            int nearest = -1;
 
 
             ScanState state;
 
             const EdgeList& cell = m_grid[ m_gridSize * gridPoint.y + gridPoint.x ];
 
-            scanCell<directCoords> ( state, cell, aP, LEAD_H | TRAIL_H );
-
-            if ( state.nearest < 0)
-            {
-                state =  ScanState();
-                scanCell<reverseCoords> ( state, cell, aP, LEAD_V | TRAIL_V );
-            }
+            scanCell ( state, cell, aP );
 
             if ( state.nearest < 0)
             {
                 state = ScanState();
-                for ( int d = 1; d < m_gridSize; d++)
+                for ( int d = 1; d <= m_gridSize; d++)
                 {
                     int xl = gridPoint.x - d;
                     int xh = gridPoint.x + d;
@@ -357,124 +354,58 @@ struct POLY_GRID_PARTITION
                     if( xl >= 0 )
                     {
                         const EdgeList& cell = m_grid[ m_gridSize * gridPoint.y + xl ];
-                        scanCell<directCoords> ( state, cell, aP, LEAD_H | TRAIL_H );
+                        scanCell ( state, cell, aP );
                         if( state.nearest >= 0)
                             break;
                     }
                     if( xh < m_gridSize )
                     {
                         const EdgeList& cell = m_grid[ m_gridSize * gridPoint.y + xh ];
-                        scanCell<directCoords> ( state, cell, aP, LEAD_H | TRAIL_H );
+                        scanCell ( state, cell, aP );
                         if( state.nearest >= 0)
                             break;
                     }
                 }
             }
 
-            /*for ( auto index : cell )
+            //if(state.nearest > 0 && staten.e== state.nearest_prev)
+            printf("nearest %d prev %d d1 %d d2 %d\n", state.nearest, state.nearest_prev, state.dist_max, state.dist_prev );
+
+            if ( state.nearest >= 0 )
             {
-                const SEG& edge = m_outline.CSegment(index);
-
-                if ( edge.A.y == edge.B.y )  // horizontal edge
-                    continue;
-
-                if ( ( m_flags[index] & (LEAD_H | TRAIL_H) ) == 0)
-                    continue;
-
-                if ( inRange ( edge.A.y, edge.B.y, aP.y ) )
-                {
-                    SEG t ( VECTOR2I( aP.x, aP.y ), VECTOR2I( aP.x + 1, aP.y )  );
-
-                    const VECTOR2I  e( edge.B - edge.A );
-                    const VECTOR2I  ff( t.B - t.A );
-                    const VECTOR2I  ac( t.A - edge.A );
-
-
-                    auto d = ff.Cross( e );
-                    auto p = ff.Cross( ac );
-                    auto q = e.Cross( ac );
-
-                    using ecoord = VECTOR2I::extended_type;
-
-                    auto ip_x = t.A.x + rescale( q, (ecoord) ff.x, d );
-
-                    auto dist = aP.x - ip_x;
-
-                    if (dist == 0)
-                        return 1;
-
-                    //fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", 3, ip_x, aP.y, ip_x + 10000, aP.y + 10000 );
-
-                    //printf("ip_x %d\n", ip_x);
-
-
-                    if( dist != 0 && std::abs(dist) < std::abs(dist_max) )
-                    {
-                        dist_max = dist;
-                        nearest = index;
-                    }
-                }
-            }*/
-
-
-            //}
-#if 0
-            if ( nearest < 0 )
-            {
-                for ( auto index : cell )
-                {
-                    const SEG& edge = m_outline.CSegment(index);
-
-                    if ( edge.A.x == edge.B.x )  // horizontal edge
-                        continue;
-
-                    if ( m_flags[index] & (LEAD_V | TRAIL_V) == 0)
-                        continue;
-
-                    if ( inRange ( edge.A.y, edge.B.y, aP.y ) )
-                    {
-                        const VECTOR2I  e( edge.B - edge.A );
-                        const VECTOR2I  f( 0, 1 );
-                        const VECTOR2I  ac( aP - edge.A );
-
-                        auto d = f.Cross( e );
-                        auto p = f.Cross( ac );
-                        auto q = e.Cross( ac );
-
-                        using ecoord = VECTOR2I::extended_type;
-
-                        auto ip_y = aP.y + rescale( q, (ecoord) 1, d );
-
-                        auto dist = aP.y - ip_y;
-
-                        if( dist >= 0 && std::abs(dist) < std::abs(dist_max) )
-                        {
-                            dist_max = dist;
-                            nearest = index;
-                        }
-                    }
-                }
-
-                if (nearest < 0)
-                    return 0;
-
-                    if( dist_max == 0)
-                        return 1;
-
-                    if ( dist_max >= 0 )
-                    {
-                        return m_flags[nearest] & LEAD_H ? 1 : 2 ;
-                    } else {
-                        return m_flags[nearest] & TRAIL_H ? 1 : 2 ;
-                    }
+                const SEG& edge =  m_outline.CSegment (state.nearest);
+            //    printf("NE %d (%d %d) - (%d %d)\n", state.nearest, edge.A.x, edge.A.y, edge.B.x, edge.B.y);
+                nearestEdge = edge;
             }
-            #endif
+
+            //printf("Flag: %d!\n",m_flags[state.nearest]);
 
             if ( state.nearest < 0)
                 return 0;
 
             if( state.dist_max == 0)
                 return 1;
+
+            if (state.nearest_prev >= 0 && state.dist_max == state.dist_prev)
+            {
+                int d = std::abs(state.nearest_prev - state.nearest);
+                if ( d == 1 ) // corner
+                {
+                    const SEG& edge1 = m_outline.CSegment( state.nearest_prev );
+                    const SEG& edge2 = m_outline.CSegment( state.nearest );
+
+                    if(edge1.A == edge2.B && edge1.B == edge1.A || edge1.A == edge1.B )
+                    {
+                        printf("SLIT!");
+                    }
+
+                    //printf("Corner: %d %d!\n",m_flags[state.nearest_prev],m_flags[state.nearest]);
+                    return (m_flags[state.nearest_prev] &m_flags[state.nearest] ) != 0;
+                } else if ( d>1){
+                    printf("d %d\n", d );
+                    return 1;
+                }
+            }
 
             if ( state.dist_max > 0 )
             {
@@ -517,7 +448,105 @@ void loadBoard( string name )
     }
 }
 
-#include <valgrind/callgrind.h>
+int k = 0;
+
+int benchmark(int np,  SHAPE_LINE_CHAIN lc  )
+{
+    int n = 0;
+    lc.Simplify();
+
+    POLY_GRID_PARTITION p ( lc, 16 );
+    BOX2I bbox = lc.BBox();
+
+
+    vector<int> hits;
+
+    for(int y = 0; y < np; y++)
+        for(int x = 0; x < np; x++)
+        {
+            hits.push_back(0);
+        }
+
+        lc.SetClosed(true);
+
+    PROF_COUNTER cnt_old("old-pip"); cnt_old.start();
+
+
+    //VECTOR2I tp (155905272, 50409210) ;
+
+
+    n = 0;
+    for(int y = 0; y < np; y++)
+        for(int x = 0; x < np; x++)
+        {
+            int px      = (int) ( (double) x / np * (double) bbox.GetWidth() + bbox.GetPosition().x );
+            int py      = (int) ( (double) y / np * (double) bbox.GetHeight() + bbox.GetPosition().y );
+            hits[n] = pointInPolygon (VECTOR2I(px,py), lc);
+
+
+            n++;
+        }
+    cnt_old.stop();
+
+    PROF_COUNTER cnt_new("new-pip"); cnt_new.start();
+
+    char str[1024];
+    sprintf(str,"report%d.log", k++ );
+    FILE *f = fopen(str,"wb");
+
+    fprintf(f,"group crappy-polygon 0\n");
+
+
+    for(int i = 0; i < lc.SegmentCount(); i++)
+    {
+        const SEG& edge = lc.CSegment(i);
+        fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",  p.m_flags[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+    }
+//    printf("Contains : %d\n", p.ContainsPoint ( tp ));
+//    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, tp.x, tp.y, tp.x, tp.y);
+
+    n = 0;
+    bool fail = false;
+    for(int y = 0; y < np; y++)
+        for(int x = 0; x < np; x++)
+        {
+
+            int px      = (int) ( (double) x / np * (double) bbox.GetWidth() + bbox.GetPosition().x );
+            int py      = (int) ( (double) y / np * (double) bbox.GetHeight() + bbox.GetPosition().y );
+            //printf("Try for (%d, %d)\n", px, py);
+            int hit = p.ContainsPoint ( VECTOR2I(px, py ));
+
+            if(hit != hits[n])
+            {
+                int dd = lc.Distance( VECTOR2I(px, py  ));
+
+
+                if ( dd > 1 )
+                {
+                    printf("fail DD = %d\n",dd);
+                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px-10000,py-10000,px+10000,py+10000 );
+                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px+10000,py-10000,px-10000,py+10000 );
+                    printf("Failure for (%d, %d) old : %d new : %d\n", px, py, hits[n], hit);
+                    fprintf(f,"item 0 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",p.nearestEdge.A.x +10000,p.nearestEdge.A.y+10000,p.nearestEdge.B.x-10000,p.nearestEdge.B.y +10000);
+                    fail = true;
+                    y=np;
+                    break;
+                }
+
+                //return -1;
+            }
+
+            n++;
+        }
+    cnt_new.stop();
+//    #endif
+    fprintf(f,"endgroup\n");
+//    exit(0);
+    printf("%d vertices, old algo = %.1f ms, new algo = %.f ms\n", lc.PointCount(), cnt_old.msecs(), cnt_new.msecs());
+    if(fail)
+        exit(0);
+    return 0;
+}
 
 int main( int argc, char* argv[] ) {
     if( argc < 2 )
@@ -532,17 +561,11 @@ int main( int argc, char* argv[] ) {
     {
             ZONE_CONTAINER *zone =  m_board->GetArea(i);
             const SHAPE_POLY_SET& polys = zone->GetFilledPolysList();
+
             for(int o = 0; o < polys.OutlineCount(); o++)
             {
-                if(  polys.COutline(o).PointCount() > 100 )
-                {
-                    PROF_COUNTER cnt ("build-poly"); cnt.start();
-                    POLY_GRID_PARTITION p (polys.COutline(o), 8 );
-                    cnt.show();
-                    return 0;
-
-                //    return 0;
-                }
+                benchmark( 200, polys.COutline(o) );
+                //return 0;
             }
 
 

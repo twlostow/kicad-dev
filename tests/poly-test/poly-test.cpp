@@ -13,6 +13,8 @@
 #include <functional>
 #include <vector>
 #include <deque>
+#include <unordered_set>
+
 #include <stdarg.h>
 
 using namespace std;
@@ -81,6 +83,37 @@ bool pointInPolygon( const VECTOR2I& aP, const SHAPE_LINE_CHAIN& aPath )
     return result ? true : false;
 }
 
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+struct segsEqual
+{
+    bool operator()( const SEG& a, const SEG& b ) const
+    {
+        return (a.A == b.A && a.B == b.B) || (a.A == b.B && a.B == b.A);
+    }
+};
+
+struct segHash
+{
+    std::size_t operator()(  const SEG&a ) const
+    {
+    std::size_t seed = 0;
+
+    return a.A.x + a.B.x + a.A.y + a.B.y;
+    //hash_combine( seed, std::min( a.A.x, a.A.y ) );
+    //hash_combine( seed, a.A.y );
+    //hash_combine( seed, a.A.y );
+    //hash_combine( seed, a.B.y );
+
+    return seed;
+    }
+};
+
 struct POLY_GRID_PARTITION
 {
     enum HashFlag {
@@ -97,16 +130,19 @@ struct POLY_GRID_PARTITION
 
     const VECTOR2I grid2poly( const VECTOR2I &p ) const
     {
-        int px      = (int) floor( (double) p.x / m_gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
-        int py      = (int) floor( (double) p.y / m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+        int px      = rescale ( p.x, m_bbox.GetWidth(), m_gridSize) +  m_bbox.GetPosition().x;
+        int py      = rescale ( p.y, m_bbox.GetHeight(), m_gridSize) +  m_bbox.GetPosition().y;//(int) floor( (double) p.y / m_gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
 
         return VECTOR2I(px, py);
     }
 
     const VECTOR2I poly2grid( const VECTOR2I &p ) const
     {
-        int px      =  (int) floor( (double)(p.x - m_bbox.GetPosition().x) * m_gridSize / (double) m_bbox.GetWidth() );
-        int py      =  (int) floor( (double)(p.y - m_bbox.GetPosition().y) * m_gridSize / (double) m_bbox.GetHeight() );
+        int px      = rescale ( p.x - m_bbox.GetPosition().x, m_gridSize, m_bbox.GetWidth());
+        int py      = rescale ( p.y - m_bbox.GetPosition().y, m_gridSize, m_bbox.GetHeight());
+
+        //int px      =  (int) floor( (double)(p.x - m_bbox.GetPosition().x) * m_gridSize / (double) m_bbox.GetWidth() );
+        //int py      =  (int) floor( (double)(p.y - m_bbox.GetPosition().y) * m_gridSize / (double) m_bbox.GetHeight() );
 
         if ( px < 0 ) px = 0;
         if ( px >= m_gridSize ) px = m_gridSize - 1;
@@ -115,6 +151,9 @@ struct POLY_GRID_PARTITION
 
         return VECTOR2I(px, py);
     }
+
+
+
 
     FILE *f;
     POLY_GRID_PARTITION( const SHAPE_LINE_CHAIN& aPolyOutline, int gridSize )
@@ -139,17 +178,47 @@ struct POLY_GRID_PARTITION
 
         m_flags.reserve( m_outline.SegmentCount() );
 
+        std::unordered_map<SEG, int, segHash, segsEqual> edgeSet;
+
+        for (int i = 0; i<m_outline.SegmentCount(); i++)
+        {
+            const auto& edge = m_outline.CSegment(i);
+
+            if ( edgeSet.find(edge) == edgeSet.end() )
+                edgeSet[edge] = 1;
+            else
+                edgeSet[edge]++;
+        }
+
         for (int i = 0; i<m_outline.SegmentCount(); i++)
         {
             const auto& edge = m_outline.CSegment(i);
             const auto dir = edge.B - edge.A;
 
-            int flags = 0;
 
-            if (dir.Dot(ref_h) > 0)
+
+            int flags = 0;
+        /*    bool slit = false;
+
+            for (int j = 0; j<m_outline.SegmentCount(); j++)
+            {
+                if ( i!= j && segsEqual()( edge, m_outline.CSegment(j)) )
+                {
+                    slit = true;break;
+                }
+            }*/
+
+
+            if (edgeSet[edge] > 1)
+            {
+                    //printf("slit found?\n");
+                    flags = 0;
+            } else if (dir.Dot(ref_h) > 0)
                 flags |= LEAD_H;
             else if (dir.Dot(ref_h) < 0)
                 flags |= TRAIL_H;
+
+
 
             m_flags.push_back( flags );
 
@@ -158,8 +227,9 @@ struct POLY_GRID_PARTITION
             double l = edge.Length();
 
             double delta = (double) std::min( m_bbox.GetWidth(), m_bbox.GetHeight() ) / (double) m_gridSize;
-            int steps = (int)(3.0 * l / delta);
+            int steps = (int)(2.0 * l / delta);
 
+// todo :scan along major direction to fill ALL cells
             //printf("edge %d : %d steps\n", i, steps);
 
             double dx = (double)dir.x / steps;
@@ -181,9 +251,14 @@ struct POLY_GRID_PARTITION
                     //printf("scan (%d, %d)\n", p.x, p.y);
 
                     m_grid[ m_gridSize * p.y + p.x ].push_back( i );
+
                 }
+                p_prev = p;
+
             }
         }
+
+
 
         f=fopen("log.log","wb");
         fprintf(f,"group crappy-polygon 0\n");
@@ -260,8 +335,8 @@ struct POLY_GRID_PARTITION
             nearest_prev = -1;
         };
 
-        int dist_prev;
-        int dist_max;
+        double dist_prev;
+        double dist_max;
         int nearest_prev;
         int nearest;
     };
@@ -275,9 +350,12 @@ struct POLY_GRID_PARTITION
             if ( edge.A.y == edge.B.y )  // horizontal edge
                     continue;
 
+            if ( m_flags[index] == 0) // a slit
+                continue;
+
             if ( inRange ( edge.A.y, edge.B.y, aP.y ) )
             {
-                    int dist = 0;
+                    double dist = 0.0;
 
                     if( edge.A.y == aP.y )
                     {
@@ -297,7 +375,7 @@ struct POLY_GRID_PARTITION
 
                         using ecoord = VECTOR2I::extended_type;
 
-                        dist = rescale( q, (ecoord) 1, d );
+                        dist = (double) q / (double) d; //rescale( q, (ecoord) 1, d );
                         }
                     if (dist == 0)
                     {
@@ -332,7 +410,7 @@ struct POLY_GRID_PARTITION
         const auto gridPoint = poly2grid (aP);
 
 
-
+        printf("gp x %d y %d\n", gridPoint.x, gridPoint.y);
         if (!m_bbox.Contains(aP))
             return false;
 
@@ -369,7 +447,8 @@ struct POLY_GRID_PARTITION
             }
 
             //if(state.nearest > 0 && staten.e== state.nearest_prev)
-            printf("nearest %d prev %d d1 %d d2 %d\n", state.nearest, state.nearest_prev, state.dist_max, state.dist_prev );
+            //printf("nearest %d prev %d d1 %.10f d2 %.10f\n", state.nearest, state.nearest_prev, state.dist_max, state.dist_prev );
+            //printf("ST: %d %d!\n",m_flags[state.nearest_prev],m_flags[state.nearest]);
 
             if ( state.nearest >= 0 )
             {
@@ -391,18 +470,15 @@ struct POLY_GRID_PARTITION
                 int d = std::abs(state.nearest_prev - state.nearest);
                 if ( d == 1 ) // corner
                 {
-                    const SEG& edge1 = m_outline.CSegment( state.nearest_prev );
-                    const SEG& edge2 = m_outline.CSegment( state.nearest );
+                
 
-                    if(edge1.A == edge2.B && edge1.B == edge1.A || edge1.A == edge1.B )
-                    {
-                        printf("SLIT!");
-                    }
+//                    printf("NE %d (%d %d) - (%d %d)\n", state.nearest, edge.A.x, edge.A.y, edge.B.x, edge.B.y);
+
 
                     //printf("Corner: %d %d!\n",m_flags[state.nearest_prev],m_flags[state.nearest]);
                     return (m_flags[state.nearest_prev] &m_flags[state.nearest] ) != 0;
                 } else if ( d>1){
-                    printf("d %d\n", d );
+                //    printf("d %d\n", d );
                     return 1;
                 }
             }
@@ -419,7 +495,7 @@ struct POLY_GRID_PARTITION
 
     }
 
-private:
+//private:
     //uint8_t *m_grid;
     int m_gridSize;
     SHAPE_LINE_CHAIN m_outline;
@@ -524,8 +600,8 @@ int benchmark(int np,  SHAPE_LINE_CHAIN lc  )
                 if ( dd > 1 )
                 {
                     printf("fail DD = %d\n",dd);
-                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px-10000,py-10000,px+10000,py+10000 );
-                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px+10000,py-10000,px-10000,py+10000 );
+                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px-1000000,py-1000000,px+1000000,py+1000000 );
+                    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px+1000000,py-1000000,px-1000000,py+1000000 );
                     printf("Failure for (%d, %d) old : %d new : %d\n", px, py, hits[n], hit);
                     fprintf(f,"item 0 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",p.nearestEdge.A.x +10000,p.nearestEdge.A.y+10000,p.nearestEdge.B.x-10000,p.nearestEdge.B.y +10000);
                     fail = true;
@@ -557,13 +633,76 @@ int main( int argc, char* argv[] ) {
 
     loadBoard( argv[1] );
 
+    if (argc == 6)
+    {
+
+
+        VECTOR2I tp (atoi(argv[2]), atoi(argv[3]));
+        ZONE_CONTAINER *zone =  m_board->GetArea(atoi(argv[4]));
+        const SHAPE_POLY_SET& polys = zone->GetFilledPolysList();
+        SHAPE_LINE_CHAIN lc = polys.COutline(atoi(argv[5]));
+        lc.Simplify();
+
+        POLY_GRID_PARTITION p ( lc, 16 );
+
+        FILE *f = fopen("reportX.log","wb");
+
+        fprintf(f,"group crappy-polygon 0\n");
+
+
+        for(int i = 0; i < lc.SegmentCount(); i++)
+        {
+            const SEG& edge = lc.CSegment(i);
+            fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",  p.m_flags[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+        }
+
+        for(int i = 0; i<p.m_gridSize; i++)
+        {
+            auto v = p.grid2poly( VECTOR2I( i, i ) );
+            fprintf(f,"item 3 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", v.x, lc.BBox().GetPosition().y, v.x, lc.BBox().GetPosition().y + lc.BBox().GetHeight() );
+            fprintf(f,"item 3 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",  lc.BBox().GetPosition().x, v.y, lc.BBox().GetPosition().x + lc.BBox().GetWidth(), v.y );
+        }
+
+        fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, tp.x-1000000,tp.y-1000000,tp.x+1000000,tp.y+1000000 );
+        fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, tp.x+1000000,tp.y-1000000,tp.x-1000000,tp.y+1000000 );
+        fprintf(f,"endgroup\n");
+
+
+        fprintf(f,"group crappy-polygon 0\n");
+
+        VECTOR2I g= p.poly2grid(tp);
+        for ( auto e : p.m_grid[p.m_gridSize * g.y + g.x] )
+        {
+            const SEG& edge = p.m_outline.CSegment(e);
+            fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", p.m_flags[e], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+        }
+        fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, tp.x-1000000,tp.y-1000000,tp.x+1000000,tp.y+1000000 );
+        fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, tp.x+1000000,tp.y-1000000,tp.x-1000000,tp.y+1000000 );
+
+        fprintf(f,"endgroup\n");
+        fclose(f);
+
+
+        printf("Testing (%d, %d)\n", tp.x, tp.y);
+        bool old_hit =  pointInPolygon(tp, lc);
+        bool new_hit = p.ContainsPoint(tp);
+        printf("old : %d\n", !!old_hit);
+        printf("new : %d\n", !!new_hit);
+
+
+        return 0;
+    }
+
     for( int i = 0; i <m_board->GetAreaCount(); i++)
     {
             ZONE_CONTAINER *zone =  m_board->GetArea(i);
             const SHAPE_POLY_SET& polys = zone->GetFilledPolysList();
 
+
+
             for(int o = 0; o < polys.OutlineCount(); o++)
             {
+                printf("zone %d outline %d\n", i, o);
                 benchmark( 200, polys.COutline(o) );
                 //return 0;
             }

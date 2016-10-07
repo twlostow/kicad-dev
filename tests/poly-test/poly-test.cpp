@@ -136,6 +136,16 @@ struct POLY_GRID_PARTITION
         return VECTOR2I(px, py);
     }
 
+    int grid2polyX( int x ) const
+    {
+        return rescale ( x, m_bbox.GetWidth(), m_gridSize) +  m_bbox.GetPosition().x;
+    }
+
+    int grid2polyY( int y ) const
+    {
+        return rescale ( y, m_bbox.GetHeight(), m_gridSize) +  m_bbox.GetPosition().y;
+    }
+
     const VECTOR2I poly2grid( const VECTOR2I &p ) const
     {
         int px      = rescale ( p.x - m_bbox.GetPosition().x, m_gridSize, m_bbox.GetWidth());
@@ -152,7 +162,25 @@ struct POLY_GRID_PARTITION
         return VECTOR2I(px, py);
     }
 
+    int poly2gridX( int x ) const
+    {
+        int px      = rescale ( x - m_bbox.GetPosition().x, m_gridSize, m_bbox.GetWidth());
 
+        if ( px < 0 ) px = 0;
+        if ( px >= m_gridSize ) px = m_gridSize - 1;
+
+        return px;
+    }
+
+    int poly2gridY( int y ) const
+    {
+        int py      = rescale ( y - m_bbox.GetPosition().y, m_gridSize, m_bbox.GetHeight());
+
+        if ( py < 0 ) py = 0;
+        if ( py >= m_gridSize ) py = m_gridSize - 1;
+
+        return py;
+    }
 
 
     FILE *f;
@@ -182,7 +210,7 @@ struct POLY_GRID_PARTITION
 
         for (int i = 0; i<m_outline.SegmentCount(); i++)
         {
-            const auto& edge = m_outline.CSegment(i);
+            SEG edge = m_outline.CSegment(i);
 
             if ( edgeSet.find(edge) == edgeSet.end() )
                 edgeSet[edge] = 1;
@@ -190,10 +218,13 @@ struct POLY_GRID_PARTITION
                 edgeSet[edge]++;
         }
 
+        f=fopen("log.log","wb");
+        fprintf(f,"group crappy-polygon 0\n");
+
         for (int i = 0; i<m_outline.SegmentCount(); i++)
         {
-            const auto& edge = m_outline.CSegment(i);
-            const auto dir = edge.B - edge.A;
+            auto edge = m_outline.CSegment(i);
+            auto dir = edge.B - edge.A;
 
 
 
@@ -224,16 +255,153 @@ struct POLY_GRID_PARTITION
 
             if( !flags )
                 continue;
-            double l = edge.Length();
 
-            double delta = (double) std::min( m_bbox.GetWidth(), m_bbox.GetHeight() ) / (double) m_gridSize;
-            int steps = (int)(2.0 * l / delta);
+            std::set<int> indices;
 
+            indices.insert ( m_gridSize * poly2gridY(edge.A.y) + poly2gridX(edge.A.x));
+            indices.insert ( m_gridSize * poly2gridY(edge.B.y) + poly2gridX(edge.B.x));
 // todo :scan along major direction to fill ALL cells
             //printf("edge %d : %d steps\n", i, steps);
 
-            double dx = (double)dir.x / steps;
-            double dy = (double)dir.y / steps;
+            //int x = grid2polyX(1);
+            //printf("xf %d %d\n", poly2gridX(x), poly2gridX(x-1) );
+
+            if(edge.A.x > edge.B.x)
+                std::swap(edge.A, edge.B);
+
+            dir = edge.B - edge.A;
+
+
+
+            if(dir.x != 0)
+            {
+                int gx0 = poly2gridX( edge.A.x ) + 1;
+                int gx1 = poly2gridX( edge.B.x );
+
+                //printf("gx0 %d gx1 %d\n", gx0, gx1);
+                for( int x = gx0 ; x <= gx1; x++ )
+                {
+                    int px = grid2polyX ( x );
+                    int py =(  edge.A.y + rescale( dir.y , px - edge.A.x , dir.x ) );
+
+                    int yy = poly2gridY( py );
+                    //int yy =
+
+
+                    fprintf(f,"item 3 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", px-1000000,py-1000000,px+1000000,py+1000000 );
+                    fprintf(f,"item 3 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", px+1000000,py-1000000,px-1000000,py+1000000 );
+
+                    indices.insert ( m_gridSize * yy + x );
+                    if ( x > 0 )
+                        indices.insert ( m_gridSize * yy + x - 1 );
+
+                }
+
+            }
+
+            if(edge.A.y > edge.B.y)
+                std::swap(edge.A, edge.B);
+
+            dir = edge.B - edge.A;
+
+            if(dir.y != 0)
+            {
+                int gy0 = poly2gridY( edge.A.y ) + 1;
+                int gy1 = poly2gridY( edge.B.y ) ;
+                for( int y = gy0 ; y <= gy1; y++ )
+                {
+                    int py = grid2polyY ( y );
+                    int px = (  edge.A.x + rescale( dir.x , py - edge.A.y , dir.y ) );
+                    int xx = poly2gridX( px );
+                    //int yy =
+                    fprintf(f,"item 3 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", px-1000000,py-1000000,px+1000000,py+1000000 );
+                    fprintf(f,"item 3 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", px+1000000,py-1000000,px-1000000,py+1000000 );
+
+                    indices.insert ( m_gridSize * y + xx );
+                    if ( y > 0 )
+                        indices.insert ( m_gridSize * (y - 1) + xx );
+
+
+                }
+            }
+
+            for(auto idx:indices)
+                m_grid[idx].push_back( i );
+
+#if 0
+            if ( std::abs(dir.x) >= std::abs(dir.y))
+            {
+
+                if(edge.A.x > edge.B.x)
+                    std::swap(edge.A, edge.B);
+
+                dir = edge.B - edge.A;
+
+                auto p_start = poly2grid(edge.A);
+                auto p_end = poly2grid(edge.B);
+
+                //p_end.x = std::min(p_end.x +, m_gridSize-1);
+
+
+
+                for(int x = p_start.x + 1; x <= p_end.x; x++)
+                {
+                    int px = grid2polyX( x );
+                    int px_next = grid2polyX( x + 1 );
+
+                    int yy = poly2gridY(      edge.A.y + (double) dir.y * (double) ( px      - edge.A.x ) / (double) dir.x );
+                    int yy_next = poly2gridY (edge.A.y + (double) dir.y * (double) ( px_next - edge.A.x ) / (double) dir.x );
+
+                    if( yy > yy_next )
+                        std::swap(yy, yy_next);
+
+                    for ( int y = yy; y <= yy_next; y ++ )
+                    {
+                        m_grid[ m_gridSize * y + x ].push_back( i );
+                    }
+                };
+
+                m_grid[ m_gridSize * p_end.y + p_end.x ].push_back( i );
+                m_grid[ m_gridSize * p_start.y + p_start.x ].push_back( i );
+
+            } else {
+                if(edge.A.y > edge.B.y)
+                    std::swap(edge.A, edge.B);
+
+                dir = edge.B - edge.A;
+
+                auto p_start = poly2grid(edge.A);
+                auto p_end = poly2grid(edge.B);
+
+
+
+                //p_end.y = std::min(p_end.y + 1, m_gridSize-1);
+
+                for(int y = p_start.y + 1; y <= p_end.y; y++)
+                {
+                    int py = grid2polyY( y );
+                    int py_next = grid2polyY( y + 1 );
+
+                    int xx = poly2gridX     ( edge.A.x + (double) dir.x * (double) ( py - edge.A.y ) / (double) dir.y );
+                    int xx_next = poly2gridX (edge.A.x + (double) dir.x * (double) ( py_next - edge.A.y ) / (double) dir.y);
+
+                    if( xx > xx_next )
+                        std::swap(xx, xx_next);
+
+                    for ( int x = xx; x <= xx_next; x ++ )
+                    {
+                        m_grid[ m_gridSize * y + x ].push_back( i );
+                    }
+
+                };
+
+                m_grid[ m_gridSize * p_end.y + p_end.x ].push_back( i );
+                m_grid[ m_gridSize * p_start.y + p_start.x ].push_back( i );
+                //m_grid[ m_gridSize * p_end.y + p_end.x ].push_back( i );
+
+            }
+#endif
+#if 0
 
             VECTOR2I p_prev;
 
@@ -256,12 +424,11 @@ struct POLY_GRID_PARTITION
                 p_prev = p;
 
             }
+#endif
+
         }
 
 
-
-        f=fopen("log.log","wb");
-        fprintf(f,"group crappy-polygon 0\n");
 
 
         for(int i = 0; i < m_outline.SegmentCount(); i++)
@@ -270,7 +437,7 @@ struct POLY_GRID_PARTITION
             fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", m_flags[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
         }
 
-        int np = 50;
+        /*int np = 50;
         for(int y = 0; y < np; y++)
             for(int x = 0; x < np; x++)
             {
@@ -282,9 +449,27 @@ struct POLY_GRID_PARTITION
                 fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",c, px,py,px,py );
 
             }
+*/
+for(int y = 0; y < gridSize; y++)
+    for(int x = 0; x < gridSize; x++)
+    {
+
+        int px      = (int) ( (double) x / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
+        int px_next = (int) ( (double) (x+1) / gridSize * (double) m_bbox.GetWidth() + m_bbox.GetPosition().x );
+        int py      = (int) ( (double) y / gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+        int py_next = (int) ( (double) (y+1) / gridSize * (double) m_bbox.GetHeight() + m_bbox.GetPosition().y );
+
+        fprintf(f,"group crappy-polygon 0\n");
+        fprintf(f,"item 0 cell 0 0 0 0 0 line 0 0 linechain 4 1 %d %d %d %d %d %d %d %d\n",px, py, px_next, py, px_next, py_next, px, py_next);
+
+
+
+    }
+
+
 
         fprintf(f,"endgroup\n");
-        return;
+        //return;
         for(int y = 0; y < gridSize; y++)
             for(int x = 0; x < gridSize; x++)
             {
@@ -410,7 +595,7 @@ struct POLY_GRID_PARTITION
         const auto gridPoint = poly2grid (aP);
 
 
-        printf("gp x %d y %d\n", gridPoint.x, gridPoint.y);
+        //printf("gp x %d y %d\n", gridPoint.x, gridPoint.y);
         if (!m_bbox.Contains(aP))
             return false;
 
@@ -470,7 +655,7 @@ struct POLY_GRID_PARTITION
                 int d = std::abs(state.nearest_prev - state.nearest);
                 if ( d == 1 ) // corner
                 {
-                
+
 
 //                    printf("NE %d (%d %d) - (%d %d)\n", state.nearest, edge.A.x, edge.A.y, edge.B.x, edge.B.y);
 
@@ -578,6 +763,8 @@ int benchmark(int np,  SHAPE_LINE_CHAIN lc  )
         const SEG& edge = lc.CSegment(i);
         fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",  p.m_flags[i], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
     }
+    fprintf(f,"endgroup \n group crappy-polygon 0\n");
+
 //    printf("Contains : %d\n", p.ContainsPoint ( tp ));
 //    fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, tp.x, tp.y, tp.x, tp.y);
 
@@ -604,6 +791,31 @@ int benchmark(int np,  SHAPE_LINE_CHAIN lc  )
                     fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",2, px+1000000,py-1000000,px-1000000,py+1000000 );
                     printf("Failure for (%d, %d) old : %d new : %d\n", px, py, hits[n], hit);
                     fprintf(f,"item 0 path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n",p.nearestEdge.A.x +10000,p.nearestEdge.A.y+10000,p.nearestEdge.B.x-10000,p.nearestEdge.B.y +10000);
+
+                    int xg = p.poly2gridX( px );
+                    int yg = p.poly2gridY( py );
+
+                    int vx      = (int) ( (double) xg / p.m_gridSize * (double) p.m_bbox.GetWidth() + p.m_bbox.GetPosition().x );
+                    int vx_next = (int) ( (double) (xg+1) / p.m_gridSize * (double) p.m_bbox.GetWidth() + p.m_bbox.GetPosition().x );
+                    int vy      = (int) ( (double) yg / p.m_gridSize * (double)p.m_bbox.GetHeight() + p.m_bbox.GetPosition().y );
+                    int vy_next = (int) ( (double) (yg+1) / p.m_gridSize * (double) p.m_bbox.GetHeight() + p.m_bbox.GetPosition().y );
+
+
+                    fprintf(f,"item 0 cell 0 0 0 0 0 line 0 0 linechain 4 1 %d %d %d %d %d %d %d %d\n",vx, vy, vx_next, vy, vx_next, vy_next, vx, vy_next);
+
+                    for ( auto e : p.m_grid[p.m_gridSize * yg + xg] )
+                    {
+
+                        const SEG& edge = p.m_outline.CSegment(e);
+
+                        fprintf(f,"item %d path-pre 0 0 0 0 0 line 0 0 linechain 2 0 %d %d %d %d\n", p.m_flags[e], edge.A.x, edge.A.y, edge.B.x, edge.B.y );
+
+
+                    }
+
+
+
+
                     fail = true;
                     y=np;
                     break;
@@ -643,7 +855,7 @@ int main( int argc, char* argv[] ) {
         SHAPE_LINE_CHAIN lc = polys.COutline(atoi(argv[5]));
         lc.Simplify();
 
-        POLY_GRID_PARTITION p ( lc, 16 );
+        POLY_GRID_PARTITION p ( lc, 4 );
 
         FILE *f = fopen("reportX.log","wb");
 

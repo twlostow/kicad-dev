@@ -357,6 +357,11 @@ struct POLY_GRID_PARTITION
         }
     }
 
+    const BOX2I& BBox() const
+    {
+        return m_bbox;
+    }
+
 private:
     int m_gridSize;
     SHAPE_LINE_CHAIN m_outline;

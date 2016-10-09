@@ -109,6 +109,9 @@ private:
 // valid flag, used to identify garbage items (we use lazy removal)
     bool m_valid;
 
+// dirty flag, used to identify recently added item not yet scanned into the connectivity search
+    bool m_dirty;
+
 public:
     CN_ITEM( BOARD_CONNECTED_ITEM *aParent, bool aCanChangeNet )
     {
@@ -116,6 +119,7 @@ public:
         m_canChangeNet = aCanChangeNet;
         m_visited = false;
         m_valid = true;
+        m_dirty = true;
     }
 
     void SetValid ( bool aValid )
@@ -126,6 +130,16 @@ public:
     bool Valid() const
     {
         return m_valid;
+    }
+
+    void SetDirty ( bool aDirty )
+    {
+        m_dirty = aDirty;
+    }
+
+    bool Dirty() const
+    {
+        return m_dirty;
     }
 
     BOARD_CONNECTED_ITEM *Parent() const
@@ -173,8 +187,6 @@ public:
     {
 
         auto last = std::remove_if(m_connected.begin(), m_connected.end(), [] ( CN_ITEM * item) {
-            //if(!item->Valid())
-        //        printf("remove-conn item %p parent %p\n", item, item->Parent());
             return !item->Valid();
 
         } );
@@ -307,7 +319,10 @@ template <class T>
 void CN_LIST::FindNearby( BOX2I aBBox, T aFunc )
 {
     for( auto p : m_anchors )
-        aFunc( p );
+    {
+            if (aBBox.Contains( p.Pos() ) )
+                aFunc( p );
+    }
 }
 
 template <class T>
@@ -470,6 +485,11 @@ public:
         return m_cachedPoly->ContainsPoint ( anchor.Pos () );
     }
 
+    const BOX2I& BBox() const
+    {
+        return m_cachedPoly->BBox();
+    }
+
 
 private:
     unique_ptr<POLY_GRID_PARTITION> m_cachedPoly;
@@ -486,7 +506,7 @@ public:
         const auto& polys = zone->GetFilledPolysList();
         std::vector<CN_ITEM*> rv;
 
-        printf("add zone %p\n", zone);
+        //printf("add zone %p\n", zone);
         for( int j = 0; j < polys.OutlineCount(); j++ )
         {
             CN_ZONE* zitem = new CN_ZONE( zone, false, j );
@@ -495,7 +515,7 @@ public:
             for( int k = 0; k < outline.PointCount(); k++)
                 addAnchor( outline.CPoint( k ), zitem );
 
-            printf("added %d anchors\n", outline.PointCount());
+            //printf("added %d anchors\n", outline.PointCount());
 
             m_items.push_back( zitem );
             rv.push_back( zitem );
@@ -611,8 +631,12 @@ public:
     ITER end() { return m_items.end(); };
 };
 
+typedef shared_ptr<CN_CLUSTER> CN_CLUSTER_PTR;
+
 class CN_CONNECTIVITY_IMPL
 {
+    using CLUSTERS = std::vector<CN_CLUSTER_PTR>;
+
     class ITEM_MAP_ENTRY
     {
     public:
@@ -647,7 +671,7 @@ class CN_CONNECTIVITY_IMPL
     using ITEM_MAP_PAIR = std::pair <BOARD_ITEM*, ITEM_MAP_ENTRY>;
 
     std::unordered_map<BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY> m_itemMap;
-    std::vector<CN_CLUSTER*> m_clusters;
+    CLUSTERS m_clusters;
 
     void searchConnections( bool aIncludeZones = false );
     void searchClusters( bool aIncludeZones = false );
@@ -720,6 +744,8 @@ public:
     void    PropagateNets();
     void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
     bool    CheckConnectivity( std::vector<DISJOINT_NET_ENTRY>& aReport );
+
+    const CLUSTERS& GetClusters();
 
 
 };
@@ -824,10 +850,10 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
     m_trackList.RemoveInvalidItems();
     m_zoneList.RemoveInvalidItems();
 
-    m_padList.ClearConnections();
-    m_viaList.ClearConnections();
-    m_trackList.ClearConnections();
-    m_zoneList.ClearConnections();
+//    m_padList.ClearConnections();
+//    m_viaList.ClearConnections();
+//    m_trackList.ClearConnections();
+//    m_zoneList.ClearConnections();
 
     using namespace std::placeholders;
 
@@ -836,9 +862,14 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
         auto pad = static_cast<D_PAD*> ( padItem->Parent() );
         auto searchPads = std::bind( checkForConnection, _1, padItem );
 
+        if (padItem->Dirty() )
+        {
+        padItem->SetDirty ( false );
+
         m_padList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
         m_trackList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
         m_viaList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
+        }
     }
 
     for( auto& trackItem : m_trackList )
@@ -846,9 +877,13 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
         auto track = static_cast<TRACK*> ( trackItem->Parent() );
         int dist_max = track->GetWidth() / 2;
         auto searchTracks = std::bind( checkForConnection, _1, trackItem, dist_max );
+        if (trackItem->Dirty())
+        {
+        trackItem->SetDirty( false );
 
         m_trackList.FindNearby( track->GetStart(), dist_max, searchTracks );
         m_trackList.FindNearby( track->GetEnd(), dist_max, searchTracks );
+        }
     }
 
     for( auto& viaItem : m_viaList )
@@ -856,23 +891,36 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
         auto via = static_cast<VIA*> ( viaItem->Parent() );
         int dist_max = via->GetWidth() / 2;
         auto searchVias = std::bind( checkForConnection, _1, viaItem, dist_max );
+        if (viaItem->Dirty())
+        {
 
+        viaItem->SetDirty ( false );
         m_viaList.FindNearby( via->GetStart(), dist_max, searchVias );
         m_trackList.FindNearby( via->GetStart(), dist_max, searchVias );
+        }
+
     }
 
     if( aIncludeZones )
     {
-        for( auto& zoneItem : m_zoneList )
+        for( auto& item : m_zoneList )
         {
+            auto zoneItem = static_cast<CN_ZONE *> (item);
             auto searchZones = std::bind( checkForConnection, _1, zoneItem );
 
-            // fixme: use bounding boxes
-            m_viaList.FindNearby( BOX2I(), searchZones );
-            m_trackList.FindNearby( BOX2I(), searchZones );
-            m_padList.FindNearby(  BOX2I(), searchZones );
-            m_zoneList.FindNearby(  BOX2I(),  std::bind( checkInterZoneConnection, _1, static_cast<CN_ZONE *> (zoneItem) ) );
+            if(zoneItem->Dirty())
+            {
+            printf("Process fdirty zone %p\n", zoneItem);
 
+
+            zoneItem->SetDirty ( false );
+
+            // fixme: use bounding boxes
+            m_viaList.FindNearby( zoneItem->BBox(), searchZones );
+            m_trackList.FindNearby( zoneItem->BBox(), searchZones );
+            m_padList.FindNearby( zoneItem->BBox(), searchZones );
+            m_zoneList.FindNearby( zoneItem->BBox(),  std::bind( checkInterZoneConnection, _1, static_cast<CN_ZONE *> (zoneItem) ) );
+            }
         }
     }
 
@@ -915,7 +963,7 @@ void CN_CONNECTIVITY_IMPL::searchClusters( bool aIncludeZones )
 
     while( head )
     {
-        auto cluster = new CN_CLUSTER();
+        CN_CLUSTER_PTR cluster ( new CN_CLUSTER() );
 
         Q.clear();
         CN_ITEM* root = head;
@@ -949,7 +997,7 @@ void CN_CONNECTIVITY_IMPL::searchClusters( bool aIncludeZones )
     cnt.show();
 
 
-    std::sort( m_clusters.begin(), m_clusters.end(), []( CN_CLUSTER* a, CN_CLUSTER* b ) {
+    std::sort( m_clusters.begin(), m_clusters.end(), []( CN_CLUSTER_PTR a, CN_CLUSTER_PTR b ) {
         return a->OriginNet() < b->OriginNet();
     } );
 
@@ -1013,11 +1061,11 @@ void CN_CONNECTIVITY_IMPL::propagateConnections()
     {
         if( cluster->IsConflicting() )
         {
-            wxLogTrace( "CN", "Conflicting nets in cluster %p\n", cluster );
+            wxLogTrace( "CN", "Conflicting nets in cluster %p\n", cluster.get() );
         }
         else if( cluster->IsOrphaned() )
         {
-            wxLogTrace( "CN", "Skipping orphaned cluster %p [net: %s]\n", cluster,
+            wxLogTrace( "CN", "Skipping orphaned cluster %p [net: %s]\n", cluster.get(),
                     (const char*) cluster->OriginNetName() );
         }
         else if( cluster->HasValidNet() )
@@ -1035,14 +1083,14 @@ void CN_CONNECTIVITY_IMPL::propagateConnections()
             }
 
             if( n_changed )
-                wxLogTrace( "CN", "Cluster %p : net : %d %s\n", cluster,
+                wxLogTrace( "CN", "Cluster %p : net : %d %s\n", cluster.get(),
                         cluster->OriginNet(), (const char*) cluster->OriginNetName() );
             else
-                wxLogTrace( "CN", "Cluster %p : nothing to propagate\n", cluster );
+                wxLogTrace( "CN", "Cluster %p : nothing to propagate\n", cluster.get() );
         }
         else
         {
-            wxLogTrace( "CN", "Cluster %p : connected to unused net\n", cluster );
+            wxLogTrace( "CN", "Cluster %p : connected to unused net\n", cluster.get() );
         }
     }
 }
@@ -1061,8 +1109,8 @@ void CN_CONNECTIVITY_IMPL::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std
     // auto range = m_itemMap.equal_range( (BOARD_ITEM *)aZone );
     aIslands.clear();
 
-    Remove( aZone );
-    Add( aZone );
+    //Remove( aZone );
+    //Add( aZone );
 
     // m_zoneList->Remove ( aZone );
     searchConnections( true );
@@ -1113,7 +1161,8 @@ bool CN_CONNECTIVITY_IMPL::CheckConnectivity( std::vector<DISJOINT_NET_ENTRY>& a
         {
             wxLogTrace( "CN", "Net %d [%s] is not completely routed (%d disjoint clusters).\n", net,
                     (const char*) name, count );
-
+            printf( "[CN] Net %d [%s] is not completely routed (%d disjoint clusters).\n", net,
+                            (const char*) name, count );
             rv = false;
         }
     }
@@ -1182,7 +1231,9 @@ int main( int argc, char* argv[] )
 
     conns.PropagateNets();
 
-#if 1
+    //return 0;
+
+#if 0
     for( int i = 0; i <m_board->GetAreaCount(); i++ )
     {
         ZONE_CONTAINER* zone = m_board->GetArea( i );
@@ -1193,15 +1244,15 @@ int main( int argc, char* argv[] )
         for( auto idx : islands )
         {
             printf("Delete poly %d/%d\n", idx, zone->FilledPolysList().OutlineCount());
-            zone->FilledPolysList().DeletePolygon( idx );
+//            zone->FilledPolysList().DeletePolygon( idx );
         }
-        conns.Remove( zone );
-        conns.Add( zone );
+//        conns.Remove( zone );
+//        conns.Add( zone );
 
     }
 #endif
-
     conns.CheckConnectivity( report );
+
 
     saveBoard( m_board, "tmp.kicad_pcb" );
     return 0;

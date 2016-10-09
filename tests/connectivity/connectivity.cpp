@@ -19,8 +19,10 @@
 #include <deque>
 #include <stdarg.h>
 
-using std::shared_ptr;
+#include "poly_grid_partition.h"
 
+using std::shared_ptr;
+using std::unique_ptr;
 
 // a lightweight intrusive list container
 template <class T>
@@ -166,6 +168,19 @@ public:
        a->m_connected.push_back( b );
        b->m_connected.push_back( a );
     }
+
+    void RemoveInvalidConnections()
+    {
+
+        auto last = std::remove_if(m_connected.begin(), m_connected.end(), [] ( CN_ITEM * item) {
+            //if(!item->Valid())
+        //        printf("remove-conn item %p parent %p\n", item, item->Parent());
+            return !item->Valid();
+
+        } );
+
+        m_connected.resize( last - m_connected.begin() );
+    }
 };
 
 class CN_ANCHOR
@@ -262,6 +277,24 @@ public:
     {
         for( auto& anchor : m_anchors )
             anchor.Item()->ClearConnections();
+    }
+
+    void RemoveInvalidItems()
+    {
+        //printf("before : %d\n", m_items.size());
+        auto last = std::remove_if(m_items.begin(), m_items.end(), [] ( CN_ITEM * item) {
+
+    //        if (!item->Valid())
+        //        printf("Remove1 %p\n", item);
+
+            return !item->Valid(); } );
+
+        m_items.resize( last - m_items.begin() );
+
+        for ( auto item : m_items )
+            item->RemoveInvalidConnections();
+
+
     }
 
     int Size() const
@@ -417,10 +450,14 @@ public:
 class CN_ZONE : public CN_ITEM
 {
 public:
-    CN_ZONE ( BOARD_CONNECTED_ITEM *aParent, bool aCanChangeNet, int aSubpolyIndex ) :
+    CN_ZONE ( ZONE_CONTAINER *aParent, bool aCanChangeNet, int aSubpolyIndex ) :
         CN_ITEM (aParent, aCanChangeNet ),
         m_subpolyIndex ( aSubpolyIndex )
     {
+        SHAPE_LINE_CHAIN outline = aParent->GetFilledPolysList().COutline( aSubpolyIndex );
+        outline.Simplify();
+
+        m_cachedPoly.reset( new POLY_GRID_PARTITION( outline, 16 ) );
     }
 
     int SubpolyIndex() const
@@ -428,7 +465,14 @@ public:
         return m_subpolyIndex;
     }
 
+    bool ContainsAnchor ( const CN_ANCHOR& anchor ) const
+    {
+        return m_cachedPoly->ContainsPoint ( anchor.Pos () );
+    }
+
+
 private:
+    unique_ptr<POLY_GRID_PARTITION> m_cachedPoly;
     int m_subpolyIndex;
 };
 
@@ -442,9 +486,17 @@ public:
         const auto& polys = zone->GetFilledPolysList();
         std::vector<CN_ITEM*> rv;
 
+        printf("add zone %p\n", zone);
         for( int j = 0; j < polys.OutlineCount(); j++ )
         {
             CN_ZONE* zitem = new CN_ZONE( zone, false, j );
+            const auto& outline = zone->GetFilledPolysList().COutline( j );
+
+            for( int k = 0; k < outline.PointCount(); k++)
+                addAnchor( outline.CPoint( k ), zitem );
+
+            printf("added %d anchors\n", outline.PointCount());
+
             m_items.push_back( zitem );
             rv.push_back( zitem );
             setDirty();
@@ -573,7 +625,10 @@ class CN_CONNECTIVITY_IMPL
         void MarkItemsAsInvalid ()
         {
             for ( auto item : m_items )
+            {
+                //printf("mark-invalidate %p\n", item);
                 item -> SetValid ( false );
+            }
         }
 
         void Link( CN_ITEM *aItem )
@@ -616,6 +671,7 @@ public:
 
     void Remove( BOARD_CONNECTED_ITEM* aItem )
     {
+        //printf("RemoveBI %p\n", aItem);
         m_itemMap[ aItem ].MarkItemsAsInvalid();
     }
 
@@ -669,8 +725,6 @@ public:
 };
 
 
-
-
 void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
 {
     auto checkForConnection = [] ( const CN_ANCHOR& point, CN_ITEM *aRefItem, int aMaxDist = 0)
@@ -718,7 +772,6 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
                             {
                                 const auto zone = static_cast<ZONE_CONTAINER*> ( parent );
                                 auto zoneItem = static_cast<CN_ZONE*> ( aRefItem );
-                                const auto& polys = zone->GetFilledPolysList();
 
                                 if( point.Item()->Parent()->GetNetCode() != parent->GetNetCode() )
                                     return;
@@ -727,24 +780,49 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
                                                            point.Item()->Parent()->GetLayerSet() ).any() )
                                                         return;
 
-                                                    if( polys.Contains( point.Pos(), zoneItem->SubpolyIndex() ) )
-                                                        CN_ITEM::Connect( zoneItem, point.Item() );
+                                if ( zoneItem->ContainsAnchor ( point ) )
+                                    CN_ITEM::Connect( zoneItem, point.Item() );
+
                                 break;
 
                             }
                             default :
-                                printf("unhandled_type %d\n", parent->Type() );
+                                //printf("unhandled_type %d\n", parent->Type() );
                                 assert ( false );
                         }
                     };
 
-    auto checkInterZoneConnection = [] ( const CN_ANCHOR& point, CN_ITEM *aRefZone )
+    auto checkInterZoneConnection = [] ( const CN_ANCHOR& point, CN_ZONE *aRefZone )
     {
-//        SHAPE_LINE_CHAIN& outline_a = static_cast<CN_ZONE*> aZone;
+        const auto testedZone = point.Item();
+        const auto parentZone = static_cast<const ZONE_CONTAINER*>(aRefZone->Parent());
+
+        if( testedZone->Parent()->Type () != PCB_ZONE_AREA_T )
+            return;
+
+        if (testedZone == aRefZone)
+            return;
+
+        if( testedZone->Parent()->GetNetCode() != parentZone->GetNetCode() )
+            return; // we only test zones belonging to the same net
+
+        if( !( testedZone->Parent()->GetLayerSet() &
+                                      parentZone->GetLayerSet() ).any() )
+            return; // and on same layer
+
+        if( aRefZone->ContainsAnchor ( point ) )
+        {
+            CN_ITEM::Connect ( aRefZone, testedZone );
+        }
     };
 
 
     PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
+
+    m_padList.RemoveInvalidItems();
+    m_viaList.RemoveInvalidItems();
+    m_trackList.RemoveInvalidItems();
+    m_zoneList.RemoveInvalidItems();
 
     m_padList.ClearConnections();
     m_viaList.ClearConnections();
@@ -793,7 +871,7 @@ void CN_CONNECTIVITY_IMPL::searchConnections( bool aIncludeZones )
             m_viaList.FindNearby( BOX2I(), searchZones );
             m_trackList.FindNearby( BOX2I(), searchZones );
             m_padList.FindNearby(  BOX2I(), searchZones );
-            m_zoneList.FindNearby(  BOX2I(),  std::bind( checkInterZoneConnection, _1, zoneItem ) );
+            m_zoneList.FindNearby(  BOX2I(),  std::bind( checkInterZoneConnection, _1, static_cast<CN_ZONE *> (zoneItem) ) );
 
         }
     }
@@ -1010,6 +1088,7 @@ void CN_CONNECTIVITY_IMPL::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std
 
 bool CN_CONNECTIVITY_IMPL::CheckConnectivity( std::vector<DISJOINT_NET_ENTRY>& aReport )
 {
+    bool rv = true;
     searchConnections( true );
     searchClusters( true );
 
@@ -1031,9 +1110,15 @@ bool CN_CONNECTIVITY_IMPL::CheckConnectivity( std::vector<DISJOINT_NET_ENTRY>& a
             }
 
         if( count > 1 )
+        {
             wxLogTrace( "CN", "Net %d [%s] is not completely routed (%d disjoint clusters).\n", net,
                     (const char*) name, count );
+
+            rv = false;
+        }
     }
+
+    return rv;
 };
 
 using namespace std;
@@ -1097,6 +1182,7 @@ int main( int argc, char* argv[] )
 
     conns.PropagateNets();
 
+#if 1
     for( int i = 0; i <m_board->GetAreaCount(); i++ )
     {
         ZONE_CONTAINER* zone = m_board->GetArea( i );
@@ -1109,10 +1195,11 @@ int main( int argc, char* argv[] )
             printf("Delete poly %d/%d\n", idx, zone->FilledPolysList().OutlineCount());
             zone->FilledPolysList().DeletePolygon( idx );
         }
-
         conns.Remove( zone );
         conns.Add( zone );
+
     }
+#endif
 
     conns.CheckConnectivity( report );
 

@@ -110,10 +110,10 @@ public:
     int DrawKeepout( const TOOL_EVENT& aEvent );
 
     /**
-     * Function PlaceDXF()
-     * Places a drawing imported from a DXF file in module editor.
+     * Function PlaceGraphics()
+     * Places a drawing imported from a vector graphics file.
      */
-    int PlaceDXF( const TOOL_EVENT& aEvent );
+    int PlaceGraphics( const TOOL_EVENT& aEvent );
 
     /**
      * Function SetAnchor()

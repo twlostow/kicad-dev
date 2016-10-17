@@ -123,8 +123,8 @@ public:
     /// Activation of the drawing tool (placing a MODULE)
     static TOOL_ACTION placeModule;
 
-    /// Activation of the drawing tool (placing a drawing from DXF file)
-    static TOOL_ACTION placeDXF;
+    /// Activation of the drawing tool (placing a drawing from a vector graphics file)
+    static TOOL_ACTION placeGraphics;
 
     /// Activation of the drawing tool (placing the footprint anchor)
     static TOOL_ACTION setAnchor;

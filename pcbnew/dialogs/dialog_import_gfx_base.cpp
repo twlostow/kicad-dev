@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
+// C++ code generated with wxFormBuilder (version Oct 17 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -7,11 +7,11 @@
 
 #include "class_pcb_layer_box_selector.h"
 
-#include "dialog_dxf_import_base.h"
+#include "dialog_import_gfx_base.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
-DIALOG_DXF_IMPORT_BASE::DIALOG_DXF_IMPORT_BASE( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DIALOG_SHIM( parent, id, title, pos, size, style )
+DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DIALOG_SHIM( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 	
@@ -56,7 +56,14 @@ DIALOG_DXF_IMPORT_BASE::DIALOG_DXF_IMPORT_BASE( wxWindow* parent, wxWindowID id,
 	bSizer6->Add( m_staticText4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_DXFPCBXCoord = new wxTextCtrl( this, wxID_ANY, _("0.0"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_DXFPCBXCoord->SetMaxLength( 10 ); 
+	#ifdef __WXGTK__
+	if ( !m_DXFPCBXCoord->HasFlag( wxTE_MULTILINE ) )
+	{
+	m_DXFPCBXCoord->SetMaxLength( 10 );
+	}
+	#else
+	m_DXFPCBXCoord->SetMaxLength( 10 );
+	#endif
 	m_DXFPCBXCoord->SetToolTip( _("DXF origin on PCB Grid, X Coordinate") );
 	
 	bSizer6->Add( m_DXFPCBXCoord, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -72,7 +79,14 @@ DIALOG_DXF_IMPORT_BASE::DIALOG_DXF_IMPORT_BASE( wxWindow* parent, wxWindowID id,
 	bSizer7->Add( m_staticText5, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	m_DXFPCBYCoord = new wxTextCtrl( this, wxID_ANY, _("0.0"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_DXFPCBYCoord->SetMaxLength( 10 ); 
+	#ifdef __WXGTK__
+	if ( !m_DXFPCBYCoord->HasFlag( wxTE_MULTILINE ) )
+	{
+	m_DXFPCBYCoord->SetMaxLength( 10 );
+	}
+	#else
+	m_DXFPCBYCoord->SetMaxLength( 10 );
+	#endif
 	m_DXFPCBYCoord->SetToolTip( _("DXF origin on PCB Grid, Y Coordinate") );
 	
 	bSizer7->Add( m_DXFPCBYCoord, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -137,18 +151,18 @@ DIALOG_DXF_IMPORT_BASE::DIALOG_DXF_IMPORT_BASE( wxWindow* parent, wxWindowID id,
 	this->Centre( wxBOTH );
 	
 	// Connect Events
-	m_buttonBrowse->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_DXF_IMPORT_BASE::OnBrowseDxfFiles ), NULL, this );
-	m_rbOffsetOption->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_DXF_IMPORT_BASE::OriginOptionOnUpdateUI ), NULL, this );
-	m_sdbSizer1Cancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_DXF_IMPORT_BASE::OnCancelClick ), NULL, this );
-	m_sdbSizer1OK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_DXF_IMPORT_BASE::OnOKClick ), NULL, this );
+	m_buttonBrowse->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnBrowseDxfFiles ), NULL, this );
+	m_rbOffsetOption->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_IMPORT_GFX_BASE::OriginOptionOnUpdateUI ), NULL, this );
+	m_sdbSizer1Cancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnCancelClick ), NULL, this );
+	m_sdbSizer1OK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnOKClick ), NULL, this );
 }
 
-DIALOG_DXF_IMPORT_BASE::~DIALOG_DXF_IMPORT_BASE()
+DIALOG_IMPORT_GFX_BASE::~DIALOG_IMPORT_GFX_BASE()
 {
 	// Disconnect Events
-	m_buttonBrowse->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_DXF_IMPORT_BASE::OnBrowseDxfFiles ), NULL, this );
-	m_rbOffsetOption->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_DXF_IMPORT_BASE::OriginOptionOnUpdateUI ), NULL, this );
-	m_sdbSizer1Cancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_DXF_IMPORT_BASE::OnCancelClick ), NULL, this );
-	m_sdbSizer1OK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_DXF_IMPORT_BASE::OnOKClick ), NULL, this );
+	m_buttonBrowse->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnBrowseDxfFiles ), NULL, this );
+	m_rbOffsetOption->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_IMPORT_GFX_BASE::OriginOptionOnUpdateUI ), NULL, this );
+	m_sdbSizer1Cancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnCancelClick ), NULL, this );
+	m_sdbSizer1OK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnOKClick ), NULL, this );
 	
 }

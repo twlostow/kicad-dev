@@ -1,12 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
+// C++ code generated with wxFormBuilder (version Oct 17 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef __DIALOG_DXF_IMPORT_BASE_H__
-#define __DIALOG_DXF_IMPORT_BASE_H__
+#ifndef __DIALOG_IMPORT_GFX_BASE_H__
+#define __DIALOG_IMPORT_GFX_BASE_H__
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
@@ -36,9 +36,9 @@ class PCB_LAYER_BOX_SELECTOR;
 #define wxID_ORIGIN_SELECT 1000
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class DIALOG_DXF_IMPORT_BASE
+/// Class DIALOG_IMPORT_GFX_BASE
 ///////////////////////////////////////////////////////////////////////////////
-class DIALOG_DXF_IMPORT_BASE : public DIALOG_SHIM
+class DIALOG_IMPORT_GFX_BASE : public DIALOG_SHIM
 {
 	private:
 	
@@ -69,9 +69,9 @@ class DIALOG_DXF_IMPORT_BASE : public DIALOG_SHIM
 	
 	public:
 		
-		DIALOG_DXF_IMPORT_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Import DXF File"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
-		~DIALOG_DXF_IMPORT_BASE();
+		DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Import DXF File"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
+		~DIALOG_IMPORT_GFX_BASE();
 	
 };
 
-#endif //__DIALOG_DXF_IMPORT_BASE_H__
+#endif //__DIALOG_IMPORT_GFX_BASE_H__

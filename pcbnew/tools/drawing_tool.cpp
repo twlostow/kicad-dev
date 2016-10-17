@@ -33,7 +33,7 @@
 #include <pcbnew_id.h>
 #include <confirm.h>
 #include <dialog_edit_module_text.h>
-#include <import_dxf/dialog_dxf_import.h>
+#include <dialog_import_gfx.h>
 
 #include <view/view_group.h>
 #include <view/view_controls.h>
@@ -513,12 +513,12 @@ int DRAWING_TOOL::DrawKeepout( const TOOL_EVENT& aEvent )
 }
 
 
-int DRAWING_TOOL::PlaceDXF( const TOOL_EVENT& aEvent )
+int DRAWING_TOOL::PlaceGraphics( const TOOL_EVENT& aEvent )
 {
     if( !m_frame->GetModel() )
         return 0;
 
-    DIALOG_DXF_IMPORT dlg( m_frame );
+    DIALOG_IMPORT_GFX dlg( m_frame );
     int dlgResult = dlg.ShowModal();
 
     const std::list<BOARD_ITEM*>& list = dlg.GetImportedItems();
@@ -671,7 +671,7 @@ int DRAWING_TOOL::PlaceDXF( const TOOL_EVENT& aEvent )
                     commit.Add( item );
             }
 
-            commit.Push( _( "Place a DXF drawing" ) );
+            commit.Push( _( "Place imported graphics" ) );
             break;
         }
     }
@@ -1339,7 +1339,7 @@ void DRAWING_TOOL::SetTransitions()
     Go( &DRAWING_TOOL::DrawZone,         COMMON_ACTIONS::drawZone.MakeEvent() );
     Go( &DRAWING_TOOL::DrawKeepout,      COMMON_ACTIONS::drawKeepout.MakeEvent() );
     Go( &DRAWING_TOOL::PlaceText,        COMMON_ACTIONS::placeText.MakeEvent() );
-    Go( &DRAWING_TOOL::PlaceDXF,         COMMON_ACTIONS::placeDXF.MakeEvent() );
+    Go( &DRAWING_TOOL::PlaceGraphics,    COMMON_ACTIONS::placeGraphics.MakeEvent() );
     Go( &DRAWING_TOOL::SetAnchor,        COMMON_ACTIONS::setAnchor.MakeEvent() );
 }
 

@@ -172,7 +172,7 @@ TOOL_ACTION COMMON_ACTIONS::drawKeepout( "pcbnew.InteractiveDrawing.keepout",
         AS_GLOBAL, 0,
         _( "Add a keepout area" ), _( "Add a keepout area" ), NULL, AF_ACTIVATE );
 
-TOOL_ACTION COMMON_ACTIONS::placeDXF( "pcbnew.InteractiveDrawing.placeDXF",
+TOOL_ACTION COMMON_ACTIONS::placeGraphics( "pcbnew.InteractiveDrawing.placeGraphics",
         AS_GLOBAL, 0,
         "", "", NULL, AF_ACTIVATE );
 
@@ -668,7 +668,7 @@ boost::optional<TOOL_EVENT> COMMON_ACTIONS::TranslateLegacyId( int aId )
         return COMMON_ACTIONS::placePad.MakeEvent();
 
     case ID_GEN_IMPORT_DXF_FILE:
-        return COMMON_ACTIONS::placeDXF.MakeEvent();
+        return COMMON_ACTIONS::placeGraphics.MakeEvent();
 
     case ID_MODEDIT_ANCHOR_TOOL:
         return COMMON_ACTIONS::setAnchor.MakeEvent();

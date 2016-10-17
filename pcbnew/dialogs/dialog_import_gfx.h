@@ -22,15 +22,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <dialog_dxf_import_base.h>
+#include <dialog_import_gfx_base.h>
 #include <wxPcbStruct.h>
 #include <dxf2brd_items.h>
 
-class DIALOG_DXF_IMPORT : public DIALOG_DXF_IMPORT_BASE
+class DIALOG_IMPORT_GFX : public DIALOG_IMPORT_GFX_BASE
 {
 public:
-    DIALOG_DXF_IMPORT( PCB_BASE_FRAME* aParent, bool aUseModuleItems = false );
-    ~DIALOG_DXF_IMPORT();
+    DIALOG_IMPORT_GFX( PCB_BASE_FRAME* aParent, bool aUseModuleItems = false );
+    ~DIALOG_IMPORT_GFX();
 
     /**
      * Function GetImportedItems()

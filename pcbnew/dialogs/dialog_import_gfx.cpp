@@ -27,7 +27,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <dialog_dxf_import.h>
+#include <dialog_import_gfx.h>
 #include <kiface_i.h>
 #include <convert_to_biu.h>
 #include <class_pcb_layer_box_selector.h>
@@ -39,23 +39,23 @@
 #include <class_pcb_text.h>
 
 // Keys to store setup in config
-#define DXF_IMPORT_LAYER_OPTION_KEY  "DxfImportBrdLayer"
-#define DXF_IMPORT_COORD_ORIGIN_KEY  "DxfImportCoordOrigin"
-#define DXF_IMPORT_LAST_FILE_KEY     "DxfImportLastFile"
-#define DXF_IMPORT_GRID_UNITS_KEY    "DxfImportGridUnits"
-#define DXF_IMPORT_GRID_OFFSET_X_KEY "DxfImportGridOffsetX"
-#define DXF_IMPORT_GRID_OFFSET_Y_KEY "DxfImportGridOffsetY"
+#define IMPORT_GFX_LAYER_OPTION_KEY  "DxfImportBrdLayer"
+#define IMPORT_GFX_COORD_ORIGIN_KEY  "DxfImportCoordOrigin"
+#define IMPORT_GFX_LAST_FILE_KEY     "DxfImportLastFile"
+#define IMPORT_GFX_GRID_UNITS_KEY    "DxfImportGridUnits"
+#define IMPORT_GFX_GRID_OFFSET_X_KEY "DxfImportGridOffsetX"
+#define IMPORT_GFX_GRID_OFFSET_Y_KEY "DxfImportGridOffsetY"
 
 
-// Static members of DIALOG_DXF_IMPORT, to remember
+// Static members of DIALOG_IMPORT_GFX, to remember
 // the user's choices during the session
-wxString DIALOG_DXF_IMPORT::m_dxfFilename;
-int DIALOG_DXF_IMPORT::m_offsetSelection = 0;
-LAYER_NUM DIALOG_DXF_IMPORT::m_layer = Dwgs_User;
+wxString DIALOG_IMPORT_GFX::m_dxfFilename;
+int DIALOG_IMPORT_GFX::m_offsetSelection = 0;
+LAYER_NUM DIALOG_IMPORT_GFX::m_layer = Dwgs_User;
 
 
-DIALOG_DXF_IMPORT::DIALOG_DXF_IMPORT( PCB_BASE_FRAME* aParent, bool aUseModuleItems )
-    : DIALOG_DXF_IMPORT_BASE( aParent )
+DIALOG_IMPORT_GFX::DIALOG_IMPORT_GFX( PCB_BASE_FRAME* aParent, bool aUseModuleItems )
+    : DIALOG_IMPORT_GFX_BASE( aParent )
 {
     m_parent = aParent;
     m_dxfImporter.UseModuleItems( aUseModuleItems );
@@ -66,12 +66,12 @@ DIALOG_DXF_IMPORT::DIALOG_DXF_IMPORT( PCB_BASE_FRAME* aParent, bool aUseModuleIt
 
     if( m_config )
     {
-        m_layer = m_config->Read( DXF_IMPORT_LAYER_OPTION_KEY, (long)Dwgs_User );
-        m_offsetSelection = m_config->Read( DXF_IMPORT_COORD_ORIGIN_KEY, (long)0 );
-        m_dxfFilename =  m_config->Read( DXF_IMPORT_LAST_FILE_KEY, wxEmptyString );
-        m_config->Read( DXF_IMPORT_GRID_UNITS_KEY, &m_PCBGridUnits, 0 );
-        m_config->Read( DXF_IMPORT_GRID_OFFSET_X_KEY, &m_PCBGridOffsetX, 0.0 );
-        m_config->Read( DXF_IMPORT_GRID_OFFSET_Y_KEY, &m_PCBGridOffsetY, 0.0 );
+        m_layer = m_config->Read( IMPORT_GFX_LAYER_OPTION_KEY, (long)Dwgs_User );
+        m_offsetSelection = m_config->Read( IMPORT_GFX_COORD_ORIGIN_KEY, (long)0 );
+        m_dxfFilename =  m_config->Read( IMPORT_GFX_LAST_FILE_KEY, wxEmptyString );
+        m_config->Read( IMPORT_GFX_GRID_UNITS_KEY, &m_PCBGridUnits, 0 );
+        m_config->Read( IMPORT_GFX_GRID_OFFSET_X_KEY, &m_PCBGridOffsetX, 0.0 );
+        m_config->Read( IMPORT_GFX_GRID_OFFSET_Y_KEY, &m_PCBGridOffsetY, 0.0 );
     }
 
     m_DXFPCBGridUnits->SetSelection( m_PCBGridUnits );
@@ -104,25 +104,25 @@ DIALOG_DXF_IMPORT::DIALOG_DXF_IMPORT( PCB_BASE_FRAME* aParent, bool aUseModuleIt
 }
 
 
-DIALOG_DXF_IMPORT::~DIALOG_DXF_IMPORT()
+DIALOG_IMPORT_GFX::~DIALOG_IMPORT_GFX()
 {
     m_offsetSelection = m_rbOffsetOption->GetSelection();
     m_layer = m_SelLayerBox->GetLayerSelection();
 
     if( m_config )
     {
-        m_config->Write( DXF_IMPORT_LAYER_OPTION_KEY, (long)m_layer );
-        m_config->Write( DXF_IMPORT_COORD_ORIGIN_KEY, m_offsetSelection );
-        m_config->Write( DXF_IMPORT_LAST_FILE_KEY, m_dxfFilename );
+        m_config->Write( IMPORT_GFX_LAYER_OPTION_KEY, (long)m_layer );
+        m_config->Write( IMPORT_GFX_COORD_ORIGIN_KEY, m_offsetSelection );
+        m_config->Write( IMPORT_GFX_LAST_FILE_KEY, m_dxfFilename );
 
-        m_config->Write( DXF_IMPORT_GRID_UNITS_KEY, GetPCBGridUnits() );
-        m_config->Write( DXF_IMPORT_GRID_OFFSET_X_KEY, m_DXFPCBXCoord->GetValue() );
-        m_config->Write( DXF_IMPORT_GRID_OFFSET_Y_KEY, m_DXFPCBYCoord->GetValue() );
+        m_config->Write( IMPORT_GFX_GRID_UNITS_KEY, GetPCBGridUnits() );
+        m_config->Write( IMPORT_GFX_GRID_OFFSET_X_KEY, m_DXFPCBXCoord->GetValue() );
+        m_config->Write( IMPORT_GFX_GRID_OFFSET_Y_KEY, m_DXFPCBYCoord->GetValue() );
     }
 }
 
 
-void DIALOG_DXF_IMPORT::OnBrowseDxfFiles( wxCommandEvent& event )
+void DIALOG_IMPORT_GFX::OnBrowseDxfFiles( wxCommandEvent& event )
 {
     wxString path;
     wxString filename;
@@ -153,7 +153,7 @@ void DIALOG_DXF_IMPORT::OnBrowseDxfFiles( wxCommandEvent& event )
 }
 
 
-void DIALOG_DXF_IMPORT::OnOKClick( wxCommandEvent& event )
+void DIALOG_IMPORT_GFX::OnOKClick( wxCommandEvent& event )
 {
     m_dxfFilename = m_textCtrlFileName->GetValue();
 
@@ -208,7 +208,7 @@ void DIALOG_DXF_IMPORT::OnOKClick( wxCommandEvent& event )
 
 bool InvokeDXFDialogBoardImport( PCB_BASE_FRAME* aCaller )
 {
-    DIALOG_DXF_IMPORT dlg( aCaller );
+    DIALOG_IMPORT_GFX dlg( aCaller );
     bool success = ( dlg.ShowModal() == wxID_OK );
 
     if( success )
@@ -239,7 +239,7 @@ bool InvokeDXFDialogModuleImport( PCB_BASE_FRAME* aCaller, MODULE* aModule )
 {
     wxASSERT( aModule );
 
-    DIALOG_DXF_IMPORT dlg( aCaller, true );
+    DIALOG_IMPORT_GFX dlg( aCaller, true );
     bool success = ( dlg.ShowModal() == wxID_OK );
 
     if( success )
@@ -261,7 +261,7 @@ bool InvokeDXFDialogModuleImport( PCB_BASE_FRAME* aCaller, MODULE* aModule )
 }
 
 
-void DIALOG_DXF_IMPORT::OriginOptionOnUpdateUI( wxUpdateUIEvent& event )
+void DIALOG_IMPORT_GFX::OriginOptionOnUpdateUI( wxUpdateUIEvent& event )
 {
     bool enable = m_rbOffsetOption->GetSelection() == 4;
 
@@ -271,13 +271,13 @@ void DIALOG_DXF_IMPORT::OriginOptionOnUpdateUI( wxUpdateUIEvent& event )
 }
 
 
-int  DIALOG_DXF_IMPORT::GetPCBGridUnits( void )
+int  DIALOG_IMPORT_GFX::GetPCBGridUnits( void )
 {
     return m_DXFPCBGridUnits->GetSelection();
 }
 
 
-void DIALOG_DXF_IMPORT::GetPCBGridOffsets( double &aXOffset, double &aYOffset )
+void DIALOG_IMPORT_GFX::GetPCBGridOffsets( double &aXOffset, double &aYOffset )
 {
     aXOffset = DoubleValueFromString( UNSCALED_UNITS, m_DXFPCBXCoord->GetValue() );
     aYOffset = DoubleValueFromString( UNSCALED_UNITS, m_DXFPCBYCoord->GetValue() );

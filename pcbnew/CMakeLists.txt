@@ -32,7 +32,7 @@ include_directories(
     ../common/dialogs
     ./exporters
     ../lib_dxf
-    ./import_dxf
+    ./import_gfx
     ../utils/idftools
     ${GLM_INCLUDE_DIR}
     ${INC_AFTER}
@@ -82,6 +82,8 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_general_options.cpp
     dialogs/dialog_general_options_BoardEditor_base.cpp
     dialogs/dialog_get_footprint_by_name_base.cpp
+    dialogs/dialog_import_gfx_base.cpp
+    dialogs/dialog_import_gfx.cpp
     dialogs/dialog_global_edit_tracks_and_vias.cpp
     dialogs/dialog_global_edit_tracks_and_vias_base.cpp
     dialogs/dialog_global_modules_fields_edition.cpp
@@ -149,10 +151,11 @@ set( PCBNEW_DIALOGS
     ${GITHUB_3DLIBRARIES_WIZARD}
     )
 
-set( PCBNEW_IMPORT_DXF
-    import_dxf/dialog_dxf_import_base.cpp
-    import_dxf/dialog_dxf_import.cpp
-    import_dxf/dxf2brd_items.cpp
+set( PCBNEW_IMPORT_GFX
+    #import_gfx/graphics_import_plugin.cpp
+    #import_gfx/graphics_importer.cpp
+    import_gfx/dxf2brd_items.cpp
+    #import_gfx/dfx_import_plugin.cpp
     )
 
 set( PCBNEW_EXPORTERS
@@ -202,7 +205,7 @@ set( PCBNEW_CLASS_SRCS
     cross-probing.cpp
     deltrack.cpp
     ${PCBNEW_DIALOGS}
-    ${PCBNEW_IMPORT_DXF}
+    ${PCBNEW_IMPORT_GFX}
     ${PCBNEW_EXPORTERS}
     dragsegm.cpp
     drc.cpp

@@ -1,6 +1,6 @@
 /**
- * @file dialog_dxf_import.cpp
- * @brief Dialog to import a dxf file on a given board layer.
+ * @file dialog_gfx_import.cpp
+ * @brief Dialog to import a vector graphics file on a given board layer.
  */
 
 /*
@@ -32,24 +32,26 @@
 #include <convert_to_biu.h>
 #include <class_pcb_layer_box_selector.h>
 
+#include <wxPcbStruct.h>
 #include <class_board.h>
 #include <class_module.h>
 #include <class_edge_mod.h>
 #include <class_text_mod.h>
 #include <class_pcb_text.h>
 
+#include <import_gfx/graphics_importer_pcbnew.h>
+
 // Keys to store setup in config
-#define IMPORT_GFX_LAYER_OPTION_KEY  "DxfImportBrdLayer"
-#define IMPORT_GFX_COORD_ORIGIN_KEY  "DxfImportCoordOrigin"
-#define IMPORT_GFX_LAST_FILE_KEY     "DxfImportLastFile"
-#define IMPORT_GFX_GRID_UNITS_KEY    "DxfImportGridUnits"
-#define IMPORT_GFX_GRID_OFFSET_X_KEY "DxfImportGridOffsetX"
-#define IMPORT_GFX_GRID_OFFSET_Y_KEY "DxfImportGridOffsetY"
+#define IMPORT_GFX_LAYER_OPTION_KEY  "GfxImportBrdLayer"
+#define IMPORT_GFX_COORD_ORIGIN_KEY  "GfxImportCoordOrigin"
+#define IMPORT_GFX_LAST_FILE_KEY     "GfxImportLastFile"
+#define IMPORT_GFX_GRID_UNITS_KEY    "GfxImportGridUnits"
+#define IMPORT_GFX_GRID_OFFSET_X_KEY "GfxImportGridOffsetX"
+#define IMPORT_GFX_GRID_OFFSET_Y_KEY "GfxImportGridOffsetY"
 
 
-// Static members of DIALOG_IMPORT_GFX, to remember
-// the user's choices during the session
-wxString DIALOG_IMPORT_GFX::m_dxfFilename;
+// Static members of DIALOG_IMPORT_GFX, to remember the user's choices during the session
+wxString DIALOG_IMPORT_GFX::m_filename;
 int DIALOG_IMPORT_GFX::m_offsetSelection = 0;
 LAYER_NUM DIALOG_IMPORT_GFX::m_layer = Dwgs_User;
 
@@ -58,31 +60,36 @@ DIALOG_IMPORT_GFX::DIALOG_IMPORT_GFX( PCB_BASE_FRAME* aParent, bool aUseModuleIt
     : DIALOG_IMPORT_GFX_BASE( aParent )
 {
     m_parent = aParent;
-    m_dxfImporter.UseModuleItems( aUseModuleItems );
+
+    if( aUseModuleItems )
+        m_importer.reset( new GRAPHICS_IMPORTER_MODULE() );
+    else
+        m_importer.reset( new GRAPHICS_IMPORTER_BOARD() );
+
     m_config = Kiface().KifaceSettings();
-    m_PCBGridUnits = 0;
-    m_PCBGridOffsetX = 0.0;
-    m_PCBGridOffsetY = 0.0;
+    m_gridUnits = 0;
+    m_gridOffsetX = 0.0;
+    m_gridOffsetY = 0.0;
 
     if( m_config )
     {
         m_layer = m_config->Read( IMPORT_GFX_LAYER_OPTION_KEY, (long)Dwgs_User );
         m_offsetSelection = m_config->Read( IMPORT_GFX_COORD_ORIGIN_KEY, (long)0 );
-        m_dxfFilename =  m_config->Read( IMPORT_GFX_LAST_FILE_KEY, wxEmptyString );
-        m_config->Read( IMPORT_GFX_GRID_UNITS_KEY, &m_PCBGridUnits, 0 );
-        m_config->Read( IMPORT_GFX_GRID_OFFSET_X_KEY, &m_PCBGridOffsetX, 0.0 );
-        m_config->Read( IMPORT_GFX_GRID_OFFSET_Y_KEY, &m_PCBGridOffsetY, 0.0 );
+        m_filename =  m_config->Read( IMPORT_GFX_LAST_FILE_KEY, wxEmptyString );
+        m_config->Read( IMPORT_GFX_GRID_UNITS_KEY, &m_gridUnits, 0 );
+        m_config->Read( IMPORT_GFX_GRID_OFFSET_X_KEY, &m_gridOffsetX, 0.0 );
+        m_config->Read( IMPORT_GFX_GRID_OFFSET_Y_KEY, &m_gridOffsetY, 0.0 );
     }
 
-    m_DXFPCBGridUnits->SetSelection( m_PCBGridUnits );
+    m_PCBGridUnits->SetSelection( m_gridUnits );
     wxString tmpStr;
-    tmpStr << m_PCBGridOffsetX;
-    m_DXFPCBXCoord->SetValue( tmpStr );
+    tmpStr << m_gridOffsetX;
+    m_PCBXCoord->SetValue( tmpStr );
     tmpStr =  "";
-    tmpStr << m_PCBGridOffsetY;
-    m_DXFPCBYCoord->SetValue( tmpStr );
+    tmpStr << m_gridOffsetY;
+    m_PCBYCoord->SetValue( tmpStr );
 
-    m_textCtrlFileName->SetValue( m_dxfFilename );
+    m_textCtrlFileName->SetValue( m_filename );
     m_rbOffsetOption->SetSelection( m_offsetSelection );
 
     // Configure the layers list selector
@@ -113,23 +120,23 @@ DIALOG_IMPORT_GFX::~DIALOG_IMPORT_GFX()
     {
         m_config->Write( IMPORT_GFX_LAYER_OPTION_KEY, (long)m_layer );
         m_config->Write( IMPORT_GFX_COORD_ORIGIN_KEY, m_offsetSelection );
-        m_config->Write( IMPORT_GFX_LAST_FILE_KEY, m_dxfFilename );
+        m_config->Write( IMPORT_GFX_LAST_FILE_KEY, m_filename );
 
         m_config->Write( IMPORT_GFX_GRID_UNITS_KEY, GetPCBGridUnits() );
-        m_config->Write( IMPORT_GFX_GRID_OFFSET_X_KEY, m_DXFPCBXCoord->GetValue() );
-        m_config->Write( IMPORT_GFX_GRID_OFFSET_Y_KEY, m_DXFPCBYCoord->GetValue() );
+        m_config->Write( IMPORT_GFX_GRID_OFFSET_X_KEY, m_PCBXCoord->GetValue() );
+        m_config->Write( IMPORT_GFX_GRID_OFFSET_Y_KEY, m_PCBYCoord->GetValue() );
     }
 }
 
 
-void DIALOG_IMPORT_GFX::OnBrowseDxfFiles( wxCommandEvent& event )
+void DIALOG_IMPORT_GFX::OnBrowseFiles( wxCommandEvent& event )
 {
     wxString path;
     wxString filename;
 
-    if( !m_dxfFilename.IsEmpty() )
+    if( !m_filename.IsEmpty() )
     {
-        wxFileName fn( m_dxfFilename );
+        wxFileName fn( m_filename );
         path = fn.GetPath();
         filename = fn.GetFullName();
     }
@@ -148,16 +155,16 @@ void DIALOG_IMPORT_GFX::OnBrowseDxfFiles( wxCommandEvent& event )
     if( fileName.IsEmpty() )
         return;
 
-    m_dxfFilename = fileName;
+    m_filename = fileName;
     m_textCtrlFileName->SetValue( fileName );
 }
 
 
 void DIALOG_IMPORT_GFX::OnOKClick( wxCommandEvent& event )
 {
-    m_dxfFilename = m_textCtrlFileName->GetValue();
+    m_filename = m_textCtrlFileName->GetValue();
 
-    if( m_dxfFilename.IsEmpty() )
+    if( m_filename.IsEmpty() )
         return;
 
     double offsetX = 0;
@@ -195,32 +202,32 @@ void DIALOG_IMPORT_GFX::OnOKClick( wxCommandEvent& event )
     }
 
     // Set coordinates offset for import (offset is given in mm)
-    m_dxfImporter.SetOffset( offsetX, offsetY );
+    //m_importer.SetOffset( offsetX, offsetY );
     m_layer = m_SelLayerBox->GetLayerSelection();
-    m_dxfImporter.SetBrdLayer( m_layer );
-
-    // Read dxf file:
-    m_dxfImporter.ImportDxfFile( m_dxfFilename );
+    m_importer->SetLayer( LAYER_ID( m_layer ) );
+    //m_importer->SetLineWidth(); // @todo add a setting in the dialog and apply it here
+    m_importer->SetPlugin( GRAPHICS_IMPORT_MGR::DXF );  // @todo pick the right plugin
+    m_importer->Import( m_filename );
 
     EndModal( wxID_OK );
 }
 
 
-bool InvokeDXFDialogBoardImport( PCB_BASE_FRAME* aCaller )
+bool InvokeDialogImportGfxBoard( PCB_BASE_FRAME* aCaller )
 {
     DIALOG_IMPORT_GFX dlg( aCaller );
     bool success = ( dlg.ShowModal() == wxID_OK );
 
     if( success )
     {
-        const std::list<BOARD_ITEM*>& list = dlg.GetImportedItems();
+        const std::list<EDA_ITEM*>& list = dlg.GetImportedItems();
         PICKED_ITEMS_LIST picklist;
         BOARD* board = aCaller->GetBoard();
 
-        std::list<BOARD_ITEM*>::const_iterator it, itEnd;
+        std::list<EDA_ITEM*>::const_iterator it, itEnd;
         for( it = list.begin(), itEnd = list.end(); it != itEnd; ++it )
         {
-            BOARD_ITEM* item = *it;
+            BOARD_ITEM* item = static_cast<BOARD_ITEM*>( *it );
             board->Add( item );
 
             ITEM_PICKER itemWrapper( item, UR_NEW );
@@ -235,7 +242,7 @@ bool InvokeDXFDialogBoardImport( PCB_BASE_FRAME* aCaller )
 }
 
 
-bool InvokeDXFDialogModuleImport( PCB_BASE_FRAME* aCaller, MODULE* aModule )
+bool InvokeDialogImportGfxModule( PCB_BASE_FRAME* aCaller, MODULE* aModule )
 {
     wxASSERT( aModule );
 
@@ -244,16 +251,16 @@ bool InvokeDXFDialogModuleImport( PCB_BASE_FRAME* aCaller, MODULE* aModule )
 
     if( success )
     {
-        const std::list<BOARD_ITEM*>& list = dlg.GetImportedItems();
+        const std::list<EDA_ITEM*>& list = dlg.GetImportedItems();
 
         aCaller->SaveCopyInUndoList( aModule, UR_CHANGED );
         aCaller->OnModify();
 
-        std::list<BOARD_ITEM*>::const_iterator it, itEnd;
+        std::list<EDA_ITEM*>::const_iterator it, itEnd;
 
         for( it = list.begin(), itEnd = list.end(); it != itEnd; ++it )
         {
-            aModule->Add( *it );
+            aModule->Add( static_cast<BOARD_ITEM*>( *it ) );
         }
     }
 
@@ -265,21 +272,21 @@ void DIALOG_IMPORT_GFX::OriginOptionOnUpdateUI( wxUpdateUIEvent& event )
 {
     bool enable = m_rbOffsetOption->GetSelection() == 4;
 
-    m_DXFPCBGridUnits->Enable( enable );
-    m_DXFPCBXCoord->Enable( enable );
-    m_DXFPCBYCoord->Enable( enable );
+    m_PCBGridUnits->Enable( enable );
+    m_PCBXCoord->Enable( enable );
+    m_PCBYCoord->Enable( enable );
 }
 
 
 int  DIALOG_IMPORT_GFX::GetPCBGridUnits( void )
 {
-    return m_DXFPCBGridUnits->GetSelection();
+    return m_PCBGridUnits->GetSelection();
 }
 
 
 void DIALOG_IMPORT_GFX::GetPCBGridOffsets( double &aXOffset, double &aYOffset )
 {
-    aXOffset = DoubleValueFromString( UNSCALED_UNITS, m_DXFPCBXCoord->GetValue() );
-    aYOffset = DoubleValueFromString( UNSCALED_UNITS, m_DXFPCBYCoord->GetValue() );
+    aXOffset = DoubleValueFromString( UNSCALED_UNITS, m_PCBXCoord->GetValue() );
+    aYOffset = DoubleValueFromString( UNSCALED_UNITS, m_PCBYCoord->GetValue() );
     return;
 }

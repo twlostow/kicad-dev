@@ -23,8 +23,9 @@
  */
 
 #include <dialog_import_gfx_base.h>
-#include <wxPcbStruct.h>
-#include <dxf2brd_items.h>
+#include <import_gfx/graphics_importer_pcbnew.h>
+
+class PCB_BASE_FRAME;
 
 class DIALOG_IMPORT_GFX : public DIALOG_IMPORT_GFX_BASE
 {
@@ -35,29 +36,29 @@ public:
     /**
      * Function GetImportedItems()
      *
-     * Returns a list of items imported from a DXF file.
+     * Returns a list of items imported from a vector graphics file.
      */
-    const std::list<BOARD_ITEM*>& GetImportedItems() const
+    const std::list<EDA_ITEM*>& GetImportedItems() const
     {
-        return m_dxfImporter.GetItemsList();
+        return m_importer->GetItems();
     }
 
 private:
     PCB_BASE_FRAME*      m_parent;
     wxConfigBase*        m_config;               // Current config
-    DXF2BRD_CONVERTER    m_dxfImporter;
-    int                  m_PCBGridUnits;
-    double               m_PCBGridOffsetX;
-    double               m_PCBGridOffsetY;
+    std::unique_ptr<GRAPHICS_IMPORTER_PCBNEW> m_importer;
+    int                  m_gridUnits;
+    double               m_gridOffsetX;
+    double               m_gridOffsetY;
 
-    static wxString      m_dxfFilename;
+    static wxString      m_filename;
     static int           m_offsetSelection;
     static LAYER_NUM     m_layer;
 
     // Virtual event handlers
     void OnCancelClick( wxCommandEvent& event ) override { event.Skip(); }
     void OnOKClick( wxCommandEvent& event ) override;
-    void OnBrowseDxfFiles( wxCommandEvent& event ) override;
+    void OnBrowseFiles( wxCommandEvent& event ) override;
     void OriginOptionOnUpdateUI( wxUpdateUIEvent& event ) override;
     int  GetPCBGridUnits( void );
     void GetPCBGridOffsets( double &aXOffset, double &aYOffset );

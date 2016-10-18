@@ -48,11 +48,11 @@ class DIALOG_IMPORT_GFX_BASE : public DIALOG_SHIM
 		wxButton* m_buttonBrowse;
 		wxRadioBox* m_rbOffsetOption;
 		wxStaticText* m_staticText4;
-		wxTextCtrl* m_DXFPCBXCoord;
+		wxTextCtrl* m_PCBXCoord;
 		wxStaticText* m_staticText5;
-		wxTextCtrl* m_DXFPCBYCoord;
+		wxTextCtrl* m_PCBYCoord;
 		wxStaticText* m_staticText3;
-		wxChoice* m_DXFPCBGridUnits;
+		wxChoice* m_PCBGridUnits;
 		wxStaticText* m_staticTextBrdlayer;
 		PCB_LAYER_BOX_SELECTOR* m_SelLayerBox;
 		wxStaticLine* m_staticline8;
@@ -61,7 +61,7 @@ class DIALOG_IMPORT_GFX_BASE : public DIALOG_SHIM
 		wxButton* m_sdbSizer1Cancel;
 		
 		// Virtual event handlers, overide them in your derived class
-		virtual void OnBrowseDxfFiles( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBrowseFiles( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OriginOptionOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void OnCancelClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOKClick( wxCommandEvent& event ) { event.Skip(); }
@@ -69,7 +69,7 @@ class DIALOG_IMPORT_GFX_BASE : public DIALOG_SHIM
 	
 	public:
 		
-		DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Import DXF File"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
+		DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Import vector graphics file"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
 		~DIALOG_IMPORT_GFX_BASE();
 	
 };

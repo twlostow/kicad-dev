@@ -41,7 +41,7 @@ DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id,
 	
 	wxString m_rbOffsetOptionChoices[] = { _("Center of page"), _("Upper left corner of page"), _("Center left side of page"), _("Lower left corner of page"), _("User defined position") };
 	int m_rbOffsetOptionNChoices = sizeof( m_rbOffsetOptionChoices ) / sizeof( wxString );
-	m_rbOffsetOption = new wxRadioBox( this, wxID_ORIGIN_SELECT, _("Place DXF origin (0,0) point:"), wxDefaultPosition, wxDefaultSize, m_rbOffsetOptionNChoices, m_rbOffsetOptionChoices, 1, wxRA_SPECIFY_COLS );
+	m_rbOffsetOption = new wxRadioBox( this, wxID_ORIGIN_SELECT, _("Place origin (0,0) point:"), wxDefaultPosition, wxDefaultSize, m_rbOffsetOptionNChoices, m_rbOffsetOptionChoices, 1, wxRA_SPECIFY_COLS );
 	m_rbOffsetOption->SetSelection( 0 );
 	bSizer3->Add( m_rbOffsetOption, 0, wxALL|wxEXPAND, 5 );
 	
@@ -55,18 +55,18 @@ DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id,
 	m_staticText4->Wrap( -1 );
 	bSizer6->Add( m_staticText4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
-	m_DXFPCBXCoord = new wxTextCtrl( this, wxID_ANY, _("0.0"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_PCBXCoord = new wxTextCtrl( this, wxID_ANY, _("0.0"), wxDefaultPosition, wxDefaultSize, 0 );
 	#ifdef __WXGTK__
-	if ( !m_DXFPCBXCoord->HasFlag( wxTE_MULTILINE ) )
+	if ( !m_PCBXCoord->HasFlag( wxTE_MULTILINE ) )
 	{
-	m_DXFPCBXCoord->SetMaxLength( 10 );
+	m_PCBXCoord->SetMaxLength( 10 );
 	}
 	#else
-	m_DXFPCBXCoord->SetMaxLength( 10 );
+	m_PCBXCoord->SetMaxLength( 10 );
 	#endif
-	m_DXFPCBXCoord->SetToolTip( _("DXF origin on PCB Grid, X Coordinate") );
+	m_PCBXCoord->SetToolTip( _("DXF origin on PCB Grid, X Coordinate") );
 	
-	bSizer6->Add( m_DXFPCBXCoord, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	bSizer6->Add( m_PCBXCoord, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
 	bSizer4->Add( bSizer6, 1, wxEXPAND, 5 );
@@ -78,18 +78,18 @@ DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id,
 	m_staticText5->Wrap( -1 );
 	bSizer7->Add( m_staticText5, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
-	m_DXFPCBYCoord = new wxTextCtrl( this, wxID_ANY, _("0.0"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_PCBYCoord = new wxTextCtrl( this, wxID_ANY, _("0.0"), wxDefaultPosition, wxDefaultSize, 0 );
 	#ifdef __WXGTK__
-	if ( !m_DXFPCBYCoord->HasFlag( wxTE_MULTILINE ) )
+	if ( !m_PCBYCoord->HasFlag( wxTE_MULTILINE ) )
 	{
-	m_DXFPCBYCoord->SetMaxLength( 10 );
+	m_PCBYCoord->SetMaxLength( 10 );
 	}
 	#else
-	m_DXFPCBYCoord->SetMaxLength( 10 );
+	m_PCBYCoord->SetMaxLength( 10 );
 	#endif
-	m_DXFPCBYCoord->SetToolTip( _("DXF origin on PCB Grid, Y Coordinate") );
+	m_PCBYCoord->SetToolTip( _("DXF origin on PCB Grid, Y Coordinate") );
 	
-	bSizer7->Add( m_DXFPCBYCoord, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	bSizer7->Add( m_PCBYCoord, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
 	bSizer4->Add( bSizer7, 1, wxEXPAND, 5 );
@@ -101,13 +101,13 @@ DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id,
 	m_staticText3->Wrap( -1 );
 	bSizer5->Add( m_staticText3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
-	wxString m_DXFPCBGridUnitsChoices[] = { _("mm"), _("inch") };
-	int m_DXFPCBGridUnitsNChoices = sizeof( m_DXFPCBGridUnitsChoices ) / sizeof( wxString );
-	m_DXFPCBGridUnits = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_DXFPCBGridUnitsNChoices, m_DXFPCBGridUnitsChoices, 0 );
-	m_DXFPCBGridUnits->SetSelection( 0 );
-	m_DXFPCBGridUnits->SetToolTip( _("Select PCB grid units") );
+	wxString m_PCBGridUnitsChoices[] = { _("mm"), _("inch") };
+	int m_PCBGridUnitsNChoices = sizeof( m_PCBGridUnitsChoices ) / sizeof( wxString );
+	m_PCBGridUnits = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_PCBGridUnitsNChoices, m_PCBGridUnitsChoices, 0 );
+	m_PCBGridUnits->SetSelection( 0 );
+	m_PCBGridUnits->SetToolTip( _("Select PCB grid units") );
 	
-	bSizer5->Add( m_DXFPCBGridUnits, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	bSizer5->Add( m_PCBGridUnits, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
 	
 	bSizer4->Add( bSizer5, 1, wxEXPAND, 5 );
@@ -151,7 +151,7 @@ DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id,
 	this->Centre( wxBOTH );
 	
 	// Connect Events
-	m_buttonBrowse->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnBrowseDxfFiles ), NULL, this );
+	m_buttonBrowse->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnBrowseFiles ), NULL, this );
 	m_rbOffsetOption->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_IMPORT_GFX_BASE::OriginOptionOnUpdateUI ), NULL, this );
 	m_sdbSizer1Cancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnCancelClick ), NULL, this );
 	m_sdbSizer1OK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnOKClick ), NULL, this );
@@ -160,7 +160,7 @@ DIALOG_IMPORT_GFX_BASE::DIALOG_IMPORT_GFX_BASE( wxWindow* parent, wxWindowID id,
 DIALOG_IMPORT_GFX_BASE::~DIALOG_IMPORT_GFX_BASE()
 {
 	// Disconnect Events
-	m_buttonBrowse->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnBrowseDxfFiles ), NULL, this );
+	m_buttonBrowse->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnBrowseFiles ), NULL, this );
 	m_rbOffsetOption->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_IMPORT_GFX_BASE::OriginOptionOnUpdateUI ), NULL, this );
 	m_sdbSizer1Cancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnCancelClick ), NULL, this );
 	m_sdbSizer1OK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_IMPORT_GFX_BASE::OnOKClick ), NULL, this );

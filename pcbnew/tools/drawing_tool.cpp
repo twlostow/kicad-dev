@@ -521,13 +521,14 @@ int DRAWING_TOOL::PlaceGraphics( const TOOL_EVENT& aEvent )
     DIALOG_IMPORT_GFX dlg( m_frame );
     int dlgResult = dlg.ShowModal();
 
-    const std::list<BOARD_ITEM*>& list = dlg.GetImportedItems();
+    const std::list<EDA_ITEM*>& list = dlg.GetImportedItems();
+    BOARD_ITEM* first = static_cast<BOARD_ITEM*>( *list.begin() );
 
     if( dlgResult != wxID_OK || list.empty() )
         return 0;
 
     VECTOR2I cursorPos = m_controls->GetCursorPosition();
-    VECTOR2I delta = cursorPos - (*list.begin())->GetPosition();
+    VECTOR2I delta = cursorPos - first->GetPosition();
 
     // Add a VIEW_GROUP that serves as a preview for the new item
     KIGFX::VIEW_GROUP preview( m_view );

@@ -32,7 +32,6 @@ include_directories(
     ../common/dialogs
     ./exporters
     ../lib_dxf
-    ./import_gfx
     ../utils/idftools
     ${GLM_INCLUDE_DIR}
     ${INC_AFTER}
@@ -152,10 +151,12 @@ set( PCBNEW_DIALOGS
     )
 
 set( PCBNEW_IMPORT_GFX
-    #import_gfx/graphics_import_plugin.cpp
-    #import_gfx/graphics_importer.cpp
-    import_gfx/dxf2brd_items.cpp
-    #import_gfx/dfx_import_plugin.cpp
+    import_gfx/graphics_import_mgr.cpp
+
+    import_gfx/graphics_importer.cpp
+    import_gfx/graphics_importer_pcbnew.cpp
+
+    import_gfx/dxf_import_plugin.cpp
     )
 
 set( PCBNEW_EXPORTERS

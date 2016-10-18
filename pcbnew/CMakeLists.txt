@@ -198,6 +198,8 @@ set( PCBNEW_CLASS_SRCS
     class_pcb_layer_box_selector.cpp
     clean.cpp
     connect.cpp
+    connectivity.cpp
+    connectivity_impl.cpp
     controle.cpp
     dimension.cpp
     cross-probing.cpp
@@ -671,6 +673,7 @@ target_link_libraries( pcbnew_kiface
     ${PCBNEW_EXTRA_LIBS}    # -lrt must follow Boost
     ${OPENMP_LIBRARIES}
     )
+
 set_source_files_properties( pcbnew.cpp PROPERTIES
     # The KIFACE is in pcbnew.cpp, export it:
     COMPILE_DEFINITIONS     "BUILD_KIWAY_DLL;COMPILING_DLL"

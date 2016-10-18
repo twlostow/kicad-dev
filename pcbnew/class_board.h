@@ -45,6 +45,9 @@
 #include <pcb_plot_params.h>
 #include <board_item_container.h>
 
+#include <memory>
+
+using std::unique_ptr;
 
 class PCB_BASE_FRAME;
 class PCB_EDIT_FRAME;
@@ -60,7 +63,7 @@ class NETLIST;
 class REPORTER;
 class RN_DATA;
 class SHAPE_POLY_SET;
-
+class CN_CONNECTIVITY;
 
 /**
  * Enum LAYER_T
@@ -189,6 +192,7 @@ private:
     EDA_RECT                m_BoundingBox;
     NETINFO_LIST            m_NetInfo;              ///< net info list (name, design constraints ..
     RN_DATA*                m_ratsnest;
+    CN_CONNECTIVITY*        m_connectivity;
 
     BOARD_DESIGN_SETTINGS   m_designSettings;
     ZONE_SETTINGS           m_zoneSettings;
@@ -301,6 +305,11 @@ public:
     RN_DATA* GetRatsnest() const
     {
         return m_ratsnest;
+    }
+
+    CN_CONNECTIVITY* GetConnectivity() const
+    {
+        return m_connectivity;
     }
 
     /**

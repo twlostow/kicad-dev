@@ -120,6 +120,10 @@ public:
     stop();
     fprintf(stderr,"%s took %.1f milliseconds.\n", m_name.c_str(), (double)m_cnt.msecs());
   }
+  double msecs() const {
+      return m_cnt.msecs();
+  }
+
 private:
   std::string m_name;
   prof_counter m_cnt;

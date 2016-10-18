@@ -37,6 +37,7 @@
 
 // Helper classes to handle connection points
 #include <connect.h>
+#include <connectivity.h>
 
 const bool g_UseLegacyConnectionAlgo = false;
 
@@ -859,14 +860,42 @@ void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
  * segments.
  * Pads netcodes are assumed to be up to date.
  */
+
+// Simple structure to hold backup data of Tracks/Vias beign processed.
+struct NETBACKUP {
+  TRACK* t;
+  int m_NetCode;
+
+  NETBACKUP (TRACK* init_t, int init_m_NetCode)
+    {
+        t = init_t;
+        m_NetCode = init_m_NetCode;
+    }
+};
+
 void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
 {
+    if ( !g_UseLegacyConnectionAlgo )
+    {
+            auto connectivity = GetBoard()->GetConnectivity();
+            GetBoard()->BuildListOfNets();
+
+            connectivity->PropagateNets();
+            RebuildTrackChain( m_Pcb );
+            return ;
+    }
+
+    std::vector< NETBACKUP > tbak;  // NetCode Backup
+
     // Build the net info list
     GetBoard()->BuildListOfNets();
 
     // Reset variables and flags used in computation
     for( TRACK* t = m_Pcb->m_Track;  t;  t = t->Next() )
     {
+        // BACKUP NetCode of Track/Via
+        tbak.push_back(NETBACKUP(t, t->GetNetCode()));
+
         t->m_TracksConnected.clear();
         t->m_PadsConnected.clear();
         t->start = NULL;
@@ -949,6 +978,16 @@ void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
     /// @todo LEGACY tracks might have changed their nets, so we need to refresh labels in GAL
     for( TRACK* track = m_Pcb->m_Track; track; track = track->Next() )
         track->ViewUpdate();
+
+    // Scan the backup netcodes, and reset any unconnected nets back to their original value.
+    for( unsigned i = 0; i != tbak.size(); i++) {
+        // Check if the Track/Via remains Unconnected
+        if (tbak[i].t->GetNetCode() == NETINFO_LIST::UNCONNECTED)
+        {
+            // It is, so restore it to the last known NetCode.
+            tbak[i].t->SetNetCode(tbak[i].m_NetCode);
+        }
+    }
 
     // Sort the track list by net codes:
     RebuildTrackChain( m_Pcb );

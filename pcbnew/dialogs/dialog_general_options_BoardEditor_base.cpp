@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version May 10 2016)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -167,6 +167,15 @@ DIALOG_GENERALOPTIONS_BOARDEDITOR_BASE::DIALOG_GENERALOPTIONS_BOARDEDITOR_BASE( 
 	
 	
 	bRightSizer->Add( sbSizer2PAN, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer4;
+	sbSizer4 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Advanced/Developer") ), wxVERTICAL );
+	
+	m_cbUseLegacyConnectivityAlgo = new wxCheckBox( sbSizer4->GetStaticBox(), wxID_ANY, _("Use legacy connectivity algorithm"), wxDefaultPosition, wxDefaultSize, 0 );
+	sbSizer4->Add( m_cbUseLegacyConnectivityAlgo, 0, wxALL, 5 );
+	
+	
+	bRightSizer->Add( sbSizer4, 1, wxEXPAND, 5 );
 	
 	
 	bSizerUpper->Add( bRightSizer, 0, wxALL|wxEXPAND, 5 );

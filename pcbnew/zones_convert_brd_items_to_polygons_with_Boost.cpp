@@ -470,7 +470,7 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList_NG( BOARD* aPcb )
 
     // Remove insulated islands:
 //    if( GetNetCode() > 0 )
-//        TestForCopperIslandAndRemoveInsulatedIslands( aPcb );
+  //      TestForCopperIslandAndRemoveInsulatedIslands( aPcb );
 
     SHAPE_POLY_SET thermalHoles;
 
@@ -503,8 +503,8 @@ void ZONE_CONTAINER::AddClearanceAreasPolygonsToPolysList_NG( BOARD* aPcb )
 
     m_RawPolysList = m_FilledPolysList;
 
-    //if( GetNetCode() > 0 )
-        //TestForCopperIslandAndRemoveInsulatedIslands( aPcb );
+	if( GetNetCode() > 0 )
+        TestForCopperIslandAndRemoveInsulatedIslands( aPcb );
 
     if(g_DumpZonesWhenFilling)
         dumper->EndGroup();

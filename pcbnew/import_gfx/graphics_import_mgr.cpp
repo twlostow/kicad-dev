@@ -28,7 +28,7 @@
 
 using namespace std;
 
-unique_ptr<GRAPHICS_IMPORT_PLUGIN> GRAPHICS_IMPORT_MGR::FindPlugin( GFX_FILE_T aType )
+unique_ptr<GRAPHICS_IMPORT_PLUGIN> GRAPHICS_IMPORT_MGR::GetPlugin( GFX_FILE_T aType )
 {
     unique_ptr<GRAPHICS_IMPORT_PLUGIN> ret;
 
@@ -44,6 +44,24 @@ unique_ptr<GRAPHICS_IMPORT_PLUGIN> GRAPHICS_IMPORT_MGR::FindPlugin( GFX_FILE_T a
     }
 
     return ret;
+}
+
+
+unique_ptr<GRAPHICS_IMPORT_PLUGIN> GRAPHICS_IMPORT_MGR::GetPluginByExt( const wxString& aExtension )
+{
+    for( auto fileType : GFX_FILE_TYPES )
+    {
+        auto plugin = GetPlugin( fileType );
+        auto fileExtensions = plugin->GetFileExtensions();
+
+        for( const auto& fileExt : fileExtensions )
+        {
+            if( aExtension.IsSameAs( fileExt, false ) )
+                return plugin;
+        }
+    }
+
+    return unique_ptr<GRAPHICS_IMPORT_PLUGIN>();
 }
 
 

@@ -45,6 +45,24 @@ public:
 
     virtual const wxArrayString GetFileExtensions() const = 0;
 
+    wxString GetWildcards() const
+    {
+        wxString ret;
+        bool first = true;
+
+        for( const auto& extension : GetFileExtensions() )
+        {
+            if( first )
+                first = false;
+            else
+                ret += ", ";
+
+            ret += "*." + extension;
+        }
+
+        return ret;
+    }
+
     virtual bool Load( const wxString& aFileName ) = 0;
 
 protected:

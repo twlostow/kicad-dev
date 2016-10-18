@@ -31,12 +31,6 @@ GRAPHICS_IMPORTER::GRAPHICS_IMPORTER() :
 }
 
 
-void GRAPHICS_IMPORTER::SetPlugin( GRAPHICS_IMPORT_MGR::GFX_FILE_T aType )
-{
-    m_plugin = GRAPHICS_IMPORT_MGR::FindPlugin( aType );
-}
-
-
 bool GRAPHICS_IMPORTER::Import( const wxString& aFileName )
 {
     m_items.clear();

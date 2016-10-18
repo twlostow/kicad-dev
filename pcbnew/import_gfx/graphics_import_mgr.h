@@ -29,17 +29,24 @@
 #include <vector>
 
 class GRAPHICS_IMPORT_PLUGIN;
+class wxString;
 
 class GRAPHICS_IMPORT_MGR
 {
 public:
+    ///> List of handled file types.
     enum GFX_FILE_T {
         DXF
     };
 
+    ///> Vector containing all GFX_FILE_T values.
     static const std::vector<GFX_FILE_T> GFX_FILE_TYPES;
 
-    static std::unique_ptr<GRAPHICS_IMPORT_PLUGIN> FindPlugin( GFX_FILE_T aType );
+    ///> Returns a plugin that handles a specific file extension.
+    static std::unique_ptr<GRAPHICS_IMPORT_PLUGIN> GetPluginByExt( const wxString& aExtension );
+
+    ///> Returns a plugin instance for a specific file type.
+    static std::unique_ptr<GRAPHICS_IMPORT_PLUGIN> GetPlugin( GFX_FILE_T aType );
 
 private:
     GRAPHICS_IMPORT_MGR()

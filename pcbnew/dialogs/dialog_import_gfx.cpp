@@ -31,6 +31,7 @@
 #include <kiface_i.h>
 #include <convert_to_biu.h>
 #include <class_pcb_layer_box_selector.h>
+#include <confirm.h>
 
 #include <wxPcbStruct.h>
 #include <class_board.h>
@@ -141,11 +142,23 @@ void DIALOG_IMPORT_GFX::OnBrowseFiles( wxCommandEvent& event )
         filename = fn.GetFullName();
     }
 
-    wxFileDialog dlg( m_parent,
-                      _( "Open File" ),
-                      path, filename,
-                       "DXF Files (*.dxf)|*.dxf",
-                      wxFD_OPEN|wxFD_FILE_MUST_EXIST );
+    // Generate the list of handled file formats
+    wxString wildcardsDesc;
+    wxString allWildcards;
+
+    for( auto pluginType : GRAPHICS_IMPORT_MGR::GFX_FILE_TYPES )
+    {
+        auto plugin = GRAPHICS_IMPORT_MGR::GetPlugin( pluginType );
+        const auto wildcards = plugin->GetWildcards();
+
+        wildcardsDesc += "|" + plugin->GetName() + " (" + wildcards + ")|" + wildcards;
+        allWildcards += wildcards;
+    }
+
+    wildcardsDesc = "All supported formats|" + allWildcards + wildcardsDesc;
+
+    wxFileDialog dlg( m_parent, _( "Open File" ), path, filename,
+                       wildcardsDesc, wxFD_OPEN|wxFD_FILE_MUST_EXIST );
 
     if( dlg.ShowModal() != wxID_OK )
         return;
@@ -205,11 +218,20 @@ void DIALOG_IMPORT_GFX::OnOKClick( wxCommandEvent& event )
     //m_importer.SetOffset( offsetX, offsetY );
     m_layer = m_SelLayerBox->GetLayerSelection();
     m_importer->SetLayer( LAYER_ID( m_layer ) );
-    //m_importer->SetLineWidth(); // @todo add a setting in the dialog and apply it here
-    m_importer->SetPlugin( GRAPHICS_IMPORT_MGR::DXF );  // @todo pick the right plugin
-    m_importer->Import( m_filename );
+    //m_importer->SetScale();       // @todo
+    //m_importer->SetLineWidth();   // @todo add a setting in the dialog and apply it here
+    auto plugin = GRAPHICS_IMPORT_MGR::GetPluginByExt( wxFileName( m_filename ).GetExt() );
 
-    EndModal( wxID_OK );
+    if( plugin )
+    {
+        m_importer->SetPlugin( std::move( plugin ) );
+        m_importer->Import( m_filename );
+        EndModal( wxID_OK );
+    }
+    else
+    {
+        DisplayError( this, _( "There is no plugin to handle this file type" ) );
+    }
 }
 
 

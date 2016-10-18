@@ -44,7 +44,10 @@ public:
     {
     }
 
-    void SetPlugin( GRAPHICS_IMPORT_MGR::GFX_FILE_T aType );
+    void SetPlugin( std::unique_ptr<GRAPHICS_IMPORT_PLUGIN> aPlugin )
+    {
+        m_plugin = std::move( aPlugin );
+    }
 
     bool Import( const wxString& aFileName );
 

@@ -42,7 +42,7 @@ public:
 
     const wxString GetName() const override
     {
-        return "DXF importer";
+        return "AutoCAD DXF";
     }
 
     const wxArrayString GetFileExtensions() const override

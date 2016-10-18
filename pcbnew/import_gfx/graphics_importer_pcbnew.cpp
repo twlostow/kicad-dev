@@ -37,8 +37,8 @@ void GRAPHICS_IMPORTER_PCBNEW::AddLine( const wxPoint& aOrigin, const wxPoint& a
     line->SetShape( S_SEGMENT );
     line->SetLayer( GetLayer() );
     line->SetWidth( GetLineWidth() );
-    line->SetStart( aOrigin );
-    line->SetEnd( aEnd );
+    line->SetStart( aOrigin * GetScale() );
+    line->SetEnd( aEnd * GetScale() );
     addItem( line );
 }
 
@@ -49,8 +49,8 @@ void GRAPHICS_IMPORTER_PCBNEW::AddCircle( const wxPoint& aCenter, unsigned int a
     circle->SetShape( S_CIRCLE );
     circle->SetLayer( GetLayer() );
     circle->SetWidth( GetLineWidth() );
-    circle->SetCenter( aCenter );
-    circle->SetArcStart( wxPoint( aCenter.x + aRadius, aCenter.y ) );
+    circle->SetCenter( aCenter * GetScale() );
+    circle->SetArcStart( wxPoint( aCenter.x + aRadius, aCenter.y ) * GetScale() );
     addItem( circle );
 }
 
@@ -61,8 +61,8 @@ void GRAPHICS_IMPORTER_PCBNEW::AddArc( const wxPoint& aCenter, const wxPoint& aS
     arc->SetShape( S_ARC );
     arc->SetLayer( GetLayer() );
     arc->SetWidth( GetLineWidth() );
-    arc->SetCenter( aCenter );
-    arc->SetArcStart( aStart );
+    arc->SetCenter( aCenter * GetScale() );
+    arc->SetArcStart( aStart * GetScale() );
     arc->SetAngle( aAngle );
     addItem( arc );
 }
@@ -77,10 +77,10 @@ void GRAPHICS_IMPORTER_PCBNEW::AddText( const wxPoint& aOrigin, const wxString& 
     tie( boardItem, textItem ) = createText();
     boardItem->SetLayer( GetLayer() );
     textItem->SetThickness( GetLineWidth() );
-    textItem->SetTextPosition( aOrigin );
+    textItem->SetTextPosition( aOrigin * GetScale() );
     textItem->SetOrientation( aOrientation );
-    textItem->SetWidth( aWidth );
-    textItem->SetHeight( aHeight );
+    textItem->SetWidth( aWidth * GetScale() );
+    textItem->SetHeight( aHeight * GetScale() );
     textItem->SetVertJustify( aVJustify );
     textItem->SetHorizJustify( aHJustify );
     textItem->SetText( aText );

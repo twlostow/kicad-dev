@@ -31,6 +31,9 @@
 class GRAPHICS_IMPORT_PLUGIN;
 class wxString;
 
+/**
+ * @brief Class to manage vector graphics importers.
+ */
 class GRAPHICS_IMPORT_MGR
 {
 public:

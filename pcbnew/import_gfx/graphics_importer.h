@@ -35,6 +35,9 @@
 
 class EDA_ITEM;
 
+/**
+ * @brief Interface that creates objects representing shapes for a given data model.
+ */
 class GRAPHICS_IMPORTER
 {
 public:
@@ -44,33 +47,56 @@ public:
     {
     }
 
+    /**
+     * @brief Sets the import plugin used to obtain shapes from a file.
+     */
     void SetPlugin( std::unique_ptr<GRAPHICS_IMPORT_PLUGIN> aPlugin )
     {
         m_plugin = std::move( aPlugin );
     }
 
+    /**
+     * @brief Imports shapes stored in a file.
+     *
+     * It is important to set the plugin type before importing shapes from a file.
+     */
     bool Import( const wxString& aFileName );
 
+    /**
+     * @brief Sets the line width for the imported outlines.
+     */
     void SetLineWidth( unsigned int aWidth )
     {
         m_lineWidth = aWidth;
     }
 
+    /**
+     * @brief Returns the line width used for importing the outlines.
+     */
     unsigned int GetLineWidth() const
     {
         return m_lineWidth;
     }
 
+    /**
+     * @brief Sets scale affecting the imported shapes.
+     */
     void SetScale( double aScale )
     {
         m_scale = aScale;
     }
 
+    /**
+     * @brief Returns the scale factor affecting the imported shapes.
+     */
     double GetScale() const
     {
         return m_scale;
     }
 
+    /**
+     * @breif Returns the list of objects representing the imported shapes.
+     */
     const std::list<EDA_ITEM*>& GetItems() const
     {
         return m_items;
@@ -80,15 +106,48 @@ public:
     static constexpr unsigned int DEFAULT_LINE_WIDTH = 1;
 
     // Methods to be implemented by derived graphics importers
+
+    /**
+     * @brief Creates an object representing a line segment.
+     * @param aOrigin is the segment origin point expressed in internal units.
+     * @param aEnd is the segment end point expressed in internal units.
+     */
     virtual void AddLine( const wxPoint& aOrigin, const wxPoint& aEnd ) = 0;
+
+    /**
+     * @brief Creates an object representing a circle.
+     * @param aCenter is the circle center point expressed in internal units.
+     * @param aRadius is the circle radius expressed in internal units.
+     */
     virtual void AddCircle( const wxPoint& aCenter, unsigned int aRadius ) = 0;
+
+    /**
+     * @brief Creates an object representing an arc.
+     * @param aCenter is the arc center point expressed in internal units.
+     * @param aStart is the arc arm end point expressed in internal units.
+     * Its length is the arc radius.
+     * @param aAgnle is the arc angle expressed in decidegrees.
+     */
     virtual void AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle ) = 0;
+
     //virtual void AddArc( const wxPoint& aOrigin, double aStartAngle, double aEndAngle ) = 0;
+    //
+    /**
+     * @brief Creates an object representing a text.
+     * @param aOrigin is the text position.
+     * @param aText is the displayed text.
+     * @param aHeight is the text height expressed in internal units.
+     * @param aWidth is the text width expressed in internal units.
+     * @param aOrientation is the text orientation angle expressed in decidegrees.
+     * @param aHJustify is the text horizontal justification.
+     * @param aVJustify is the text vertical justification.
+     */
     virtual void AddText( const wxPoint& aOrigin, const wxString& aText,
             unsigned int aHeight, unsigned aWidth, double aOrientation,
             EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) = 0;
 
 protected:
+    ///> Adds an item to the imported shapes list.
     void addItem( EDA_ITEM* aItem )
     {
         m_items.emplace_back( aItem );

@@ -29,6 +29,9 @@
 
 class GRAPHICS_IMPORTER;
 
+/**
+ * @brief Interface for vector graphics import plugins.
+ */
 class GRAPHICS_IMPORT_PLUGIN
 {
 public:
@@ -36,15 +39,30 @@ public:
     {
     }
 
+    /**
+     * @brief Sets the receiver of the imported shapes.
+     */
     void SetImporter( GRAPHICS_IMPORTER* aImporter )
     {
         m_importer = aImporter;
     }
 
+    /**
+     * @breif Returns the plugin name.
+     *
+     * This string will be used as the description in the file dialog.
+     */
     virtual const wxString GetName() const = 0;
 
+    /**
+     * @brief Returns a string array of the file extensions handled by this plugin.
+     */
     virtual const wxArrayString GetFileExtensions() const = 0;
 
+    /**
+     * @brief Returns a list of wildcards that contains the file extensions
+     * handled by this plugin, separated with a coma.
+     */
     wxString GetWildcards() const
     {
         wxString ret;
@@ -63,9 +81,15 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Loads shapes from a file.
+     *
+     * It is necessary to have the GRAPHICS_IMPORTER object set before.
+     */
     virtual bool Load( const wxString& aFileName ) = 0;
 
 protected:
+    ///> Importer used to create objects representing the imported shapes.
     GRAPHICS_IMPORTER* m_importer;
 };
 

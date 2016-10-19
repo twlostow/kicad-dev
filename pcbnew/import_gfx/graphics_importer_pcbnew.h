@@ -41,25 +41,38 @@ public:
     {
     }
 
+    /**
+     * @brief Sets the target layer for the imported shapes.
+     * @param aLayer is the layer to be used by the imported shapes.
+     */
     void SetLayer( LAYER_ID aLayer )
     {
         m_layer = aLayer;
     }
 
+    /**
+     * @brief Returns the target layer for the imported shapes.
+     */
     LAYER_ID GetLayer() const
     {
         return m_layer;
     }
 
     void AddLine( const wxPoint& aOrigin, const wxPoint& aEnd ) override;
+
     void AddCircle( const wxPoint& aOrigin, unsigned int aRadius ) override;
+
     void AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle ) override;
+
     void AddText( const wxPoint& aOrigin, const wxString& aText,
             unsigned int aHeight, unsigned aWidth, double aOrientation,
             EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) override;
 
 protected:
+    ///> Create an object representing a graphical shape.
     virtual DRAWSEGMENT* createDrawing() const = 0;
+
+    ///> Create an object representing a text.
     virtual std::pair<BOARD_ITEM*, EDA_TEXT*> createText() const = 0;
 
     LAYER_ID m_layer;

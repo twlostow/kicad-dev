@@ -33,38 +33,38 @@ using namespace std;
 
 void GRAPHICS_IMPORTER_PCBNEW::AddLine( const wxPoint& aOrigin, const wxPoint& aEnd )
 {
-    DRAWSEGMENT* line = createDrawing();
+    unique_ptr<DRAWSEGMENT> line( createDrawing() );
     line->SetShape( S_SEGMENT );
     line->SetLayer( GetLayer() );
     line->SetWidth( GetLineWidth() );
     line->SetStart( aOrigin * GetScale() );
     line->SetEnd( aEnd * GetScale() );
-    addItem( line );
+    addItem( std::move( line ) );
 }
 
 
 void GRAPHICS_IMPORTER_PCBNEW::AddCircle( const wxPoint& aCenter, unsigned int aRadius )
 {
-    DRAWSEGMENT* circle = createDrawing();
+    unique_ptr<DRAWSEGMENT> circle( createDrawing() );
     circle->SetShape( S_CIRCLE );
     circle->SetLayer( GetLayer() );
     circle->SetWidth( GetLineWidth() );
     circle->SetCenter( aCenter * GetScale() );
     circle->SetArcStart( wxPoint( aCenter.x + aRadius, aCenter.y ) * GetScale() );
-    addItem( circle );
+    addItem( std::move( circle ) );
 }
 
 
 void GRAPHICS_IMPORTER_PCBNEW::AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle )
 {
-    DRAWSEGMENT* arc = createDrawing();
+    unique_ptr<DRAWSEGMENT> arc( createDrawing() );
     arc->SetShape( S_ARC );
     arc->SetLayer( GetLayer() );
     arc->SetWidth( GetLineWidth() );
     arc->SetCenter( aCenter * GetScale() );
     arc->SetArcStart( aStart * GetScale() );
     arc->SetAngle( aAngle );
-    addItem( arc );
+    addItem( std::move( arc ) );
 }
 
 
@@ -72,7 +72,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddText( const wxPoint& aOrigin, const wxString& 
         unsigned int aHeight, unsigned aWidth, double aOrientation,
         EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify )
 {
-    BOARD_ITEM* boardItem;
+    unique_ptr<BOARD_ITEM> boardItem;
     EDA_TEXT* textItem;
     tie( boardItem, textItem ) = createText();
     boardItem->SetLayer( GetLayer() );
@@ -84,31 +84,31 @@ void GRAPHICS_IMPORTER_PCBNEW::AddText( const wxPoint& aOrigin, const wxString& 
     textItem->SetVertJustify( aVJustify );
     textItem->SetHorizJustify( aHJustify );
     textItem->SetText( aText );
-    addItem( boardItem );
+    addItem( std::move( boardItem ) );
 }
 
 
-DRAWSEGMENT* GRAPHICS_IMPORTER_BOARD::createDrawing() const
+unique_ptr<DRAWSEGMENT> GRAPHICS_IMPORTER_BOARD::createDrawing() const
 {
-    return new DRAWSEGMENT();
+    return unique_ptr<DRAWSEGMENT>( new DRAWSEGMENT() );
 }
 
 
-pair<BOARD_ITEM*, EDA_TEXT*> GRAPHICS_IMPORTER_BOARD::createText() const
+pair<unique_ptr<BOARD_ITEM>, EDA_TEXT*> GRAPHICS_IMPORTER_BOARD::createText() const
 {
     TEXTE_PCB* text = new TEXTE_PCB( nullptr );
-    return make_pair( static_cast<BOARD_ITEM*>( text ), static_cast<EDA_TEXT*>( text ) );
+    return make_pair( unique_ptr<BOARD_ITEM>( text ), static_cast<EDA_TEXT*>( text ) );
 }
 
 
-DRAWSEGMENT* GRAPHICS_IMPORTER_MODULE::createDrawing() const
+unique_ptr<DRAWSEGMENT> GRAPHICS_IMPORTER_MODULE::createDrawing() const
 {
-    return new EDGE_MODULE( nullptr );
+    return unique_ptr<DRAWSEGMENT>( new EDGE_MODULE( nullptr ) );
 }
 
 
-pair<BOARD_ITEM*, EDA_TEXT*> GRAPHICS_IMPORTER_MODULE::createText() const
+pair<unique_ptr<BOARD_ITEM>, EDA_TEXT*> GRAPHICS_IMPORTER_MODULE::createText() const
 {
     TEXTE_MODULE* text = new TEXTE_MODULE( nullptr );
-    return make_pair( static_cast<BOARD_ITEM*>( text ), static_cast<EDA_TEXT*>( text ) );
+    return make_pair( unique_ptr<BOARD_ITEM>( text ), static_cast<EDA_TEXT*>( text ) );
 }

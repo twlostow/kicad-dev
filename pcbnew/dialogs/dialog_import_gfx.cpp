@@ -242,14 +242,13 @@ bool InvokeDialogImportGfxBoard( PCB_BASE_FRAME* aCaller )
 
     if( success )
     {
-        const std::list<EDA_ITEM*>& list = dlg.GetImportedItems();
         PICKED_ITEMS_LIST picklist;
         BOARD* board = aCaller->GetBoard();
+        auto& items = dlg.GetImportedItems();
 
-        std::list<EDA_ITEM*>::const_iterator it, itEnd;
-        for( it = list.begin(), itEnd = list.end(); it != itEnd; ++it )
+        for( auto it = items.begin(); it != items.end(); ++it )
         {
-            BOARD_ITEM* item = static_cast<BOARD_ITEM*>( *it );
+            BOARD_ITEM* item = static_cast<BOARD_ITEM*>( it->release() );
             board->Add( item );
 
             ITEM_PICKER itemWrapper( item, UR_NEW );
@@ -273,16 +272,13 @@ bool InvokeDialogImportGfxModule( PCB_BASE_FRAME* aCaller, MODULE* aModule )
 
     if( success )
     {
-        const std::list<EDA_ITEM*>& list = dlg.GetImportedItems();
-
         aCaller->SaveCopyInUndoList( aModule, UR_CHANGED );
         aCaller->OnModify();
+        auto& list = dlg.GetImportedItems();
 
-        std::list<EDA_ITEM*>::const_iterator it, itEnd;
-
-        for( it = list.begin(), itEnd = list.end(); it != itEnd; ++it )
+        for( auto it = list.begin(); it != list.end(); ++it )
         {
-            aModule->Add( static_cast<BOARD_ITEM*>( *it ) );
+            aModule->Add( static_cast<BOARD_ITEM*>( it->release() ) );
         }
     }
 

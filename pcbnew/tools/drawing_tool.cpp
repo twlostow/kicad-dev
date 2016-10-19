@@ -520,15 +520,14 @@ int DRAWING_TOOL::PlaceGraphics( const TOOL_EVENT& aEvent )
 
     DIALOG_IMPORT_GFX dlg( m_frame );
     int dlgResult = dlg.ShowModal();
-
-    const std::list<EDA_ITEM*>& list = dlg.GetImportedItems();
-    BOARD_ITEM* first = static_cast<BOARD_ITEM*>( *list.begin() );
+    auto& list = dlg.GetImportedItems();
 
     if( dlgResult != wxID_OK || list.empty() )
         return 0;
 
+    BOARD_ITEM* firstItem = static_cast<BOARD_ITEM*>( list.begin()->get() );
     VECTOR2I cursorPos = m_controls->GetCursorPosition();
-    VECTOR2I delta = cursorPos - first->GetPosition();
+    VECTOR2I delta = cursorPos - firstItem->GetPosition();
 
     // Add a VIEW_GROUP that serves as a preview for the new item
     KIGFX::VIEW_GROUP preview( m_view );
@@ -541,10 +540,9 @@ int DRAWING_TOOL::PlaceGraphics( const TOOL_EVENT& aEvent )
         assert( type == PCB_LINE_T || type == PCB_TEXT_T );
 
         if( type == PCB_LINE_T || type == PCB_TEXT_T )
-            preview.Add( *it );
+            preview.Add( it->get() );
     }
 
-    BOARD_ITEM* firstItem = static_cast<BOARD_ITEM*>( *preview.Begin() );
     m_view->Add( &preview );
 
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
@@ -588,7 +586,6 @@ int DRAWING_TOOL::PlaceGraphics( const TOOL_EVENT& aEvent )
             }
             else if( evt->IsCancel() || evt->IsActivate() )
             {
-                preview.FreeItems();
                 break;
             }
         }
@@ -596,81 +593,8 @@ int DRAWING_TOOL::PlaceGraphics( const TOOL_EVENT& aEvent )
         else if( evt->IsClick( BUT_LEFT ) )
         {
             // Place the drawing
-            PICKED_ITEMS_LIST picklist;
-            BOARD_ITEM_CONTAINER* parent = m_frame->GetModel();
-
-            for( KIGFX::VIEW_GROUP::const_iter it = preview.Begin(); it != preview.End(); ++it )
-            {
-                BOARD_ITEM* item = static_cast<BOARD_ITEM*>( *it );
-
-                if( m_editModules )
-                {
-                    // Modules use different types for the same things,
-                    // so we need to convert imported items to appropriate classes.
-                    BOARD_ITEM* converted = NULL;
-
-                    switch( item->Type() )
-                    {
-                    case PCB_TEXT_T:
-                    {
-                        TEXTE_PCB* text = static_cast<TEXTE_PCB*>( item );
-                        TEXTE_MODULE* textMod = new TEXTE_MODULE( (MODULE*) parent );
-                        // Assignment operator also copies the item PCB_TEXT_T type,
-                        // so it cannot be added to a module which handles PCB_MODULE_TEXT_T
-                        textMod->SetPosition( text->GetPosition() );
-                        textMod->SetText( text->GetText() );
-                        textMod->SetSize( text->GetSize() );
-                        textMod->SetThickness( text->GetThickness() );
-                        textMod->SetOrientation( text->GetOrientation() );
-                        textMod->SetTextPosition( text->GetTextPosition() );
-                        textMod->SetSize( text->GetSize() );
-                        textMod->SetMirrored( text->IsMirrored() );
-                        textMod->SetAttributes( text->GetAttributes() );
-                        textMod->SetItalic( text->IsItalic() );
-                        textMod->SetBold( text->IsBold() );
-                        textMod->SetHorizJustify( text->GetHorizJustify() );
-                        textMod->SetVertJustify( text->GetVertJustify() );
-                        textMod->SetMultilineAllowed( text->IsMultilineAllowed() );
-                        converted = textMod;
-                        break;
-                    }
-
-                    case PCB_LINE_T:
-                    {
-                        DRAWSEGMENT* seg = static_cast<DRAWSEGMENT*>( item );
-                        EDGE_MODULE* modSeg = new EDGE_MODULE( (MODULE*) parent );
-
-                        // Assignment operator also copies the item PCB_LINE_T type,
-                        // so it cannot be added to a module which handles PCB_MODULE_EDGE_T
-                        modSeg->SetWidth( seg->GetWidth() );
-                        modSeg->SetStart( seg->GetStart() );
-                        modSeg->SetEnd( seg->GetEnd() );
-                        modSeg->SetAngle( seg->GetAngle() );
-                        modSeg->SetShape( seg->GetShape() );
-                        modSeg->SetType( seg->GetType() );
-                        modSeg->SetBezControl1( seg->GetBezControl1() );
-                        modSeg->SetBezControl2( seg->GetBezControl2() );
-                        modSeg->SetBezierPoints( seg->GetBezierPoints() );
-                        modSeg->SetPolyPoints( seg->GetPolyPoints() );
-                        converted = modSeg;
-                        break;
-                    }
-
-                    default:
-                        assert( false );
-                        break;
-                    }
-
-                    if( converted )
-                        converted->SetLayer( item->GetLayer() );
-
-                    delete item;
-                    item = converted;
-                }
-
-                if( item )
-                    commit.Add( item );
-            }
+            for( auto it = list.begin(); it != list.end(); ++it )
+                commit.Add( it->release() );
 
             commit.Push( _( "Place imported graphics" ) );
             break;

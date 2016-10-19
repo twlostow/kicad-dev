@@ -70,11 +70,13 @@ public:
 
 protected:
     ///> Create an object representing a graphical shape.
-    virtual DRAWSEGMENT* createDrawing() const = 0;
+    virtual std::unique_ptr<DRAWSEGMENT> createDrawing() const = 0;
 
-    ///> Create an object representing a text.
-    virtual std::pair<BOARD_ITEM*, EDA_TEXT*> createText() const = 0;
+    ///> Create an object representing a text. Both pointers point to different parts of the
+    ///> same object, the EDA_TEXT pointer is simply for convenience.
+    virtual std::pair<std::unique_ptr<BOARD_ITEM>, EDA_TEXT*> createText() const = 0;
 
+    ///> Target layer for the imported shapes.
     LAYER_ID m_layer;
 };
 
@@ -82,16 +84,16 @@ protected:
 class GRAPHICS_IMPORTER_BOARD : public GRAPHICS_IMPORTER_PCBNEW
 {
 protected:
-    DRAWSEGMENT* createDrawing() const override;
-    std::pair<BOARD_ITEM*, EDA_TEXT*> createText() const override;
+    std::unique_ptr<DRAWSEGMENT> createDrawing() const override;
+    std::pair<std::unique_ptr<BOARD_ITEM>, EDA_TEXT*> createText() const override;
 };
 
 
 class GRAPHICS_IMPORTER_MODULE : public GRAPHICS_IMPORTER_PCBNEW
 {
 protected:
-    DRAWSEGMENT* createDrawing() const override;
-    std::pair<BOARD_ITEM*, EDA_TEXT*> createText() const override;
+    std::unique_ptr<DRAWSEGMENT> createDrawing() const override;
+    std::pair<std::unique_ptr<BOARD_ITEM>, EDA_TEXT*> createText() const override;
 };
 
 #endif /* GRAPHICS_IMPORTER_PCBNEW */

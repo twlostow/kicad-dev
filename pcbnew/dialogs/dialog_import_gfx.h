@@ -38,7 +38,7 @@ public:
      *
      * Returns a list of items imported from a vector graphics file.
      */
-    const std::list<EDA_ITEM*>& GetImportedItems() const
+    std::list<std::unique_ptr<EDA_ITEM>>& GetImportedItems()
     {
         return m_importer->GetItems();
     }

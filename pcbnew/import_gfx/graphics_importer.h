@@ -97,7 +97,7 @@ public:
     /**
      * @breif Returns the list of objects representing the imported shapes.
      */
-    const std::list<EDA_ITEM*>& GetItems() const
+    std::list<std::unique_ptr<EDA_ITEM>>& GetItems()
     {
         return m_items;
     }
@@ -148,14 +148,14 @@ public:
 
 protected:
     ///> Adds an item to the imported shapes list.
-    void addItem( EDA_ITEM* aItem )
+    void addItem( std::unique_ptr<EDA_ITEM> aItem )
     {
-        m_items.emplace_back( aItem );
+        m_items.emplace_back( std::move( aItem ) );
     }
 
 private:
     ///> List of imported items
-    std::list<EDA_ITEM*> m_items;
+    std::list<std::unique_ptr<EDA_ITEM>> m_items;
 
     ///> Plugin used to load a file
     std::unique_ptr<GRAPHICS_IMPORT_PLUGIN> m_plugin;

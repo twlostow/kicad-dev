@@ -152,7 +152,7 @@ void DIALOG_IMPORT_GFX::OnBrowseFiles( wxCommandEvent& event )
         const auto wildcards = plugin->GetWildcards();
 
         wildcardsDesc += "|" + plugin->GetName() + " (" + wildcards + ")|" + wildcards;
-        allWildcards += wildcards;
+        allWildcards += wildcards + ";";
     }
 
     wildcardsDesc = "All supported formats|" + allWildcards + wildcardsDesc;

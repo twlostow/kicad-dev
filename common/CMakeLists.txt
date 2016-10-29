@@ -242,6 +242,7 @@ set( COMMON_SRCS
     kiway_player.cpp
     lockfile.cpp
     msgpanel.cpp
+    nanosvg.cpp
     netlist_keywords.cpp
     prependpath.cpp
     project.cpp

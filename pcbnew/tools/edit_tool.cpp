@@ -40,6 +40,7 @@
 #include <view/view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 #include <confirm.h>
 
 #include <cassert>
@@ -700,18 +701,18 @@ void EDIT_TOOL::SetTransitions()
 void EDIT_TOOL::updateRatsnest( bool aRedraw )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
-    ratsnest->ClearSimple();
+    connectivity->GetRatsnest()->ClearSimple();
 
     for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
         BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
 
-        ratsnest->Update( item );
+        connectivity->Update( item );
 
         if( aRedraw )
-            ratsnest->AddSimple( item );
+            connectivity->GetRatsnest()->AddSimple( item );
     }
 }
 

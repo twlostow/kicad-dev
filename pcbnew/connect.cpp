@@ -37,7 +37,6 @@
 
 // Helper classes to handle connection points
 #include <connect.h>
-#include <connectivity.h>
 
 const bool g_UseLegacyConnectionAlgo = false;
 
@@ -875,16 +874,6 @@ struct NETBACKUP {
 
 void PCB_BASE_FRAME::RecalculateAllTracksNetcode()
 {
-    if ( !g_UseLegacyConnectionAlgo )
-    {
-            auto connectivity = GetBoard()->GetConnectivity();
-            GetBoard()->BuildListOfNets();
-
-            connectivity->PropagateNets();
-            RebuildTrackChain( m_Pcb );
-            return ;
-    }
-
     std::vector< NETBACKUP > tbak;  // NetCode Backup
 
     // Build the net info list

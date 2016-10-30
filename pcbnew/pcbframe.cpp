@@ -63,7 +63,7 @@
 #include <class_board.h>
 #include <class_module.h>
 #include <worksheet_viewitem.h>
-#include <ratsnest_data.h>
+#include <connectivity.h>
 #include <ratsnest_viewitem.h>
 
 #include <tool/tool_manager.h>
@@ -481,7 +481,8 @@ void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard )
 
     if( IsGalCanvasActive() )
     {
-        aBoard->GetRatsnest()->ProcessBoard();
+        aBoard->GetConnectivity()->ProcessBoard();
+        //aBoard->
 
         // reload the worksheet
         SetPageSettings( aBoard->GetPageSettings() );

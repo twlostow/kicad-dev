@@ -330,8 +330,8 @@ void DIALOG_NETLIST::OnTestFootprintsClick( wxCommandEvent& event )
 void DIALOG_NETLIST::OnCompileRatsnestClick( wxCommandEvent& event )
 {
     // Rebuild the board connectivity:
-    if( m_parent->IsGalCanvasActive() )
-        m_parent->GetBoard()->GetRatsnest()->ProcessBoard();
+    //if( m_parent->IsGalCanvasActive() )
+        //m_parent->GetBoard()->GetRatsnest()->ProcessBoard();
 
     m_parent->Compile_Ratsnest( m_dc, true );
 }

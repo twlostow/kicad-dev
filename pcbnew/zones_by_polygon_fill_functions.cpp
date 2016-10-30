@@ -43,6 +43,8 @@
 #include <pcbnew.h>
 #include <zones.h>
 
+#include <connectivity.h>
+
 #define FORMAT_STRING _( "Filling zone %d out of %d (net %s)..." )
 
 
@@ -116,7 +118,7 @@ int PCB_EDIT_FRAME::Fill_Zone( ZONE_CONTAINER* aZone )
 
     aZone->BuildFilledSolidAreasPolygons( GetBoard() );
     aZone->ViewUpdate( KIGFX::VIEW_ITEM::ALL );
-    GetBoard()->GetRatsnest()->Update( aZone );
+    GetBoard()->GetConnectivity()->Update( aZone );
 
     OnModify();
 

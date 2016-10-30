@@ -63,7 +63,7 @@ class NETLIST;
 class REPORTER;
 class RN_DATA;
 class SHAPE_POLY_SET;
-class CN_CONNECTIVITY;
+class CONNECTIVITY_DATA;
 
 /**
  * Enum LAYER_T
@@ -191,8 +191,7 @@ private:
 
     EDA_RECT                m_BoundingBox;
     NETINFO_LIST            m_NetInfo;              ///< net info list (name, design constraints ..
-    RN_DATA*                m_ratsnest;
-    CN_CONNECTIVITY*        m_connectivity;
+    CONNECTIVITY_DATA*      m_connectivity;
 
     BOARD_DESIGN_SETTINGS   m_designSettings;
     ZONE_SETTINGS           m_zoneSettings;
@@ -302,12 +301,9 @@ public:
      * returns list of missing connections between components/tracks.
      * @return RATSNEST* is an object that contains informations about missing connections.
      */
-    RN_DATA* GetRatsnest() const
-    {
-        return m_ratsnest;
-    }
+    //RN_DATA* GetRatsnest() const;
 
-    CN_CONNECTIVITY* GetConnectivity() const
+    CONNECTIVITY_DATA* GetConnectivity() const
     {
         return m_connectivity;
     }

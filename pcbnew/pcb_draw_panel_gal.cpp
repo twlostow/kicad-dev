@@ -29,6 +29,7 @@
 #include <worksheet_viewitem.h>
 #include <ratsnest_viewitem.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 
 #include <class_colors_design_settings.h>
 #include <class_board.h>
@@ -161,7 +162,7 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
         delete m_ratsnest;
     }
 
-    m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetRatsnest() );
+    m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetConnectivity()->GetRatsnest() );
     m_view->Add( m_ratsnest );
 
     // Display settings
@@ -347,7 +348,7 @@ void PCB_DRAW_PANEL_GAL::GetMsgPanelInfo( std::vector<MSG_PANEL_ITEM>& aList )
     txt.Printf( wxT( "%d" ), board->GetNetCount() );
     aList.push_back( MSG_PANEL_ITEM( _( "Nets" ), txt, RED ) );
 
-    txt.Printf( wxT( "%d" ), board->GetRatsnest()->GetUnconnectedCount() );
+    txt.Printf( wxT( "%d" ), board->GetConnectivity()->GetUnconnectedCount() );
     aList.push_back( MSG_PANEL_ITEM( _( "Unconnected" ), txt, BLUE ) );
 }
 

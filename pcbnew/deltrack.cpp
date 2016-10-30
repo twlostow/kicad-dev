@@ -123,7 +123,7 @@ TRACK* PCB_EDIT_FRAME::Delete_Segment( wxDC* DC, TRACK* aTrack )
     // Remove the segment from list, but do not delete it (it will be stored i n undo list)
     GetBoard()->Remove( aTrack );
 
-    GetBoard()->GetRatsnest()->Remove( aTrack );
+    //GetBoard()->GetRatsnest()->Remove( aTrack );
     aTrack->ViewRelease();
 
     // redraw the area where the track was
@@ -174,7 +174,7 @@ void PCB_EDIT_FRAME::Delete_net( wxDC* DC, TRACK* aTrack )
         if( segm->GetNetCode() != netcode )
             break;
 
-        GetBoard()->GetRatsnest()->Remove( segm );
+        //GetBoard()->GetRatsnest()->Remove( segm );
         segm->ViewRelease();
         GetBoard()->m_Track.Remove( segm );
 
@@ -221,7 +221,7 @@ void PCB_EDIT_FRAME::Remove_One_Track( wxDC* DC, TRACK* pt_segm )
                      << TO_UTF8( TRACK::ShowState( tracksegment->GetStatus() ) ) \
                      << std::endl; )
 
-        GetBoard()->GetRatsnest()->Remove( tracksegment );
+        //GetBoard()->GetRatsnest()->Remove( tracksegment );
         tracksegment->ViewRelease();
         GetBoard()->m_Track.Remove( tracksegment );
 

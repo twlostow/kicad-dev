@@ -39,6 +39,7 @@
 #include <class_module.h>
 #include <class_mire.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 #include <collectors.h>
 #include <zones_functions_for_undo_redo.h>
 #include <board_commit.h>
@@ -485,7 +486,8 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
 {
     SELECTION_TOOL* selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     const SELECTION& selection = selTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
+
 
     for( int i = 0; i < selection.Size(); ++i )
     {
@@ -494,11 +496,11 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
         ZONE_CONTAINER* zone = selection.Item<ZONE_CONTAINER>( i );
         m_frame->Fill_Zone( zone );
         zone->SetIsFilled( true );
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         zone->ViewUpdate();
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -507,18 +509,18 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
 int PCB_EDITOR_CONTROL::ZoneFillAll( const TOOL_EVENT& aEvent )
 {
     BOARD* board = getModel<BOARD>();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( int i = 0; i < board->GetAreaCount(); ++i )
     {
         ZONE_CONTAINER* zone = board->GetArea( i );
         m_frame->Fill_Zone( zone );
         zone->SetIsFilled( true );
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         zone->ViewUpdate();
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -528,7 +530,7 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
 {
     SELECTION_TOOL* selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     const SELECTION& selection = selTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( int i = 0; i < selection.Size(); ++i )
     {
@@ -537,11 +539,11 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
         ZONE_CONTAINER* zone = selection.Item<ZONE_CONTAINER>( i );
         zone->SetIsFilled( false );
         zone->ClearFilledPolysList();
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         zone->ViewUpdate();
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -550,18 +552,18 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
 int PCB_EDITOR_CONTROL::ZoneUnfillAll( const TOOL_EVENT& aEvent )
 {
     BOARD* board = getModel<BOARD>();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( int i = 0; i < board->GetAreaCount(); ++i )
     {
         ZONE_CONTAINER* zone = board->GetArea( i );
         zone->SetIsFilled( false );
         zone->ClearFilledPolysList();
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         zone->ViewUpdate();
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -571,7 +573,7 @@ int PCB_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
 {
     SELECTION selection = m_toolMgr->GetTool<SELECTION_TOOL>()->GetSelection();
     BOARD* board = getModel<BOARD>();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
     KIGFX::VIEW* view = getView();
     BOARD_COMMIT commit( m_frame );
 
@@ -652,7 +654,7 @@ int PCB_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
         if( picker.GetStatus() == UR_DELETED )
         {
             view->Remove( item );
-            ratsnest->Remove( item );
+            connectivity->Remove( item );
         }
         else if( picker.GetStatus() == UR_CHANGED )
         {

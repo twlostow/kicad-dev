@@ -131,8 +131,8 @@ void PCB_EDIT_FRAME::Clean_Pcb()
                           dlg.m_deleteUnconnectedSegm );
 
     // There is a chance that some of tracks have changed their nets, so rebuild ratsnest from scratch
-    if( IsGalCanvasActive() )
-        GetBoard()->GetRatsnest()->ProcessBoard();
+    //if( IsGalCanvasActive() )
+    //    GetBoard()->GetRatsnest()->ProcessBoard();
 
     m_canvas->Refresh( true );
 }
@@ -244,7 +244,7 @@ bool TRACKS_CLEANER::remove_duplicates_of_via( const VIA *aVia )
                 (alt_via->GetStart() == aVia->GetStart()) )
         {
             // delete via
-            m_Brd->GetRatsnest()->Remove( alt_via );
+            //m_Brd->GetRatsnest()->Remove( alt_via );
             alt_via->ViewRelease();
             alt_via->DeleteStructure();
             modified = true;
@@ -285,7 +285,7 @@ bool TRACKS_CLEANER::clean_vias()
                 if( (pad->GetLayerSet() & all_cu) == all_cu )
                 {
                     // redundant: delete the via
-                    m_Brd->GetRatsnest()->Remove( via );
+                    //m_Brd->GetRatsnest()->Remove( via );
                     via->ViewRelease();
                     via->DeleteStructure();
                     modified = true;
@@ -400,7 +400,7 @@ bool TRACKS_CLEANER::deleteUnconnectedTracks()
             if( flag_erase )
             {
                 // remove segment from board
-                m_Brd->GetRatsnest()->Remove( track );
+                //m_Brd->GetRatsnest()->Remove( track );
                 track->ViewRelease();
                 track->DeleteStructure();
 
@@ -428,7 +428,7 @@ bool TRACKS_CLEANER::delete_null_segments()
 
         if( segment->IsNull() )     // Length segment = 0; delete it
         {
-            m_Brd->GetRatsnest()->Remove( segment );
+            //m_Brd->GetRatsnest()->Remove( segment );
             segment->ViewRelease();
             segment->DeleteStructure();
             modified = true;
@@ -460,7 +460,7 @@ bool TRACKS_CLEANER::remove_duplicates_of_track( const TRACK *aTrack )
                 ((aTrack->GetStart() == other->GetEnd()) &&
                  (aTrack->GetEnd() == other->GetStart())))
             {
-                m_Brd->GetRatsnest()->Remove( other );
+                //m_Brd->GetRatsnest()->Remove( other );
                 other->ViewRelease();
                 other->DeleteStructure();
                 modified = true;
@@ -506,7 +506,7 @@ bool TRACKS_CLEANER::merge_collinear_of_track( TRACK *aSegment )
                         // Merge succesful, the other one has to go away
                         if( segDelete )
                         {
-                            m_Brd->GetRatsnest()->Remove( segDelete );
+                            //m_Brd->GetRatsnest()->Remove( segDelete );
                             segDelete->ViewRelease();
                             segDelete->DeleteStructure();
                             merged_this = true;

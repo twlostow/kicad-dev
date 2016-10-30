@@ -25,6 +25,7 @@
 #include "graphics_import_mgr.h"
 
 #include "dxf_import_plugin.h"
+#include "svg_import_plugin.h"
 
 using namespace std;
 
@@ -36,6 +37,10 @@ unique_ptr<GRAPHICS_IMPORT_PLUGIN> GRAPHICS_IMPORT_MGR::GetPlugin( GFX_FILE_T aT
     {
         case DXF:
             ret.reset( new DXF_IMPORT_PLUGIN() );
+            break;
+
+        case SVG:
+            ret.reset( new SVG_IMPORT_PLUGIN() );
             break;
 
         default:
@@ -65,4 +70,4 @@ unique_ptr<GRAPHICS_IMPORT_PLUGIN> GRAPHICS_IMPORT_MGR::GetPluginByExt( const wx
 }
 
 
-const vector<GRAPHICS_IMPORT_MGR::GFX_FILE_T> GRAPHICS_IMPORT_MGR::GFX_FILE_TYPES = { DXF };
+const vector<GRAPHICS_IMPORT_MGR::GFX_FILE_T> GRAPHICS_IMPORT_MGR::GFX_FILE_TYPES = { DXF, SVG };

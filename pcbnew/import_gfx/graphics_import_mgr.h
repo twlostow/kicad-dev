@@ -39,7 +39,8 @@ class GRAPHICS_IMPORT_MGR
 public:
     ///> List of handled file types.
     enum GFX_FILE_T {
-        DXF
+        DXF,
+        SVG
     };
 
     ///> Vector containing all GFX_FILE_T values.

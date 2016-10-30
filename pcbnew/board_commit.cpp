@@ -30,6 +30,7 @@
 #include <view/view.h>
 #include <board_commit.h>
 #include <tools/pcb_tool.h>
+#include <connectivity.h>
 
 #include <functional>
 using namespace std::placeholders;
@@ -60,7 +61,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
     KIGFX::VIEW* view = m_toolMgr->GetView();
     BOARD* board = (BOARD*) m_toolMgr->GetModel();
     PCB_BASE_FRAME* frame = (PCB_BASE_FRAME*) m_toolMgr->GetEditFrame();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = board->GetConnectivity();
     std::set<EDA_ITEM*> savedModules;
 
     if( Empty() )
@@ -256,7 +257,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
                 }
 
                 view->Update ( boardItem );
-                ratsnest->Update( boardItem );
+                connectivity->Update( boardItem );
                 break;
             }
 
@@ -272,7 +273,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage )
     if( TOOL_MANAGER* toolMgr = frame->GetToolManager() )
         toolMgr->PostEvent( { TC_MESSAGE, TA_MODEL_CHANGE, AS_GLOBAL } );
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
     frame->OnModify();
     frame->UpdateMsgPanel();
 
@@ -301,7 +302,7 @@ void BOARD_COMMIT::Revert()
     PICKED_ITEMS_LIST undoList;
     KIGFX::VIEW* view = m_toolMgr->GetView();
     BOARD* board = (BOARD*) m_toolMgr->GetModel();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = board->GetConnectivity();
 
     for( auto it = m_changes.rbegin(); it != m_changes.rend(); ++it )
     {
@@ -319,7 +320,7 @@ void BOARD_COMMIT::Revert()
             }
 
             view->Remove( item );
-            ratsnest->Remove( item );
+            connectivity->Remove( item );
             break;
 
         case CHT_REMOVE:
@@ -331,7 +332,7 @@ void BOARD_COMMIT::Revert()
             }
 
             view->Add( item );
-            ratsnest->Add( item );
+            connectivity->Add( item );
             break;
 
         case CHT_MODIFY:
@@ -343,7 +344,7 @@ void BOARD_COMMIT::Revert()
             }
 
             view->Remove( item );
-            ratsnest->Remove( item );
+            connectivity->Remove( item );
 
             item->SwapData( copy );
 
@@ -359,7 +360,7 @@ void BOARD_COMMIT::Revert()
             }
 
             view->Add( item );
-            ratsnest->Add( item );
+            connectivity->Add( item );
             delete copy;
             break;
         }
@@ -370,7 +371,7 @@ void BOARD_COMMIT::Revert()
         }
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     clear();
 }

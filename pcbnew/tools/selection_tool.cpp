@@ -38,6 +38,7 @@ using namespace std::placeholders;
 #include <collectors.h>
 #include <confirm.h>
 #include <dialog_find.h>
+#include <connectivity.h>
 
 #include <class_draw_panel_gal.h>
 #include <view/view_controls.h>
@@ -598,7 +599,7 @@ int SELECTION_TOOL::selectCopper( const TOOL_EVENT& aEvent )
         return 0;
 
     std::list<BOARD_CONNECTED_ITEM*> itemsList;
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    RN_DATA* ratsnest = getModel<BOARD>()->GetConnectivity()->GetRatsnest();
 
     ratsnest->GetConnectedItems( item, itemsList, (RN_ITEM_TYPE)( RN_TRACKS | RN_VIAS ) );
 
@@ -624,7 +625,7 @@ int SELECTION_TOOL::selectNet( const TOOL_EVENT& aEvent )
         return 0;
 
     std::list<BOARD_CONNECTED_ITEM*> itemsList;
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    RN_DATA* ratsnest = getModel<BOARD>()->GetConnectivity()->GetRatsnest();
     int netCode = item->GetNetCode();
 
     clearSelection();

@@ -198,7 +198,7 @@ void DRC::RunTests( wxTextCtrl* aMessages )
         }
 
         m_pcbEditorFrame->Compile_Ratsnest( NULL, true );
-        m_pcb->GetRatsnest()->ProcessBoard();
+        //m_pcb->GetRatsnest()->ProcessBoard();
     }
 
     // someone should have cleared the two lists before calling this.

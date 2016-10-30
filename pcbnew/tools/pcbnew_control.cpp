@@ -44,7 +44,7 @@
 #include <pcbnew_id.h>
 #include <wxPcbStruct.h>
 #include <pcb_draw_panel_gal.h>
-#include <ratsnest_data.h>
+#include <connectivity.h>
 #include <tool/tool_manager.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <view/view_controls.h>
@@ -883,7 +883,7 @@ int PCBNEW_CONTROL::AppendBoard( const TOOL_EVENT& aEvent )
     // Ratsnest
     board->BuildListOfNets();
     board->SynchronizeNetsAndNetClasses();
-    board->GetRatsnest()->ProcessBoard();
+    board->GetConnectivity()->ProcessBoard();
 
     // Start dragging the appended board
     SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<SELECTION_TOOL>();

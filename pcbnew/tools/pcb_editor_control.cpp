@@ -539,7 +539,7 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
 {
     auto selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     const auto& selection = selTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( auto item : selection )
     {
@@ -548,11 +548,11 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
         ZONE_CONTAINER* zone = static_cast<ZONE_CONTAINER*> ( item );
         m_frame->Fill_Zone( zone );
         zone->SetIsFilled( true );
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         getView()->Update( zone );
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -561,18 +561,18 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
 int PCB_EDITOR_CONTROL::ZoneFillAll( const TOOL_EVENT& aEvent )
 {
     BOARD* board = getModel<BOARD>();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( int i = 0; i < board->GetAreaCount(); ++i )
     {
         ZONE_CONTAINER* zone = board->GetArea( i );
         m_frame->Fill_Zone( zone );
         zone->SetIsFilled( true );
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         getView()->Update( zone );
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -582,7 +582,7 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
 {
     auto selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     const auto& selection = selTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( auto item : selection )
     {
@@ -591,11 +591,11 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
         ZONE_CONTAINER* zone = static_cast<ZONE_CONTAINER*>( item );
         zone->SetIsFilled( false );
         zone->ClearFilledPolysList();
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         getView()->Update( zone );
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }
@@ -604,18 +604,18 @@ int PCB_EDITOR_CONTROL::ZoneUnfill( const TOOL_EVENT& aEvent )
 int PCB_EDITOR_CONTROL::ZoneUnfillAll( const TOOL_EVENT& aEvent )
 {
     BOARD* board = getModel<BOARD>();
-    RN_DATA* ratsnest = board->GetRatsnest();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
 
     for( int i = 0; i < board->GetAreaCount(); ++i )
     {
         ZONE_CONTAINER* zone = board->GetArea( i );
         zone->SetIsFilled( false );
         zone->ClearFilledPolysList();
-        ratsnest->Update( zone );
+        connectivity->Update( zone );
         getView()->Update( zone );
     }
 
-    ratsnest->Recalculate();
+    connectivity->RecalculateRatsnest();
 
     return 0;
 }

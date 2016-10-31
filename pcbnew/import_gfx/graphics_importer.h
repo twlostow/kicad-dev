@@ -29,6 +29,7 @@
 #include "graphics_import_plugin.h"
 
 #include <eda_text.h>
+#include <math/vector2d.h>
 
 #include <list>
 #include <memory>
@@ -113,14 +114,14 @@ public:
      * @param aOrigin is the segment origin point expressed in internal units.
      * @param aEnd is the segment end point expressed in internal units.
      */
-    virtual void AddLine( const wxPoint& aOrigin, const wxPoint& aEnd ) = 0;
+    virtual void AddLine( const VECTOR2D& aOrigin, const VECTOR2D& aEnd ) = 0;
 
     /**
      * @brief Creates an object representing a circle.
      * @param aCenter is the circle center point expressed in internal units.
      * @param aRadius is the circle radius expressed in internal units.
      */
-    virtual void AddCircle( const wxPoint& aCenter, unsigned int aRadius ) = 0;
+    virtual void AddCircle( const VECTOR2D& aCenter, unsigned int aRadius ) = 0;
 
     /**
      * @brief Creates an object representing an arc.
@@ -129,11 +130,11 @@ public:
      * Its length is the arc radius.
      * @param aAgnle is the arc angle expressed in decidegrees.
      */
-    virtual void AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle ) = 0;
+    virtual void AddArc( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle ) = 0;
 
-    virtual void AddPolygon( const std::vector< wxPoint >& aVertices ) = 0;
+    virtual void AddPolygon( const std::vector< VECTOR2D >& aVertices ) = 0;
 
-    //virtual void AddArc( const wxPoint& aOrigin, double aStartAngle, double aEndAngle ) = 0;
+    //virtual void AddArc( const VECTOR2D& aOrigin, double aStartAngle, double aEndAngle ) = 0;
     //
     /**
      * @brief Creates an object representing a text.
@@ -145,7 +146,7 @@ public:
      * @param aHJustify is the text horizontal justification.
      * @param aVJustify is the text vertical justification.
      */
-    virtual void AddText( const wxPoint& aOrigin, const wxString& aText,
+    virtual void AddText( const VECTOR2D& aOrigin, const wxString& aText,
             unsigned int aHeight, unsigned aWidth, double aOrientation,
             EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) = 0;
 

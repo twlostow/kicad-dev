@@ -27,8 +27,8 @@
 
 #include "graphics_import_plugin.h"
 #include "drw_interface.h"
+#include <math/vector2d.h>
 
-class wxRealPoint;
 
 class SVG_IMPORT_PLUGIN : public GRAPHICS_IMPORT_PLUGIN
 {
@@ -49,16 +49,16 @@ private:
     void DrawPath( const float* aPoints, int aNumPoints, bool aClosedPath );
 
     void DrawLinePath( const float* aPoints, int aNumPoints,
-            std::vector< wxRealPoint >& aGeneratedPoints );
+            std::vector< VECTOR2D >& aGeneratedPoints );
 
     void DrawCubicBezierPath( const float* aPoints, int aNumPoints,
-            std::vector< wxRealPoint >& aGeneratedPoints );
+            std::vector< VECTOR2D >& aGeneratedPoints );
 
     void DrawCubicBezierCurve( const float* aPoints,
-            std::vector< wxRealPoint >& aGeneratedPoints );
+            std::vector< VECTOR2D >& aGeneratedPoints );
 
-    void DrawPolygon( const std::vector< wxRealPoint >& aPoints );
-    void DrawLineSegments( const std::vector< wxRealPoint >& aPoints );
+    void DrawPolygon( const std::vector< VECTOR2D >& aPoints );
+    void DrawLineSegments( const std::vector< VECTOR2D >& aPoints );
 };
 
 #endif /* SVG_IMPORT_PLUGIN_H */

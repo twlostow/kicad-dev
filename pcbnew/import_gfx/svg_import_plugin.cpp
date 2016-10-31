@@ -25,14 +25,15 @@
 #include "svg_import_plugin.h"
 
 #include <wx/gdicmn.h>
+#include <math/vector2d.h>
 
 #include "nanosvg.h"
 
 #include "graphics_importer.h"
 
-static wxRealPoint getBezierPoint( const float* aCurvePoints, float aStep );
-static wxRealPoint getPoint( const float* aPointCoordinates );
-static wxRealPoint getPointInLine( const wxRealPoint& aLineStart, const wxRealPoint& aLineEnd,
+static VECTOR2D getBezierPoint( const float* aCurvePoints, float aStep );
+static VECTOR2D getPoint( const float* aPointCoordinates );
+static VECTOR2D getPointInLine( const VECTOR2D& aLineStart, const VECTOR2D& aLineEnd,
         float aDistance );
 
 bool SVG_IMPORT_PLUGIN::Load( const wxString& aFileName )
@@ -63,7 +64,7 @@ void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints, bool aCl
     const int numBezierCoordinates = numBezierPoints * 2;
     const float* linePoints = aPoints + numBezierCoordinates;
 
-    std::vector< wxRealPoint > collectedPathPoints;
+    std::vector< VECTOR2D > collectedPathPoints;
 
     if( numBezierPoints > 0 )
         DrawCubicBezierPath( aPoints, numBezierPoints, collectedPathPoints );
@@ -79,7 +80,7 @@ void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints, bool aCl
 
 
 void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoints,
-        std::vector< wxRealPoint >& aGeneratedPoints )
+        std::vector< VECTOR2D >& aGeneratedPoints )
 {
     const int numberOfCoordinatesPerSegment = 2 * 4;
     const float* currentPoints = aPoints;
@@ -93,9 +94,9 @@ void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoint
 
 
 void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints,
-        std::vector< wxRealPoint >& aGeneratedPoints )
+        std::vector< VECTOR2D >& aGeneratedPoints )
 {
-    for( float step = 0.f; step < 1.f; step += 0.1f )
+    for( float step = 0.f; step < 1.f; step += 0.01f )
     {
         auto point = getBezierPoint( aPoints, step );
 
@@ -105,11 +106,10 @@ void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints,
 
 
 void SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints,
-        std::vector< wxRealPoint >& aGeneratedPoints )
+        std::vector< VECTOR2D >& aGeneratedPoints )
 {
     const int coordinatesPerPoint = 2;
     const float* remainingPoints = aPoints;
-
     for( int numPoints = aNumPoints; numPoints > 0; --numPoints )
     {
         auto point = getPoint( remainingPoints );
@@ -121,18 +121,17 @@ void SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints,
 }
 
 
-void SVG_IMPORT_PLUGIN::DrawPolygon( const std::vector< wxRealPoint >& aPrecisePoints )
+void SVG_IMPORT_PLUGIN::DrawPolygon( const std::vector< VECTOR2D >& aPrecisePoints )
 {
-    std::vector< wxPoint > convertedPoints( aPrecisePoints.size() );
-
-    for( const wxRealPoint& point : aPrecisePoints )
+    std::vector< VECTOR2D > convertedPoints( aPrecisePoints.size() );
+    for( const VECTOR2D& point : aPrecisePoints )
         convertedPoints.emplace_back( point.x, point.y );
 
     m_importer->AddPolygon( convertedPoints );
 }
 
 
-void SVG_IMPORT_PLUGIN::DrawLineSegments( const std::vector< wxRealPoint >& aPoints )
+void SVG_IMPORT_PLUGIN::DrawLineSegments( const std::vector< VECTOR2D >& aPoints )
 {
     unsigned int numLineStartPoints = aPoints.size() - 1;
 
@@ -141,13 +140,13 @@ void SVG_IMPORT_PLUGIN::DrawLineSegments( const std::vector< wxRealPoint >& aPoi
 }
 
 
-static wxRealPoint getPoint( const float* aPointCoordinates )
+static VECTOR2D getPoint( const float* aPointCoordinates )
 {
-    return wxRealPoint( aPointCoordinates[0], aPointCoordinates[1] );
+    return VECTOR2D( aPointCoordinates[0], aPointCoordinates[1] );
 }
 
 
-static wxRealPoint getBezierPoint( const float* aPoints, float aStep )
+static VECTOR2D getBezierPoint( const float* aPoints, float aStep )
 {
     const int coordinatesPerPoint = 2;
 
@@ -167,7 +166,7 @@ static wxRealPoint getBezierPoint( const float* aPoints, float aStep )
 }
 
 
-static wxRealPoint getPointInLine( const wxRealPoint& aLineStart, const wxRealPoint& aLineEnd,
+static VECTOR2D getPointInLine( const VECTOR2D& aLineStart, const VECTOR2D& aLineEnd,
         float aDistance )
 {
     return aLineStart + ( aLineEnd - aLineStart ) * aDistance;

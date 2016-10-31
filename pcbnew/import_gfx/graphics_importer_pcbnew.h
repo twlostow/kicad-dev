@@ -58,15 +58,15 @@ public:
         return m_layer;
     }
 
-    void AddLine( const wxPoint& aOrigin, const wxPoint& aEnd ) override;
+    void AddLine( const VECTOR2D& aOrigin, const VECTOR2D& aEnd ) override;
 
-    void AddCircle( const wxPoint& aOrigin, unsigned int aRadius ) override;
+    void AddCircle( const VECTOR2D& aOrigin, unsigned int aRadius ) override;
 
-    void AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle ) override;
+    void AddArc( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle ) override;
 
-    void AddPolygon( const std::vector< wxPoint >& aVertices ) override;
+    void AddPolygon( const std::vector< VECTOR2D >& aVertices ) override;
 
-    void AddText( const wxPoint& aOrigin, const wxString& aText,
+    void AddText( const VECTOR2D& aOrigin, const wxString& aText,
             unsigned int aHeight, unsigned aWidth, double aOrientation,
             EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) override;
 

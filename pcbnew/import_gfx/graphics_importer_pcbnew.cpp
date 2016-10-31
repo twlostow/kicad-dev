@@ -31,54 +31,65 @@
 
 using namespace std;
 
-void GRAPHICS_IMPORTER_PCBNEW::AddLine( const wxPoint& aOrigin, const wxPoint& aEnd )
+static wxPoint Round ( const VECTOR2D& aVec )
+{
+    return wxPoint ( (int) aVec.x, (int) aVec.y );
+}
+
+void GRAPHICS_IMPORTER_PCBNEW::AddLine( const VECTOR2D& aOrigin, const VECTOR2D& aEnd )
 {
     unique_ptr<DRAWSEGMENT> line( createDrawing() );
     line->SetShape( S_SEGMENT );
     line->SetLayer( GetLayer() );
     line->SetWidth( GetLineWidth() );
-    line->SetStart( aOrigin * GetScale() );
-    line->SetEnd( aEnd * GetScale() );
+    line->SetStart( Round ( aOrigin * GetScale() ) );
+    line->SetEnd( Round ( aEnd * GetScale() ) );
     addItem( std::move( line ) );
 }
 
 
-void GRAPHICS_IMPORTER_PCBNEW::AddCircle( const wxPoint& aCenter, unsigned int aRadius )
+void GRAPHICS_IMPORTER_PCBNEW::AddCircle( const VECTOR2D& aCenter, unsigned int aRadius )
 {
     unique_ptr<DRAWSEGMENT> circle( createDrawing() );
     circle->SetShape( S_CIRCLE );
     circle->SetLayer( GetLayer() );
     circle->SetWidth( GetLineWidth() );
-    circle->SetCenter( aCenter * GetScale() );
-    circle->SetArcStart( wxPoint( aCenter.x + aRadius, aCenter.y ) * GetScale() );
+    circle->SetCenter( Round ( aCenter * GetScale() ) );
+    circle->SetArcStart( Round ( VECTOR2D( aCenter.x + aRadius, aCenter.y ) * GetScale() ) );
     addItem( std::move( circle ) );
 }
 
 
-void GRAPHICS_IMPORTER_PCBNEW::AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle )
+void GRAPHICS_IMPORTER_PCBNEW::AddArc( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle )
 {
     unique_ptr<DRAWSEGMENT> arc( createDrawing() );
     arc->SetShape( S_ARC );
     arc->SetLayer( GetLayer() );
     arc->SetWidth( GetLineWidth() );
-    arc->SetCenter( aCenter * GetScale() );
-    arc->SetArcStart( aStart * GetScale() );
+    arc->SetCenter( Round ( aCenter * GetScale() ) );
+    arc->SetArcStart( Round ( aStart * GetScale() ) );
     arc->SetAngle( aAngle );
     addItem( std::move( arc ) );
 }
 
 
-void GRAPHICS_IMPORTER_PCBNEW::AddPolygon( const std::vector< wxPoint >& aVertices )
+void GRAPHICS_IMPORTER_PCBNEW::AddPolygon( const std::vector< VECTOR2D >& aVertices )
 {
     unique_ptr<DRAWSEGMENT> polygon( createDrawing() );
+    std::vector<wxPoint> verts;
     polygon->SetShape( S_POLYGON );
     polygon->SetLayer( GetLayer() );
-    polygon->SetPolyPoints( aVertices );
+
+
+    for ( auto p : aVertices )
+        verts.push_back ( Round ( p ) );
+
+    polygon->SetPolyPoints( verts );
     addItem( std::move( polygon ) );
 }
 
 
-void GRAPHICS_IMPORTER_PCBNEW::AddText( const wxPoint& aOrigin, const wxString& aText,
+void GRAPHICS_IMPORTER_PCBNEW::AddText( const VECTOR2D& aOrigin, const wxString& aText,
         unsigned int aHeight, unsigned aWidth, double aOrientation,
         EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify )
 {
@@ -87,10 +98,10 @@ void GRAPHICS_IMPORTER_PCBNEW::AddText( const wxPoint& aOrigin, const wxString& 
     tie( boardItem, textItem ) = createText();
     boardItem->SetLayer( GetLayer() );
     textItem->SetThickness( GetLineWidth() );
-    textItem->SetTextPosition( aOrigin * GetScale() );
+    textItem->SetTextPosition( Round ( aOrigin * GetScale() ) );
     textItem->SetOrientation( aOrientation );
-    textItem->SetWidth( aWidth * GetScale() );
-    textItem->SetHeight( aHeight * GetScale() );
+    textItem->SetWidth( (double)aWidth * GetScale() );
+    textItem->SetHeight( (double)aHeight * GetScale() );
     textItem->SetVertJustify( aVJustify );
     textItem->SetHorizJustify( aHJustify );
     textItem->SetText( aText );

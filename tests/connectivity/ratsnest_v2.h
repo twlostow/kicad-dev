@@ -27,8 +27,8 @@
  * @brief Class that computes missing connections on a PCB.
  */
 
-#ifndef RATSNEST_DATA_H
-#define RATSNEST_DATA_H
+#ifndef RATSNEST_DATA_V2H
+#define RATSNEST_DATA_V2H
 
 #include <ttl/halfedge/hetriang.h>
 #include <ttl/halfedge/hetraits.h>
@@ -51,6 +51,7 @@ class TRACK;
 class ZONE_CONTAINER;
 class SHAPE_POLY_SET;
 
+namespace RN {
 ///> Types of items that are handled by the class
 enum RN_ITEM_TYPE
 {
@@ -96,7 +97,7 @@ RN_NODE_OR_FILTER operator||( const RN_NODE_FILTER& aFilter1, const RN_NODE_FILT
 ///> Leaves nodes that can be a ratsnest line target
 struct LINE_TARGET : public RN_NODE_FILTER
 {
-    bool operator()( const RN_NODE_PTR& aNode ) const override
+    bool operator()( const RN_NODE_PTR& aNode ) const
     {
         return !aNode->GetNoLine();
     }
@@ -109,7 +110,7 @@ struct LINE_TARGET_SAME_TAG : public RN_NODE_FILTER
         m_tag( aTag )
     {}
 
-    bool operator()( const RN_NODE_PTR& aNode ) const override
+    bool operator()( const RN_NODE_PTR& aNode ) const
     {
         return !aNode->GetNoLine() && aNode->GetTag() == m_tag;
     }
@@ -124,7 +125,7 @@ struct LINE_TARGET_DIFF_TAG : public RN_NODE_FILTER
         m_tag( aTag )
     {}
 
-    bool operator()( const RN_NODE_PTR& aNode ) const override
+    bool operator()( const RN_NODE_PTR& aNode ) const
     {
         return !aNode->GetNoLine() && aNode->GetTag() == m_tag;
     }
@@ -139,7 +140,7 @@ struct RN_NODE_AND_FILTER : public RN_NODE_FILTER
         m_filter1( aFilter1 ), m_filter2( aFilter2 )
     {}
 
-    bool operator()( const RN_NODE_PTR& aNode ) const override
+    bool operator()( const RN_NODE_PTR& aNode ) const
     {
         return m_filter1( aNode ) && m_filter2( aNode );
     }
@@ -155,7 +156,7 @@ struct RN_NODE_OR_FILTER : public RN_NODE_FILTER
         m_filter1( aFilter1 ), m_filter2( aFilter2 )
     {}
 
-    bool operator()( const RN_NODE_PTR& aNode ) const override
+    bool operator()( const RN_NODE_PTR& aNode ) const
     {
         return m_filter1( aNode ) || m_filter2( aNode );
     }
@@ -400,76 +401,12 @@ public:
     void RemoveCluster( std::shared_ptr<CN_CLUSTER> aCluster );
 
     /**
-     * Function AddItem()
-     * Adds an appropriate node associated with selected pad, so it is
-     * taken into account during ratsnest computations.
-     * @param aPad is a pad for which node is added.
-     */
-    bool AddItem( const D_PAD* aPad );
-
-    /**
-     * Function AddItem()
-     * Adds an appropriate node associated with selected via, so it is
-     * taken into account during ratsnest computations.
-     * @param aVia is a via for which node is added.
-     */
-    bool AddItem( const VIA* aVia );
-
-    /**
-     * Function AddItem()
-     * Adds appropriate nodes and edges associated with selected track, so they are
-     * taken into account during ratsnest computations.
-     * @param aTrack is a track for which nodes and edges are added.
-     */
-    bool AddItem( const TRACK* aTrack );
-
-    /**
-     * Function AddItem()
-     * Processes zone to split it into subpolygons and adds appropriate nodes for them, so they are
-     * taken into account during ratsnest computations.
-     * @param aZone is a zone to be processed.
-     */
-    bool AddItem( const ZONE_CONTAINER* aZone );
-
-    /**
-     * Function RemoveItem()
-     * Removes all nodes and edges associated with selected pad, so they are not
-     * taken into account during ratsnest computations anymore.
-     * @param aPad is a pad for which nodes and edges are removed.
-     */
-    bool RemoveItem( const D_PAD* aPad );
-
-    /**
-     * Function RemoveItem()
-     * Removes all nodes and edges associated with selected via, so they are not
-     * taken into account during ratsnest computations anymore.
-     * @param aVia is a via for which nodes and edges are removed.
-     */
-    bool RemoveItem( const VIA* aVia );
-
-    /**
-     * Function RemoveItem()
-     * Removes all nodes and edges associated with selected track, so they are not
-     * taken into account during ratsnest computations anymore.
-     * @param aTrack is a track for which nodes and edges are removed.
-     */
-    bool RemoveItem( const TRACK* aTrack );
-
-    /**
-     * Function RemoveItem()
-     * Removes all nodes and edges associated with selected zone, so they are not
-     * taken into account during ratsnest computations anymore.
-     * @param aZone is a zone for which nodes and edges are removed.
-     */
-    bool RemoveItem( const ZONE_CONTAINER* aZone );
-
-    /**
      * Function GetNodes()
      * Returns list of nodes that are associated with a given item.
      * @param aItem is an item for which the list is generated.
      * @return List of associated nodes.
      */
-    std::list<RN_NODE_PTR> GetNodes( const BOARD_CONNECTED_ITEM* aItem ) const;
+//    std::list<RN_NODE_PTR> GetNodes( const BOARD_CONNECTED_ITEM* aItem ) const;
 
     /**
      * Function GetAllItems()
@@ -477,7 +414,7 @@ public:
      * @param aOutput is the list that will have items added.
      * @param aType determines the type of added items.
      */
-    void GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, RN_ITEM_TYPE aType = RN_ALL ) const;
+//    void GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, RN_ITEM_TYPE aType = RN_ALL ) const;
 
     /**
      * Function GetClosestNode()
@@ -561,9 +498,12 @@ public:
      * @param aOutput is the list that will contain found items.
      * @param aTypes allows to filter by item types.
      */
-    void GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
-                            std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                            RN_ITEM_TYPE aTypes = RN_ALL ) const;
+    #if 0
+        void GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
+                                std::list<BOARD_CONNECTED_ITEM*>& aOutput,
+                                RN_ITEM_TYPE aTypes = RN_ALL ) const;
+    #endif
+
 
 protected:
     ///> Validates edge, i.e. modifies source and target nodes for an edge
@@ -572,20 +512,14 @@ protected:
 
     ///> Removes a link between a node and a parent,
     ///> and clears linked edges if it was the last parent.
-    void removeNode( RN_NODE_PTR& aNode, const BOARD_CONNECTED_ITEM* aParent );
+    void removeNode( RN_NODE_PTR& aNode, std::shared_ptr<CN_CLUSTER> aParent );
 
     ///> Removes a link between an edge and a parent,
     ///> and clears its node data if it was the last parent.
-    void removeEdge( RN_EDGE_MST_PTR& aEdge, const BOARD_CONNECTED_ITEM* aParent );
+    void removeEdge( RN_EDGE_MST_PTR& aEdge, std::shared_ptr<CN_CLUSTER> aParent );
 
     ///> Removes all ratsnest edges for a given node.
     void clearNode( const RN_NODE_PTR& aNode );
-
-    ///> Adds appropriate edges for nodes that are connected by zones.
-    void processZones();
-
-    ///> Adds additional edges to account for connections made by items located in pads areas.
-    void processPads();
 
     ///> Recomputes ratsnset from scratch.
     void compute();
@@ -605,201 +539,12 @@ protected:
     ///> Flag indicating necessity of recalculation of ratsnest for a net.
     bool m_dirty;
 
-    ///> Structure to hold ratsnest data for ZONE_CONTAINER objects.
-    typedef struct
-    {
-        ///> Subpolygons belonging to a zone
-        std::deque<RN_POLY> m_Polygons;
-
-        ///> Connections to other nodes
-        std::deque<RN_EDGE_MST_PTR> m_Edges;
-    } RN_ZONE_DATA;
-
-    ///> Structureo to hold ratsnest data for D_PAD objects.
-    typedef struct
-    {
-        ///> Node representing the pad.
-        RN_NODE_PTR m_Node;
-
-        ///> Helper nodes that make for connections to items located in the pad area.
-        std::deque<RN_EDGE_MST_PTR> m_Edges;
-    } RN_PAD_DATA;
-
-    ///> Helper typedefs
-    typedef std::unordered_map<const D_PAD*, RN_PAD_DATA> PAD_NODE_MAP;
-    typedef std::unordered_map<const VIA*, RN_NODE_PTR> VIA_NODE_MAP;
-    typedef std::unordered_map<const TRACK*, RN_EDGE_MST_PTR> TRACK_EDGE_MAP;
-    typedef std::unordered_map<const ZONE_CONTAINER*, RN_ZONE_DATA> ZONE_DATA_MAP;
-
-    ///> Map that associates nodes in the ratsnest model to respective nodes.
-    PAD_NODE_MAP m_pads;
-
-    ///> Map that associates nodes in the ratsnest model to respective vias.
-    VIA_NODE_MAP m_vias;
-
-    ///> Map that associates edges in the ratsnest model to respective tracks.
-    TRACK_EDGE_MAP m_tracks;
-
-    ///> Map that associates groups of subpolygons in the ratsnest model to respective zones.
-    ZONE_DATA_MAP m_zones;
-
     ///> Visibility flag.
     bool m_visible;
 };
 
 
-/**
- * Class RN_DATA
- *
- * Stores information about unconnected items for a board.
- */
-class RN_DATA
-{
-public:
-    /**
-     * Default constructor
-     * @param aBoard is the board to be processed in order to look for unconnected items.
-     */
-    RN_DATA( const BOARD* aBoard ) : m_board( aBoard ) {}
 
-    /**
-     * Function Add()
-     * Adds an item to the ratsnest data.
-     * @param aItem is an item to be added.
-     * @return True if operation succeeded.
-     */
-    bool Add( const BOARD_ITEM* aItem );
-
-    /**
-     * Function Remove()
-     * Removes an item from the ratsnest data.
-     * @param aItem is an item to be updated.
-     * @return True if operation succeeded.
-     */
-    bool Remove( const BOARD_ITEM* aItem );
-
-    /**
-     * Function Update()
-     * Updates the ratsnest data for an item.
-     * @param aItem is an item to be updated.
-     * @return True if operation succeeded. The item will not be updated if it was not previously
-     * added to the ratsnest.
-     */
-    bool Update( const BOARD_ITEM* aItem );
-
-    /**
-     * Function AddSimple()
-     * Sets an item to be drawn in simple mode (i.e. one line per node, instead of full ratsnest).
-     * It is used for drawing quick, temporary ratsnest, eg. while moving an item.
-     * @param aItem is an item to be drawn in simple node.
-     */
-    void AddSimple( const BOARD_ITEM* aItem );
-
-    /**
-     * Function AddBlocked()
-     * Specifies an item as not suitable as a ratsnest line target (i.e. ratsnest lines will not
-     * target its node(s)). The status is cleared after calling ClearSimple().
-     * @param aItem is the item of which node(s) are not going to be used as a ratsnest line target.
-     */
-    void AddBlocked( const BOARD_ITEM* aItem );
-
-    /**
-     * Function ClearSimple()
-     * Clears the list of nodes for which ratsnest is drawn in simple mode (one line per node).
-     */
-    void ClearSimple()
-    {
-        for( RN_NET& net : m_nets )
-            net.ClearSimple();
-    }
-
-    /**
-     * Function ProcessBoard()
-     * Prepares data for computing (computes a list of current nodes and connections). It is
-     * required to run only once after loading a board.
-     */
-    void ProcessBoard();
-
-    /**
-     * Function Recalculate()
-     * Recomputes ratsnest for selected net number or all nets that need updating.
-     * @param aNet is a net number. If it is negative, all nets that need updating are recomputed.
-     */
-    void Recalculate( int aNet = -1 );
-
-    /**
-     * Function GetNetCount()
-     * Returns the number of nets handled by the ratsnest.
-     * @return Number of the nets.
-     */
-    int GetNetCount() const
-    {
-        return m_nets.size();
-    }
-
-    /**
-     * Function GetNet()
-     * Returns ratsnest grouped by net numbers.
-     * @param aNetCode is the net code.
-     * @return Ratsnest data for a specified net.
-     */
-    RN_NET& GetNet( int aNetCode )
-    {
-        assert( aNetCode > 0 );     // ratsnest does not handle the unconnected net
-
-        return m_nets[aNetCode];
-    }
-
-    /**
-     * Function GetConnectedItems()
-     * Adds items that are connected together to a list.
-     * @param aItem is the reference item to find other connected items.
-     * @param aOutput is the list that will contain found items.
-     * @param aTypes allows to filter by item types.
-     */
-    void GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
-                            std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                            RN_ITEM_TYPE aTypes = RN_ALL ) const;
-
-    /**
-     * Function GetNetItems()
-     * Adds all items that belong to a certain net to a list.
-     * @param aNetCode is the net code.
-     * @param aOutput is the list that will have items added.
-     * @param aTypes allows to filter by item types.
-     */
-    void GetNetItems( int aNetCode, std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                            RN_ITEM_TYPE aTypes = RN_ALL ) const;
-
-    /**
-     * Function AreConnected()
-     * Checks if two items are connected with copper.
-     * @param aThis is the first item.
-     * @param aOther is the second item.
-     * @return True if they are connected, false otherwise.
-     */
-    bool AreConnected( const BOARD_CONNECTED_ITEM* aItem, const BOARD_CONNECTED_ITEM* aOther );
-
-    /**
-     * Function GetUnconnectedCount()
-     * Returns the number of missing connections.
-     * @return Number of missing connections.
-     */
-    int GetUnconnectedCount() const;
-
-protected:
-    /**
-     * Function updateNet()
-     * Recomputes ratsnest for a single net.
-     * @param aNetCode is the net number to be recomputed.
-     */
-    void updateNet( int aNetCode );
-
-    ///> Board to be processed.
-    const BOARD* m_board;
-
-    ///> Stores information about ratsnest grouped by net numbers.
-    std::vector<RN_NET> m_nets;
 };
 
 #endif /* RATSNEST_DATA_H */

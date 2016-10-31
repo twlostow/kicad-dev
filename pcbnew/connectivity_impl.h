@@ -112,9 +112,6 @@ private:
 // list of items physically connected (touching)
     std::vector<CN_ITEM*> m_connected;
 
-// list of anchors
-    std::vector<CN_ANCHOR*> m_anchors;
-
 // visited flag for the BFS scan
     bool m_visited;
 
@@ -179,12 +176,6 @@ public:
         m_connected.clear();
     }
 
-
-    void AddAnchor ( CN_ANCHOR *aAnchor )
-    {
-        m_anchors.push_back( aAnchor );
-    }
-
     void SetVisited ( bool aVisited )
     {
         m_visited = aVisited;
@@ -206,28 +197,22 @@ public:
        b->m_connected.push_back( a );
     }
 
-    void RemoveInvalidConnections()
-    {
-        //printf("RIC before: %d\n", m_connected.size() );
-        auto last = std::remove_if(m_connected.begin(), m_connected.end(), [] ( CN_ITEM * item) {
-            return !item->Valid();
+    void RemoveInvalidRefs();
 
-        } );
+    virtual int AnchorCount() const;
+    virtual const VECTOR2I GetAnchor( int n ) const;
 
-        m_connected.resize( last - m_connected.begin() );
-        //printf("RIC after: %d\n", m_connected.size() );
-    }
-
-    /*std::vector<CN_ANCHOR*>& Anchors()
-    {
-        return m_anchors;
-    }*/
-
+    int Net() const;
 };
 
 class CN_ANCHOR
 {
 public:
+    CN_ANCHOR()
+    {
+        m_item = nullptr;
+    }
+
     CN_ANCHOR( const VECTOR2I& aPos, CN_ITEM* aItem )
     {
         m_pos   = aPos;
@@ -237,6 +222,8 @@ public:
 
     bool Valid() const
     {
+        if( !m_item )
+            return false;
         return m_item->Valid();
     }
 
@@ -269,7 +256,6 @@ public:
 private:
     VECTOR2I m_pos;
     CN_ITEM* m_item;
-    bool m_valid;
 };
 
 class CN_LIST
@@ -277,7 +263,7 @@ class CN_LIST
 private:
     bool m_dirty;
     int m_count;
-    std::vector<CN_ANCHOR*> m_anchors;
+    std::vector<CN_ANCHOR> m_anchors;
 
 protected:
 
@@ -286,9 +272,7 @@ protected:
 
     void addAnchor( VECTOR2I pos, CN_ITEM* item )
     {
-        auto anchor = new CN_ANCHOR( pos, item );
-        m_anchors.push_back( anchor );
-        item->AddAnchor ( anchor );
+        m_anchors.push_back( CN_ANCHOR( pos, item ) );
     }
 
 private:
@@ -297,17 +281,8 @@ private:
     {
         if( m_dirty )
         {
-            std::sort( m_anchors.begin(), m_anchors.end(), [] ( const CN_ANCHOR *a, const CN_ANCHOR *b ) { return (*a) < (*b); } );
+            std::sort( m_anchors.begin(), m_anchors.end() );
 
-            int n_invalid = 0;
-            for (auto a : m_anchors)
-            {
-                //printf("sorted %p %d %d valid %d\n", a, a->Pos().x, a->Pos().y, !!a->Valid() );
-                if(!a->Valid()) n_invalid++;
-            }
-
-        //    printf("Invalid anchors: %d\n", n_invalid);
-        //    m_anchors.resize( m_anchors.size() - n_invalid );
             m_dirty = false;
         }
     }
@@ -335,32 +310,39 @@ public:
         m_dirty = aDirty;
     }
 
+    bool IsDirty() const
+    {
+        return m_dirty;
+    }
+
     void ClearConnections()
     {
-        for( auto anchor : m_anchors )
-            anchor->Item()->ClearConnections();
+        for( auto& anchor : m_anchors )
+            anchor.Item()->ClearConnections();
     }
 
     void RemoveInvalidItems()
     {
-        //printf("before : %d\n", m_items.size());
-        auto last = std::remove_if(m_items.begin(), m_items.end(), [] ( CN_ITEM * item) {
+        auto lastAnchor = std::remove_if(m_anchors.begin(), m_anchors.end(), [] ( const CN_ANCHOR& anchor) {
+            return !anchor.Valid();
 
-    //        if (!item->Valid())
-        //        printf("Remove1 %p\n", item);
+        } );
 
-            return !item->Valid(); } );
+        m_anchors.resize( lastAnchor - m_anchors.begin() );
 
-            //printf("RII Before %d\n", m_items.size() );
+        auto lastItem = std::remove_if(m_items.begin(), m_items.end(), [] ( CN_ITEM * item) {
+            if ( !item->Valid() )
+            {
+        //        delete item; // fixme: leak
+                return true;
+            }
+            return false;
+        } );
 
-        m_items.resize( last - m_items.begin() );
-
-//        printf("RII After %d\n", m_items.size() );
+        m_items.resize( lastItem - m_items.begin() );
 
         for ( auto item : m_items )
-            item->RemoveInvalidConnections();
-
-
+            item->RemoveInvalidRefs();
     }
 
     int Size() const
@@ -449,6 +431,8 @@ public:
         return m_cachedPoly->BBox();
     }
 
+    virtual int AnchorCount() const;
+    virtual const VECTOR2I GetAnchor( int n ) const;
 
 private:
     unique_ptr<POLY_GRID_PARTITION> m_cachedPoly;
@@ -489,10 +473,10 @@ public:
 template <class T>
 void CN_LIST::FindNearby( BOX2I aBBox, T aFunc )
 {
-    for( auto p : m_anchors )
+    for( auto &p : m_anchors )
     {
-            if ( p->Valid() && aBBox.Contains( p->Pos() ) )
-                aFunc( *p );
+            if ( p.Valid() && aBBox.Contains( p.Pos() ) )
+                aFunc( p );
     }
 }
 
@@ -526,13 +510,13 @@ void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
 
         auto p = m_anchors[idx];
 
-        int dist = p->Pos().x - aPosition.x;
+        int dist = p.Pos().x - aPosition.x;
 
         if( std::abs( dist ) <= aDistMax )
         {
             break;                              // A good entry point is found. The list can be scanned from this point.
         }
-        else if( p->Pos().x < aPosition.x )      // We should search after this point
+        else if( p.Pos().x < aPosition.x )      // We should search after this point
         {
             idx += delta;
 
@@ -558,8 +542,8 @@ void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
 
     for( int ii = idx; ii <= idxmax; ii++ )
     {
-        auto p = m_anchors[ii];
-        diff = p->Pos() - aPosition;;
+        auto &p = m_anchors[ii];
+        diff = p.Pos() - aPosition;;
 
         if( std::abs( diff.x ) > aDistMax )
             break; // Exit: the distance is to long, we cannot find other candidates
@@ -568,15 +552,15 @@ void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
             continue; // the y distance is to long, but we can find other candidates
 
         // We have here a good candidate: add it
-        if(p->Valid())
-            aFunc( *p );
+        if(p.Valid())
+            aFunc( p );
     }
 
     // search previous candidates in list
     for(  int ii = idx - 1; ii >=0; ii-- )
     {
-        auto p = m_anchors[ii];
-        diff = p->Pos() - aPosition;
+        auto &p = m_anchors[ii];
+        diff = p.Pos() - aPosition;
 
         if( abs( diff.x ) > aDistMax )
             break;
@@ -585,12 +569,10 @@ void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc )
             continue;
 
         // We have here a good candidate:add it
-        if(p->Valid())
-            aFunc( *p );
+        if(p.Valid())
+            aFunc( p );
     }
 }
-
-
 
 class CN_CONNECTIVITY_ALGO_IMPL
 {
@@ -628,6 +610,13 @@ private:
         std::list<CN_ITEM *> m_items;
     };
 
+    enum CLUSTER_SEARCH_MODE
+    {
+        CSM_PROPAGATE,
+        CSM_CONNECTIVITY_CHECK,
+        CSM_RATSNEST
+    };
+
     CN_PAD_LIST m_padList;
     CN_TRACK_LIST m_trackList;
     CN_VIA_LIST m_viaList;
@@ -636,10 +625,14 @@ private:
     using ITEM_MAP_PAIR = std::pair <BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY>;
 
     std::unordered_map<BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY> m_itemMap;
-    CLUSTERS m_clusters;
+
+    CLUSTERS m_connClusters;
+    CLUSTERS m_ratsnestClusters;
+    std::vector<bool> m_dirtyNets;
 
     void searchConnections( bool aIncludeZones = false );
-    void searchClusters( bool aIncludeZones = false );
+    const CLUSTERS searchClusters( CLUSTER_SEARCH_MODE aMode );
+
     void update();
     void propagateConnections();
 
@@ -652,11 +645,31 @@ private:
 
     bool isDirty() const;
 
-public:
+    void markNetAsDirty ( int aNet );
+    void markItemNetAsDirty( const BOARD_ITEM *aItem );
 
+
+
+public:
 
     CN_CONNECTIVITY_ALGO_IMPL();
     ~CN_CONNECTIVITY_ALGO_IMPL();
+
+    bool IsNetDirty( int aNet) const
+    {
+        return m_dirtyNets[ aNet ];
+    }
+
+    void ClearDirtyNets()
+    {
+        for ( auto i = m_dirtyNets.begin(); i != m_dirtyNets.end(); ++i )
+            *i = false;
+    }
+
+    int NetCount() const
+    {
+        return m_dirtyNets.size();
+    }
 
     void SetBoard( BOARD* aBoard );
 

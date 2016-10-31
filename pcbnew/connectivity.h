@@ -38,6 +38,8 @@ public:
     CN_CLUSTER();
     ~CN_CLUSTER();
 
+    const std::vector<VECTOR2I> GetAnchors();
+
     bool HasValidNet() const
     {
         return m_originNet >= 0;
@@ -99,10 +101,16 @@ public:
 
     void SetBoard( BOARD* aBoard );
 
+
 // PUBLIC API
     void    PropagateNets();
     void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
-//    bool    CheckConnectivity( std::vector<DISJOINT_NET_ENTRY>& aReport );
+    bool    CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport );
+
+    bool IsNetDirty( int aNet) const;
+    void ClearDirtyNets();
+    int NetCount() const;
+
 
     const CLUSTERS& GetClusters();
     int GetUnconnectedCount();

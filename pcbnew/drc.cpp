@@ -43,6 +43,7 @@
 #include <view/view.h>
 #include <geometry/seg.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 
 #include <tool/tool_manager.h>
 #include <tools/common_actions.h>
@@ -553,6 +554,23 @@ void DRC::testTracks( wxWindow *aActiveWindow, bool aShowProgressBar )
 
 void DRC::testUnconnected()
 {
+    std::vector<CN_DISJOINT_NET_ENTRY> report;
+
+    auto connAlgo = m_pcb->GetConnectivity()->GetConnectivityAlgo();
+
+    //connAlgo->ProcessBoard(); // just in case...
+
+    connAlgo->CheckConnectivity( report );
+
+    printf("Connectivity: %d unconnected\n", report.size());
+
+    for( auto ent : report )
+    {
+
+    }
+
+
+#if 0
     if( (m_pcb->m_Status_Pcb & LISTE_RATSNEST_ITEM_OK) == 0 )
     {
         wxClientDC dc( m_pcbEditorFrame->GetCanvas() );
@@ -583,6 +601,8 @@ void DRC::testUnconnected()
 
         m_unconnected.push_back( uncItem );
     }
+#endif
+
 }
 
 

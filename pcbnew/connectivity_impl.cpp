@@ -68,12 +68,6 @@ void CN_ITEM::Dump()
         TRACK *t = static_cast<TRACK*>(i->Parent());
         printf("    - %p [%d %d] [%d %d] l %d w %d\n", i, t->GetStart().x, t->GetStart().y, t->GetEnd(), t->GetEnd().y, t->GetLayer(), t->GetWidth() );
     }
-
-    printf("    anchors: \n");
-    for(auto i : m_anchors )
-        printf("     - %p [%d %d] item %p\n", i, i->Pos().x, i->Pos().y, i->Item() );
-
-
 }
 
 void CN_CLUSTER::Dump()
@@ -96,7 +90,7 @@ void CN_CLUSTER::Add( CN_ITEM* item )
 
     if ( m_originNet < 0 )
     {
-        m_originNet = item->Parent()->GetNetCode();
+        m_originNet = item->Net();
     }
 
     if( item->Parent()->Type() == PCB_PAD_T )
@@ -104,9 +98,9 @@ void CN_CLUSTER::Add( CN_ITEM* item )
         if( !m_originPad )
         {
             m_originPad = item;
-            m_originNet = item->Parent()->GetNetCode();
+            m_originNet = item->Net();
         }
-        if( m_originPad && item->Parent()->GetNetCode() != m_originNet )
+        if( m_originPad && item->Net() != m_originNet )
         {
             m_conflicting = true;
         }
@@ -124,6 +118,8 @@ CN_CONNECTIVITY_ALGO_IMPL::~CN_CONNECTIVITY_ALGO_IMPL()
 
 bool CN_CONNECTIVITY_ALGO_IMPL::Remove( BOARD_ITEM* aItem )
 {
+    markItemNetAsDirty ( aItem );
+
     switch( aItem->Type() )
     {
     case PCB_MODULE_T:
@@ -167,8 +163,19 @@ bool CN_CONNECTIVITY_ALGO_IMPL::Remove( BOARD_ITEM* aItem )
 
 }
 
+void CN_CONNECTIVITY_ALGO_IMPL::markItemNetAsDirty( const BOARD_ITEM *aItem )
+{
+    if ( aItem->IsConnected () )
+    {
+        auto citem = static_cast<const BOARD_CONNECTED_ITEM*> ( aItem );
+        markNetAsDirty ( citem->GetNetCode() );
+    }
+}
+
+
 bool CN_CONNECTIVITY_ALGO_IMPL::Add( BOARD_ITEM* aItem )
     {
+        markItemNetAsDirty ( aItem );
 
 
         switch( aItem->Type() )
@@ -265,7 +272,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchConnections( bool aIncludeZones )
                                 const auto zone = static_cast<ZONE_CONTAINER*> ( parent );
                                 auto zoneItem = static_cast<CN_ZONE*> ( aRefItem );
 
-                                if( point.Item()->Parent()->GetNetCode() != parent->GetNetCode() )
+                                if( point.Item()->Net() != parent->GetNetCode() )
                                     return;
 
                                 if( !( zone->GetLayerSet() &
@@ -297,7 +304,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchConnections( bool aIncludeZones )
         if (testedZone == aRefZone)
             return;
 
-        if( testedZone->Parent()->GetNetCode() != parentZone->GetNetCode() )
+        if( testedZone->Net() != parentZone->GetNetCode() )
             return; // we only test zones belonging to the same net
 
         if( !( testedZone->Parent()->GetLayerSet() &
@@ -330,7 +337,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchConnections( bool aIncludeZones )
     PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
 
     m_padList.RemoveInvalidItems();
-    m_viaList.RemoveInvalidItems();
+m_viaList.RemoveInvalidItems();
     m_trackList.RemoveInvalidItems();
     m_zoneList.RemoveInvalidItems();
 
@@ -392,7 +399,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchConnections( bool aIncludeZones )
             auto zoneItem = static_cast<CN_ZONE *> (item);
             auto searchZones = std::bind( checkForConnection, _1, zoneItem );
 
-            if(zoneItem->Dirty())
+            if( zoneItem->Dirty() )
             {
 
 
@@ -415,19 +422,39 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchConnections( bool aIncludeZones )
     search_cnt.show();
 }
 
-
-void CN_CONNECTIVITY_ALGO_IMPL::searchClusters( bool aIncludeZones )
+void CN_ITEM::RemoveInvalidRefs()
 {
+    auto lastConn = std::remove_if(m_connected.begin(), m_connected.end(), [] ( CN_ITEM * item) {
+        return !item->Valid();
+
+    } );
+
+    m_connected.resize( lastConn - m_connected.begin() );
+}
+
+bool CN_CONNECTIVITY_ALGO_IMPL::isDirty() const
+{
+        return m_viaList.IsDirty() || m_trackList.IsDirty() || m_zoneList.IsDirty() || m_padList.IsDirty();
+}
+
+const CN_CONNECTIVITY_ALGO_IMPL::CLUSTERS CN_CONNECTIVITY_ALGO_IMPL::searchClusters( CLUSTER_SEARCH_MODE aMode )
+{
+    bool includeZones = ( aMode != CSM_PROPAGATE );
+    bool withinSingleNet = ( aMode != CSM_PROPAGATE );
 
     std::deque<CN_ITEM*> Q;
     CN_ITEM* head = nullptr;
-    m_clusters.clear();
+    CLUSTERS clusters;
 
-    PROF_COUNTER cnt( "search-clusters" );
-    cnt.start();
+    if ( isDirty() )
+        searchConnections( includeZones );
 
-    auto addToSearchList = [&head] ( CN_ITEM *aItem )
+
+    auto addToSearchList = [&head, withinSingleNet] ( CN_ITEM *aItem )
     {
+        if ( withinSingleNet && aItem->Net() <= 0 )
+            return;
+
         if( !aItem->Valid() )
             return;
 
@@ -444,7 +471,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchClusters( bool aIncludeZones )
     std::for_each( m_trackList.begin(), m_trackList.end(), addToSearchList );
     std::for_each( m_viaList.begin(), m_viaList.end(), addToSearchList );
 
-    if (aIncludeZones)
+    if (includeZones)
     {
         std::for_each( m_zoneList.begin(), m_zoneList.end(), addToSearchList );
     }
@@ -471,6 +498,9 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchClusters( bool aIncludeZones )
 
             for( auto n : current->ConnectedItems() )
             {
+                if ( withinSingleNet && n->Net() != root->Net() )
+                    continue;
+
                 if( !n->Visited() && n->Valid() )
                 {
                     n->SetVisited( true );
@@ -480,25 +510,24 @@ void CN_CONNECTIVITY_ALGO_IMPL::searchClusters( bool aIncludeZones )
             }
         }
 
-        m_clusters.push_back( cluster );
+        clusters.push_back( cluster );
     }
 
-    cnt.show();
 
-
-    std::sort( m_clusters.begin(), m_clusters.end(), []( CN_CLUSTER_PTR a, CN_CLUSTER_PTR b ) {
+    std::sort( clusters.begin(), clusters.end(), []( CN_CLUSTER_PTR a, CN_CLUSTER_PTR b ) {
         return a->OriginNet() < b->OriginNet();
     } );
 
 #ifdef CONNECTIVITY_DEBUG
-
     printf("Active clusters: %d\n");
-    for (auto cl:m_clusters)
+    for (auto cl:clusters)
     {
     printf("Net %d\n", cl->OriginNet());
         cl->Dump();
     }
 #endif
+
+    return clusters;
 }
 
 void CN_CONNECTIVITY_ALGO_IMPL::SetBoard( BOARD* aBoard )
@@ -523,7 +552,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::SetBoard( BOARD* aBoard )
 
 void CN_CONNECTIVITY_ALGO_IMPL::propagateConnections()
 {
-    for( auto cluster : m_clusters )
+    for( auto cluster : m_connClusters )
     {
         if( cluster->IsConflicting() )
         {
@@ -565,7 +594,7 @@ void CN_CONNECTIVITY_ALGO_IMPL::propagateConnections()
 void CN_CONNECTIVITY_ALGO_IMPL::PropagateNets()
 {
     searchConnections( false );
-    searchClusters( false );
+    m_connClusters = searchClusters( CSM_PROPAGATE );
     propagateConnections();
 }
 
@@ -581,9 +610,9 @@ void CN_CONNECTIVITY_ALGO_IMPL::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone
 
     // m_zoneList->Remove ( aZone );
     searchConnections( true );
-    searchClusters( true );
+    m_connClusters = searchClusters( CSM_CONNECTIVITY_CHECK );
 
-    for( auto cluster : m_clusters )
+    for( auto cluster : m_connClusters )
         if( cluster->Contains( aZone ) && cluster->IsOrphaned() )
         {
             // printf("cluster %p found orphaned : %d\n", cluster, !!cluster->IsOrphaned());
@@ -604,11 +633,11 @@ bool CN_CONNECTIVITY_ALGO_IMPL::CheckConnectivity( std::vector<CN_DISJOINT_NET_E
     bool rv = true;
 
     searchConnections( true );
-    searchClusters( true );
+    m_connClusters = searchClusters( CSM_CONNECTIVITY_CHECK );
 
     int maxNetCode = 0;
 
-    for( auto cluster : m_clusters )
+    for( auto cluster : m_connClusters )
         maxNetCode = std::max( maxNetCode, cluster->OriginNet() );
 
     for( int net = 1; net <= maxNetCode; net++ )
@@ -616,7 +645,7 @@ bool CN_CONNECTIVITY_ALGO_IMPL::CheckConnectivity( std::vector<CN_DISJOINT_NET_E
         int count = 0;
         wxString name;
 
-        for( auto cluster : m_clusters )
+        for( auto cluster : m_connClusters )
             if( cluster->OriginNet() == net )
             {
                 name = cluster->OriginNetName();
@@ -642,9 +671,9 @@ int CN_CONNECTIVITY_ALGO_IMPL::GetUnconnectedCount()
     std::set<int> hits;
 
     searchConnections( true );
-    searchClusters( true );
+    m_connClusters = searchClusters( CSM_CONNECTIVITY_CHECK );
 
-    for( auto cluster : m_clusters )
+    for( auto cluster : m_connClusters )
     {
         auto netcode = cluster->OriginNet();
         if (netcode <= 0 )
@@ -667,5 +696,84 @@ int CN_CONNECTIVITY_ALGO_IMPL::GetUnconnectedCount()
 
 const CN_CONNECTIVITY_ALGO_IMPL::CLUSTERS& CN_CONNECTIVITY_ALGO_IMPL::GetClusters()
 {
-    return m_clusters;
+    m_ratsnestClusters = searchClusters( CSM_RATSNEST );
+    return m_ratsnestClusters;
+};
+
+void CN_CONNECTIVITY_ALGO_IMPL::markNetAsDirty ( int aNet )
+{
+    if(aNet <= 0)
+        return;
+
+    if(m_dirtyNets.size() <= aNet )
+        m_dirtyNets.resize(aNet + 1);
+
+    m_dirtyNets[ aNet ] = true;
+}
+
+int CN_ITEM::AnchorCount() const
+{
+    return m_parent->Type() == PCB_TRACE_T ? 2 : 1;
+}
+
+const VECTOR2I CN_ITEM::GetAnchor( int n ) const
+{
+    switch ( m_parent->Type() )
+    {
+        case PCB_PAD_T:
+            return static_cast<const D_PAD *>(m_parent)->ShapePos();
+            break;
+
+        case PCB_TRACE_T:
+        {
+            auto tr = static_cast<const TRACK *>(m_parent);
+            return (n == 0 ? tr->GetStart() : tr->GetEnd() );
+
+            break;
+        }
+
+        case PCB_VIA_T:
+            return static_cast<const VIA *>(m_parent)->GetStart();
+
+        default:
+            assert(false);
+            return VECTOR2I();
+    }
+}
+
+int CN_ZONE::AnchorCount() const
+{
+    const auto zone = static_cast<const ZONE_CONTAINER*> ( Parent() );
+    const auto& outline = zone->GetFilledPolysList().COutline( m_subpolyIndex );
+
+    return outline.PointCount() ? 1 : 0;
+}
+
+const VECTOR2I CN_ZONE::GetAnchor(int n ) const
+{
+    const auto zone = static_cast<const ZONE_CONTAINER*> ( Parent() );
+    const auto& outline = zone->GetFilledPolysList().COutline( m_subpolyIndex );
+
+    return outline.CPoint(0);
+}
+
+const std::vector<VECTOR2I> CN_CLUSTER::GetAnchors()
+{
+    std::vector<VECTOR2I> anchors;
+
+    for ( auto item : m_items )
+    {
+        int cnt = item->AnchorCount();
+        for (int i = 0 ; i < cnt; i++)
+            anchors.push_back( item->GetAnchor(i) );
+    }
+
+    return anchors;
+}
+
+int CN_ITEM::Net() const
+{
+    if (!m_parent)
+        return -1;
+    return m_parent->GetNetCode();
 }

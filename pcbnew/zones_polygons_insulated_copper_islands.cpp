@@ -41,10 +41,8 @@ void ZONE_CONTAINER::TestForCopperIslandAndRemoveInsulatedIslands( BOARD* aPcb )
 
     for( auto idx : islands )
     {
-        printf("Remove : %d\n", idx);    
         m_FilledPolysList.DeletePolygon( idx );
     }
-    printf("After remove : %d\n", m_FilledPolysList.OutlineCount());
 
     connectivity->Update( this );
 }

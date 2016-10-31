@@ -46,7 +46,7 @@ bool SVG_IMPORT_PLUGIN::Load( const wxString& aFileName )
     for( NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next )
     {
         for( NSVGpath* path = shape->paths; path != NULL; path = path->next )
-            DrawPath( path->pts, path->npts );
+            DrawPath( path->pts, path->npts, path->closed );
     }
 
     nsvgDelete( image );
@@ -55,13 +55,16 @@ bool SVG_IMPORT_PLUGIN::Load( const wxString& aFileName )
 }
 
 
-void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints )
+void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints, bool aClosedPath )
 {
     const int numBezierPoints = aNumPoints & ~0x3;
     const int numLinePoints = aNumPoints & 0x3;
 
     const int numBezierCoordinates = numBezierPoints * 2;
     const float* linePoints = aPoints + numBezierCoordinates;
+
+    auto pathStart = getPoint( aPoints );
+    auto pathEnd = pathStart;
 
     if( numBezierPoints > 0 )
     {
@@ -72,11 +75,18 @@ void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints )
             auto linePathStart = getPoint( linePoints );
 
             m_importer->AddLine( bezierPathEnd, linePathStart );
+
+            pathEnd = linePathStart;
         }
+        else
+            pathEnd = bezierPathEnd;
     }
 
     if( numLinePoints > 1 )
-        DrawLinePath( linePoints, numLinePoints );
+        pathEnd = DrawLinePath( linePoints, numLinePoints );
+
+    if( aClosedPath )
+        m_importer->AddLine( pathEnd, pathStart );
 }
 
 
@@ -117,7 +127,7 @@ wxRealPoint SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
 }
 
 
-void SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints )
+wxRealPoint SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints )
 {
     auto currentPoint = getPoint( aPoints );
 
@@ -133,6 +143,8 @@ void SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints )
         currentPoint = nextPoint;
         remainingPoints+= coordinatesPerPoint;
     }
+
+    return currentPoint;
 }
 
 

@@ -1,4 +1,4 @@
-add_executable ( connectivity connectivity.cpp  connectivity_impl.cpp test_connectivity.cpp )
+add_executable ( connectivity test_connectivity.cpp ratsnest_v2.cpp )
 
 target_link_libraries (
     connectivity

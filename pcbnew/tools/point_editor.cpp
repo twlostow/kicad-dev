@@ -249,7 +249,7 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
         KIGFX::VIEW_CONTROLS* controls = getViewControls();
         KIGFX::VIEW* view = getView();
         PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
-        EDA_ITEM* item = selection.items.GetPickedItem( 0 );
+        auto item = selection.items[0];
 
         m_editPoints = EDIT_POINTS_FACTORY::Make( item, getView()->GetGAL() );
 

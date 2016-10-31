@@ -307,19 +307,14 @@ const SELECTION& SELECTION_TOOL::GetSelection()
     // The selected items list has been requested, so it is no longer preliminary
     m_preliminary = false;
 
-    // Filter out not modifiable items
-    for( int i = 0; i < m_selection.Size(); )
-    {
-        BOARD_ITEM* item = m_selection.Item<BOARD_ITEM>( i );
+    auto items = m_selection.items;
 
+    // Filter out not modifiable items
+    for ( auto item : items )
+    {
         if( !modifiable( item ) )
         {
-            m_selection.items.RemovePicker( i );
-            m_selection.group->Remove( item );
-        }
-        else
-        {
-            ++i;
+            m_selection.Remove( item );
         }
     }
 
@@ -990,13 +985,12 @@ void SELECTION_TOOL::select( BOARD_ITEM* aItem )
     {
         MODULE* module = static_cast<MODULE*>( aItem->GetParent() );
 
-        if( m_selection.items.FindItem( module ) >= 0 )
+        if( m_selection.Contains( module ) )
             return;
     }
 
     selectVisually( aItem );
-    ITEM_PICKER picker( aItem );
-    m_selection.items.PushItem( picker );
+    m_selection.Add ( aItem );
 
     if( m_selection.Size() == 1 )
     {
@@ -1025,10 +1019,7 @@ void SELECTION_TOOL::unselect( BOARD_ITEM* aItem )
     }
 
     unselectVisually( aItem );
-
-    int itemIdx = m_selection.items.FindItem( aItem );
-    if( itemIdx >= 0 )
-        m_selection.items.RemovePicker( itemIdx );
+    m_selection.Remove( aItem );
 
     if( m_selection.Empty() )
     {
@@ -1065,9 +1056,8 @@ bool SELECTION_TOOL::selectionContains( const VECTOR2I& aPoint ) const
     VECTOR2D margin = getView()->ToWorld( VECTOR2D( GRIP_MARGIN, GRIP_MARGIN ), false );
 
     // Check if the point is located within any of the currently selected items bounding boxes
-    for( unsigned int i = 0; i < m_selection.items.GetCount(); ++i )
+    for( auto item : m_selection )
     {
-        BOARD_ITEM* item = m_selection.Item<BOARD_ITEM>( i );
         BOX2I itemBox = item->ViewBBox();
         itemBox.Inflate( margin.x, margin.y );    // Give some margin for gripping an item
 
@@ -1383,10 +1373,8 @@ bool SELECTION_TOOL::SanitizeSelection()
 
     if( !m_editModules )
     {
-        for( unsigned int i = 0; i < m_selection.items.GetCount(); ++i )
-        {
-            BOARD_ITEM* item = m_selection.Item<BOARD_ITEM>( i );
-
+        for( auto item : m_selection )
+        {            
             if( item->Type() == PCB_PAD_T )
             {
                 MODULE* mod = static_cast<MODULE*>( item->GetParent() );
@@ -1401,7 +1389,7 @@ bool SELECTION_TOOL::SanitizeSelection()
                 }
 
                 // case 2: multi-item selection contains both the module and its pads - remove the pads
-                if( mod && m_selection.items.FindItem( mod ) >= 0 )
+                if( mod && m_selection.Contains( mod ) )
                     rejected.insert( item );
             }
         }

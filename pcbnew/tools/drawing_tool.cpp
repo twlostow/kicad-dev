@@ -594,7 +594,6 @@ int DRAWING_TOOL::PlaceDXF( const TOOL_EVENT& aEvent )
         else if( evt->IsClick( BUT_LEFT ) )
         {
             // Place the drawing
-            PICKED_ITEMS_LIST picklist;
             BOARD_ITEM_CONTAINER* parent = m_frame->GetModel();
 
             for( KIGFX::VIEW_GROUP::const_iter it = preview.Begin(); it != preview.End(); ++it )

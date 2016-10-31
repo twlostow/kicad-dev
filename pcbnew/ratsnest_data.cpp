@@ -52,6 +52,8 @@ using namespace std::placeholders;
 #include <profile.h>
 #endif
 
+#include "connectivity_impl.h"
+
 static uint64_t getDistance( const RN_NODE_PTR& aNode1, const RN_NODE_PTR& aNode2 )
 {
     // Drop the least significant bits to avoid overflow
@@ -450,11 +452,12 @@ void RN_NET::Update()
 }
 
 
+
 bool RN_NET::AddItem( const D_PAD* aPad )
 {
     // Ratsnest is not computed for non-copper pads
-    if( ( aPad->GetLayerSet() & LSET::AllCuMask() ).none() )
-        return false;
+    //if( ( aPad->GetLayerSet() & LSET::AllCuMask() ).none() )
+        //return false;
 
     RN_NODE_PTR node = m_links.AddNode( aPad->GetPosition().x, aPad->GetPosition().y );
     node->AddParent( aPad );
@@ -490,6 +493,24 @@ bool RN_NET::AddItem( const TRACK* aTrack )
     m_dirty = true;
 
     return true;
+}
+
+void RN_NET::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster )
+{
+    for ( auto item : *aCluster )
+    {
+        for ( auto connected : item->ConnectedItems() )
+        {
+
+        }
+        //RN_NODE_PTR start = m_links.AddNode( aTrack->GetStart().x, aTrack->GetStart().y );
+        //RN_NODE_PTR end = m_links.AddNode( aTrack->GetEnd().x, aTrack->GetEnd().y );
+    }
+}
+
+void RN_NET::RemoveCluster( std::shared_ptr<CN_CLUSTER> aCluster )
+{
+
 }
 
 
@@ -989,7 +1010,7 @@ void RN_NET::processZones()
             m_links.RemoveConnection( edge );
 
         zoneData.m_Edges.clear();
-        LSET layers = zone->GetLayerSet();
+        //LSET layers = zone->GetLayerSet();
 
         // Compute new connections
         RN_LINKS::RN_NODE_SET candidates = m_links.GetNodes();
@@ -1009,7 +1030,7 @@ void RN_NET::processZones()
 
             while( point != pointEnd )
             {
-                if( *point != node && ( (*point)->GetLayers() & layers ).any()
+                if( *point != node /*&& ( (*point)->GetLayers() & layers ).any()*/
                         && poly->HitTest( *point ) )
                 {
                     //(*point)->AddParent( zone );  // do not assign parent for helper links
@@ -1043,7 +1064,7 @@ void RN_NET::processPads()
         for( RN_EDGE_MST_PTR edge : edges )
             m_links.RemoveConnection( edge );
 
-        LSET layers = pad->GetLayerSet();
+        //LSET layers = pad->GetLayerSet();
         const RN_LINKS::RN_NODE_SET& candidates = m_links.GetNodes();
         RN_LINKS::RN_NODE_SET::const_iterator point, pointEnd;
 
@@ -1052,7 +1073,7 @@ void RN_NET::processPads()
 
         while( point != pointEnd )
         {
-            if( *point != node && ( (*point)->GetLayers() & layers ).any() &&
+            if( *point != node && /*( (*point)->GetLayers() & layers ).any() */
                     pad->HitTest( wxPoint( (*point)->GetX(), (*point)->GetY() ) ) )
             {
                 //(*point)->AddParent( pad );   // do not assign parent for helper links

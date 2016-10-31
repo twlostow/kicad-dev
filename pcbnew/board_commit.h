@@ -40,7 +40,7 @@ public:
     BOARD_COMMIT( PCB_BASE_FRAME* aFrame );
     virtual ~BOARD_COMMIT();
 
-    virtual void Push( const wxString& aMessage );
+    virtual void Push( const wxString& aMessage = wxT("A commit"), bool aCreateUndoEntry = true);
     virtual void Revert();
 
 private:

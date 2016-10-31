@@ -81,6 +81,11 @@ void CN_CONNECTIVITY_ALGO::Update ( BOARD_ITEM* aItem)
     m_pimpl->Add (aItem);
 }
 
+bool CN_CONNECTIVITY_ALGO::CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport )
+{
+    return m_pimpl->CheckConnectivity( aReport );
+}
+
 void CN_CONNECTIVITY_ALGO::SetBoard( BOARD* aBoard )
 {
     m_pimpl->SetBoard(aBoard);
@@ -106,6 +111,23 @@ const CN_CONNECTIVITY_ALGO::CLUSTERS& CN_CONNECTIVITY_ALGO::GetClusters()
 {
     return m_pimpl->GetClusters();
 }
+
+bool CN_CONNECTIVITY_ALGO::IsNetDirty( int aNet) const
+{
+    return m_pimpl->IsNetDirty( aNet );
+}
+
+void CN_CONNECTIVITY_ALGO::ClearDirtyNets()
+{
+    m_pimpl->ClearDirtyNets();
+}
+
+int CN_CONNECTIVITY_ALGO::NetCount() const
+{
+    return m_pimpl->NetCount();
+}
+
+
 
 CONNECTIVITY_DATA::CONNECTIVITY_DATA( BOARD* aBoard )
 {

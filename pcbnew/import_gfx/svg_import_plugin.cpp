@@ -31,6 +31,7 @@
 #include "graphics_importer.h"
 
 static wxRealPoint getBezierPoint( const float* aCurvePoints, float aStep );
+static wxRealPoint getPoint( const float* aPointCoordinates );
 static wxRealPoint getPointInLine( const wxRealPoint& aLineStart, const wxRealPoint& aLineEnd,
         float aDistance );
 
@@ -70,10 +71,7 @@ void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoint
 
 void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
 {
-    float startX = aPoints[0];
-    float startY = aPoints[1];
-
-    auto currentPoint = wxRealPoint( startX, startY );
+    auto currentPoint = getPoint( aPoints );
 
     for( float step = 0.f; step < 1.f; step += 0.1f )
     {
@@ -85,12 +83,21 @@ void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
     }
 }
 
+
+static wxRealPoint getPoint( const float* aPointCoordinates )
+{
+    return wxRealPoint( aPointCoordinates[0], aPointCoordinates[1] );
+}
+
+
 static wxRealPoint getBezierPoint( const float* aPoints, float aStep )
 {
-    auto firstCubicPoint = wxRealPoint( aPoints[0], aPoints[1] );
-    auto secondCubicPoint = wxRealPoint( aPoints[2], aPoints[3] );
-    auto thirdCubicPoint = wxRealPoint( aPoints[4], aPoints[5] );
-    auto fourthCubicPoint = wxRealPoint( aPoints[6], aPoints[7] );
+    const int coordinatesPerPoint = 2;
+
+    auto firstCubicPoint = getPoint( aPoints );
+    auto secondCubicPoint = getPoint( aPoints + 1 * coordinatesPerPoint );
+    auto thirdCubicPoint = getPoint( aPoints + 2 * coordinatesPerPoint );
+    auto fourthCubicPoint = getPoint( aPoints + 3 * coordinatesPerPoint );
 
     auto firstQuadraticPoint = getPointInLine( firstCubicPoint, secondCubicPoint, aStep );
     auto secondQuadraticPoint = getPointInLine( secondCubicPoint, thirdCubicPoint, aStep );
@@ -101,6 +108,7 @@ static wxRealPoint getBezierPoint( const float* aPoints, float aStep )
 
     return getPointInLine( firstLinearPoint, secondLinearPoint, aStep );
 }
+
 
 static wxRealPoint getPointInLine( const wxRealPoint& aLineStart, const wxRealPoint& aLineEnd,
         float aDistance )

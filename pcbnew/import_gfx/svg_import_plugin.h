@@ -46,7 +46,9 @@ public:
     bool Load( const wxString& aFileName ) override;
 
 private:
-    void DrawCubicBezierPath( const float* aPoints, int aNumPoints );
+    void DrawPath( const float* aPoints, int aNumPoints );
+    void DrawLinePath( const float* aPoints, int aNumPoints );
+    wxRealPoint DrawCubicBezierPath( const float* aPoints, int aNumPoints );
     wxRealPoint DrawCubicBezierCurve( const float* aPoints );
 };
 

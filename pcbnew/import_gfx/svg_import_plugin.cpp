@@ -46,7 +46,7 @@ bool SVG_IMPORT_PLUGIN::Load( const wxString& aFileName )
     for( NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next )
     {
         for( NSVGpath* path = shape->paths; path != NULL; path = path->next )
-            DrawCubicBezierPath( path->pts, path->npts );
+            DrawPath( path->pts, path->npts );
     }
 
     nsvgDelete( image );
@@ -55,7 +55,32 @@ bool SVG_IMPORT_PLUGIN::Load( const wxString& aFileName )
 }
 
 
-void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoints )
+void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints )
+{
+    const int numBezierPoints = aNumPoints & ~0x3;
+    const int numLinePoints = aNumPoints & 0x3;
+
+    const int numBezierCoordinates = numBezierPoints * 2;
+    const float* linePoints = aPoints + numBezierCoordinates;
+
+    if( numBezierPoints > 0 )
+    {
+        auto bezierPathEnd = DrawCubicBezierPath( aPoints, numBezierPoints );
+
+        if( numLinePoints > 0 )
+        {
+            auto linePathStart = getPoint( linePoints );
+
+            m_importer->AddLine( bezierPathEnd, linePathStart );
+        }
+    }
+
+    if( numLinePoints > 1 )
+        DrawLinePath( linePoints, numLinePoints );
+}
+
+
+wxRealPoint SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoints )
 {
     const int numberOfCoordinatesPerSegment = 2 * 4;
     const float* currentPoints = aPoints;
@@ -67,9 +92,11 @@ void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoint
         auto firstPointOfNextCurve = getPoint( currentPoints );
         m_importer->AddLine( latestPoint, firstPointOfNextCurve );
 
-        DrawCubicBezierCurve( currentPoints );
+        latestPoint = DrawCubicBezierCurve( currentPoints );
         currentPoints += numberOfCoordinatesPerSegment;
     }
+
+    return latestPoint;
 }
 
 
@@ -87,6 +114,25 @@ wxRealPoint SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
     }
 
     return currentPoint;
+}
+
+
+void SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints )
+{
+    auto currentPoint = getPoint( aPoints );
+
+    const int coordinatesPerPoint = 2;
+    const float* remainingPoints = aPoints + coordinatesPerPoint;
+
+    for( int numPoints = aNumPoints; numPoints > 0; --numPoints )
+    {
+        auto nextPoint = getPoint( remainingPoints );
+
+        m_importer->AddLine( currentPoint, nextPoint );
+
+        currentPoint = nextPoint;
+        remainingPoints+= coordinatesPerPoint;
+    }
 }
 
 

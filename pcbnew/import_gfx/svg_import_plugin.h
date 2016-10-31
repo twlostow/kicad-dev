@@ -47,9 +47,18 @@ public:
 
 private:
     void DrawPath( const float* aPoints, int aNumPoints, bool aClosedPath );
-    wxRealPoint DrawLinePath( const float* aPoints, int aNumPoints );
-    wxRealPoint DrawCubicBezierPath( const float* aPoints, int aNumPoints );
-    wxRealPoint DrawCubicBezierCurve( const float* aPoints );
+
+    void DrawLinePath( const float* aPoints, int aNumPoints,
+            std::vector< wxRealPoint >& aGeneratedPoints );
+
+    void DrawCubicBezierPath( const float* aPoints, int aNumPoints,
+            std::vector< wxRealPoint >& aGeneratedPoints );
+
+    void DrawCubicBezierCurve( const float* aPoints,
+            std::vector< wxRealPoint >& aGeneratedPoints );
+
+    void DrawPolygon( const std::vector< wxRealPoint >& aPoints );
+    void DrawLineSegments( const std::vector< wxRealPoint >& aPoints );
 };
 
 #endif /* SVG_IMPORT_PLUGIN_H */

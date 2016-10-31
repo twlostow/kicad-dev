@@ -63,88 +63,81 @@ void SVG_IMPORT_PLUGIN::DrawPath( const float* aPoints, int aNumPoints, bool aCl
     const int numBezierCoordinates = numBezierPoints * 2;
     const float* linePoints = aPoints + numBezierCoordinates;
 
-    auto pathStart = getPoint( aPoints );
-    auto pathEnd = pathStart;
+    std::vector< wxRealPoint > collectedPathPoints;
 
     if( numBezierPoints > 0 )
-    {
-        auto bezierPathEnd = DrawCubicBezierPath( aPoints, numBezierPoints );
+        DrawCubicBezierPath( aPoints, numBezierPoints, collectedPathPoints );
 
-        if( numLinePoints > 0 )
-        {
-            auto linePathStart = getPoint( linePoints );
-
-            m_importer->AddLine( bezierPathEnd, linePathStart );
-
-            pathEnd = linePathStart;
-        }
-        else
-            pathEnd = bezierPathEnd;
-    }
-
-    if( numLinePoints > 1 )
-        pathEnd = DrawLinePath( linePoints, numLinePoints );
+    if( numLinePoints > 0 )
+        DrawLinePath( linePoints, numLinePoints, collectedPathPoints );
 
     if( aClosedPath )
-        m_importer->AddLine( pathEnd, pathStart );
+        DrawPolygon( collectedPathPoints );
+    else
+        DrawLineSegments( collectedPathPoints );
 }
 
 
-wxRealPoint SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoints )
+void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoints,
+        std::vector< wxRealPoint >& aGeneratedPoints )
 {
     const int numberOfCoordinatesPerSegment = 2 * 4;
     const float* currentPoints = aPoints;
 
-    auto latestPoint = DrawCubicBezierCurve( currentPoints );
-
     for( int numPoints = aNumPoints; numPoints > 0; numPoints -= 4 )
     {
-        auto firstPointOfNextCurve = getPoint( currentPoints );
-        m_importer->AddLine( latestPoint, firstPointOfNextCurve );
-
-        latestPoint = DrawCubicBezierCurve( currentPoints );
+        DrawCubicBezierCurve( currentPoints, aGeneratedPoints );
         currentPoints += numberOfCoordinatesPerSegment;
     }
-
-    return latestPoint;
 }
 
 
-wxRealPoint SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
+void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints,
+        std::vector< wxRealPoint >& aGeneratedPoints )
 {
-    auto currentPoint = getPoint( aPoints );
-
     for( float step = 0.f; step < 1.f; step += 0.1f )
     {
-        auto nextPoint = getBezierPoint( aPoints, step );
+        auto point = getBezierPoint( aPoints, step );
 
-        m_importer->AddLine( currentPoint, nextPoint );
-
-        currentPoint = nextPoint;
+        aGeneratedPoints.push_back( point );
     }
-
-    return currentPoint;
 }
 
 
-wxRealPoint SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints )
+void SVG_IMPORT_PLUGIN::DrawLinePath( const float* aPoints, int aNumPoints,
+        std::vector< wxRealPoint >& aGeneratedPoints )
 {
-    auto currentPoint = getPoint( aPoints );
-
     const int coordinatesPerPoint = 2;
-    const float* remainingPoints = aPoints + coordinatesPerPoint;
+    const float* remainingPoints = aPoints;
 
     for( int numPoints = aNumPoints; numPoints > 0; --numPoints )
     {
-        auto nextPoint = getPoint( remainingPoints );
+        auto point = getPoint( remainingPoints );
 
-        m_importer->AddLine( currentPoint, nextPoint );
+        aGeneratedPoints.push_back( point );
 
-        currentPoint = nextPoint;
         remainingPoints+= coordinatesPerPoint;
     }
+}
 
-    return currentPoint;
+
+void SVG_IMPORT_PLUGIN::DrawPolygon( const std::vector< wxRealPoint >& aPrecisePoints )
+{
+    std::vector< wxPoint > convertedPoints( aPrecisePoints.size() );
+
+    for( const wxRealPoint& point : aPrecisePoints )
+        convertedPoints.emplace_back( point.x, point.y );
+
+    m_importer->AddPolygon( convertedPoints );
+}
+
+
+void SVG_IMPORT_PLUGIN::DrawLineSegments( const std::vector< wxRealPoint >& aPoints )
+{
+    unsigned int numLineStartPoints = aPoints.size() - 1;
+
+    for( unsigned int pointIndex = 0; pointIndex < numLineStartPoints; ++pointIndex )
+        m_importer->AddLine( aPoints[ pointIndex ], aPoints[ pointIndex + 1 ] );
 }
 
 

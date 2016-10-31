@@ -191,8 +191,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
                  KiBitmap( import_xpm ) );
 
     AddMenuItem( submenuImport, ID_GEN_IMPORT_DXF_FILE,
-                 _( "&DXF File" ),
-                 _( "Import a 2D Drawing DXF file to Pcbnew on the Drawings layer" ),
+                 _( "&Graphics" ),
+                 _( "Import a 2D Vector Graphics File" ),
                  KiBitmap( import_xpm ) );
 
     AddMenuItem( filesMenu, submenuImport,

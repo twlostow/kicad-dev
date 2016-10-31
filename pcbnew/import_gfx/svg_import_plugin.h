@@ -46,8 +46,8 @@ public:
     bool Load( const wxString& aFileName ) override;
 
 private:
-    void DrawCubicBezierPath( const float* points, int numPoints );
-    wxRealPoint DrawCubicBezierCurve( const float* points );
+    void DrawCubicBezierPath( const float* aPoints, int aNumPoints );
+    wxRealPoint DrawCubicBezierCurve( const float* aPoints );
 };
 
 #endif /* SVG_IMPORT_PLUGIN_H */

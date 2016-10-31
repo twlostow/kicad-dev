@@ -28,6 +28,8 @@
 #include "graphics_import_plugin.h"
 #include "drw_interface.h"
 
+class wxRealPoint;
+
 class SVG_IMPORT_PLUGIN : public GRAPHICS_IMPORT_PLUGIN
 {
 public:
@@ -45,7 +47,7 @@ public:
 
 private:
     void DrawCubicBezierPath( const float* points, int numPoints );
-    void DrawCubicBezierCurve( const float* points );
+    wxRealPoint DrawCubicBezierCurve( const float* points );
 };
 
 #endif /* SVG_IMPORT_PLUGIN_H */

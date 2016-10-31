@@ -58,18 +58,22 @@ bool SVG_IMPORT_PLUGIN::Load( const wxString& aFileName )
 void SVG_IMPORT_PLUGIN::DrawCubicBezierPath( const float* aPoints, int aNumPoints )
 {
     const int numberOfCoordinatesPerSegment = 2 * 4;
-
     const float* currentPoints = aPoints;
+
+    auto latestPoint = DrawCubicBezierCurve( currentPoints );
 
     for( int numPoints = aNumPoints; numPoints > 0; numPoints -= 4 )
     {
+        auto firstPointOfNextCurve = getPoint( currentPoints );
+        m_importer->AddLine( latestPoint, firstPointOfNextCurve );
+
         DrawCubicBezierCurve( currentPoints );
         currentPoints += numberOfCoordinatesPerSegment;
     }
 }
 
 
-void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
+wxRealPoint SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
 {
     auto currentPoint = getPoint( aPoints );
 
@@ -81,6 +85,8 @@ void SVG_IMPORT_PLUGIN::DrawCubicBezierCurve( const float* aPoints )
 
         currentPoint = nextPoint;
     }
+
+    return currentPoint;
 }
 
 

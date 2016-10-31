@@ -32,6 +32,7 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
 class EDA_ITEM;
 
@@ -129,6 +130,8 @@ public:
      * @param aAgnle is the arc angle expressed in decidegrees.
      */
     virtual void AddArc( const wxPoint& aCenter, const wxPoint& aStart, double aAngle ) = 0;
+
+    virtual void AddPolygon( const std::vector< wxPoint >& aVertices ) = 0;
 
     //virtual void AddArc( const wxPoint& aOrigin, double aStartAngle, double aEndAngle ) = 0;
     //

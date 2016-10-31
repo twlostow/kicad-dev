@@ -68,6 +68,16 @@ void GRAPHICS_IMPORTER_PCBNEW::AddArc( const wxPoint& aCenter, const wxPoint& aS
 }
 
 
+void GRAPHICS_IMPORTER_PCBNEW::AddPolygon( const std::vector< wxPoint >& aVertices )
+{
+    unique_ptr<DRAWSEGMENT> polygon( createDrawing() );
+    polygon->SetShape( S_POLYGON );
+    polygon->SetLayer( GetLayer() );
+    polygon->SetPolyPoints( aVertices );
+    addItem( std::move( polygon ) );
+}
+
+
 void GRAPHICS_IMPORTER_PCBNEW::AddText( const wxPoint& aOrigin, const wxString& aText,
         unsigned int aHeight, unsigned aWidth, double aOrientation,
         EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify )

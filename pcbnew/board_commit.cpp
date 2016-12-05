@@ -93,9 +93,9 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry)
                 if ( aCreateUndoEntry )
                 {
 		                ITEM_PICKER itemWrapper( ent.m_item, UR_CHANGED );
-	                itemWrapper.SetLink( ent.m_copy );-
-	                undoList.PushItem( itemWrapper );
-	                frame->SaveCopyInUndoList( undoList, UR_CHANGED );
+	                	itemWrapper.SetLink( ent.m_copy );
+		                undoList.PushItem( itemWrapper );
+		                frame->SaveCopyInUndoList( undoList, UR_CHANGED );
 				}
 
                 savedModules.insert( ent.m_item );
@@ -109,7 +109,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry)
             {
                 if( !m_editModules )
                 {
-                    if ( aCreateUndoEntry )                    
+                    if ( aCreateUndoEntry )
 						undoList.PushItem( ITEM_PICKER( boardItem, UR_NEW ) );
 
                     if( !( changeFlags & CHT_DONE ) )
@@ -255,7 +255,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry)
                 if ( boardItem->Type() == PCB_MODULE_T )
                 {
                     MODULE* module = static_cast<MODULE*>( boardItem );
-                    module->RunOnChildren( boost::bind( &KIGFX::VIEW::Update, view, _1 ) );
+                    module->RunOnChildren( [&view] ( BOARD_ITEM *aItem ){ view->Update( aItem ); } ); //std::bind( &KIGFX::VIEW::Update, view, _1 ) );
                 }
 
                 view->Update ( boardItem );

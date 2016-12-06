@@ -502,6 +502,7 @@ set( BMAPS_MID
     save_setup
     save
     schematic
+    search_tree
     select_grid
     select_layer_pair
     select_w_layer

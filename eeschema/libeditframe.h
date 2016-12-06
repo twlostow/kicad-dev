@@ -330,6 +330,9 @@ public:
     void OnEditComponentProperties( wxCommandEvent& aEvent );
     void InstallFieldsEditorDialog( wxCommandEvent& aEvent );
 
+    void ToggleSearchTree( wxCommandEvent& aEvent );
+    bool IsSearchTreeShown();
+
     /**
      * Function LoadOneLibraryPart
      * loads a library component from the currently selected library.

@@ -232,5 +232,9 @@ void LIB_EDIT_FRAME::CreateOptionToolbar()
                                KiBitmap( pin_show_etype_xpm ),
                                _( "Show the pins electrical type" ), wxITEM_CHECK );
 
+    m_optionsToolBar->AddTool( ID_LIBEDIT_SHOW_HIDE_SEARCH_TREE, wxEmptyString,
+                               KiBitmap( search_tree_xpm ),
+                               _( "Toggles the search tree" ), wxITEM_CHECK );
+
     m_optionsToolBar->Realize();
 }

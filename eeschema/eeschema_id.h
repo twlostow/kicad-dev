@@ -252,6 +252,7 @@ enum id_eeschema_frm
     ID_LIBEDIT_COPY_PART,
     ID_LIBEDIT_PASTE_PART,
     ID_LIBEDIT_RENAME_PART,
+    ID_LIBEDIT_SHOW_HIDE_SEARCH_TREE,
 
     /* Library viewer horizontal toolbar IDs */
     ID_LIBVIEW_SELECT_PART,

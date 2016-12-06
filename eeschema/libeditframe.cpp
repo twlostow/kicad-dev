@@ -137,6 +137,7 @@ BEGIN_EVENT_TABLE( LIB_EDIT_FRAME, EDA_DRAW_FRAME )
     EVT_MENU( wxID_EXIT, LIB_EDIT_FRAME::CloseWindow )
     EVT_MENU( ID_LIBEDIT_GEN_PNG_FILE, LIB_EDIT_FRAME::OnPlotCurrentComponent )
     EVT_MENU( ID_LIBEDIT_GEN_SVG_FILE, LIB_EDIT_FRAME::OnPlotCurrentComponent )
+    EVT_TOOL( ID_LIBEDIT_SHOW_HIDE_SEARCH_TREE, LIB_EDIT_FRAME::ToggleSearchTree )
     EVT_MENU( wxID_HELP, EDA_DRAW_FRAME::GetKicadHelp )
     EVT_MENU( wxID_INDEX, EDA_DRAW_FRAME::GetKicadHelp )
     EVT_MENU( ID_HELP_GET_INVOLVED, EDA_DRAW_FRAME::GetKicadContribute )
@@ -191,6 +192,7 @@ BEGIN_EVENT_TABLE( LIB_EDIT_FRAME, EDA_DRAW_FRAME )
     EVT_UPDATE_UI_RANGE( ID_LIBEDIT_PIN_BUTT, ID_LIBEDIT_DELETE_ITEM_BUTT,
                          LIB_EDIT_FRAME::OnUpdateEditingPart )
     EVT_UPDATE_UI( ID_LIBEDIT_SHOW_ELECTRICAL_TYPE, LIB_EDIT_FRAME::OnUpdateElectricalType )
+    EVT_UPDATE_UI( ID_LIBEDIT_SHOW_HIDE_SEARCH_TREE, LIB_EDIT_FRAME::OnUpdateSearchTree )
 
     EVT_IDLE( LIB_EDIT_FRAME::UpdateLibraries )
 
@@ -489,6 +491,13 @@ void LIB_EDIT_FRAME::OnShowElectricalType( wxCommandEvent& event )
 void LIB_EDIT_FRAME::OnUpdateElectricalType( wxUpdateUIEvent& aEvent )
 {
     aEvent.Check( GetShowElectricalType() );
+}
+
+
+void LIB_EDIT_FRAME::OnUpdateSearchTree( wxUpdateUIEvent& aEvent )
+{
+    if( aEvent.GetEventObject() == m_optionsToolBar )
+        aEvent.Check( IsSearchTreeShown() );
 }
 
 
@@ -1150,6 +1159,20 @@ void LIB_EDIT_FRAME::OnEditComponentProperties( wxCommandEvent& event )
     DisplayCmpDoc();
     OnModify();
     m_canvas->Refresh();
+}
+
+
+void LIB_EDIT_FRAME::ToggleSearchTree( wxCommandEvent& aEvent )
+{
+    auto& treePane = m_auimgr.GetPane( wxT( "m_panelTree" ) );
+    treePane.Show( !IsSearchTreeShown() );
+    m_auimgr.Update();
+}
+
+
+bool LIB_EDIT_FRAME::IsSearchTreeShown()
+{
+    return m_auimgr.GetPane( wxT( "m_panelTree" ) ).IsShown();
 }
 
 

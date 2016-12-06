@@ -174,12 +174,18 @@ void LIB_EDIT_FRAME::ReCreateMenuBar()
     text = AddHotkeyName( _( "&Fit on Screen" ), g_Libedit_Hokeys_Descr, HK_ZOOM_AUTO );
     AddMenuItem( viewMenu, ID_ZOOM_PAGE, text, HELP_ZOOM_FIT, KiBitmap( zoom_fit_in_page_xpm ) );
 
-    // Separator
-    viewMenu->AppendSeparator();
-
     // Redraw
     text = AddHotkeyName( _( "&Redraw" ), g_Libedit_Hokeys_Descr, HK_ZOOM_REDRAW );
     AddMenuItem( viewMenu, ID_ZOOM_REDRAW, text, HELP_ZOOM_REDRAW, KiBitmap( zoom_redraw_xpm ) );
+
+    // Separator
+    viewMenu->AppendSeparator();
+
+    AddMenuItem( viewMenu,
+                 ID_LIBEDIT_SHOW_HIDE_SEARCH_TREE,
+                 _( "Toggle &search tree" ),
+                 _( "Toggles the search tree visibility" ),
+                 KiBitmap( search_tree_xpm ) );
 
     // Menu Component:
     wxMenu* componentMenu = new wxMenu;

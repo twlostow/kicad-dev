@@ -77,7 +77,6 @@ class BASE_SCREEN : public EDA_ITEM
 {
 private:
     GRIDS       m_grids;            ///< List of valid grid sizes.
-    bool        m_FlagModified;     ///< Indicates current drawing has been modified.
     bool        m_FlagSave;         ///< Indicates automatic file save.
     EDA_ITEM*   m_CurrentItem;      ///< Currently selected object
     GRID_TYPE   m_Grid;             ///< Current grid selection.
@@ -321,11 +320,8 @@ public:
         }
     }
 
-    void SetModify()        { m_FlagModified = true; }
-    void ClrModify()        { m_FlagModified = false; }
     void SetSave()          { m_FlagSave = true; }
     void ClrSave()          { m_FlagSave = false; }
-    bool IsModify() const   { return m_FlagModified; }
     bool IsSave() const     { return m_FlagSave; }
 
 

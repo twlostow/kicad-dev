@@ -233,6 +233,7 @@ public:
     inline void ClearBrightened() { ClearFlags( BRIGHTENED ); }
 
     void SetModified();
+    void ClearModified() { ClearFlags( IS_CHANGED ); }
 
     int GetState( int type ) const
     {

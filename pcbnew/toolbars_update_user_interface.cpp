@@ -205,7 +205,7 @@ void PCB_EDIT_FRAME::OnUpdateShowMicrowaveToolbar( wxUpdateUIEvent& aEvent )
 
 void PCB_EDIT_FRAME::OnUpdateSave( wxUpdateUIEvent& aEvent )
 {
-    aEvent.Enable( GetScreen()->IsModify() );
+    aEvent.Enable( GetScreen()->IsModified() );
 }
 
 

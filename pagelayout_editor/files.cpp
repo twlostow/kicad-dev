@@ -47,7 +47,7 @@ void PL_EDITOR_FRAME::OnFileHistory( wxCommandEvent& event )
 
     if( filename != wxEmptyString )
     {
-        if( GetScreen()->IsModify() && !IsOK( this,
+        if( GetScreen()->IsModified() && !IsOK( this,
                    _( "The current page layout has been modified.\n"
                       "Do you wish to discard the changes?" ) ) )
             return;
@@ -81,7 +81,7 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
     case ID_LOAD_DEFAULT_PAGE_LAYOUT:
     case wxID_NEW:
     case wxID_OPEN:
-        if( GetScreen()->IsModify() && !IsOK( this,
+        if( GetScreen()->IsModified() && !IsOK( this,
                    _( "The current page layout has been modified.\n"
                       "Do you wish to discard the changes?" ) ) )
             return;
@@ -123,7 +123,7 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
         }
         else
         {
-            GetScreen()->SetModify();
+            GetScreen()->SetModified();
             RebuildDesignTree();
             m_canvas->Refresh();
             msg.Printf( _("File <%s> inserted"), GetChars( filename ) );
@@ -217,7 +217,7 @@ bool PL_EDITOR_FRAME::LoadPageLayoutDescrFile( const wxString& aFullFileName )
         WORKSHEET_LAYOUT::GetTheInstance().SetPageLayout( aFullFileName );
         SetCurrFileName( aFullFileName );
         UpdateFileHistory( aFullFileName );
-        GetScreen()->ClrModify();
+        GetScreen()->ClearModified();
         return true;
     }
 
@@ -249,7 +249,7 @@ bool PL_EDITOR_FRAME::SavePageLayoutDescrFile( const wxString& aFullFileName )
     if( ! aFullFileName.IsEmpty() )
     {
         WORKSHEET_LAYOUT::GetTheInstance().Save( aFullFileName );
-        GetScreen()->ClrModify();
+        GetScreen()->ClearModified();
         return true;
     }
 

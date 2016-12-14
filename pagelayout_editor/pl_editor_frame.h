@@ -379,7 +379,7 @@ public:
      */
     void OnModify()
     {
-        GetScreen()->SetModify();
+        GetScreen()->SetModified();
     }
 
     /**

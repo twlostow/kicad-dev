@@ -171,7 +171,7 @@ bool LIB_MANAGER::SaveLibrary( const wxString& aLibName, const wxString& aFileNa
 
         // Clear modification flag on successful write
         for( auto& screen : buf->m_screens )
-            screen.second->ClrModify();
+            screen.second->ClearModified();
 
         if( buf )
             buf->m_modified = false;
@@ -393,7 +393,7 @@ bool LIB_MANAGER::SavePart( const wxString& aPart, const wxString& aLibrary )
 
     // Replacing the part in the original library automatically saves to disk
     updatePart( origLib, part );
-    GetScreen( aPart, aLibrary )->ClrModify();
+    GetScreen( aPart, aLibrary )->ClearModified();
 
     // If the part was renamed, remove the associated entry
     buf.m_renamed.erase( aPart );
@@ -423,7 +423,7 @@ bool LIB_MANAGER::RevertPart( const wxString& aPart, const wxString& aLibrary )
     // Use a copy of the original part, so the main part remains untouched
     if( part && origPart )          // part has been modified
     {
-        GetScreen( aPart, aLibrary )->ClrModify();
+        GetScreen( aPart, aLibrary )->ClearModified();
         bufLib->ReplacePart( part, origPart );
     }
     else if( !part && origPart )    // part has been deleted

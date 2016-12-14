@@ -291,7 +291,7 @@ void PCB_EDIT_FRAME::Files_io_from_id( int id )
             if( !IsOK( this, msg ) )
                 break;
 
-            GetScreen()->ClrModify();    // do not prompt the user for changes
+            GetScreen()->ClearModified();    // do not prompt the user for changes
 
             // LoadOnePcbFile( fn.GetFullPath(), aAppend=false, aForceFileDialog=false );
             OpenProjectFiles( std::vector<wxString>( 1, fn.GetFullPath() ) );
@@ -427,7 +427,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         return false;
     }
 
-    if( GetScreen()->IsModify() )
+    if( GetScreen()->IsModified() )
     {
         int response = YesNoCancelDialog( this, _(
             "The current board has been modified.  Do you wish to save the changes?" ),
@@ -540,7 +540,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         // update the layer names in the listbox
         ReCreateLayerBox( false );
 
-        GetScreen()->ClrModify();
+        GetScreen()->ClearModified();
 
         {
             wxFileName fn = fullFileName;
@@ -763,7 +763,7 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
 
     AppendMsgPanel( upperTxt, lowerTxt, CYAN );
 
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
     GetScreen()->ClrSave();
     return true;
 }
@@ -858,7 +858,7 @@ bool PCB_EDIT_FRAME::doAutoSave()
 
     if( SavePcbFile( autoSaveFileName.GetFullPath(), NO_BACKUP_FILE ) )
     {
-        GetScreen()->SetModify();
+        GetScreen()->SetModified();
         GetBoard()->SetFileName( tmpFileName.GetFullPath() );
         UpdateTitle();
         m_autoSaveState = false;

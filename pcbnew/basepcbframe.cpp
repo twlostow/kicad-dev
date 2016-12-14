@@ -796,7 +796,7 @@ void PCB_BASE_FRAME::SaveSettings( wxConfigBase* aCfg )
 
 void PCB_BASE_FRAME::OnModify()
 {
-    GetScreen()->SetModify();
+    GetScreen()->SetModified();
     GetScreen()->SetSave();
 
     if( IsGalCanvasActive() )

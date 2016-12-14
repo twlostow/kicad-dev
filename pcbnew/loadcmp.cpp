@@ -126,7 +126,7 @@ bool FOOTPRINT_EDIT_FRAME::Load_Module_From_BOARD( MODULE* aModule )
     // Put it in orientation 0,
     // because this is the default orientation in ModEdit, and in libs
     Rotate_Module( NULL, newModule, 0, false );
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
     Zoom_Automatique( false );
 
     if( IsGalCanvasActive() )

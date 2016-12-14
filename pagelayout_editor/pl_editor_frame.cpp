@@ -216,7 +216,7 @@ bool PL_EDITOR_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, i
 
 void PL_EDITOR_FRAME::OnCloseWindow( wxCloseEvent& Event )
 {
-    if( GetScreen()->IsModify() )
+    if( GetScreen()->IsModified() )
     {
         wxString msg;
         wxString filename = GetCurrFileName();
@@ -775,7 +775,7 @@ WORKSHEET_DATAITEM* PL_EDITOR_FRAME::Locate( const wxPoint& aPosition )
 void PL_EDITOR_FRAME::OnNewPageLayout()
 {
     GetScreen()->ClearUndoRedoList();
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
     m_propertiesPagelayout->CopyPrmsFromGeneralToPanel();
     RebuildDesignTree();
     Zoom_Automatique( false );

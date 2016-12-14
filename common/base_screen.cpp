@@ -54,7 +54,6 @@ BASE_SCREEN::BASE_SCREEN( KICAD_T aType ) :
     m_ScrollPixelsPerUnitX = 1;
     m_ScrollPixelsPerUnitY = 1;
 
-    m_FlagModified     = false;     // Set when any change is made on board.
     m_FlagSave         = false;     // Used in auto save set when an auto save is required.
 
     SetCurItem( NULL );

@@ -520,7 +520,7 @@ void FOOTPRINT_EDIT_FRAME::SaveSettings( wxConfigBase* aCfg )
 
 void FOOTPRINT_EDIT_FRAME::OnCloseWindow( wxCloseEvent& Event )
 {
-    if( GetScreen()->IsModify() )
+    if( GetScreen()->IsModified() )
     {
         int ii = DisplayExitDialog( this, _( "Save the changes to the footprint before closing?" ) );
 
@@ -537,7 +537,7 @@ void FOOTPRINT_EDIT_FRAME::OnCloseWindow( wxCloseEvent& Event )
                 if( SaveFootprintInLibrary( GetCurrentLib(), GetBoard()->m_Modules, true, true ) )
                 {
                     // save was correct
-                    GetScreen()->ClrModify();
+                    GetScreen()->ClearModified();
                     break;
                 }
             }

@@ -149,7 +149,7 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SCREEN* aScreen, bool aSaveUnderNewName,
             aScreen->SetFileName( schematicFileName.GetFullPath() );
 
         aScreen->ClrSave();
-        aScreen->ClrModify();
+        aScreen->ClearModified();
 
         msg.Printf( _( "File %s saved" ), GetChars( aScreen->GetFileName() ) );
         SetStatusText( msg, 0 );
@@ -218,7 +218,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     // Save any currently open and modified project files.
     for( SCH_SCREEN* screen = screenList.GetFirst(); screen; screen = screenList.GetNext() )
     {
-        if( screen->IsModify() )
+        if( screen->IsModified() )
         {
             int response = YesNoCancelDialog( this, _(
                 "The current schematic has been modified.  Do you wish to save the changes?" ),
@@ -303,7 +303,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     if( is_new )
     {
         // mark new, unsaved file as modified.
-        GetScreen()->SetModify();
+        GetScreen()->SetModified();
     }
     else
     {
@@ -338,7 +338,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
         SetScreen( m_CurrentSheet->LastScreen() );
 
-        GetScreen()->ClrModify();
+        GetScreen()->ClearModified();
 
         UpdateFileHistory( fullFileName );
 
@@ -578,7 +578,7 @@ bool SCH_EDIT_FRAME::doAutoSave()
         screen->SetFileName( fn.GetFullPath() );
 
         if( SaveEEFile( screen, false, NO_BACKUP_FILE ) )
-            screen->SetModify();
+            screen->SetModified();
         else
             autoSaveOk = false;
 

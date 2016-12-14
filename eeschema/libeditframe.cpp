@@ -572,7 +572,7 @@ void LIB_EDIT_FRAME::OnUpdateRedo( wxUpdateUIEvent& event )
 void LIB_EDIT_FRAME::OnUpdateAnyLib( wxUpdateUIEvent& aEvent )
 {
     // The most often case and quick to check
-    if( GetCurPart() && GetScreen()->IsModify() )
+    if( GetCurPart() && GetScreen()->IsModified() )
     {
         aEvent.Enable( true );
         return;

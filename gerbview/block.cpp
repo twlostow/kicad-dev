@@ -92,7 +92,7 @@ void GERBVIEW_FRAME::HandleBlockPlace( wxDC* DC )
     }
 
     m_canvas->EndMouseCapture( GetToolId(), m_canvas->GetCurrentCursor(), wxEmptyString, false );
-    GetScreen()->SetModify();
+    GetScreen()->SetModified();
     GetScreen()->ClearBlockCommand();
 
     wxASSERT( GetScreen()->m_BlockLocate.GetCount() == 0 );
@@ -194,7 +194,7 @@ void GERBVIEW_FRAME::Block_Move()
 
     SetCrossHairPosition( oldpos );
     m_canvas->MoveCursorToCrossHair();
-    GetScreen()->SetModify();
+    GetScreen()->SetModified();
     GetScreen()->m_BlockLocate.Normalize();
 
     /* Calculate displacement vectors. */

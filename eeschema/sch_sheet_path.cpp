@@ -530,7 +530,7 @@ bool SCH_SHEET_LIST::IsModified()
 {
     for( SCH_SHEET_PATHS_ITER it = begin(); it != end(); ++it )
     {
-        if( (*it).LastScreen() && (*it).LastScreen()->IsModify() )
+        if( (*it).LastScreen() && (*it).LastScreen()->IsModified() )
             return true;
     }
 
@@ -555,7 +555,7 @@ void SCH_SHEET_LIST::ClearModifyStatus()
     for( SCH_SHEET_PATHS_ITER it = begin(); it != end(); ++it )
     {
         if( (*it).LastScreen() )
-            (*it).LastScreen()->ClrModify();
+            (*it).LastScreen()->ClearModified();
     }
 }
 

@@ -165,7 +165,7 @@ void SCH_SCREEN::DeleteItem( SCH_ITEM* aItem )
 {
     wxCHECK_RET( aItem, wxT( "Cannot delete invalid item from screen." ) );
 
-    SetModify();
+    SetModified();
 
     if( aItem->Type() == SCH_SHEET_PIN_T )
     {

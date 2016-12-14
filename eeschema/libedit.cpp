@@ -452,7 +452,7 @@ bool LIB_EDIT_FRAME::SaveOnePart( PART_LIB* aLib, bool aPromptUser )
     LIB_PART*   part = GetSelectedPart();
     LIB_PART*   old_part = NULL;
 
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
 
     if( !wxFileName::FileExists( aLib->GetFullFileName() ) )
     {

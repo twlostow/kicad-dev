@@ -108,7 +108,7 @@ bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
     wxString        errorText;
 
     BASE_SCREEN*    screen = GetScreen();
-    bool            wasModified = screen->IsModify();
+    bool            wasModified = screen->IsModified();
 
     db.SetPCB( SPECCTRA_DB::MakePCB() );
 
@@ -143,7 +143,7 @@ bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
     // modified flag, yet their actions cancel each other out, so it should
     // be ok to clear the modify flag.
     if( !wasModified )
-        screen->ClrModify();
+        screen->ClearModified();
 
     if( ok )
     {

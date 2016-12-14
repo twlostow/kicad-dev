@@ -760,7 +760,7 @@ wxString SCH_EDIT_FRAME::GetUniqueFilenameForCurrentSheet()
 
 void SCH_EDIT_FRAME::OnModify()
 {
-    GetScreen()->SetModify();
+    GetScreen()->SetModified();
     GetScreen()->SetSave();
 
     m_foundItems.SetForceSearch();
@@ -812,7 +812,7 @@ void SCH_EDIT_FRAME::OnUpdateSave( wxUpdateUIEvent& aEvent )
 
 void SCH_EDIT_FRAME::OnUpdateSaveSheet( wxUpdateUIEvent& aEvent )
 {
-    aEvent.Enable( GetScreen()->IsModify() );
+    aEvent.Enable( GetScreen()->IsModified() );
 
 }
 
@@ -1349,7 +1349,7 @@ void SCH_EDIT_FRAME::addCurrentItemToList( bool aRedraw )
     }
 
     item->ClearFlags();
-    screen->SetModify();
+    screen->SetModified();
     screen->SetCurItem( NULL );
     m_canvas->SetMouseCapture( NULL, NULL );
     m_canvas->EndMouseCapture();

@@ -607,7 +607,7 @@ void PCB_EDIT_FRAME::OnCloseWindow( wxCloseEvent& Event )
 {
     m_canvas->SetAbortRequest( true );
 
-    if( GetScreen()->IsModify() )
+    if( GetScreen()->IsModified() )
     {
         wxString msg = wxString::Format( _(
                 "Save the changes in\n"

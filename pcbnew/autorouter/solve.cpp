@@ -1328,5 +1328,5 @@ static void AddNewTrace( AUTOROUTER_CONTEXT& ctx )
 
     ctx.pcbframe->TestNetConnection( ctx.dc, netcode );
 
-    screen->SetModify();
+    screen->SetModified();
 }

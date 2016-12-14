@@ -185,7 +185,7 @@ void PCB_EDIT_FRAME::OnExportSTEP( wxCommandEvent& event )
     wxFileName brdFile = GetBoard()->GetFileName();
     wxString brdName;
 
-    if( GetScreen()->IsModify() || brdFile.GetFullPath().empty() )
+    if( GetScreen()->IsModified() || brdFile.GetFullPath().empty() )
     {
         if( !doAutoSave() )
         {

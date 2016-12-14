@@ -173,7 +173,7 @@ BOARD_ITEM* FOOTPRINT_EDIT_FRAME::ModeditLocateAndDisplay( int aHotKeyCode )
 
 void FOOTPRINT_EDIT_FRAME::LoadModuleFromBoard( wxCommandEvent& event )
 {
-    if( GetScreen()->IsModify() )
+    if( GetScreen()->IsModified() )
     {
         if( !IsOK( this,
                    _( "Current footprint changes will be lost and this operation cannot be undone. Continue?" ) ) )
@@ -184,7 +184,7 @@ void FOOTPRINT_EDIT_FRAME::LoadModuleFromBoard( wxCommandEvent& event )
         return;
 
     GetScreen()->ClearUndoRedoList();
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
 
     EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
 
@@ -324,13 +324,13 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             updateView();
             m_canvas->Refresh();
 
-            GetScreen()->ClrModify();
+            GetScreen()->ClearModified();
         }
         break;
 
     case ID_MODEDIT_NEW_MODULE_FROM_WIZARD:
         {
-            if( GetScreen()->IsModify() && !GetBoard()->IsEmpty() )
+            if( GetScreen()->IsModified() && !GetBoard()->IsEmpty() )
             {
                 if( !IsOK( this,
                            _( "Current Footprint will be lost and this operation cannot be undone. Continue ?" ) ) )
@@ -371,7 +371,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
                 if( draw3DFrame )
                     draw3DFrame->NewDisplay();
 
-                GetScreen()->ClrModify();
+                GetScreen()->ClearModified();
             }
 
             wizard->Destroy();
@@ -382,7 +382,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         if( GetBoard()->m_Modules && GetCurrentLib().size() )
         {
             SaveFootprintInLibrary( GetCurrentLib(), GetBoard()->m_Modules, true, true );
-            GetScreen()->ClrModify();
+            GetScreen()->ClearModified();
         }
         break;
 
@@ -469,7 +469,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             }
 
             newmodule->ClearFlags();
-            GetScreen()->ClrModify();
+            GetScreen()->ClearModified();
             pcbframe->SetCurItem( NULL );
             // @todo LEGACY should be unnecessary
             mainpcb->m_Status_Pcb = 0;
@@ -486,7 +486,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         if( GetBoard()->m_Modules )
             GetBoard()->m_Modules->ClearFlags();
 
-        GetScreen()->ClrModify();
+        GetScreen()->ClearModified();
         Zoom_Automatique( false );
         m_canvas->Refresh();
         {
@@ -558,7 +558,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             draw3DFrame->NewDisplay();
         }
 
-        GetScreen()->ClrModify();
+        GetScreen()->ClearModified();
 
         updateView();
         m_canvas->Refresh();

@@ -50,7 +50,7 @@ bool PCB_EDIT_FRAME::Clear_Pcb( bool aQuery )
 
     // Clear undo and redo lists because we want a full deletion
     GetScreen()->ClearUndoRedoList();
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
 
     // Items visibility flags will be set because a new board will be created.
     // Grid and ratsnest can be left to their previous state
@@ -96,7 +96,7 @@ bool FOOTPRINT_EDIT_FRAME::Clear_Pcb( bool aQuery )
     if( GetBoard() == NULL )
         return false;
 
-    if( aQuery && GetScreen()->IsModify() && !GetBoard()->IsEmpty() )
+    if( aQuery && GetScreen()->IsModified() && !GetBoard()->IsEmpty() )
     {
         if( !IsOK( this,
                    _( "Current Footprint will be lost and this operation cannot be undone. Continue ?" ) ) )
@@ -105,7 +105,7 @@ bool FOOTPRINT_EDIT_FRAME::Clear_Pcb( bool aQuery )
 
     // Clear undo and redo lists because we want a full deletion
     GetScreen()->ClearUndoRedoList();
-    GetScreen()->ClrModify();
+    GetScreen()->ClearModified();
 
     BOARD* board = new BOARD;
 

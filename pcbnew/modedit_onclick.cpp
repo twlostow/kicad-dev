@@ -180,7 +180,7 @@ void FOOTPRINT_EDIT_FRAME::OnLeftClick( wxDC* DC, const wxPoint& MousePos )
         m_canvas->DrawGridAxis( DC, GR_XOR, GetBoard()->GetGridOrigin() );
         SetGridOrigin( GetCrossHairPosition() );
         m_canvas->DrawGridAxis( DC, GR_COPY, GetBoard()->GetGridOrigin() );
-        GetScreen()->SetModify();
+        GetScreen()->SetModified();
         break;
 
     case ID_MODEDIT_TEXT_TOOL:

@@ -9,6 +9,7 @@ include_directories(
     ./dialogs
     ./netlist_exporters
     ./widgets
+    ./libedit_gal
     ../common
     ../common/dialogs
     ${INC_AFTER}
@@ -74,6 +75,7 @@ set( EESCHEMA_WIDGETS
 
 
 set( EESCHEMA_SRCS
+    libedit_gal/ui.cpp
     autoplace_fields.cpp
     annotate.cpp
     backanno.cpp

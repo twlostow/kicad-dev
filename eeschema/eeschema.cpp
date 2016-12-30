@@ -49,6 +49,7 @@
 
 #include <kiway.h>
 #include <sim/sim_plot_frame.h>
+#include <libeditframe_gal.h>
 
 // The main sheet of the project
 SCH_SHEET*  g_RootSheet = NULL;
@@ -90,7 +91,7 @@ static struct IFACE : public KIFACE_I
 
         case FRAME_SCH_LIB_EDITOR:
             {
-                LIB_EDIT_FRAME* frame = new LIB_EDIT_FRAME( aKiway, aParent );
+                LIB_EDIT_FRAME_GAL* frame = new LIB_EDIT_FRAME_GAL( aKiway, aParent );
                 return frame;
             }
             break;

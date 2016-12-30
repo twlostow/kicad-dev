@@ -137,6 +137,11 @@ EDA_DRAW_PANEL_GAL::~EDA_DRAW_PANEL_GAL()
     delete m_gal;
 }
 
+void EDA_DRAW_PANEL_GAL::SetPainter ( KIGFX::PAINTER *painter )
+{
+    m_painter = painter;
+    m_view->SetPainter ( m_painter );
+}
 
 void EDA_DRAW_PANEL_GAL::SetFocus()
 {
@@ -441,7 +446,7 @@ bool EDA_DRAW_PANEL_GAL::LoadGalSettings()
 void EDA_DRAW_PANEL_GAL::onEvent( wxEvent& aEvent )
 {
     if( m_lostFocus )
-        SetFocus();
+    SetFocus();
 
     if( !m_eventDispatcher )
         aEvent.Skip();

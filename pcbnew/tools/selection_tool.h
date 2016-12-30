@@ -29,6 +29,7 @@
 #include <math/vector2d.h>
 #include <tools/pcb_tool.h>
 #include <tool/context_menu.h>
+#include <class_undoredo_container.h>
 
 #include "selection_conditions.h"
 #include "conditional_menu.h"
@@ -48,59 +49,41 @@ class VIEW_GROUP;
 
 struct SELECTION
 {
-private:
     /// Set of selected items
-    std::set<BOARD_ITEM *> m_items;
+    PICKED_ITEMS_LIST items;
 
     /// VIEW_GROUP that holds currently selected items
-    KIGFX::VIEW_GROUP* m_group;
-
-public:
-    using ITER = std::set<BOARD_ITEM *>::iterator;
-    using CITER = std::set<BOARD_ITEM *>::const_iterator;
-
-    ITER begin() { return m_items.begin(); }
-    ITER end() { return m_items.end(); }
-    CITER cbegin() { return m_items.cbegin(); }
-    CITER cend() { return m_items.cend(); }
-
-    void Add( BOARD_ITEM *aItem )
-    {
-        m_items.insert (aItem);
-    }
-
-    void Remove( const BOARD_ITEM *aItem )
-    {
-        m_items.erase (aItem);
-    }
-
-    bool Contains( const BOARD_ITEM *aItem ) const
-    {
-        return m_items.find (aItem) != m_items.end();
-    }
+    KIGFX::VIEW_GROUP* group;
 
     /// Checks if there is anything selected
     bool Empty() const
     {
-        return ( m_items.size() == 0 );
+        return ( items.GetCount() == 0 );
     }
 
     /// Returns the number of selected parts
     int Size() const
     {
-        return m_items.size();
+        return items.GetCount();
+    }
+
+    /// Alias to make code shorter and clearer
+    template <typename T>
+    T* Item( unsigned int aIndex ) const
+    {
+        return static_cast<T*>( items.GetPickedItem( aIndex ) );
     }
 
     /// Returns the center point of the selection area bounding box.
     VECTOR2I GetCenter() const;
 
     /// Runs a function on all selected items.
-/*    template <typename T>
+    template <typename T>
     void ForAll( std::function<void (T*)> aFunction ) const
     {
         for( unsigned int i = 0; i < items.GetCount(); ++i )
             aFunction( Item<T>( i ) );
-    }*/
+    }
 
 private:
     /// Clears both the VIEW_GROUP and set of selected items. Please note that it does not

@@ -141,13 +141,15 @@ CONNECTIVITY_DATA::CONNECTIVITY_DATA( BOARD* aBoard )
 bool CONNECTIVITY_DATA::Add( BOARD_ITEM* aItem )
 {
     m_connAlgo->Add ( aItem );
-    return m_ratsnest->Add ( aItem );
+    return true;
+    //return m_ratsnest->Add ( aItem );
 }
 
 bool CONNECTIVITY_DATA::Remove( BOARD_ITEM* aItem )
 {
     m_connAlgo->Remove ( aItem );
-    return m_ratsnest->Remove ( aItem );
+    return true;
+    //return m_ratsnest->Remove ( aItem );
 }
 
 /**
@@ -160,7 +162,8 @@ bool CONNECTIVITY_DATA::Remove( BOARD_ITEM* aItem )
 bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 {
     m_connAlgo->Update( aItem );
-    return m_ratsnest->Update ( aItem );
+    return true;
+    //return m_ratsnest->Update ( aItem );
 }
 
 /**

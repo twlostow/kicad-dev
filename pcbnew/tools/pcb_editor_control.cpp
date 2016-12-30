@@ -625,7 +625,7 @@ int PCB_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
                 if( ret && board->CombineAreas( &changes, curr_area, area2 ) )
                 {
                     mod_ia1 = true;
-//                    selection.items.RemovePicker( ia2 ); fixme
+                    selection.items.RemovePicker( ia2 );
 
                     ITEM_PICKER picker( curr_area, UR_CHANGED );
                     picker.SetLink( backup );

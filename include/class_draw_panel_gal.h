@@ -67,6 +67,8 @@ public:
 
     virtual void SetFocus();
 
+    void SetPainter ( KIGFX::PAINTER *painter );
+
     /**
      * Function SwitchBackend
      * Switches method of rendering graphics.

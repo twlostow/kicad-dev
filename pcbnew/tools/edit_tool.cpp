@@ -193,12 +193,11 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
                 wxPoint movement = wxPoint( m_cursor.x, m_cursor.y ) - item->GetPosition();
                 totalMovement += movement;
 
-                // Drag items to the current cursor position
-                for ( auto item : selection.items )
-                    item)->Move( movement + m_offset );
+                //printf("")
 
-                //for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
-                //    selection.Item<BOARD_ITEM>( i )->Move( movement + m_offset );
+                // Drag items to the current cursor position
+                for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
+                    selection.Item<BOARD_ITEM>( i )->Move( movement + m_offset );
 
                 updateRatsnest( true );
             }
@@ -291,8 +290,9 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
                 //editFrame->RestoreCopyFromUndoList( dummy );
                 //
                 // So, instead, reset the position manually
-                for( auto item : selection.items )
+                for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
                 {
+                    BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
                     item->SetPosition( item->GetPosition() - totalMovement );
 
                     // And what about flipping and rotation?
@@ -406,8 +406,9 @@ int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
 
     wxPoint rotatePoint = getModificationPoint( selection );
 
-    for ( auto item : selection.items )
+    for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
         m_commit->Modify( item );
         item->Rotate( rotatePoint, editFrame->GetRotationAngle() );
     }
@@ -437,8 +438,9 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
 
     wxPoint flipPoint = getModificationPoint( selection );
 
-    for( auto item : selection.items )
+    for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
         m_commit->Modify( item );
         item->Flip( flipPoint );
     }
@@ -466,8 +468,9 @@ int EDIT_TOOL::Remove( const TOOL_EVENT& aEvent )
     // As we are about to remove items, they have to be removed from the selection first
     m_toolMgr->RunAction( COMMON_ACTIONS::selectionClear, true );
 
-    for( auto item : selection.items )
+    for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
         m_commit->Remove( item );
     }
 
@@ -500,8 +503,9 @@ int EDIT_TOOL::MoveExact( const TOOL_EVENT& aEvent )
         VECTOR2I rp = selection.GetCenter();
         wxPoint rotPoint( rp.x, rp.y );
 
-        for( auto item : selection.items )
+        for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
         {
+            BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
 
             m_commit->Modify( item );
             item->Move( translation );
@@ -701,8 +705,10 @@ void EDIT_TOOL::updateRatsnest( bool aRedraw )
 
     connectivity->GetRatsnest()->ClearSimple();
 
-    for( auto item : selection.items )
+    for( unsigned int i = 0; i < selection.items.GetCount(); ++i )
     {
+        BOARD_ITEM* item = selection.Item<BOARD_ITEM>( i );
+
         connectivity->Update( item );
 
         if( aRedraw )

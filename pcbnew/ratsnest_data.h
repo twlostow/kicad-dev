@@ -255,6 +255,12 @@ public:
         m_edges.remove( aEdge );
     }
 
+    void Clear()
+    {
+        m_nodes.clear();
+        m_edges.clear();
+    }
+
     /**
      * Function GetConnections()
      * Returns the list of edges that currently connect nodes.
@@ -395,9 +401,8 @@ public:
      * Recomputes ratsnest for a net.
      */
     void Update();
-
+    void Clear();
     void AddCluster( std::shared_ptr<CN_CLUSTER> aCluster );
-    void RemoveCluster( std::shared_ptr<CN_CLUSTER> aCluster );
 
     /**
      * Function AddItem()
@@ -582,10 +587,10 @@ protected:
     void clearNode( const RN_NODE_PTR& aNode );
 
     ///> Adds appropriate edges for nodes that are connected by zones.
-    void processZones();
+    //void processZones();
 
     ///> Adds additional edges to account for connections made by items located in pads areas.
-    void processPads();
+    //void processPads();
 
     ///> Recomputes ratsnset from scratch.
     void compute();
@@ -606,42 +611,44 @@ protected:
     bool m_dirty;
 
     ///> Structure to hold ratsnest data for ZONE_CONTAINER objects.
-    typedef struct
-    {
+    //typedef struct
+    //{
         ///> Subpolygons belonging to a zone
-        std::deque<RN_POLY> m_Polygons;
+        //std::deque<RN_POLY> m_Polygons;
 
         ///> Connections to other nodes
-        std::deque<RN_EDGE_MST_PTR> m_Edges;
-    } RN_ZONE_DATA;
+    //    std::deque<RN_EDGE_MST_PTR> m_Edges;
+    //} RN_ZONE_DATA;
 
     ///> Structureo to hold ratsnest data for D_PAD objects.
-    typedef struct
-    {
+    //typedef struct
+    //{
         ///> Node representing the pad.
-        RN_NODE_PTR m_Node;
+        //RN_NODE_PTR m_Node;
 
         ///> Helper nodes that make for connections to items located in the pad area.
-        std::deque<RN_EDGE_MST_PTR> m_Edges;
-    } RN_PAD_DATA;
+        //std::deque<RN_EDGE_MST_PTR> m_Edges;
+    //} RN_PAD_DATA;
 
     ///> Helper typedefs
-    typedef std::unordered_map<const D_PAD*, RN_PAD_DATA> PAD_NODE_MAP;
-    typedef std::unordered_map<const VIA*, RN_NODE_PTR> VIA_NODE_MAP;
-    typedef std::unordered_map<const TRACK*, RN_EDGE_MST_PTR> TRACK_EDGE_MAP;
-    typedef std::unordered_map<const ZONE_CONTAINER*, RN_ZONE_DATA> ZONE_DATA_MAP;
+    //typedef std::unordered_map<const D_PAD*, RN_PAD_DATA> PAD_NODE_MAP;
+    //typedef std::unordered_map<const VIA*, RN_NODE_PTR> VIA_NODE_MAP;
+    //typedef std::unordered_map<const TRACK*, RN_EDGE_MST_PTR> TRACK_EDGE_MAP;
+    //typedef std::unordered_map<const ZONE_CONTAINER*, RN_ZONE_DATA> ZONE_DATA_MAP;
 
     ///> Map that associates nodes in the ratsnest model to respective nodes.
-    PAD_NODE_MAP m_pads;
+    //PAD_NODE_MAP m_pads;
 
     ///> Map that associates nodes in the ratsnest model to respective vias.
-    VIA_NODE_MAP m_vias;
+    //VIA_NODE_MAP m_vias;
 
     ///> Map that associates edges in the ratsnest model to respective tracks.
-    TRACK_EDGE_MAP m_tracks;
+    //TRACK_EDGE_MAP m_tracks;
 
     ///> Map that associates groups of subpolygons in the ratsnest model to respective zones.
-    ZONE_DATA_MAP m_zones;
+    //ZONE_DATA_MAP m_zones;
+
+
 
     ///> Visibility flag.
     bool m_visible;
@@ -661,6 +668,10 @@ public:
      * @param aBoard is the board to be processed in order to look for unconnected items.
      */
     RN_DATA( const BOARD* aBoard ) : m_board( aBoard ) {}
+
+    void ClearNet( int aNet );
+    bool AddCluster( std::shared_ptr<CN_CLUSTER> aCluster  );
+
 
     /**
      * Function Add()

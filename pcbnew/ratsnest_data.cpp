@@ -441,9 +441,6 @@ bool RN_POLY::HitTest( const RN_NODE_PTR& aNode ) const
 
 void RN_NET::Update()
 {
-    // Add edges resulting from nodes being connected by zones
-    //processZones();
-    //processPads();
 
     compute();
 
@@ -497,45 +494,42 @@ bool RN_NET::AddItem( const TRACK* aTrack )
     return true;
 }
 
+class CN_RATSNEST_NODES
+{
+//    std::vector<RN_EDGE_MST_PTR> m_edges;
+//    std::vector<RN_NODE_PTR> m_nodes;
+};
+
+void RN_NET::Clear()
+{
+    m_links.Clear();
+    m_rnEdges->clear();
+    m_blockedNodes.clear();
+    m_simpleNodes.clear();
+    m_dirty = true;
+}
+
 void RN_NET::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster )
 {
-//    std::vector<>
-
-    for ( auto item : *aCluster )
-    {
-        for ( auto connected : item->ConnectedItems() )
-        {
-
-        }
-        //RN_NODE_PTR start = m_links.AddNode( aTrack->GetStart().x, aTrack->GetStart().y );
-        //RN_NODE_PTR end = m_links.AddNode( aTrack->GetEnd().x, aTrack->GetEnd().y );
-    }
-}
-
-void RN_NET::RemoveCluster( std::shared_ptr<CN_CLUSTER> aCluster )
-{
-
-}
-
-
-bool RN_NET::AddItem( const ZONE_CONTAINER* aZone )
-{
-    // Prepare a list of polygons (every zone can contain one or more polygons)
-    /*const SHAPE_POLY_SET& polySet = aZone->GetFilledPolysList();
-
-    for( int i = 0; i < polySet.OutlineCount(); ++i )
-    {
-        const SHAPE_LINE_CHAIN& path = polySet.COutline( i );
-
-        RN_POLY poly = RN_POLY( &polySet, i, m_links, path.BBox() );
-        m_zones[aZone].m_Polygons.push_back( poly );
-    }
-
     m_dirty = true;
-*/
-    return true;
-}
+    auto nodes = new CN_RATSNEST_NODES;
+    auto anchors = aCluster->GetAnchors();
 
+    if( !anchors.size() )
+        return;
+
+    auto start = m_links.AddNode( anchors[0].x, anchors[0].y );
+
+    for(int i = 1; i < anchors.size(); i++ )
+    {
+
+        auto end = m_links.AddNode( anchors[i].x, anchors[i].y );
+
+        if(start != end)
+            auto conn = m_links.AddConnection( start, end );
+    }
+    m_dirty = true;
+}
 
 bool RN_NET::RemoveItem( const D_PAD* aPad )
 {
@@ -1011,100 +1005,6 @@ int RN_DATA::GetUnconnectedCount() const
 }
 
 
-void RN_NET::processZones()
-{
-#if 0
-    for( ZONE_DATA_MAP::iterator it = m_zones.begin(); it != m_zones.end(); ++it )
-    {
-        const ZONE_CONTAINER* zone = it->first;
-        RN_ZONE_DATA& zoneData = it->second;
-
-        // Reset existing connections
-        for( RN_EDGE_MST_PTR edge : zoneData.m_Edges )
-            m_links.RemoveConnection( edge );
-
-        zoneData.m_Edges.clear();
-        //LSET layers = zone->GetLayerSet();
-
-        // Compute new connections
-        RN_LINKS::RN_NODE_SET candidates = m_links.GetNodes();
-        RN_LINKS::RN_NODE_SET::const_iterator point, pointEnd;
-
-        // Sorting by area should speed up the processing, as smaller polygons are computed
-        // faster and may reduce the number of points for further checks
-        std::sort( zoneData.m_Polygons.begin(), zoneData.m_Polygons.end(), sortArea );
-
-        for( std::deque<RN_POLY>::iterator poly = zoneData.m_Polygons.begin(),
-                polyEnd = zoneData.m_Polygons.end(); poly != polyEnd; ++poly )
-        {
-            const RN_NODE_PTR& node = poly->GetNode();
-
-            point = candidates.begin();
-            pointEnd = candidates.end();
-
-            while( point != pointEnd )
-            {
-                if( *point != node /*&& ( (*point)->GetLayers() & layers ).any()*/
-                        && poly->HitTest( *point ) )
-                {
-                    //(*point)->AddParent( zone );  // do not assign parent for helper links
-
-                    RN_EDGE_MST_PTR connection = m_links.AddConnection( node, *point );
-                    zoneData.m_Edges.push_back( connection );
-
-                    // This point already belongs to a polygon, we do not need to check it anymore
-                    point = candidates.erase( point );
-                    pointEnd = candidates.end();
-                }
-                else
-                {
-                    ++point;
-                }
-            }
-        }
-    }
-#endif
-}
-
-
-void RN_NET::processPads()
-{
-#if 0
-    for( PAD_NODE_MAP::iterator it = m_pads.begin(); it != m_pads.end(); ++it )
-    {
-        const D_PAD* pad = it->first;
-        RN_NODE_PTR node = it->second.m_Node;
-        std::deque<RN_EDGE_MST_PTR>& edges = it->second.m_Edges;
-
-        // Reset existing connections
-        for( RN_EDGE_MST_PTR edge : edges )
-            m_links.RemoveConnection( edge );
-
-        //LSET layers = pad->GetLayerSet();
-        const RN_LINKS::RN_NODE_SET& candidates = m_links.GetNodes();
-        RN_LINKS::RN_NODE_SET::const_iterator point, pointEnd;
-
-        point = candidates.begin();
-        pointEnd = candidates.end();
-
-        while( point != pointEnd )
-        {
-            if( *point != node && /*( (*point)->GetLayers() & layers ).any() */
-                    pad->HitTest( wxPoint( (*point)->GetX(), (*point)->GetY() ) ) )
-            {
-                //(*point)->AddParent( pad );   // do not assign parent for helper links
-
-                RN_EDGE_MST_PTR connection = m_links.AddConnection( node, *point );
-                edges.push_back( connection );
-            }
-
-            ++point;
-        }
-    }
-#endif
-}
-
-
 bool RN_DATA::Add( const BOARD_ITEM* aItem )
 {
     #if 0
@@ -1371,4 +1271,27 @@ void RN_DATA::updateNet( int aNetCode )
 
     m_nets[aNetCode].ClearSimple();
     m_nets[aNetCode].Update();
+}
+
+void RN_DATA::ClearNet( int aNet )
+{
+    if( aNet >= (int) m_nets.size() )
+        m_nets.resize( aNet + 1 );
+
+    if( aNet < 1 || aNet > (int) m_nets.size() )
+        return;
+
+    printf("Clearnet %d\n", aNet);
+    m_nets[aNet].Clear();
+}
+
+bool  RN_DATA::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster  )
+{
+    int net = aCluster->OriginNet();
+
+    if( net >= (int) m_nets.size() )
+        m_nets.resize( net + 1 );
+
+    m_nets[ net ].AddCluster (aCluster);
+    return true;
 }

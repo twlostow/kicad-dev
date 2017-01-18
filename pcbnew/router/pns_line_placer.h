@@ -335,6 +335,11 @@ private:
      */
     void routeStep( const VECTOR2I& aP );
 
+    const LINE reduceToNearestObstacle( const LINE& aOriginalLine );
+
+    bool rhStopAtNearestObstacle( const VECTOR2I& aP, LINE& aNewHead );
+
+
     ///> route step, walkaround mode
     bool rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead);
 

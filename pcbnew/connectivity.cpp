@@ -162,6 +162,31 @@ bool CONNECTIVITY_DATA::Remove( BOARD_ITEM* aItem )
 bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 {
     m_connAlgo->Update( aItem );
+
+    printf("Update %p\n", aItem);
+
+
+    for ( int i = 0; i < m_connAlgo->NetCount(); i++ )
+    {
+            if ( m_connAlgo->IsNetDirty( i ) )
+            {
+                    printf("update Dirty net %d\n");
+
+                    auto& clusters = m_connAlgo->GetClusters();
+
+                    m_ratsnest->ClearNet( i );
+
+                    for( auto c : clusters )
+                        if ( c->OriginNet() == i )
+                            m_ratsnest->AddCluster( c );
+
+                    m_ratsnest->Recalculate( i );
+
+            }
+
+    }
+
+
     return true;
     //return m_ratsnest->Update ( aItem );
 }
@@ -176,7 +201,16 @@ void CONNECTIVITY_DATA::ProcessBoard()
     delete m_connAlgo;//->Clear();
     m_connAlgo = new CN_CONNECTIVITY_ALGO; // fixme: clearnup!
     m_connAlgo->SetBoard( m_board ); // fixme: do we need it here?
-    m_ratsnest->ProcessBoard();
+
+    auto& clusters = m_connAlgo->GetClusters();
+
+    printf("%d clusters found\n", clusters.size() );
+
+    for( auto c : clusters )
+        m_ratsnest->AddCluster( c );
+
+    m_ratsnest->Recalculate();
+    //m_ratsnest->ProcessBoard();
 }
 
 void CONNECTIVITY_DATA::RecalculateRatsnest()

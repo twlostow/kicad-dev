@@ -169,6 +169,13 @@ void CN_CONNECTIVITY_ALGO_IMPL::markItemNetAsDirty( const BOARD_ITEM *aItem )
     {
         auto citem = static_cast<const BOARD_CONNECTED_ITEM*> ( aItem );
         markNetAsDirty ( citem->GetNetCode() );
+    } else {
+        if ( aItem->Type() == PCB_MODULE_T )
+        {
+            auto mod = static_cast <const MODULE *> ( aItem );
+            for( D_PAD* pad = mod->Pads(); pad; pad = pad->Next() )
+                markNetAsDirty ( pad->GetNetCode() );
+        }
     }
 }
 

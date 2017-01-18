@@ -12,6 +12,7 @@ using std::unique_ptr;
 
 class CN_ITEM;
 class CN_CONNECTIVITY_ALGO_IMPL;
+class CN_RATSNEST_NODES;
 class BOARD;
 class BOARD_CONNECTED_ITEM;
 class BOARD_ITEM;
@@ -29,14 +30,19 @@ class CN_CLUSTER
 {
 private:
 
-    bool m_conflicting;
-    int m_originNet;
-    CN_ITEM* m_originPad;
+    bool m_conflicting = false;
+    int m_originNet = 0;
+    CN_ITEM* m_originPad = nullptr;
     std::vector<CN_ITEM*> m_items;
+
+    CN_RATSNEST_NODES *m_rnNodes = nullptr;
 
 public:
     CN_CLUSTER();
     ~CN_CLUSTER();
+
+    void SetRatsnestNodes( CN_RATSNEST_NODES* aNodes ) { m_rnNodes = aNodes; }
+    CN_RATSNEST_NODES* GetRatsnestNodes() const { return m_rnNodes; }
 
     const std::vector<VECTOR2I> GetAnchors();
 

@@ -588,6 +588,7 @@ bool SHAPE_LINE_CHAIN::Parse( std::stringstream& aStream )
     return true;
 }
 
+<<<<<<< HEAD
 
 const VECTOR2I SHAPE_LINE_CHAIN::PointAlong( int aPathLength ) const
 {
@@ -597,18 +598,37 @@ const VECTOR2I SHAPE_LINE_CHAIN::PointAlong( int aPathLength ) const
         return CPoint( 0 );
 
     for( int i = 0; i < SegmentCount(); i++ )
+=======
+const VECTOR2I SHAPE_LINE_CHAIN::PointAlong ( int aPathLength ) const
+{
+    int total = 0;
+
+    if (aPathLength == 0)
+        return CPoint(0);
+
+    for(int i = 0; i < SegmentCount(); i++)
+>>>>>>> router: snap to clearance boundaries in Highlight Collisions mode
     {
         const SEG& s = CSegment( i );
         int l = s.Length();
 
         if( total + l >= aPathLength )
         {
+<<<<<<< HEAD
             VECTOR2I d( s.B - s.A );
             return s.A + d.Resize( aPathLength - total );
+=======
+            VECTOR2I d ( s.B - s.A );
+            return s.A + d.Resize ( aPathLength - total );
+>>>>>>> router: snap to clearance boundaries in Highlight Collisions mode
         }
 
         total += l;
     }
 
+<<<<<<< HEAD
     return CPoint( -1 );
+=======
+    return CPoint(-1);
+>>>>>>> router: snap to clearance boundaries in Highlight Collisions mode
 }

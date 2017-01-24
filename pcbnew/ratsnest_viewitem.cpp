@@ -29,6 +29,7 @@
 
 #include <ratsnest_viewitem.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <pcb_painter.h>
 #include <layers_id_colors_and_visibility.h>
@@ -37,7 +38,7 @@
 
 namespace KIGFX {
 
-RATSNEST_VIEWITEM::RATSNEST_VIEWITEM( RN_DATA* aData ) :
+RATSNEST_VIEWITEM::RATSNEST_VIEWITEM( CONNECTIVITY_DATA* aData ) :
         EDA_ITEM( NOT_USED ), m_data( aData )
 {
 }
@@ -66,14 +67,15 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
     // Dynamic ratsnest (for e.g. dragged items)
     for( int i = 1; i < m_data->GetNetCount(); ++i )
     {
-        RN_NET& net = m_data->GetNet( i );
+        RN_NET* net = m_data->GetRatsnestForNet( i );
 
-        if( !net.IsVisible() )
+        if( !net->IsVisible() )
             continue;
 
         // Set brighter color for the temporary ratsnest
         gal->SetStrokeColor( color.Brightened( 0.8 ) );
 
+        #if 0
         // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
         for( const RN_NODE_PTR& node : net.GetSimpleNodes() )
         {
@@ -91,12 +93,13 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
                 gal->DrawLine( origin, end );
             }
         }
+        #endif
 
         // Draw the "static" ratsnest
         if( i != highlightedNet )
             gal->SetStrokeColor( color );  // using the default ratsnest color for not highlighted
 
-        const std::vector<RN_EDGE_MST_PTR>* edges = net.GetUnconnected();
+        const auto edges = net->GetUnconnected();
 
         if( edges == NULL )
             continue;

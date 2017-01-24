@@ -660,10 +660,20 @@ public:
         return m_dirtyNets[ aNet ];
     }
 
-    void ClearDirtyNets()
+    void ClearDirtyFlags()
     {
         for ( auto i = m_dirtyNets.begin(); i != m_dirtyNets.end(); ++i )
             *i = false;
+    }
+
+    void GetDirtyClusters( CLUSTERS& aClusters )
+    {
+        for ( auto cl : m_ratsnestClusters )
+        {
+            int net = cl->OriginNet();
+            if ( net >= 0 && m_dirtyNets[net] )
+                aClusters.push_back( cl );
+        }
     }
 
     int NetCount() const
@@ -671,7 +681,8 @@ public:
         return m_dirtyNets.size();
     }
 
-    void SetBoard( BOARD* aBoard );
+    void Build( BOARD* aBoard );
+    void Build( const std::vector<BOARD_ITEM *> &aItems );
 
     bool Remove( BOARD_ITEM* aItem );
     bool Add( BOARD_ITEM* aItem );

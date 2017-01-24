@@ -162,7 +162,7 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
         delete m_ratsnest;
     }
 
-    m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetConnectivity()->GetRatsnest() );
+    m_ratsnest = new KIGFX::RATSNEST_VIEWITEM( aBoard->GetConnectivity() );
     m_view->Add( m_ratsnest );
 
     // Display settings

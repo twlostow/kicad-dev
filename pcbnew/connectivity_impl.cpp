@@ -169,6 +169,13 @@ void CN_CONNECTIVITY_ALGO_IMPL::markItemNetAsDirty( const BOARD_ITEM *aItem )
     {
         auto citem = static_cast<const BOARD_CONNECTED_ITEM*> ( aItem );
         markNetAsDirty ( citem->GetNetCode() );
+    } else {
+        if ( aItem->Type() == PCB_MODULE_T )
+        {
+            auto mod = static_cast <const MODULE *> ( aItem );
+            for( D_PAD* pad = mod->Pads(); pad; pad = pad->Next() )
+                markNetAsDirty ( pad->GetNetCode() );
+        }
     }
 }
 
@@ -530,7 +537,7 @@ const CN_CONNECTIVITY_ALGO_IMPL::CLUSTERS CN_CONNECTIVITY_ALGO_IMPL::searchClust
     return clusters;
 }
 
-void CN_CONNECTIVITY_ALGO_IMPL::SetBoard( BOARD* aBoard )
+void CN_CONNECTIVITY_ALGO_IMPL::Build( BOARD* aBoard )
 {
     for( int i = 0; i<aBoard->GetAreaCount(); i++ )
     {
@@ -548,6 +555,30 @@ void CN_CONNECTIVITY_ALGO_IMPL::SetBoard( BOARD* aBoard )
     /*wxLogTrace( "CN", "zones : %lu, pads : %lu vias : %lu tracks : %lu\n",
             m_zoneList.Size(), m_padList.Size(),
             m_viaList.Size(), m_trackList.Size() );*/
+}
+
+void CN_CONNECTIVITY_ALGO_IMPL::Build( const std::vector<BOARD_ITEM *> &aItems )
+{
+    for ( auto item : aItems )
+    {
+        switch( item->Type() )
+        {
+            case PCB_TRACE_T:
+            case PCB_VIA_T:
+            case PCB_ZONE_T:
+            case PCB_PAD_T:
+                Add( item );
+                break;
+
+            case PCB_MODULE_T:
+            {
+                for( auto pad : static_cast<MODULE*>(item)->PadsIter() )
+                    Add( pad );
+            }
+            default:
+                return;
+        }
+    }
 }
 
 void CN_CONNECTIVITY_ALGO_IMPL::propagateConnections()

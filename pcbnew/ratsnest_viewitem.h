@@ -34,14 +34,14 @@
 #include <math/vector2d.h>
 
 class GAL;
-class RN_DATA;
+class CONNECTIVITY_DATA;
 
 namespace KIGFX
 {
 class RATSNEST_VIEWITEM : public EDA_ITEM
 {
 public:
-    RATSNEST_VIEWITEM( RN_DATA* aData );
+    RATSNEST_VIEWITEM( CONNECTIVITY_DATA* aData );
 
     /// @copydoc VIEW_ITEM::ViewBBox()
     const BOX2I ViewBBox() const override;
@@ -69,7 +69,7 @@ public:
 
 protected:
     ///> Object containing ratsnest data.
-    RN_DATA* m_data;
+    CONNECTIVITY_DATA* m_data;
 };
 
 }   // namespace KIGFX

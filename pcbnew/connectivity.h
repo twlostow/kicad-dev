@@ -12,10 +12,13 @@ using std::unique_ptr;
 
 class CN_ITEM;
 class CN_CONNECTIVITY_ALGO_IMPL;
+class CN_RATSNEST_NODES;
 class BOARD;
 class BOARD_CONNECTED_ITEM;
 class BOARD_ITEM;
 class ZONE_CONTAINER;
+class RN_DATA;
+class RN_NET;
 
 struct CN_DISJOINT_NET_ENTRY
 {
@@ -29,14 +32,19 @@ class CN_CLUSTER
 {
 private:
 
-    bool m_conflicting;
-    int m_originNet;
-    CN_ITEM* m_originPad;
+    bool m_conflicting = false;
+    int m_originNet = 0;
+    CN_ITEM* m_originPad = nullptr;
     std::vector<CN_ITEM*> m_items;
+
+    CN_RATSNEST_NODES *m_rnNodes = nullptr;
 
 public:
     CN_CLUSTER();
     ~CN_CLUSTER();
+
+    void SetRatsnestNodes( CN_RATSNEST_NODES* aNodes ) { m_rnNodes = aNodes; }
+    CN_RATSNEST_NODES* GetRatsnestNodes() const { return m_rnNodes; }
 
     const std::vector<VECTOR2I> GetAnchors();
 
@@ -99,16 +107,17 @@ public:
     bool Remove ( BOARD_ITEM* aItem);
     void Update ( BOARD_ITEM* aItem);
 
-    void SetBoard( BOARD* aBoard );
-
+    void Build( BOARD* aBoard );
+    void Build( const std::vector<BOARD_ITEM *> &aItems );
 
 // PUBLIC API
     void    PropagateNets();
     void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
     bool    CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport );
 
+    void GetDirtyClusters( CLUSTERS& aClusters ) ;
     bool IsNetDirty( int aNet) const;
-    void ClearDirtyNets();
+    void ClearDirtyFlags();
     int NetCount() const;
 
 
@@ -119,7 +128,6 @@ private:
     unique_ptr<CN_CONNECTIVITY_ALGO_IMPL> m_pimpl;
 };
 
-class RN_DATA;
 
 // a wrapper class encompassing the connectivity computation algorithm and the
 class CONNECTIVITY_DATA
@@ -159,9 +167,19 @@ public:
      */
     void ProcessBoard();
 
+    int GetNetCount()
+    {
+        return m_connAlgo->NetCount();
+    }
+
     RN_DATA *GetRatsnest()
     {
         return m_ratsnest;//.get();
+    }
+
+    RN_NET *GetRatsnestForNet ( int aNet )
+    {
+        return m_nets[aNet];
     }
 
     CN_CONNECTIVITY_ALGO* GetConnectivityAlgo()
@@ -183,6 +201,7 @@ public:
 private:
 
     BOARD *m_board;
+    std::vector<RN_NET *> m_nets;
 
     RN_DATA* m_ratsnest;
     CN_CONNECTIVITY_ALGO* m_connAlgo;

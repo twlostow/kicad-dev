@@ -344,7 +344,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
     PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
 
     m_padList.RemoveInvalidItems();
-m_viaList.RemoveInvalidItems();
+    m_viaList.RemoveInvalidItems();
     m_trackList.RemoveInvalidItems();
     m_zoneList.RemoveInvalidItems();
 
@@ -525,6 +525,8 @@ const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::searchClusters( CLUST
         return a->OriginNet() < b->OriginNet();
     } );
 
+    printf("clusters : %d\n", clusters.size());
+
 #ifdef CONNECTIVITY_DEBUG
     printf("Active clusters: %d\n");
     for (auto cl:clusters)
@@ -573,10 +575,15 @@ void CN_CONNECTIVITY_ALGO::Build( const std::vector<BOARD_ITEM *> &aItems )
             case PCB_MODULE_T:
             {
                 for( auto pad : static_cast<MODULE*>(item)->PadsIter() )
+                {
                     Add( pad );
+                }
+
+                break;
             }
+
             default:
-                return;
+                break;
         }
     }
 }
@@ -796,7 +803,9 @@ const std::vector<VECTOR2I> CN_CLUSTER::GetAnchors()
     {
         int cnt = item->AnchorCount();
         for (int i = 0 ; i < cnt; i++)
+        {
             anchors.push_back( item->GetAnchor(i) );
+        }
     }
 
     return anchors;

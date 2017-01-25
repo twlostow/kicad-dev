@@ -1,7 +1,7 @@
 //#define CONNECTIVITY_DEBUG
 
-#ifndef __CONNECTIVITY_IMPL_H
-#define __CONNECTIVITY_IMPL_H
+#ifndef __CONNECTIVITY_ALGO_H
+#define __CONNECTIVITY_ALGO_H
 
 // TODO: RN_NET could operate on CN_CLUSTERs
 
@@ -23,7 +23,8 @@
 #include <deque>
 #include <stdarg.h>
 
-#include "connectivity.h"
+#include <ratsnest_data.h>
+//#include "connectivity.h"
 
 
 using std::shared_ptr;
@@ -38,7 +39,6 @@ class BOARD_ITEM;
 class ZONE_CONTAINER;
 class RN_DATA;
 class RN_NET;
-
 
 struct CN_DISJOINT_NET_ENTRY
 {
@@ -102,7 +102,6 @@ private:
     int m_originNet = 0;
     CN_ITEM* m_originPad = nullptr;
     std::vector<CN_ITEM*> m_items;
-    std::vector<RN_NODE_PTR> m_rnNodes;
 
     //CN_RATSNEST_NODES *m_rnNodes = nullptr;
 
@@ -110,13 +109,7 @@ public:
     CN_CLUSTER();
     ~CN_CLUSTER();
 
-    //void SetRatsnestNodes( CN_RATSNEST_NODES* aNodes ) { m_rnNodes = aNodes; }
-    //CN_RATSNEST_NODES* GetRatsnestNodes() const { return m_rnNodes; }
-
     const std::vector<VECTOR2I> GetAnchors();
-
-    void AddRatsnestNode ( RN_NODE_PTR aNode );
-    void ClearRatsnestNodes ();
 
     bool HasValidNet() const
     {
@@ -163,8 +156,6 @@ public:
 };
 
 typedef shared_ptr<CN_CLUSTER> CN_CLUSTER_PTR;
-
-
 
 // a lightweight intrusive list container
 template <class T>
@@ -690,18 +681,17 @@ private:
             m_items.push_back( aItem );
         }
 
-        void AddRatsnestNode( RN_NODE_PTR aNode );
+        void AddRatsnestNode( RN_NODE_PTR aNode )
         {
             m_rnNodes.push_back( aNode );
         }
 
-        void ClearRatsnestNodes( );
+        void ClearRatsnestNodes( )
         {
             m_rnNodes.clear();
         }
 
-        std::vector<RN_NODE_PTR>& GetRatsnestNodes() const;
-
+        std::vector<RN_NODE_PTR>& RatsnestNodes() { return m_rnNodes; };
         std::vector<RN_NODE_PTR> m_rnNodes;
         std::list<CN_ITEM *> m_items;
     };
@@ -718,9 +708,9 @@ private:
     CN_VIA_LIST m_viaList;
     CN_ZONE_LIST m_zoneList;
 
-    using ITEM_MAP_PAIR = std::pair <BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY>;
+    using ITEM_MAP_PAIR = std::pair <const BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY>;
 
-    std::unordered_map<BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY> m_itemMap;
+    std::unordered_map<const BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY> m_itemMap;
 
     CLUSTERS m_connClusters;
     CLUSTERS m_ratsnestClusters;
@@ -750,6 +740,12 @@ public:
 
     CN_CONNECTIVITY_ALGO();
     ~CN_CONNECTIVITY_ALGO();
+
+    ITEM_MAP_ENTRY& ItemEntry ( const BOARD_CONNECTED_ITEM* aItem )
+    {
+        return m_itemMap[ aItem ];
+    }
+
 
     bool IsNetDirty( int aNet) const
     {
@@ -783,8 +779,8 @@ public:
     bool Remove( BOARD_ITEM* aItem );
     bool Add( BOARD_ITEM* aItem );
 
-    void AddRatsnestNode ( BOARD_CONNECTED_ITEM* aItem, RN_NODE_PTR aNode );
-    std::vector<RN_NODE_PTR>& GetRatsnestNodes() const;
+    //void AddRatsnestNode ( BOARD_CONNECTED_ITEM* aItem, RN_NODE_PTR aNode );
+    //std::vector<RN_NODE_PTR>& GetRatsnestNodes() const;
 
 
 // PUBLIC API

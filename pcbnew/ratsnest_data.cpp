@@ -52,7 +52,7 @@ using namespace std::placeholders;
 #include <profile.h>
 #endif
 
-#include "connectivity_impl.h"
+#include "connectivity_algo.h"
 
 static uint64_t getDistance( const RN_NODE_PTR& aNode1, const RN_NODE_PTR& aNode2 )
 {
@@ -450,7 +450,7 @@ void RN_NET::Update()
     m_dirty = false;
 }
 
-
+#if 0
 
 bool RN_NET::AddItem( const D_PAD* aPad )
 {
@@ -494,6 +494,8 @@ bool RN_NET::AddItem( const TRACK* aTrack )
     return true;
 }
 
+#endif
+
 class CN_RATSNEST_NODES
 {
 //    std::vector<RN_EDGE_MST_PTR> m_edges;
@@ -510,10 +512,10 @@ void RN_NET::Clear()
     m_dirty = true;
 }
 
+#if 0
 void RN_NET::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster )
 {
     m_dirty = true;
-    auto nodes = new CN_RATSNEST_NODES;
     auto anchors = aCluster->GetAnchors();
 
     if( !anchors.size() )
@@ -521,16 +523,23 @@ void RN_NET::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster )
 
     auto start = m_links.AddNode( anchors[0].x, anchors[0].y );
 
+    //aCluster->ClearRatsnestNodes();
+    //aCluster->AddRatsnestNode( start );
+
     for(int i = 1; i < anchors.size(); i++ )
     {
 
         auto end = m_links.AddNode( anchors[i].x, anchors[i].y );
+
+    //    aCluster->AddRatsnestNode( end );
 
         if(start != end)
             auto conn = m_links.AddConnection( start, end );
     }
     m_dirty = true;
 }
+
+
 
 bool RN_NET::RemoveItem( const D_PAD* aPad )
 {
@@ -606,6 +615,7 @@ bool RN_NET::RemoveItem( const ZONE_CONTAINER* aZone )
     return true;
 }
 
+#endif
 
 const RN_NODE_PTR RN_NET::GetClosestNode( const RN_NODE_PTR& aNode ) const
 {
@@ -713,8 +723,8 @@ std::list<RN_NODE_PTR> RN_NET::GetClosestNodes( const RN_NODE_PTR& aNode,
 }
 
 
-void RN_NET::AddSimple( const BOARD_CONNECTED_ITEM* aItem )
-{
+//void RN_NET::AddSimple( const BOARD_CONNECTED_ITEM* aItem )
+//{
 /*    for( RN_NODE_PTR node : GetNodes( aItem ) )
     {
         // Block all nodes, so they do not become targets for dynamic ratsnest lines
@@ -724,7 +734,7 @@ void RN_NET::AddSimple( const BOARD_CONNECTED_ITEM* aItem )
         if( node->GetRefCount() == 1 )
             m_simpleNodes.insert( node );
     }*/
-}
+//}
 
 
 std::list<RN_NODE_PTR> RN_NET::GetNodes( const BOARD_CONNECTED_ITEM* aItem ) const
@@ -813,13 +823,13 @@ void RN_NET::GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, RN_ITEM_TYP
 }
 
 
-void RN_NET::ClearSimple()
+void RN_NET::ClearBlockedNodes()
 {
     for( const RN_NODE_PTR& node : m_blockedNodes )
         node->SetNoLine( false );
 
     m_blockedNodes.clear();
-    m_simpleNodes.clear();
+    //m_simpleNodes.clear();
 }
 
 
@@ -938,7 +948,7 @@ void RN_DATA::AddBlocked( const BOARD_ITEM* aItem )
         */
 }
 
-
+/*
 void RN_DATA::GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
                                  std::list<BOARD_CONNECTED_ITEM*>& aOutput,
                                  RN_ITEM_TYPE aTypes ) const
@@ -964,11 +974,11 @@ void RN_DATA::GetNetItems( int aNetCode, std::list<BOARD_CONNECTED_ITEM*>& aOutp
 
     m_nets[aNetCode].GetAllItems( aOutput, aTypes );
 }
+*/
 
-
-bool RN_DATA::AreConnected( const BOARD_CONNECTED_ITEM* aItem, const BOARD_CONNECTED_ITEM* aOther )
-{
-    return false;
+//bool RN_DATA::AreConnected( const BOARD_CONNECTED_ITEM* aItem, const BOARD_CONNECTED_ITEM* aOther )
+//{
+//    return false;
 
     /*int net1 = aItem->GetNetCode();
     int net2 = aOther->GetNetCode();
@@ -985,7 +995,7 @@ bool RN_DATA::AreConnected( const BOARD_CONNECTED_ITEM* aItem, const BOARD_CONNE
     assert( !items1.empty() && !items2.empty() );
 
     return ( items1.front()->GetTag() == items2.front()->GetTag() );*/
-}
+//}
 
 
 int RN_DATA::GetUnconnectedCount() const
@@ -1270,7 +1280,7 @@ void RN_DATA::updateNet( int aNetCode )
     if( aNetCode < 1 || aNetCode > (int) m_nets.size() )
         return;
 
-    m_nets[aNetCode].ClearSimple();
+    m_nets[aNetCode].ClearBlockedNodes();
     m_nets[aNetCode].Update();
 }
 
@@ -1282,10 +1292,11 @@ void RN_DATA::ClearNet( int aNet )
     if( aNet < 1 || aNet > (int) m_nets.size() )
         return;
 
-    printf("Clear net %d\n", aNet);
+    //printf("Clear net %d\n", aNet);
     m_nets[aNet].Clear();
 }
 
+#if 0
 bool  RN_DATA::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster  )
 {
     int net = aCluster->OriginNet();
@@ -1295,4 +1306,51 @@ bool  RN_DATA::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster  )
 
     m_nets[ net ].AddCluster (aCluster);
     return true;
+}
+#endif
+
+const RN_NODE_PTR& RN_NET::AddNode( int aX, int aY )
+{
+    return m_links.AddNode( aX, aY );
+}
+
+void RN_NET::AddConnection( const RN_NODE_PTR& aNode1, const RN_NODE_PTR& aNode2,
+                    unsigned int aDistance  )
+{
+    m_links.AddConnection( aNode1, aNode2, aDistance );
+}
+
+bool RN_NET::NearestBicoloredPair( const RN_NET& aOtherNet, RN_NODE_PTR& aNode1, RN_NODE_PTR& aNode2 ) const
+{
+    bool rv = false;
+    VECTOR2I::extended_type distMax = VECTOR2I::ECOORD_MAX;
+
+    for ( auto nodeA : m_links.GetNodes() )
+    {
+        for ( auto nodeB : aOtherNet.m_links.GetNodes() )
+        {
+            if ( !nodeA->GetNoLine() )
+            {
+                const VECTOR2I posA ( nodeA->GetX(), nodeA->GetY() );
+                const VECTOR2I posB ( nodeB->GetX(), nodeB->GetY() );
+
+                auto squaredDist = (posA - posB).SquaredEuclideanNorm();
+
+                if ( squaredDist < distMax )
+                {
+                    rv = true;
+                    distMax = squaredDist;
+                    aNode1 = nodeA;
+                    aNode2 = nodeB;
+                }
+            }
+        }
+    }
+
+    return rv;
+}
+
+unsigned int RN_NET::GetNodeCount() const
+{
+    return m_links.GetNodes().size();
 }

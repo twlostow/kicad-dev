@@ -1,21 +1,15 @@
+#define PROFILE
+
 #include "connectivity.h"
-#include "connectivity_impl.h"
+#include "connectivity_algo.h"
 #include "ratsnest_data.h"
+
 
 #ifdef USE_OPENMP
 #include <omp.h>
 #endif /* USE_OPENMP */
 
 
-CN_CONNECTIVITY_ALGO::CN_CONNECTIVITY_ALGO()
-{
-    m_pimpl.reset( new CN_CONNECTIVITY_ALGO_IMPL );
-}
-
-CN_CONNECTIVITY_ALGO::~CN_CONNECTIVITY_ALGO()
-{
-
-}
 
 static std::vector<BOARD_ITEM*> items;
 static FILE *f_log = nullptr;
@@ -56,104 +50,18 @@ static void dumpRemove(BOARD_ITEM *aItem)
     }
 }
 
-bool CN_CONNECTIVITY_ALGO::Add ( BOARD_ITEM* aItem )
+
+CONNECTIVITY_DATA::CONNECTIVITY_DATA( )
 {
-#ifdef CONNECTIVITY_DEBUG
-    dumpAdd(aItem);
-#endif
-    return m_pimpl->Add (aItem);
-}
-
-bool CN_CONNECTIVITY_ALGO::Remove ( BOARD_ITEM* aItem)
-{
-#ifdef CONNECTIVITY_DEBUG
-    dumpRemove(aItem);
-#endif
-    return m_pimpl->Remove(aItem);
-}
-
-void CN_CONNECTIVITY_ALGO::Update ( BOARD_ITEM* aItem)
-{
-    //  printf("CN_UPD %p\n", aItem);
-#ifdef CONNECTIVITY_DEBUG
-    dumpRemove(aItem);
-#endif
-    m_pimpl->Remove(aItem);
-#ifdef CONNECTIVITY_DEBUG
-    dumpAdd(aItem);
-#endif
-    m_pimpl->Add (aItem);
-}
-
-bool CN_CONNECTIVITY_ALGO::CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport )
-{
-    return m_pimpl->CheckConnectivity( aReport );
-}
-
-void CN_CONNECTIVITY_ALGO::Build( BOARD* aBoard )
-{
-    m_pimpl->Build(aBoard);
-}
-
-void CN_CONNECTIVITY_ALGO::Build( const std::vector<BOARD_ITEM *> &aItems )
-{
-    m_pimpl->Build(aItems);
-}
-
-
-void CN_CONNECTIVITY_ALGO::PropagateNets()
-{
-    m_pimpl->PropagateNets();
-}
-
-int CN_CONNECTIVITY_ALGO::GetUnconnectedCount()
-{
-    return m_pimpl->GetUnconnectedCount();
-}
-
-
-void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands )
-{
-    m_pimpl->FindIsolatedCopperIslands( aZone, aIslands );
-}
-
-const CN_CONNECTIVITY_ALGO::CLUSTERS& CN_CONNECTIVITY_ALGO::GetClusters()
-{
-    return m_pimpl->GetClusters();
-}
-
-bool CN_CONNECTIVITY_ALGO::IsNetDirty( int aNet) const
-{
-    return m_pimpl->IsNetDirty( aNet );
-}
-
-void CN_CONNECTIVITY_ALGO::ClearDirtyFlags()
-{
-    m_pimpl->ClearDirtyFlags();
-}
-
-void CN_CONNECTIVITY_ALGO::GetDirtyClusters( CLUSTERS& aClusters )
-{
-    m_pimpl->GetDirtyClusters( aClusters );
-}
-
-int CN_CONNECTIVITY_ALGO::NetCount() const
-{
-    return m_pimpl->NetCount();
-}
-
-CONNECTIVITY_DATA::CONNECTIVITY_DATA( BOARD* aBoard )
-{
-    m_board = aBoard;
 
     m_connAlgo = new CN_CONNECTIVITY_ALGO;
-    m_ratsnest = new RN_DATA ( m_board );
+    //m_ratsnest = new RN_DATA ( m_board );
 }
 
 
 bool CONNECTIVITY_DATA::Add( BOARD_ITEM* aItem )
 {
-    printf("Cn: add %p\n", aItem);
+    //printf("Cn: add %p\n", aItem);
     m_connAlgo->Add ( aItem );
     return true;
     //return m_ratsnest->Add ( aItem );
@@ -175,7 +83,8 @@ bool CONNECTIVITY_DATA::Remove( BOARD_ITEM* aItem )
  */
 bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 {
-    m_connAlgo->Update( aItem );
+    m_connAlgo->Remove( aItem );
+    m_connAlgo->Add( aItem );
 #if 0
 
     printf("Update %p\n", aItem);
@@ -193,7 +102,7 @@ bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 
                     for( auto c : clusters )
                         if ( c->OriginNet() == i )
-                            m_ratsnest->AddCluster( c );
+                            m_ratsnest->ter( c );
 
                     m_ratsnest->Recalculate( i );
 
@@ -211,17 +120,117 @@ bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
  * Prepares data for computing (computes a list of current nodes and connections). It is
  * required to run only once after loading a board.
  */
-void CONNECTIVITY_DATA::ProcessBoard()
+void CONNECTIVITY_DATA::Build( BOARD *aBoard )
 {
     delete m_connAlgo;//->Clear();
 
     m_connAlgo = new CN_CONNECTIVITY_ALGO; // fixme: clearnup!
-    m_connAlgo->Build( m_board ); // fixme: do we need it here?
+    m_connAlgo->Build( aBoard ); // fixme: do we need it here?
 
 
     RecalculateRatsnest();
-    //m_ratsnest->ProcessBoard();
 }
+
+void CONNECTIVITY_DATA::Build( const std::vector<BOARD_ITEM *>& aItems )
+{
+    delete m_connAlgo;//->Clear();
+
+    m_connAlgo = new CN_CONNECTIVITY_ALGO; // fixme: clearnup!
+    m_connAlgo->Build( aItems ); // fixme: do we need it here?
+
+    RecalculateRatsnest();
+}
+
+
+//void CONNECTIVITY_DATA::Block()
+//{
+
+//}
+
+void CONNECTIVITY_DATA::updateRatsnest()
+{
+    int lastNet =  m_connAlgo->NetCount();
+
+    #ifdef PROFILE
+        prof_counter totalRealTime;
+        prof_start( &totalRealTime );
+    #endif
+
+    unsigned int i;
+
+    #ifdef USE_OPENMP
+            #pragma omp parallel shared(lastNet) private(i)
+            {
+                #pragma omp for schedule(guided, 1)
+    #else /* USE_OPENMP */
+            {
+    #endif
+                // Start with net number 1, as 0 stands for not connected
+                for( i = 1; i < lastNet; ++i )
+                {
+                    if( m_nets[i]->IsDirty() )
+                    {
+            //            printf("redo %d\n", i);
+                        m_nets[i]->Update();
+                        //printf("Unconnected: %d\n", m_nets[i]->GetUnconnected()->size());
+                    }
+                }
+            }  /* end of parallel section */
+    #ifdef PROFILE
+        prof_end( &totalRealTime );
+        wxLogDebug( wxT( "Recalculate all nets: %.1f ms" ), totalRealTime.msecs() );
+    #endif /* PROFILE */
+    //m_ratsnest->Recalculate();
+}
+
+void CONNECTIVITY_DATA::addRatsnestCluster( std::shared_ptr<CN_CLUSTER> aCluster )
+{
+    auto rnNet = m_nets[ aCluster->OriginNet() ];
+    RN_NODE_PTR firstNode;
+
+    for ( auto item : *aCluster )
+    {
+        auto& entry = m_connAlgo->ItemEntry( item->Parent() );
+
+        for (int i = 0; i < item->AnchorCount(); i++)
+        {
+            auto anchor = item->GetAnchor( i );
+            auto node = rnNet->AddNode ( anchor.x, anchor.y );
+
+            if ( firstNode  )
+            {
+                if ( firstNode != node )
+                {
+                    rnNet->AddConnection( firstNode, node );
+                }
+            } else {
+                firstNode = node;
+            }
+
+            entry.AddRatsnestNode ( node );
+        }
+    }
+#if 0
+
+    auto start = m_links.AddNode( anchors[0].x, anchors[0].y );
+
+    //aCluster->ClearRatsnestNodes();
+    //aCluster->AddRatsnestNode( start );
+
+    for(int i = 1; i < anchors.size(); i++ )
+    {
+
+        auto end = m_links.AddNode( anchors[i].x, anchors[i].y );
+
+    //    aCluster->AddRatsnestNode( end );
+
+        if(start != end)
+            auto conn = m_links.AddConnection( start, end );
+    }
+    m_dirty = true;
+#endif
+}
+
 
 void CONNECTIVITY_DATA::RecalculateRatsnest()
 {
@@ -232,7 +241,7 @@ void CONNECTIVITY_DATA::RecalculateRatsnest()
         int prevSize = m_nets.size();
         m_nets.resize( lastNet + 1 );
 
-        printf("Creating %d nets\n", m_nets.size() + 1);
+        //printf("Creating %d nets\n", m_nets.size() + 1);
 
         for ( int i = prevSize; i < m_nets.size(); i++ )
             m_nets[i] = new RN_NET;
@@ -256,43 +265,110 @@ void CONNECTIVITY_DATA::RecalculateRatsnest()
         int net  = c->OriginNet();
         if ( m_connAlgo->IsNetDirty( net ) )
         {
-            printf("net %d: add cluster %p\n", net, c.get());
-            m_nets[net]->AddCluster( c );
+            //printf("net %d: add cluster %p\n", net, c.get());
+            addRatsnestCluster( c );
         }
     }
 
     m_connAlgo->ClearDirtyFlags();
 
-    #ifdef PROFILE
-        prof_counter totalRealTime;
-        prof_start( &totalRealTime );
-    #endif
+    updateRatsnest();
 
-    unsigned int i;
+}
 
-    #ifdef USE_OPENMP
-            #pragma omp parallel shared(lastNet) private(i)
+void CONNECTIVITY_DATA::BlockRatsnestItems( const std::vector<BOARD_ITEM *> &aItems )
+{
+    std::vector<BOARD_CONNECTED_ITEM*> citems;
+
+    for ( auto item : aItems )
+    {
+        if ( item->Type() == PCB_MODULE_T )
+        {
+            for ( auto pad : static_cast<MODULE *>(item) -> PadsIter() )
+                citems.push_back(pad);
+        } else {
+            citems.push_back(static_cast<BOARD_CONNECTED_ITEM*>(item));
+        }
+    }
+
+    for ( auto item : citems )
+    {
+        auto& entry = m_connAlgo->ItemEntry ( item );
+
+        for( auto node : entry.RatsnestNodes() )
+        {
+            node->SetNoLine(true);
+        }
+    }
+}
+
+int CONNECTIVITY_DATA::GetNetCount() const
+{
+    return m_connAlgo->NetCount();
+}
+
+void CONNECTIVITY_DATA::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands )
+{
+    m_connAlgo -> FindIsolatedCopperIslands( aZone, aIslands );
+}
+
+void CONNECTIVITY_DATA::ComputeDynamicRatsnest( CONNECTIVITY_DATA *aMovedItems )
+{
+
+    m_dynamicRatsnest.clear();
+    for (int nc = 1; nc < aMovedItems->m_nets.size(); nc ++ )
+    {
+        auto dynNet = aMovedItems->m_nets[nc];
+
+        if ( dynNet->GetNodeCount() != 0 )
+        {
+            auto ourNet = m_nets[nc];
+            RN_NODE_PTR nodeA, nodeB;
+
+            if ( ourNet->NearestBicoloredPair( *dynNet, nodeA, nodeB ) )
             {
-                #pragma omp for schedule(guided, 1)
-    #else /* USE_OPENMP */
-            {
-    #endif
-                // Start with net number 1, as 0 stands for not connected
-                for( i = 1; i < lastNet; ++i )
-                {
-                    if( m_nets[i]->IsDirty() )
-                    {
-                        m_nets[i]->Update();
-                        printf("Unconnected: %d\n", m_nets[i]->GetUnconnected()->size());
-                    }
-                }
-            }  /* end of parallel section */
-    #ifdef PROFILE
-        prof_end( &totalRealTime );
-        wxLogDebug( wxT( "Recalculate all nets: %.1f ms" ), totalRealTime.msecs() );
-    #endif /* PROFILE */
+                RN_DYNAMIC_LINE l;
+                l.a = VECTOR2I ( nodeA->GetX(), nodeA->GetY() );
+                l.b = VECTOR2I ( nodeB->GetX(), nodeB->GetY() );
+                l.netCode = nc;
 
+                m_dynamicRatsnest.push_back ( l );
+            }
 
+        }
+    }
 
-    //m_ratsnest->Recalculate();
+    for ( auto net : aMovedItems->m_nets )
+    {
+        if ( !net )
+            continue;
+
+        const auto edges = net->GetUnconnected();
+
+        if (!edges)
+            continue;
+
+        for( const auto& edge : *edges )
+        {
+            const auto& nodeA = edge->GetSourceNode();
+            const auto& nodeB = edge->GetTargetNode();
+            RN_DYNAMIC_LINE l;
+
+            l.a = VECTOR2I ( nodeA->GetX(), nodeA->GetY() );
+            l.b = VECTOR2I ( nodeB->GetX(), nodeB->GetY() );
+            l.netCode = 0;
+            m_dynamicRatsnest.push_back ( l );
+
+        }
+    }
+}
+
+const std::vector<RN_DYNAMIC_LINE> & CONNECTIVITY_DATA::GetDynamicRatsnest() const
+{
+    return m_dynamicRatsnest;
+}
+
+void CONNECTIVITY_DATA::ClearDynamicRatsnest()
+{
+    m_dynamicRatsnest.clear();
 }

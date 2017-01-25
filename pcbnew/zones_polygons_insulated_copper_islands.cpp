@@ -35,7 +35,7 @@ void ZONE_CONTAINER::TestForCopperIslandAndRemoveInsulatedIslands( BOARD* aPcb )
 
     auto connectivity = aPcb->GetConnectivity();
 
-    connectivity->GetConnectivityAlgo()->FindIsolatedCopperIslands( this, islands );
+    connectivity->FindIsolatedCopperIslands( this, islands );
 
     std::sort( islands.begin(), islands.end(), std::greater<int>() );
 

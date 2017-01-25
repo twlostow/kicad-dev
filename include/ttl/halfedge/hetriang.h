@@ -217,6 +217,12 @@ public:
         }
     }
 
+    const std::unordered_set<const void*>& GetParents() const
+    {
+        return m_parents;
+    }
+
+
     //const LSET& GetLayers()
     //{
         //if( m_layers.none() )

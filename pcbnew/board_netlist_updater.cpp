@@ -669,7 +669,7 @@ bool BOARD_NETLIST_UPDATER::UpdateNetlist( NETLIST& aNetlist )
     {
         m_commit.Push( _( "Update netlist" ) );
         m_frame->Compile_Ratsnest( NULL, false );
-        m_board->GetConnectivity()->ProcessBoard();
+        m_board->GetConnectivity()->Build( m_board );
         testConnectivity( aNetlist );
     }
 

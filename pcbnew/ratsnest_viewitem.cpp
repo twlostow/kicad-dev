@@ -57,12 +57,20 @@ const BOX2I RATSNEST_VIEWITEM::ViewBBox() const
 void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
 {
     auto gal = aView->GetGAL();
-    gal->SetIsStroke( true );
+	gal->SetIsStroke( true );
     gal->SetIsFill( false );
     gal->SetLineWidth( 1.0 );
-    auto rs = aView->GetPainter()->GetSettings();
-    auto color = rs->GetColor( NULL, ITEM_GAL_LAYER( RATSNEST_VISIBLE ) );
+    RENDER_SETTINGS* rs = aView->GetPainter()->GetSettings();
+    COLOR4D color = rs->GetColor( NULL, ITEM_GAL_LAYER( RATSNEST_VISIBLE ) );
     int highlightedNet = rs->GetHighlightNetCode();
+
+    gal->SetStrokeColor( color.Brightened( 0.8 ) );
+
+    // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
+    for( const auto& l : m_data->GetDynamicRatsnest() )
+    {
+        gal->DrawLine( l.a, l.b );
+    }
 
     // Dynamic ratsnest (for e.g. dragged items)
     for( int i = 1; i < m_data->GetNetCount(); ++i )
@@ -71,29 +79,6 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
 
         if( !net->IsVisible() )
             continue;
-
-        // Set brighter color for the temporary ratsnest
-        gal->SetStrokeColor( color.Brightened( 0.8 ) );
-
-        #if 0
-        // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
-        for( const RN_NODE_PTR& node : net.GetSimpleNodes() )
-        {
-            // Skipping nodes with higher reference count avoids displaying redundant lines
-            if( node->GetRefCount() > 1 )
-                continue;
-
-            RN_NODE_PTR dest = net.GetClosestNode( node, LINE_TARGET() );
-
-            if( dest )
-            {
-                VECTOR2D origin( node->GetX(), node->GetY() );
-                VECTOR2D end( dest->GetX(), dest->GetY() );
-
-                gal->DrawLine( origin, end );
-            }
-        }
-        #endif
 
         // Draw the "static" ratsnest
         if( i != highlightedNet )
@@ -111,7 +96,8 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
             VECTOR2D source( sourceNode->GetX(), sourceNode->GetY() );
             VECTOR2D target( targetNode->GetX(), targetNode->GetY() );
 
-            gal->DrawLine( source, target );
+            if ( !sourceNode->GetNoLine() && !targetNode->GetNoLine() )
+                gal->DrawLine( source, target );
         }
     }
 }

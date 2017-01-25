@@ -107,7 +107,8 @@ BOARD::BOARD() :
     m_designSettings.SetCustomViaDrill( m_designSettings.GetCurrentViaDrill() );
 
     // Initialize ratsnest
-    m_connectivity = new CONNECTIVITY_DATA( this );
+    m_connectivity = new CONNECTIVITY_DATA();
+    m_connectivity->Build( this );
 }
 
 

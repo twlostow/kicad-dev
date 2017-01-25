@@ -554,6 +554,7 @@ void DRC::testTracks( wxWindow *aActiveWindow, bool aShowProgressBar )
 
 void DRC::testUnconnected()
 {
+#if 0
     std::vector<CN_DISJOINT_NET_ENTRY> report;
 
     auto connAlgo = m_pcb->GetConnectivity()->GetConnectivityAlgo();
@@ -568,6 +569,7 @@ void DRC::testUnconnected()
     {
 
     }
+#endif
 
 
 #if 0

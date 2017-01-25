@@ -883,7 +883,7 @@ int PCBNEW_CONTROL::AppendBoard( const TOOL_EVENT& aEvent )
     // Ratsnest
     board->BuildListOfNets();
     board->SynchronizeNetsAndNetClasses();
-    board->GetConnectivity()->ProcessBoard();
+    board->GetConnectivity()->Build ( board );
 
     // Start dragging the appended board
     SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<SELECTION_TOOL>();

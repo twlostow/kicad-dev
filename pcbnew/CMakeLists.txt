@@ -199,7 +199,7 @@ set( PCBNEW_CLASS_SRCS
     clean.cpp
     connect.cpp
     connectivity.cpp
-    connectivity_impl.cpp
+    connectivity_algo.cpp
     controle.cpp
     dimension.cpp
     cross-probing.cpp

@@ -297,11 +297,10 @@ public:
     BOARD_ITEM* Duplicate( const BOARD_ITEM* aItem, bool aAddToBoard = false );
 
     /**
-     * Function GetRatsnest()
+     * Function GetConnectivity()
      * returns list of missing connections between components/tracks.
      * @return RATSNEST* is an object that contains informations about missing connections.
      */
-    //RN_DATA* GetRatsnest() const;
 
     CONNECTIVITY_DATA* GetConnectivity() const
     {

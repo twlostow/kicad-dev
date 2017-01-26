@@ -341,7 +341,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
     printf("Search start\n");
 #endif
 
-    PROF_COUNTER search_cnt( "search-connections" ); search_cnt.start();
+    PROF_COUNTER search_cnt( "search-connections" );
 
     m_padList.RemoveInvalidItems();
     m_viaList.RemoveInvalidItems();
@@ -426,7 +426,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 #ifdef CONNECTIVITY_DEBUG
     printf("Search end\n");
 #endif
-    search_cnt.show();
+    search_cnt.Show();
 }
 
 void CN_ITEM::RemoveInvalidRefs()

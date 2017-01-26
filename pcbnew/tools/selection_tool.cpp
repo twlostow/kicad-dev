@@ -599,9 +599,10 @@ int SELECTION_TOOL::selectCopper( const TOOL_EVENT& aEvent )
         return 0;
 
     std::list<BOARD_CONNECTED_ITEM*> itemsList;
-    RN_DATA* ratsnest;// = getModel<BOARD>()->GetConnectivity()->GetRatsnest();
 
-    //ratsnest->GetConnectedItems( item, itemsList, (RN_ITEM_TYPE)( RN_TRACKS | RN_VIAS ) );
+    const KICAD_T types[] = { PCB_TRACE_T, PCB_VIA_T, EOT };
+
+    getModel<BOARD>()->GetConnectivity()->GetConnectedItems ( item, itemsList, types );
 
     for( BOARD_CONNECTED_ITEM* i : itemsList )
         select( i );
@@ -629,7 +630,9 @@ int SELECTION_TOOL::selectNet( const TOOL_EVENT& aEvent )
     int netCode = item->GetNetCode();
 
     clearSelection();
-    //ratsnest->GetNetItems( netCode, itemsList, (RN_ITEM_TYPE)( RN_TRACKS | RN_VIAS ) );
+
+    const KICAD_T types[] = { PCB_TRACE_T, PCB_VIA_T, EOT };
+    getModel<BOARD>()->GetConnectivity()->GetNetItems ( item, itemsList, types );
 
     for( BOARD_CONNECTED_ITEM* i : itemsList )
         select( i );

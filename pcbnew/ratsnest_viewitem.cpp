@@ -69,7 +69,13 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
     // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
     for( const auto& l : m_data->GetDynamicRatsnest() )
     {
-        gal->DrawLine( l.a, l.b );
+        if ( l.a == l.b )
+        {
+            gal->DrawLine( VECTOR2I( l.a.x - 100000, l.a.y - 100000 ), VECTOR2I( l.b.x + 100000, l.b.y + 100000 ) );
+            gal->DrawLine( VECTOR2I( l.a.x - 100000, l.a.y + 100000 ), VECTOR2I( l.b.x + 100000, l.b.y - 100000 ) );
+        } else {
+            gal->DrawLine( l.a, l.b );
+        }
     }
 
     // Dynamic ratsnest (for e.g. dragged items)

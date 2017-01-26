@@ -30,8 +30,7 @@
 #ifndef RATSNEST_DATA_H
 #define RATSNEST_DATA_H
 
-
-
+#include <core/typeinfo.h>
 #include <math/box2.h>
 
 #include <deque>
@@ -45,23 +44,6 @@
 class BOARD;
 class BOARD_ITEM;
 class BOARD_CONNECTED_ITEM;
-class MODULE;
-class D_PAD;
-class VIA;
-class TRACK;
-class ZONE_CONTAINER;
-class SHAPE_POLY_SET;
-class CN_CLUSTER;
-
-///> Types of items that are handled by the class
-enum RN_ITEM_TYPE
-{
-    RN_PADS    = 0x01,
-    RN_VIAS    = 0x02,
-    RN_TRACKS  = 0x04,
-    RN_ZONES   = 0x08,
-    RN_ALL     = 0xFF
-};
 
 // Preserve KiCad coding style policy
 typedef hed::EDGE           RN_EDGE;
@@ -287,61 +269,6 @@ protected:
     RN_EDGE_LIST m_edges;
 };
 
-
-/**
- * Class RN_POLY
- * Describes a single subpolygon (ZONE_CONTAINER is supposed to contain one or more of those) and
- * performs fast point-inside-polygon test.
- */
-class RN_POLY
-{
-public:
-    RN_POLY( const SHAPE_POLY_SET* aParent,
-             int aSubpolygonIndex,
-             RN_LINKS& aConnections, const BOX2I& aBBox );
-
-    /**
-     * Function GetNode()
-     * Returns node representing a polygon (it has the same coordinates as the first point of its
-     * bounding polyline.
-     */
-    inline const RN_NODE_PTR& GetNode() const
-    {
-        return m_node;
-    }
-
-    inline RN_NODE_PTR& GetNode()
-    {
-        return m_node;
-    }
-
-    /**
-     * Function HitTest()
-     * Tests if selected node is located within polygon boundaries.
-     * @param aNode is a node to be checked.
-     * @return True is the node is located within polygon boundaries.
-     */
-    bool HitTest( const RN_NODE_PTR& aNode ) const;
-
-private:
-
-    ///> Index of the outline in the parent polygon set
-    int m_subpolygonIndex;
-
-    ///> Bounding box of the polygon.
-    BOX2I m_bbox;
-
-    ///> Polygon set containing the geometry
-    const SHAPE_POLY_SET* m_parentPolyset;
-
-    ///> Node representing a polygon (it has the same coordinates as the first point of its
-    ///> bounding polyline.
-    RN_NODE_PTR m_node;
-
-    friend bool sortArea( const RN_POLY& aP1, const RN_POLY& aP2 );
-};
-
-
 /**
  * Class RN_NET
  * Describes ratsnest for a single net.
@@ -410,7 +337,6 @@ public:
      */
     void Update();
     void Clear();
-//    void AddCluster( std::shared_ptr<CN_CLUSTER> aCluster );
 
     const RN_NODE_PTR& AddNode( int aX, int aY );
     void AddConnection( const RN_NODE_PTR& aNode1, const RN_NODE_PTR& aNode2,
@@ -433,7 +359,7 @@ public:
      * @param aOutput is the list that will have items added.
      * @param aType determines the type of added items.
      */
-    void GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, RN_ITEM_TYPE aType = RN_ALL ) const;
+    void GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, const KICAD_T aTypes[] ) const;
 
     /**
      * Function GetClosestNode()
@@ -477,39 +403,6 @@ public:
                                             const RN_NODE_FILTER& aFilter, int aNumber = -1 ) const;
 
     /**
-     * Function AddSimple()
-     * Changes drawing mode for an item to simple (i.e. one ratsnest line per node).
-     * @param aNode is a node that changes its drawing mode.
-     */
-    //void AddSimple( const BOARD_CONNECTED_ITEM* aItem );
-
-    /**
-     * Function AddBlockedNode()
-     * Specifies a node as not suitable as a ratsnest line target (i.e. ratsnest lines will not
-     * target the node). The status is cleared after calling ClearSimple().
-     * @param aNode is the node that is not going to be used as a ratsnest line target.
-     */
-    inline void AddBlockedNode( RN_NODE_PTR& aNode )
-    {
-        m_blockedNodes.insert( aNode );
-        aNode->SetNoLine( true );
-    }
-
-    void ClearBlockedNodes();
-
-    /**
-     * Function GetSimpleNodes()
-     * Returns list of nodes for which ratsnest is drawn in simple mode (i.e. one
-     * ratsnest line per node).
-     * @return list of nodes for which ratsnest is drawn in simple mode.
-     */
-    inline const std::unordered_set<RN_NODE_PTR>& GetSimpleNodes() const
-    {
-        return m_simpleNodes;
-    }
-
-
-    /**
      * Function GetConnectedItems()
      * Adds items that are connected together to a list.
      * @param aItem is the reference item to find other connected items.
@@ -518,7 +411,7 @@ public:
      */
     void GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
                             std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                            RN_ITEM_TYPE aTypes = RN_ALL ) const;
+                            const KICAD_T aTypes[] ) const;
 
 protected:
     ///> Validates edge, i.e. modifies source and target nodes for an edge
@@ -560,179 +453,9 @@ protected:
     ///> Flag indicating necessity of recalculation of ratsnest for a net.
     bool m_dirty;
 
-    ///> Structure to hold ratsnest data for ZONE_CONTAINER objects.
-    //typedef struct
-    //{
-        ///> Subpolygons belonging to a zone
-        //std::deque<RN_POLY> m_Polygons;
-
-        ///> Connections to other nodes
-    //    std::deque<RN_EDGE_MST_PTR> m_Edges;
-    //} RN_ZONE_DATA;
-
-    ///> Structureo to hold ratsnest data for D_PAD objects.
-    //typedef struct
-    //{
-        ///> Node representing the pad.
-        //RN_NODE_PTR m_Node;
-
-        ///> Helper nodes that make for connections to items located in the pad area.
-        //std::deque<RN_EDGE_MST_PTR> m_Edges;
-    //} RN_PAD_DATA;
-
-    ///> Helper typedefs
-    //typedef std::unordered_map<const BOARD_ITEM*, RN_PAD_DATA> PAD_NODE_MAP;
-    //typedef std::unordered_map<const VIA*, RN_NODE_PTR> VIA_NODE_MAP;
-    //typedef std::unordered_map<const TRACK*, RN_EDGE_MST_PTR> TRACK_EDGE_MAP;
-    //typedef std::unordered_map<const ZONE_CONTAINER*, RN_ZONE_DATA> ZONE_DATA_MAP;
-
-    ///> Map that associates nodes in the ratsnest model to respective nodes.
-    //PAD_NODE_MAP m_pads;
-
-    ///> Map that associates nodes in the ratsnest model to respective vias.
-    //VIA_NODE_MAP m_vias;
-
-    ///> Map that associates edges in the ratsnest model to respective tracks.
-    //TRACK_EDGE_MAP m_tracks;
-
-    ///> Map that associates groups of subpolygons in the ratsnest model to respective zones.
-    //ZONE_DATA_MAP m_zones;
-
-
-
     ///> Visibility flag.
     bool m_visible;
 };
 
-
-/**
- * Class RN_DATA
- *
- * Stores information about unconnected items for a board.
- */
-class RN_DATA
-{
-public:
-    /**
-     * Default constructor
-     * @param aBoard is the board to be processed in order to look for unconnected items.
-     */
-    RN_DATA( const BOARD* aBoard ) : m_board( aBoard ) {}
-
-    void ClearNet( int aNet );
-    bool AddCluster( std::shared_ptr<CN_CLUSTER> aCluster  );
-
-
-    /**
-     * Function Add()
-     * Adds an item to the ratsnest data.
-     * @param aItem is an item to be added.
-     * @return True if operation succeeded.
-     */
-    bool Add( const BOARD_ITEM* aItem );
-
-    /**
-     * Function Remove()
-     * Removes an item from the ratsnest data.
-     * @param aItem is an item to be updated.
-     * @return True if operation succeeded.
-     */
-    bool Remove( const BOARD_ITEM* aItem );
-
-    /**
-     * Function Update()
-     * Updates the ratsnest data for an item.
-     * @param aItem is an item to be updated.
-     * @return True if operation succeeded. The item will not be updated if it was not previously
-     * added to the ratsnest.
-     */
-    bool Update( const BOARD_ITEM* aItem );
-
-    /**
-     * Function AddSimple()
-     * Sets an item to be drawn in simple mode (i.e. one line per node, instead of full ratsnest).
-     * It is used for drawing quick, temporary ratsnest, eg. while moving an item.
-     * @param aItem is an item to be drawn in simple node.
-     */
-    void AddSimple( const BOARD_ITEM* aItem );
-
-    /**
-     * Function AddBlocked()
-     * Specifies an item as not suitable as a ratsnest line target (i.e. ratsnest lines will not
-     * target its node(s)). The status is cleared after calling ClearSimple().
-     * @param aItem is the item of which node(s) are not going to be used as a ratsnest line target.
-     */
-    void AddBlocked( const BOARD_ITEM* aItem );
-
-    /**
-     * Function ClearSimple()
-     * Clears the list of nodes for which ratsnest is drawn in simple mode (one line per node).
-     */
-    void ClearSimple()
-    {
-        //for( RN_NET& net : m_nets )
-        //    net.ClearSimple();
-    }
-
-    /**
-     * Function ProcessBoard()
-     * Prepares data for computing (computes a list of current nodes and connections). It is
-     * required to run only once after loading a board.
-     */
-    void ProcessBoard();
-
-    /**
-     * Function Recalculate()
-     * Recomputes ratsnest for selected net number or all nets that need updating.
-     * @param aNet is a net number. If it is negative, all nets that need updating are recomputed.
-     */
-    void Recalculate( int aNet = -1 );
-
-    /**
-     * Function GetNetCount()
-     * Returns the number of nets handled by the ratsnest.
-     * @return Number of the nets.
-     */
-    int GetNetCount() const
-    {
-        return m_nets.size();
-    }
-
-    /**
-     * Function GetNet()
-     * Returns ratsnest grouped by net numbers.
-     * @param aNetCode is the net code.
-     * @return Ratsnest data for a specified net.
-     */
-    RN_NET& GetNet( int aNetCode )
-    {
-        assert( aNetCode > 0 );     // ratsnest does not handle the unconnected net
-
-        return m_nets[aNetCode];
-    }
-
-
-
-    /**
-     * Function GetUnconnectedCount()
-     * Returns the number of missing connections.
-     * @return Number of missing connections.
-     */
-    int GetUnconnectedCount() const;
-
-protected:
-    /**
-     * Function updateNet()
-     * Recomputes ratsnest for a single net.
-     * @param aNetCode is the net number to be recomputed.
-     */
-    void updateNet( int aNetCode );
-
-    ///> Board to be processed.
-    const BOARD* m_board;
-
-    ///> Stores information about ratsnest grouped by net numbers.
-    std::vector<RN_NET> m_nets;
-};
 
 #endif /* RATSNEST_DATA_H */

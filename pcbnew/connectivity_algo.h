@@ -509,6 +509,7 @@ public:
     virtual const VECTOR2I GetAnchor( int n ) const;
 
 private:
+    std::vector<VECTOR2I> m_testOutlinePoints;
     unique_ptr<POLY_GRID_PARTITION> m_cachedPoly;
     int m_subpolyIndex;
 };

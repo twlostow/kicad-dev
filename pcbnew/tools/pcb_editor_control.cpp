@@ -40,8 +40,7 @@
 #include <class_draw_panel_gal.h>
 #include <class_module.h>
 #include <class_mire.h>
-#include <ratsnest_data.h>
-#include <ratsnest_data.h>
+#include <connectivity.h>
 #include <collectors.h>
 #include <zones_functions_for_undo_redo.h>
 #include <board_commit.h>

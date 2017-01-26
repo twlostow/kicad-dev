@@ -25,6 +25,8 @@
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_circle.h>
 
+#include <unordered_map>
+
 using boost::optional;
 
 bool SHAPE_LINE_CHAIN::Collide( const VECTOR2I& aP, int aClearance ) const
@@ -588,7 +590,32 @@ bool SHAPE_LINE_CHAIN::Parse( std::stringstream& aStream )
     return true;
 }
 
-<<<<<<< HEAD
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+struct segsEqual
+{
+    bool operator()( const SEG& a, const SEG& b ) const
+    {
+        return (a.A == b.A && a.B == b.B) || (a.A == b.B && a.B == b.A);
+    }
+};
+
+struct segHash
+{
+    std::size_t operator()(  const SEG&a ) const
+    {
+    std::size_t seed = 0;
+
+    return a.A.x + a.B.x + a.A.y + a.B.y;
+
+    return seed;
+    }
+};
 
 const VECTOR2I SHAPE_LINE_CHAIN::PointAlong( int aPathLength ) const
 {
@@ -598,37 +625,43 @@ const VECTOR2I SHAPE_LINE_CHAIN::PointAlong( int aPathLength ) const
         return CPoint( 0 );
 
     for( int i = 0; i < SegmentCount(); i++ )
-=======
-const VECTOR2I SHAPE_LINE_CHAIN::PointAlong ( int aPathLength ) const
-{
-    int total = 0;
-
-    if (aPathLength == 0)
-        return CPoint(0);
-
-    for(int i = 0; i < SegmentCount(); i++)
->>>>>>> router: snap to clearance boundaries in Highlight Collisions mode
     {
         const SEG& s = CSegment( i );
         int l = s.Length();
 
         if( total + l >= aPathLength )
         {
-<<<<<<< HEAD
             VECTOR2I d( s.B - s.A );
             return s.A + d.Resize( aPathLength - total );
-=======
-            VECTOR2I d ( s.B - s.A );
-            return s.A + d.Resize ( aPathLength - total );
->>>>>>> router: snap to clearance boundaries in Highlight Collisions mode
         }
 
         total += l;
     }
 
-<<<<<<< HEAD
     return CPoint( -1 );
-=======
-    return CPoint(-1);
->>>>>>> router: snap to clearance boundaries in Highlight Collisions mode
+}
+
+const SHAPE_LINE_CHAIN SHAPE_LINE_CHAIN::RemoveHoles( ) const
+{
+    /*std::unordered_map<SEG, int, segHash, segsEqual> edgeSet;
+    std::vector<bool> insideEdges;
+
+    insideEdges.reserve ( SegmentCount() );
+
+    for (int i = 0; i<SegmentCount(); i++)
+    {
+        const auto& edge = CSegment(i);
+
+        if ( edgeSet.find(edge) == edgeSet.end() )
+            edgeSet[edge] = 1;
+        else
+            edgeSet[edge]++;
+    }
+
+    for (int i = 0; i<SegmentCount(); i++)
+    {
+
+    }
+
+    */
 }

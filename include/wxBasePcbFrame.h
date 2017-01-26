@@ -567,7 +567,7 @@ public:
      * search connections between tracks and pads and propagate pad net codes to the track
      * segments.
      */
-    void RecalculateAllTracksNetcode();
+    void ComputeLegacyConnections ();
 
     /* Functions relative to Undo/redo commands:
      */

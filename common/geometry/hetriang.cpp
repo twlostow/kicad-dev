@@ -55,14 +55,6 @@ using namespace hed;
 #endif
 
 
-/*void NODE::updateLayers()
-{
-    assert( m_layers.none() );
-
-    //for( const BOARD_CONNECTED_ITEM* item : m_parents )
-        m_layers = LSET::AllLayersMask(); //F_Cu; //item->GetLayerSet();
-}*/
-
 
 //#define DEBUG_HE
 #ifdef DEBUG_HE

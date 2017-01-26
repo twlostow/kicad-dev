@@ -109,12 +109,6 @@ protected:
     /// Whether it the node can be a target for ratsnest lines
     bool m_noline;
 
-    /// List of board items that share this node
-    std::unordered_set<const void*> m_parents;
-
-    /// Layers that are occupied by this node
-    //LSET m_layers;
-
     /// Recomputes the layers used by this node
     void updateLayers();
 
@@ -129,7 +123,6 @@ public:
 #endif
         m_x( aX ), m_y( aY ), m_tag( -1 ), m_noline( false )
     {
-        //m_layers.reset();
     }
 
     /// Destructor
@@ -193,43 +186,7 @@ public:
     }
 #endif
 
-    inline unsigned int GetRefCount() const
-    {
-        return m_parents.size();
-    }
-
-    template<class T>
-    inline void AddParent( const T* aParent )
-    {
-        m_parents.insert( reinterpret_cast<const void *> ( aParent ) );
-        //m_layers.reset();   // mark as needs updating
-    }
-
-    template<class T>
-    inline void RemoveParent( const T* aParent )
-    {
-        auto it = m_parents.find( reinterpret_cast<const void *>(aParent ));
-
-        if( it != m_parents.end() )
-        {
-            m_parents.erase( it );
-            //m_layers.reset();   // mark as needs updating
-        }
-    }
-
-    const std::unordered_set<const void*>& GetParents() const
-    {
-        return m_parents;
-    }
-
-
-    //const LSET& GetLayers()
-    //{
-        //if( m_layers.none() )
-        //    updateLayers();
-
-//        return m_layers;
-//    }
+    
 
     // Tag used for unconnected items.
     static const int TAG_UNCONNECTED = -1;

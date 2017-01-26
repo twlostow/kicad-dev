@@ -40,7 +40,7 @@
 #include <view/view_controls.h>
 #include <view/view.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <ratsnest_data.h>
+#include <connectivity.h>
 #include <confirm.h>
 
 #include <cassert>
@@ -310,6 +310,8 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
             lockOverride = false;
         }
     } while( ( evt = Wait() ) ); //Should be assignment not equality test
+
+    getModel<BOARD>()->GetConnectivity()->ClearDynamicRatsnest();
 
     m_dragging = false;
     m_offset.x = 0;
@@ -794,18 +796,13 @@ void EDIT_TOOL::SetTransitions()
 
 void EDIT_TOOL::updateRatsnest( bool aRedraw )
 {
-    SELECTION& selection = m_selectionTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto& selection = m_selectionTool->GetSelection();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
+    std::vector<BOARD_ITEM *> items;
 
-    ratsnest->ClearSimple();
+    items.assign ( selection.begin(), selection.end() );
 
-    for( auto item : selection )
-    {
-        ratsnest->Update( item );
-
-        if( aRedraw )
-            ratsnest->AddSimple( item );
-    }
+    connectivity->ComputeDynamicRatsnest( items );
 }
 
 

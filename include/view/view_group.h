@@ -123,12 +123,17 @@ public:
      */
     void FreeItems();
 
+    int GetLastRenderTimeMs() const;
+
 protected:
 
     virtual const ITEMS updateDrawList() const;
 
     /// Layer on which the group is drawn
     int m_layer;
+
+    /// time it took to render in milliseconds
+    int m_lastRenderTimeMs;
 
 protected:
     /// Container for storing VIEW_ITEMs

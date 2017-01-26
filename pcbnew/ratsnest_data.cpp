@@ -78,12 +78,6 @@ static bool sortWeight( const RN_EDGE_PTR& aEdge1, const RN_EDGE_PTR& aEdge2 )
 }
 
 
-bool sortArea( const RN_POLY& aP1, const RN_POLY& aP2 )
-{
-    return aP1.m_bbox.GetArea() < aP2.m_bbox.GetArea();
-}
-
-
 bool operator==( const RN_NODE_PTR& aFirst, const RN_NODE_PTR& aSecond )
 {
     return aFirst->GetX() == aSecond->GetX() && aFirst->GetY() == aSecond->GetY();
@@ -271,7 +265,7 @@ void RN_NET::validateEdge( RN_EDGE_MST_PTR& aEdge )
 }
 
 
-void RN_NET::removeNode( RN_NODE_PTR& aNode, const BOARD_CONNECTED_ITEM* aParent )
+/*void RN_NET::removeNode( RN_NODE_PTR& aNode, const BOARD_CONNECTED_ITEM* aParent )
 {
     aNode->RemoveParent( aParent );
 
@@ -305,7 +299,7 @@ void RN_NET::removeEdge( RN_EDGE_MST_PTR& aEdge, const BOARD_CONNECTED_ITEM* aPa
         clearNode( end );
 
     m_dirty = true;
-}
+}*/
 
 
 const RN_NODE_PTR& RN_LINKS::AddNode( int aX, int aY )
@@ -319,7 +313,7 @@ const RN_NODE_PTR& RN_LINKS::AddNode( int aX, int aY )
 }
 
 
-bool RN_LINKS::RemoveNode( const RN_NODE_PTR& aNode )
+/*bool RN_LINKS::RemoveNode( const RN_NODE_PTR& aNode )
 {
     if( aNode->GetRefCount() == 0 )
     {
@@ -329,7 +323,7 @@ bool RN_LINKS::RemoveNode( const RN_NODE_PTR& aNode )
     }
 
     return false;
-}
+}*/
 
 
 RN_EDGE_MST_PTR RN_LINKS::AddConnection( const RN_NODE_PTR& aNode1, const RN_NODE_PTR& aNode2,
@@ -411,34 +405,6 @@ void RN_NET::clearNode( const RN_NODE_PTR& aNode )
     m_rnEdges->resize( std::distance( m_rnEdges->begin(), newEnd ) );
 }
 
-#if 0
-
-RN_POLY::RN_POLY( const SHAPE_POLY_SET* aParent,
-                  int aSubpolygonIndex,
-                  RN_LINKS& aConnections, const BOX2I& aBBox ) :
-    m_subpolygonIndex( aSubpolygonIndex ),
-    m_bbox( aBBox ),
-    m_parentPolyset( aParent )
-{
-    const VECTOR2I& p = aParent->CVertex( 0, aSubpolygonIndex );
-
-    m_node = aConnections.AddNode( p.x, p.y );
-
-    // Mark it as not appropriate as a destination of ratsnest edges
-    // (edges coming out from a polygon vertex look weird)
-    m_node->SetNoLine( true );
-}
-
-
-bool RN_POLY::HitTest( const RN_NODE_PTR& aNode ) const
-{
-    VECTOR2I p( aNode->GetX(), aNode->GetY() );
-
-    return m_parentPolyset->Contains( p, m_subpolygonIndex );
-}
-
-#endif
-
 void RN_NET::Update()
 {
 
@@ -450,58 +416,6 @@ void RN_NET::Update()
     m_dirty = false;
 }
 
-#if 0
-
-bool RN_NET::AddItem( const D_PAD* aPad )
-{
-    // Ratsnest is not computed for non-copper pads
-    //if( ( aPad->GetLayerSet() & LSET::AllCuMask() ).none() )
-        //return false;
-
-/*RN_NODE_PTR node = m_links.AddNode( aPad->GetPosition().x, aPad->GetPosition().y );
-    node->AddParent( aPad );
-    m_pads[aPad].m_Node = node;
-    m_dirty = true;*/
-
-    return true;
-}
-
-
-bool RN_NET::AddItem( const VIA* aVia )
-{
-    /*RN_NODE_PTR node = m_links.AddNode( aVia->GetPosition().x, aVia->GetPosition().y );
-    node->AddParent( aVia );
-    m_vias[aVia] = node;
-    m_dirty = true;*/
-
-    return true;
-}
-
-
-bool RN_NET::AddItem( const TRACK* aTrack )
-{
-/*    if( aTrack->GetStart() == aTrack->GetEnd() )
-        return false;
-
-    RN_NODE_PTR start = m_links.AddNode( aTrack->GetStart().x, aTrack->GetStart().y );
-    RN_NODE_PTR end = m_links.AddNode( aTrack->GetEnd().x, aTrack->GetEnd().y );
-
-    start->AddParent( aTrack );
-    end->AddParent( aTrack );
-    m_tracks[aTrack] = m_links.AddConnection( start, end );
-    m_dirty = true;
-*/
-    return true;
-}
-
-#endif
-
-class CN_RATSNEST_NODES
-{
-//    std::vector<RN_EDGE_MST_PTR> m_edges;
-//    std::vector<RN_NODE_PTR> m_nodes;
-};
-
 void RN_NET::Clear()
 {
     m_links.Clear();
@@ -512,110 +426,6 @@ void RN_NET::Clear()
     m_dirty = true;
 }
 
-#if 0
-void RN_NET::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster )
-{
-    m_dirty = true;
-    auto anchors = aCluster->GetAnchors();
-
-    if( !anchors.size() )
-        return;
-
-    auto start = m_links.AddNode( anchors[0].x, anchors[0].y );
-
-    //aCluster->ClearRatsnestNodes();
-    //aCluster->AddRatsnestNode( start );
-
-    for(int i = 1; i < anchors.size(); i++ )
-    {
-
-        auto end = m_links.AddNode( anchors[i].x, anchors[i].y );
-
-    //    aCluster->AddRatsnestNode( end );
-
-        if(start != end)
-            auto conn = m_links.AddConnection( start, end );
-    }
-    m_dirty = true;
-}
-
-
-
-bool RN_NET::RemoveItem( const D_PAD* aPad )
-{
-    /*PAD_NODE_MAP::iterator it = m_pads.find( aPad );
-
-    if( it == m_pads.end() )
-        return false;
-
-    RN_PAD_DATA& pad_data = it->second;
-    removeNode( pad_data.m_Node, aPad );
-
-    for( RN_EDGE_MST_PTR& edge : pad_data.m_Edges )
-        removeEdge( edge, aPad );
-
-    m_pads.erase( aPad );
-*/
-    return true;
-}
-
-
-bool RN_NET::RemoveItem( const VIA* aVia )
-{
-    /*VIA_NODE_MAP::iterator it = m_vias.find( aVia );
-
-    if( it == m_vias.end() )
-        return false;
-
-    removeNode( it->second, aVia );
-    m_vias.erase( it );
-*/
-    return true;
-}
-
-
-bool RN_NET::RemoveItem( const TRACK* aTrack )
-{
-/*    TRACK_EDGE_MAP::iterator it = m_tracks.find( aTrack );
-
-    if( it == m_tracks.end() )
-        return false;
-
-    removeEdge( it->second, aTrack );
-    m_tracks.erase( it );
-*/
-    return true;
-}
-
-
-bool RN_NET::RemoveItem( const ZONE_CONTAINER* aZone )
-{
-    /*ZONE_DATA_MAP::iterator it = m_zones.find( aZone );
-
-    if( it == m_zones.end() )
-        return false;
-
-    RN_ZONE_DATA& zoneData = it->second;
-
-    // Remove all subpolygons that make the zone
-    std::deque<RN_POLY>& polygons = zoneData.m_Polygons;
-    for( RN_POLY& polygon : polygons )
-        removeNode( polygon.GetNode(), aZone );
-    polygons.clear();
-
-    // Remove all connections added by the zone
-    std::deque<RN_EDGE_MST_PTR>& edges = zoneData.m_Edges;
-
-    for( RN_EDGE_MST_PTR edge : edges )
-        removeEdge( edge, aZone );
-
-    edges.clear();
-    m_zones.erase( it );
-*/
-    return true;
-}
-
-#endif
 
 const RN_NODE_PTR RN_NET::GetClosestNode( const RN_NODE_PTR& aNode ) const
 {
@@ -680,7 +490,6 @@ const RN_NODE_PTR RN_NET::GetClosestNode( const RN_NODE_PTR& aNode,
 std::list<RN_NODE_PTR> RN_NET::GetClosestNodes( const RN_NODE_PTR& aNode, int aNumber ) const
 {
     std::list<RN_NODE_PTR> closest;
-    /*
     const RN_LINKS::RN_NODE_SET& nodes = m_links.GetNodes();
 
     // Copy nodes
@@ -695,7 +504,6 @@ std::list<RN_NODE_PTR> RN_NET::GetClosestNodes( const RN_NODE_PTR& aNode, int aN
     // Trim the result to the asked size
     if( aNumber > 0 )
         closest.resize( std::min( (size_t)aNumber, nodes.size() ) );
-*/
     return closest;
 }
 
@@ -704,7 +512,7 @@ std::list<RN_NODE_PTR> RN_NET::GetClosestNodes( const RN_NODE_PTR& aNode,
                                                 const RN_NODE_FILTER& aFilter, int aNumber ) const
 {
     std::list<RN_NODE_PTR> closest;
-    /*const RN_LINKS::RN_NODE_SET& nodes = m_links.GetNodes();
+    const RN_LINKS::RN_NODE_SET& nodes = m_links.GetNodes();
 
     // Copy filtered nodes
     std::copy_if( nodes.begin(), nodes.end(), std::back_inserter( closest ), std::cref( aFilter ) );
@@ -718,23 +526,8 @@ std::list<RN_NODE_PTR> RN_NET::GetClosestNodes( const RN_NODE_PTR& aNode,
     // Trim the result to the asked size
     if( aNumber > 0 )
         closest.resize( std::min( static_cast<size_t>( aNumber ), nodes.size() ) );
-*/
     return closest;
 }
-
-
-//void RN_NET::AddSimple( const BOARD_CONNECTED_ITEM* aItem )
-//{
-/*    for( RN_NODE_PTR node : GetNodes( aItem ) )
-    {
-        // Block all nodes, so they do not become targets for dynamic ratsnest lines
-        AddBlockedNode( node );
-
-        // Filter out junctions
-        if( node->GetRefCount() == 1 )
-            m_simpleNodes.insert( node );
-    }*/
-//}
 
 
 std::list<RN_NODE_PTR> RN_NET::GetNodes( const BOARD_CONNECTED_ITEM* aItem ) const
@@ -795,7 +588,7 @@ std::list<RN_NODE_PTR> RN_NET::GetNodes( const BOARD_CONNECTED_ITEM* aItem ) con
 }
 
 
-void RN_NET::GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, RN_ITEM_TYPE aType ) const
+void RN_NET::GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, const KICAD_T aTypes[] ) const
 {
 /*    if( aType & RN_PADS )
     {
@@ -822,20 +615,9 @@ void RN_NET::GetAllItems( std::list<BOARD_CONNECTED_ITEM*>& aOutput, RN_ITEM_TYP
     }*/
 }
 
-
-void RN_NET::ClearBlockedNodes()
-{
-    for( const RN_NODE_PTR& node : m_blockedNodes )
-        node->SetNoLine( false );
-
-    m_blockedNodes.clear();
-    //m_simpleNodes.clear();
-}
-
-
 void RN_NET::GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
                                 std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                                RN_ITEM_TYPE aTypes ) const
+                                const KICAD_T aTypes[] ) const
 {
 /*    std::list<RN_NODE_PTR> nodes = GetNodes( aItem );
     assert( !nodes.empty() );
@@ -885,429 +667,6 @@ void RN_NET::GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
         }
     }*/
 }
-
-
-void RN_DATA::AddSimple( const BOARD_ITEM* aItem )
-{
-/*
-    int net;
-
-    if( aItem->IsConnected() )
-    {
-        const BOARD_CONNECTED_ITEM* item = static_cast<const BOARD_CONNECTED_ITEM*>( aItem );
-        net = item->GetNetCode();
-
-        if( net < 1 )           // do not process unconnected items
-            return;
-
-        m_nets[net].AddSimple( item );
-    }
-    else if( aItem->Type() == PCB_MODULE_T )
-    {
-        const MODULE* module = static_cast<const MODULE*>( aItem );
-
-        for( const D_PAD* pad = module->Pads().GetFirst(); pad; pad = pad->Next() )
-            AddSimple( pad );
-
-        return;
-    }
-    else
-        return;
-        */
-}
-
-
-void RN_DATA::AddBlocked( const BOARD_ITEM* aItem )
-{
-    /*
-    int net;
-
-    if( aItem->IsConnected() )
-    {
-        const BOARD_CONNECTED_ITEM* item = static_cast<const BOARD_CONNECTED_ITEM*>( aItem );
-        net = item->GetNetCode();
-
-        if( net < 1 )           // do not process unconnected items
-            return;
-
-        // Block all nodes belonging to the item
-        for( RN_NODE_PTR node : m_nets[net].GetNodes( item ) )
-            m_nets[net].AddBlockedNode( node );
-    }
-    else if( aItem->Type() == PCB_MODULE_T )
-    {
-        const MODULE* module = static_cast<const MODULE*>( aItem );
-
-        for( const D_PAD* pad = module->Pads().GetFirst(); pad; pad = pad->Next() )
-            AddBlocked( pad );
-
-        return;
-    }
-    else
-        return;
-        */
-}
-
-/*
-void RN_DATA::GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
-                                 std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                                 RN_ITEM_TYPE aTypes ) const
-{
-    int net = aItem->GetNetCode();
-
-    if( net < 1 )
-        return;
-
-    assert( net < (int) m_nets.size() );
-
-    m_nets[net].GetConnectedItems( aItem, aOutput, aTypes );
-}
-
-
-void RN_DATA::GetNetItems( int aNetCode, std::list<BOARD_CONNECTED_ITEM*>& aOutput,
-                           RN_ITEM_TYPE aTypes ) const
-{
-    if( aNetCode < 1 )
-        return;
-
-    assert( aNetCode < (int) m_nets.size() );
-
-    m_nets[aNetCode].GetAllItems( aOutput, aTypes );
-}
-*/
-
-//bool RN_DATA::AreConnected( const BOARD_CONNECTED_ITEM* aItem, const BOARD_CONNECTED_ITEM* aOther )
-//{
-//    return false;
-
-    /*int net1 = aItem->GetNetCode();
-    int net2 = aOther->GetNetCode();
-
-    if( net1 < 1 || net2 < 1 || net1 != net2 )
-        return false;
-
-    assert( net1 < (int) m_nets.size() && net2 < (int) m_nets.size() );
-
-    // net1 == net2
-    std::list<RN_NODE_PTR> items1 = m_nets[net1].GetNodes( aItem );
-    std::list<RN_NODE_PTR> items2 = m_nets[net1].GetNodes( aOther );
-
-    assert( !items1.empty() && !items2.empty() );
-
-    return ( items1.front()->GetTag() == items2.front()->GetTag() );*/
-//}
-
-
-int RN_DATA::GetUnconnectedCount() const
-{
-    return 0;
-    /*
-    int count = 0;
-
-    for( unsigned i = 0; i < m_nets.size(); ++i )
-    {
-        const std::vector<RN_EDGE_MST_PTR>* unconnected = m_nets[i].GetUnconnected();
-
-        if( unconnected )
-            count += unconnected->size();
-    }
-
-    return count;*/
-}
-
-
-bool RN_DATA::Add( const BOARD_ITEM* aItem )
-{
-    #if 0
-    int net;
-
-    if( aItem->IsConnected() )
-    {
-        net = static_cast<const BOARD_CONNECTED_ITEM*>( aItem )->GetNetCode();
-
-        if( net < 0 )           // do not process unconnected items
-            return false;
-
-        // Autoresize is necessary e.g. for module editor
-        if( net >= (int) m_nets.size() )
-            m_nets.resize( net + 1 );
-    }
-    else if( aItem->Type() == PCB_MODULE_T )
-    {
-        const MODULE* module = static_cast<const MODULE*>( aItem );
-
-        for( const D_PAD* pad = module->Pads().GetFirst(); pad; pad = pad->Next() )
-        {
-            net = pad->GetNetCode();
-
-            if( net < 1 )       // do not process unconnected items
-                continue;
-
-            // Autoresize is necessary e.g. for module editor
-            if( net >= (int) m_nets.size() )
-                m_nets.resize( net + 1 );
-
-            m_nets[net].AddItem( pad );
-        }
-
-        return true;
-    }
-    else if( aItem->Type() == PCB_NETINFO_T )
-    {
-        int netCount = m_board->GetNetCount();
-
-        if( (unsigned) netCount > m_nets.size() )
-            m_nets.resize( netCount );
-
-        return true;
-    }
-
-    switch( aItem->Type() )
-    {
-    case PCB_PAD_T:
-        return m_nets[net].AddItem( static_cast<const D_PAD*>( aItem ) );
-        break;
-
-    case PCB_TRACE_T:
-        return m_nets[net].AddItem( static_cast<const TRACK*>( aItem ) );
-        break;
-
-    case PCB_VIA_T:
-        return m_nets[net].AddItem( static_cast<const VIA*>( aItem ) );
-        break;
-
-    case PCB_ZONE_AREA_T:
-        return m_nets[net].AddItem( static_cast<const ZONE_CONTAINER*>( aItem ) );
-        break;
-
-    default:
-        break;
-    }
-
-    return false;
-    #endif
-    return true;
-}
-
-
-bool RN_DATA::Remove( const BOARD_ITEM* aItem )
-{
-    #if 0
-    int net;
-
-    if( aItem->IsConnected() )
-    {
-        net = static_cast<const BOARD_CONNECTED_ITEM*>( aItem )->GetNetCode();
-
-        if( net < 0 )           // do not process unconnected items
-            return false;
-
-        // Autoresize is necessary e.g. for module editor
-        if( net >= (int) m_nets.size() )
-        {
-            m_nets.resize( net + 1 );
-            return false;     // if it was resized, then surely the item had not been added before
-        }
-    }
-    else if( aItem->Type() == PCB_MODULE_T )
-    {
-        const MODULE* module = static_cast<const MODULE*>( aItem );
-
-        for( const D_PAD* pad = module->Pads().GetFirst(); pad; pad = pad->Next() )
-        {
-            net = pad->GetNetCode();
-
-            if( net < 1 )       // do not process unconnected items
-                continue;
-
-            // Autoresize is necessary e.g. for module editor
-            if( net >= (int) m_nets.size() )
-            {
-                m_nets.resize( net + 1 );
-                return false;     // if it was resized, then surely the item had not been added before
-            }
-
-            m_nets[net].RemoveItem( pad );
-        }
-
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-
-    switch( aItem->Type() )
-    {
-    case PCB_PAD_T:
-        return m_nets[net].RemoveItem( static_cast<const D_PAD*>( aItem ) );
-        break;
-
-    case PCB_TRACE_T:
-        return m_nets[net].RemoveItem( static_cast<const TRACK*>( aItem ) );
-        break;
-
-    case PCB_VIA_T:
-        return m_nets[net].RemoveItem( static_cast<const VIA*>( aItem ) );
-        break;
-
-    case PCB_ZONE_AREA_T:
-        return m_nets[net].RemoveItem( static_cast<const ZONE_CONTAINER*>( aItem ) );
-        break;
-
-    default:
-        break;
-    }
-
-    return false;
-    #endif
-    return true;
-}
-
-
-bool RN_DATA::Update( const BOARD_ITEM* aItem )
-{
-    #if 0
-    if( Remove( aItem ) )
-    {
-        bool res = Add( aItem );
-        assert( res );
-        return true;
-    }
-    #endif
-    return false;
-}
-
-
-void RN_DATA::ProcessBoard()
-{
-    int netCount = m_board->GetNetCount();
-    m_nets.clear();
-    m_nets.resize( netCount );
-    int netCode;
-
-#if 0
-    // Iterate over all items that may need to be connected
-    for( MODULE* module = m_board->m_Modules; module; module = module->Next() )
-    {
-        for( D_PAD* pad = module->Pads().GetFirst(); pad; pad = pad->Next() )
-        {
-            netCode = pad->GetNetCode();
-
-            assert( netCode >= 0 && netCode < netCount );
-
-            if( netCode >= 0 && netCode < netCount )
-                m_nets[netCode].AddItem( pad );
-        }
-    }
-
-    for( TRACK* track = m_board->m_Track; track; track = track->Next() )
-    {
-        netCode = track->GetNetCode();
-
-        assert( netCode >= 0 && netCode < netCount );
-
-        if( netCode >= 0 && netCode < netCount )
-        {
-            if( track->Type() == PCB_VIA_T )
-                m_nets[netCode].AddItem( static_cast<VIA*>( track ) );
-            else if( track->Type() == PCB_TRACE_T )
-                m_nets[netCode].AddItem( track );
-        }
-    }
-
-    for( int i = 0; i < m_board->GetAreaCount(); ++i )
-    {
-        ZONE_CONTAINER* zone = m_board->GetArea( i );
-
-        netCode = zone->GetNetCode();
-
-        assert( netCode >= 0 && netCode < netCount );
-
-        if( netCode >= 0 && netCode < netCount )
-            m_nets[netCode].AddItem( zone );
-    }
-
-    Recalculate();
-#endif
-}
-
-
-void RN_DATA::Recalculate( int aNet )
-{
-    unsigned int netCount = m_board->GetNetCount();
-
-    if( aNet <= 0 && netCount > 1 )              // Recompute everything
-    {
-#ifdef PROFILE
-    prof_counter totalRealTime;
-    prof_start( &totalRealTime );
-#endif
-
-        unsigned int i;
-
-#ifdef USE_OPENMP
-        #pragma omp parallel shared(netCount) private(i)
-        {
-            #pragma omp for schedule(guided, 1)
-#else /* USE_OPENMP */
-        {
-#endif
-            // Start with net number 1, as 0 stands for not connected
-            for( i = 1; i < netCount; ++i )
-            {
-                if( m_nets[i].IsDirty() )
-                    updateNet( i );
-            }
-        }  /* end of parallel section */
-#ifdef PROFILE
-    prof_end( &totalRealTime );
-
-    wxLogDebug( wxT( "Recalculate all nets: %.1f ms" ), totalRealTime.msecs() );
-#endif /* PROFILE */
-    }
-    else if( aNet > 0 )         // Recompute only specific net
-    {
-        updateNet( aNet );
-    }
-}
-
-
-void RN_DATA::updateNet( int aNetCode )
-{
-    assert( aNetCode < (int) m_nets.size() );
-
-    if( aNetCode < 1 || aNetCode > (int) m_nets.size() )
-        return;
-
-    m_nets[aNetCode].ClearBlockedNodes();
-    m_nets[aNetCode].Update();
-}
-
-void RN_DATA::ClearNet( int aNet )
-{
-    if( aNet >= (int) m_nets.size() )
-        m_nets.resize( aNet + 1 );
-
-    if( aNet < 1 || aNet > (int) m_nets.size() )
-        return;
-
-    //printf("Clear net %d\n", aNet);
-    m_nets[aNet].Clear();
-}
-
-#if 0
-bool  RN_DATA::AddCluster( std::shared_ptr<CN_CLUSTER> aCluster  )
-{
-    int net = aCluster->OriginNet();
-
-    if( net >= (int) m_nets.size() )
-        m_nets.resize( net + 1 );
-
-    m_nets[ net ].AddCluster (aCluster);
-    return true;
-}
-#endif
 
 const RN_NODE_PTR& RN_NET::AddNode( int aX, int aY )
 {

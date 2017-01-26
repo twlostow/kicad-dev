@@ -1,6 +1,8 @@
 #ifndef __CONNECTIVITY_H
 #define __CONNECTIVITY_H
 
+#include <core/typeinfo.h>
+
 #include <wx/string.h>
 #include <vector>
 #include <list>
@@ -76,13 +78,18 @@ public:
         return m_nets[aNet];
     }
 
-    //CN_CONNECTIVITY_ALGO* GetConnectivityAlgo()
-    //{
-    //     return m_connAlgo;//.get();
-    //}
+    void GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem,
+                            std::list<BOARD_CONNECTED_ITEM*>& aOutput,
+                            const KICAD_T aTypes[] ) const {};
 
-    void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
+    void GetNetItems( const BOARD_CONNECTED_ITEM* aItem,
+                            std::list<BOARD_CONNECTED_ITEM*>& aOutput,
+                            const KICAD_T aTypes[] ) const {};
 
+
+    void PropagateNets();
+
+    void FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
 
     void RecalculateRatsnest();
 
@@ -92,12 +99,8 @@ public:
         //return m_connAlgo->GetUnconnectedCount();
     }
 
-    void BlockRatsnestItems( const std::vector<BOARD_ITEM *> &aItems );
-
+    void ComputeDynamicRatsnest( const std::vector<BOARD_ITEM *> &aItems  );
     void ClearDynamicRatsnest();
-    void ComputeDynamicRatsnest( CONNECTIVITY_DATA *aMovedItems );
-
-
 
     /**
      * Function GetConnectedItems()
@@ -133,17 +136,18 @@ public:
 
     const std::vector<RN_DYNAMIC_LINE> & GetDynamicRatsnest() const;
 
-
 private:
 
     void updateRatsnest();
     void addRatsnestCluster( std::shared_ptr<CN_CLUSTER> aCluster );
+    void blockRatsnestItems( const std::vector<BOARD_ITEM *> &aItems );
 
 
-    //BOARD *m_board;
+    unique_ptr<CONNECTIVITY_DATA> m_dynamicConnectivity;
+    shared_ptr<CN_CONNECTIVITY_ALGO> m_connAlgo;
+
     std::vector<RN_DYNAMIC_LINE> m_dynamicRatsnest;
     std::vector<RN_NET *> m_nets;
-    CN_CONNECTIVITY_ALGO* m_connAlgo;
 };
 
 #endif

@@ -38,10 +38,13 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <layers_id_colors_and_visibility.h>
 
+#include <profile.h>
+
 using namespace KIGFX;
 
 VIEW_GROUP::VIEW_GROUP( VIEW* aView ) :
-    m_layer( ITEM_GAL_LAYER( GP_OVERLAY ) )
+    m_layer( ITEM_GAL_LAYER( GP_OVERLAY ) ),
+    m_lastRenderTimeMs( 0 )
 {
 }
 
@@ -101,6 +104,10 @@ void VIEW_GROUP::ViewDraw( int aLayer, VIEW* aView ) const
     auto gal = aView->GetGAL();
     PAINTER* painter = aView->GetPainter();
 
+    PROF_COUNTER timeCounter;
+
+    timeCounter.Start();
+
     const auto drawList = updateDrawList();
 
     // Draw all items immediately (without caching)
@@ -125,6 +132,9 @@ void VIEW_GROUP::ViewDraw( int aLayer, VIEW* aView ) const
 
         gal->PopDepth();
     }
+
+    timeCounter.Stop();
+    printf( " last render tiem : %d ms\n", (int)timeCounter.msecs() );
 }
 
 

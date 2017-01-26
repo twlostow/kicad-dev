@@ -9,69 +9,22 @@
 #include <omp.h>
 #endif /* USE_OPENMP */
 
-
-
-static std::vector<BOARD_ITEM*> items;
-static FILE *f_log = nullptr;
-//static int n_cur = 0;
-
-static void dumpAdd(BOARD_ITEM *aItem)
-{
-    if(!f_log)
-        f_log=fopen("conn_log.txt","wb");
-    if(aItem->Type() == PCB_TRACE_T)
-    {
-        auto t= static_cast<TRACK*>(aItem);
-        int n_cur = items.size();
-        items.push_back(t);
-        fprintf(f_log, "auto t%d = new TRACK(nullptr); t%d->SetStart( wxPoint(%d, %d)); t%d->SetEnd(wxPoint(%d,%d)); t%d->SetLayer((LAYER_ID)%d); t%d->SetWidth(%d); addItem(t%d);\n", n_cur, n_cur, t->GetStart().x, t->GetStart().y, n_cur, t->GetEnd().x, t->GetEnd().y, n_cur, t->GetLayer(), n_cur, t->GetWidth(), n_cur);
-        printf("**** auto t%d = new TRACK(nullptr); t%d->SetStart( wxPoint(%d, %d)); t%d->SetEnd(wxPoint(%d,%d)); t%d->SetLayer((LAYER_ID)%d); t%d->SetWidth(%d); addItem(t%d);\n", n_cur, n_cur, t->GetStart().x, t->GetStart().y, n_cur, t->GetEnd().x, t->GetEnd().y, n_cur, t->GetLayer(), n_cur, t->GetWidth(), n_cur);
-        fflush(f_log);
-    }
-
-}
-
-static void dumpRemove(BOARD_ITEM *aItem)
-{
-    int n_cur = -1;
-//    printf("CN_REM %p\n", aItem);
-    for (int i =0 ;i<items.size();i++)
-    {
-            if( items[i] == aItem )
-            {
-                n_cur = i; break;
-            }
-    }
-
-    if(n_cur >= 0)
-    {
-        fprintf(f_log, "removeItem(t%d);\n", n_cur);
-        fflush(f_log);
-    }
-}
-
-
 CONNECTIVITY_DATA::CONNECTIVITY_DATA( )
 {
-
-    m_connAlgo = new CN_CONNECTIVITY_ALGO;
-    //m_ratsnest = new RN_DATA ( m_board );
+    m_connAlgo.reset( new CN_CONNECTIVITY_ALGO );
 }
 
 
 bool CONNECTIVITY_DATA::Add( BOARD_ITEM* aItem )
 {
-    //printf("Cn: add %p\n", aItem);
     m_connAlgo->Add ( aItem );
     return true;
-    //return m_ratsnest->Add ( aItem );
 }
 
 bool CONNECTIVITY_DATA::Remove( BOARD_ITEM* aItem )
 {
     m_connAlgo->Remove ( aItem );
     return true;
-    //return m_ratsnest->Remove ( aItem );
 }
 
 /**
@@ -85,34 +38,7 @@ bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 {
     m_connAlgo->Remove( aItem );
     m_connAlgo->Add( aItem );
-#if 0
-
-    printf("Update %p\n", aItem);
-
-
-    for ( int i = 0; i < m_connAlgo->NetCount(); i++ )
-    {
-            if ( m_connAlgo->IsNetDirty( i ) )
-            {
-                    printf("update Dirty net %d\n");
-
-                    auto& clusters = m_connAlgo->GetClusters();
-
-                    m_ratsnest->ClearNet( i );
-
-                    for( auto c : clusters )
-                        if ( c->OriginNet() == i )
-                            m_ratsnest->ter( c );
-
-                    m_ratsnest->Recalculate( i );
-
-            }
-
-    }
-
     return true;
-    //return m_ratsnest->Update ( aItem );
-#endif
 }
 
 /**
@@ -122,41 +48,30 @@ bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
  */
 void CONNECTIVITY_DATA::Build( BOARD *aBoard )
 {
-    delete m_connAlgo;//->Clear();
-
-    m_connAlgo = new CN_CONNECTIVITY_ALGO; // fixme: clearnup!
+    m_connAlgo.reset( new CN_CONNECTIVITY_ALGO ); // fixme: clearnup!
     m_connAlgo->Build( aBoard ); // fixme: do we need it here?
-
 
     RecalculateRatsnest();
 }
 
 void CONNECTIVITY_DATA::Build( const std::vector<BOARD_ITEM *>& aItems )
 {
-    delete m_connAlgo;//->Clear();
 
-    m_connAlgo = new CN_CONNECTIVITY_ALGO; // fixme: clearnup!
+    m_connAlgo.reset( new CN_CONNECTIVITY_ALGO ); // fixme: clearnup!
     m_connAlgo->Build( aItems ); // fixme: do we need it here?
 
     RecalculateRatsnest();
 }
-
-
-//void CONNECTIVITY_DATA::Block()
-//{
-
-//}
 
 void CONNECTIVITY_DATA::updateRatsnest()
 {
     int lastNet =  m_connAlgo->NetCount();
 
     #ifdef PROFILE
-        prof_counter totalRealTime;
-        prof_start( &totalRealTime );
+        PROF_COUNTER rnUpdate ( "update-ratsnest" );
     #endif
 
-    unsigned int i;
+    int i;
 
     #ifdef USE_OPENMP
             #pragma omp parallel shared(lastNet) private(i)
@@ -177,8 +92,7 @@ void CONNECTIVITY_DATA::updateRatsnest()
                 }
             }  /* end of parallel section */
     #ifdef PROFILE
-        prof_end( &totalRealTime );
-        wxLogDebug( wxT( "Recalculate all nets: %.1f ms" ), totalRealTime.msecs() );
+        rnUpdate.Show();
     #endif /* PROFILE */
     //m_ratsnest->Recalculate();
 }
@@ -210,27 +124,7 @@ void CONNECTIVITY_DATA::addRatsnestCluster( std::shared_ptr<CN_CLUSTER> aCluster
             entry.AddRatsnestNode ( node );
         }
     }
-#if 0
-
-    auto start = m_links.AddNode( anchors[0].x, anchors[0].y );
-
-    //aCluster->ClearRatsnestNodes();
-    //aCluster->AddRatsnestNode( start );
-
-    for(int i = 1; i < anchors.size(); i++ )
-    {
-
-        auto end = m_links.AddNode( anchors[i].x, anchors[i].y );
-
-    //    aCluster->AddRatsnestNode( end );
-
-        if(start != end)
-            auto conn = m_links.AddConnection( start, end );
-    }
-    m_dirty = true;
-#endif
 }
-
 
 void CONNECTIVITY_DATA::RecalculateRatsnest()
 {
@@ -238,19 +132,19 @@ void CONNECTIVITY_DATA::RecalculateRatsnest()
 
     if( lastNet >= (int) m_nets.size() )
     {
-        int prevSize = m_nets.size();
+        unsigned int prevSize = m_nets.size();
         m_nets.resize( lastNet + 1 );
 
-        //printf("Creating %d nets\n", m_nets.size() + 1);
-
-        for ( int i = prevSize; i < m_nets.size(); i++ )
+        for ( unsigned int i = prevSize; i < m_nets.size(); i++ )
             m_nets[i] = new RN_NET;
     }
 
     PROF_COUNTER cnt_clusters("build-clusters");
     auto clusters = m_connAlgo->GetClusters();
-    cnt_clusters.show();
+    cnt_clusters.Show();
+
     printf("Found %d clusters\n", clusters.size());
+
     int dirtyNets = 0;
 
     for (int net = 0; net < lastNet; net++)
@@ -260,12 +154,13 @@ void CONNECTIVITY_DATA::RecalculateRatsnest()
             dirtyNets++;
         }
 
+    printf("Dirty nets after cl: %d\n", dirtyNets);
+
     for( auto c : clusters )
     {
         int net  = c->OriginNet();
         if ( m_connAlgo->IsNetDirty( net ) )
         {
-            //printf("net %d: add cluster %p\n", net, c.get());
             addRatsnestCluster( c );
         }
     }
@@ -273,10 +168,9 @@ void CONNECTIVITY_DATA::RecalculateRatsnest()
     m_connAlgo->ClearDirtyFlags();
 
     updateRatsnest();
-
 }
 
-void CONNECTIVITY_DATA::BlockRatsnestItems( const std::vector<BOARD_ITEM *> &aItems )
+void CONNECTIVITY_DATA::blockRatsnestItems( const std::vector<BOARD_ITEM *> &aItems )
 {
     std::vector<BOARD_CONNECTED_ITEM*> citems;
 
@@ -312,13 +206,18 @@ void CONNECTIVITY_DATA::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::v
     m_connAlgo -> FindIsolatedCopperIslands( aZone, aIslands );
 }
 
-void CONNECTIVITY_DATA::ComputeDynamicRatsnest( CONNECTIVITY_DATA *aMovedItems )
+void CONNECTIVITY_DATA::ComputeDynamicRatsnest( const std::vector<BOARD_ITEM *> &aItems )
 {
+    m_dynamicConnectivity.reset( new CONNECTIVITY_DATA );
+    m_dynamicConnectivity->Build ( aItems );
 
     m_dynamicRatsnest.clear();
-    for (int nc = 1; nc < aMovedItems->m_nets.size(); nc ++ )
+
+    blockRatsnestItems ( aItems );
+
+    for (unsigned int nc = 1; nc < m_dynamicConnectivity->m_nets.size(); nc ++ )
     {
-        auto dynNet = aMovedItems->m_nets[nc];
+        auto dynNet = m_dynamicConnectivity->m_nets[nc];
 
         if ( dynNet->GetNodeCount() != 0 )
         {
@@ -334,11 +233,10 @@ void CONNECTIVITY_DATA::ComputeDynamicRatsnest( CONNECTIVITY_DATA *aMovedItems )
 
                 m_dynamicRatsnest.push_back ( l );
             }
-
         }
     }
 
-    for ( auto net : aMovedItems->m_nets )
+    for ( auto net : m_dynamicConnectivity->m_nets )
     {
         if ( !net )
             continue;
@@ -358,7 +256,6 @@ void CONNECTIVITY_DATA::ComputeDynamicRatsnest( CONNECTIVITY_DATA *aMovedItems )
             l.b = VECTOR2I ( nodeB->GetX(), nodeB->GetY() );
             l.netCode = 0;
             m_dynamicRatsnest.push_back ( l );
-
         }
     }
 }
@@ -370,5 +267,11 @@ const std::vector<RN_DYNAMIC_LINE> & CONNECTIVITY_DATA::GetDynamicRatsnest() con
 
 void CONNECTIVITY_DATA::ClearDynamicRatsnest()
 {
+    m_dynamicConnectivity.reset();
     m_dynamicRatsnest.clear();
+}
+
+void CONNECTIVITY_DATA::PropagateNets()
+{
+    m_connAlgo->PropagateNets();
 }

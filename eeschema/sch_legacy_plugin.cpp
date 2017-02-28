@@ -3367,14 +3367,14 @@ void SCH_LEGACY_PLUGIN_CACHE::DeleteSymbol( const wxString& aAliasName )
 
 void SCH_LEGACY_PLUGIN::cacheLib( const wxString& aLibraryFileName )
 {
-    if( !m_cache || !m_cache->IsFile( aLibraryFileName ) || m_cache->IsFileChanged() )
+    // buffered libraries are not reloaded
+    if( !m_cache || !m_cache->IsFile( aLibraryFileName )
+            || ( !isBuffering( m_props ) && m_cache->IsFileChanged() ) )
     {
         // a spectacular episode in memory management:
         delete m_cache;
         m_cache = new SCH_LEGACY_PLUGIN_CACHE( aLibraryFileName );
-
-        if( !isBuffering( m_props ) )
-            m_cache->Load();
+        m_cache->Load();
     }
 }
 

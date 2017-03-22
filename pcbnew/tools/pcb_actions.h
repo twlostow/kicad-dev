@@ -345,6 +345,7 @@ public:
     static TOOL_ACTION crossProbeSchToPcb;
     static TOOL_ACTION appendBoard;
     static TOOL_ACTION showHelp;
+    static TOOL_ACTION showLocalRatsnest;
     static TOOL_ACTION toBeDone;
 
     /// Find an item

@@ -553,8 +553,6 @@ void DRC::testUnconnected()
 
     connectivity->CheckConnectivity( report );
 
-    printf("Connectivity: %d unconnected\n", report.size());
-
     for( auto ent : report )
     {
     /*    DRC_ITEM* uncItem = new DRC_ITEM( DRCE_UNCONNECTED_PADS,
@@ -1111,4 +1109,3 @@ bool DRC::doFootprintOverlappingDrc()
 
     return success;
 }
-

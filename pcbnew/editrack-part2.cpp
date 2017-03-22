@@ -221,13 +221,12 @@ bool PCB_EDIT_FRAME::Other_Layer_Route( TRACK* aTrack, wxDC* DC )
 
 void PCB_EDIT_FRAME::Show_1_Ratsnest( EDA_ITEM* item, wxDC* DC )
 {
-    D_PAD*   pt_pad = NULL;
-    MODULE*  Module = NULL;
-
     if( GetBoard()->IsElementVisible(RATSNEST_VISIBLE) )
         return;
 
     Compile_Ratsnest( DC, true );
+
+// FIXME
 
 #if 0
     if( item )

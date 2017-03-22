@@ -41,7 +41,7 @@
 #include <view/view_controls.h>
 #include <view/view.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <ratsnest_data.h>
+#include <connectivity.h>
 #include <confirm.h>
 #include <bitmaps.h>
 #include <hotkeys.h>
@@ -420,6 +420,8 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
             lockOverride = false;
         }
     } while( ( evt = Wait() ) ); //Should be assignment not equality test
+
+    getModel<BOARD>()->GetConnectivity()->ClearDynamicRatsnest();
 
     controls->ForceCursorPosition( false );
     controls->ShowCursor( false );
@@ -1055,18 +1057,14 @@ void EDIT_TOOL::SetTransitions()
 
 void EDIT_TOOL::updateRatsnest( bool aRedraw )
 {
-    const SELECTION& selection = m_selectionTool->GetSelection();
-    RN_DATA* ratsnest = getModel<BOARD>()->GetRatsnest();
+    auto& selection = m_selectionTool->GetSelection();
+    auto connectivity = getModel<BOARD>()->GetConnectivity();
+    std::vector<BOARD_ITEM *> items;
 
-    ratsnest->ClearSimple();
+    for ( auto item : selection )
+        items.push_back ( static_cast<BOARD_ITEM *>( item ) );
 
-    for( auto item : selection )
-    {
-        ratsnest->Update( static_cast<BOARD_ITEM*>( item ) );
-
-        if( aRedraw )
-            ratsnest->AddSimple( static_cast<BOARD_ITEM*>( item ) );
-    }
+    connectivity->ComputeDynamicRatsnest( items );
 }
 
 

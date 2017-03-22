@@ -29,6 +29,7 @@
 #include <worksheet_viewitem.h>
 #include <ratsnest_viewitem.h>
 #include <ratsnest_data.h>
+#include <connectivity.h>
 
 #include <class_colors_design_settings.h>
 #include <class_board.h>
@@ -154,8 +155,9 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( const BOARD* aBoard )
         m_view->Add( zone );
 
     // Ratsnest
-    m_ratsnest.reset( new KIGFX::RATSNEST_VIEWITEM( aBoard->GetRatsnest() ) );
+    m_ratsnest.reset( new KIGFX::RATSNEST_VIEWITEM( aBoard->GetConnectivity() ) );
     m_view->Add( m_ratsnest.get() );
+
 
     // Display settings
     UseColorScheme( aBoard->GetColorsSettings() );
@@ -334,7 +336,8 @@ void PCB_DRAW_PANEL_GAL::GetMsgPanelInfo( std::vector<MSG_PANEL_ITEM>& aList )
     txt.Printf( wxT( "%d" ), board->GetNetCount() );
     aList.push_back( MSG_PANEL_ITEM( _( "Nets" ), txt, RED ) );
 
-    txt.Printf( wxT( "%d" ), board->GetRatsnest()->GetUnconnectedCount() );
+    txt.Printf( wxT( "%d" ), board->GetConnectivity()->GetUnconnectedCount() );
+
     aList.push_back( MSG_PANEL_ITEM( _( "Unconnected" ), txt, BLUE ) );
 }
 
@@ -394,6 +397,7 @@ void PCB_DRAW_PANEL_GAL::setDefaultLayerDeps()
         else if( IsNetnameLayer( layer ) )
             m_view->SetLayerDisplayOnly( layer );
     }
+
 
     m_view->SetLayerTarget( ITEM_GAL_LAYER( ANCHOR_VISIBLE ), KIGFX::TARGET_NONCACHED );
     m_view->SetLayerDisplayOnly( ITEM_GAL_LAYER( ANCHOR_VISIBLE ) );

@@ -472,6 +472,11 @@ public:
         return m_FilledPolysList;
     }
 
+    SHAPE_POLY_SET& FilledPolysList()
+    {
+        return m_FilledPolysList;
+    }
+
    /**
      * Function AddFilledPolysList
      * sets the list of filled polygons.
@@ -514,6 +519,12 @@ public:
     {
         m_FillSegmList.insert( m_FillSegmList.end(), aSegments.begin(), aSegments.end() );
     }
+
+    SHAPE_POLY_SET& RawPolysList()
+    {
+        return m_RawPolysList;
+    }
+
 
     wxString GetSelectMenuText() const override;
 
@@ -610,6 +621,7 @@ private:
      * described by m_Poly can have many filled areas
      */
     SHAPE_POLY_SET m_FilledPolysList;
+    SHAPE_POLY_SET m_RawPolysList;
 };
 
 

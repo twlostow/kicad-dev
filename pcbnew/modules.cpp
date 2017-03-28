@@ -411,11 +411,11 @@ void PCB_BASE_FRAME::PlaceModule( MODULE* aModule, wxDC* aDC, bool aDoNotRecreat
 
     m_canvas->SetMouseCapture( NULL, NULL );
 
+    m_Pcb->GetConnectivity()->ClearDynamicRatsnest();
     m_Pcb->GetConnectivity()->Update( aModule );
 
-
-    if( GetBoard()->IsElementVisible( RATSNEST_VISIBLE ) && !aDoNotRecreateRatsnest )
-        Compile_Ratsnest( aDC, true );
+    m_Pcb->m_Status_Pcb &= ~DO_NOT_SHOW_GENERAL_RASTNEST;
+    Compile_Ratsnest( aDC, true );
 
 
     if( aDC )

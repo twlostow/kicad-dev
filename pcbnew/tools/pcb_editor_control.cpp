@@ -148,6 +148,10 @@ TOOL_ACTION PCB_ACTIONS::highlightNetCursor( "pcbnew.EditorControl.highlightNetC
         AS_GLOBAL, 0,
         "", "" );
 
+TOOL_ACTION PCB_ACTIONS::showLocalRatsnest( "pcbnew.Control.showLocalRatsnest",
+        AS_GLOBAL, 0,
+        "", "" );
+
 
 class ZONE_CONTEXT_MENU : public CONTEXT_MENU
 {
@@ -484,7 +488,7 @@ int PCB_EDITOR_CONTROL::PlaceModule( const TOOL_EVENT& aEvent )
     controls->SetSnapping( false );
     controls->SetAutoPan( false );
     controls->CaptureCursor( false );
-    
+
 	view->Remove( &preview );
     m_frame->SetToolID( ID_NO_TOOL_SELECTED, wxCURSOR_DEFAULT, wxEmptyString );
 
@@ -1058,25 +1062,45 @@ int PCB_EDITOR_CONTROL::HighlightNetCursor( const TOOL_EVENT& aEvent )
     return 0;
 }
 
-static bool showLocalRatsnest( KIGFX::VIEW* aView, PCB_BASE_FRAME* aFrame,
-                            KIGFX::ORIGIN_VIEWITEM* aItem, const VECTOR2D& aPosition )
+static bool showLocalRatsnest( TOOL_MANAGER* aToolMgr, const VECTOR2D& aPosition )
 {
-    aFrame->SetAuxOrigin( wxPoint( aPosition.x, aPosition.y ) );
-    aItem->SetPosition( aPosition );
-    aView->MarkDirty();
+    auto selectionTool = aToolMgr->GetTool<SELECTION_TOOL>();
+
+    aToolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+    aToolMgr->RunAction( PCB_ACTIONS::selectionCursor, true );
+
+    const SELECTION& selection = selectionTool->GetSelection();
+
+    if( selection.Empty() )
+        return true;
+
+    for ( auto item : selection )
+    {
+        if ( item->Type() == PCB_MODULE_T )
+        {
+            for ( auto pad : static_cast<MODULE *> (item)->PadsIter() )
+            {
+                pad->SetLocalRatsnestVisible( true );
+            }
+        }
+    }
 
     return true;
 }
 
 int PCB_EDITOR_CONTROL::ShowLocalRatsnest( const TOOL_EVENT& aEvent )
 {
+    printf("ShowLocalRTool!\n");
+
     Activate();
+
+
 
     auto picker = m_toolMgr->GetTool<PICKER_TOOL>();
     assert( picker );
 
     m_frame->SetToolID( ID_PCB_SHOW_1_RATSNEST_BUTT, wxCURSOR_PENCIL, _( "Pick Components for Local Ratsnest" ) );
-    //picker->SetClickHandler( std::bind( showLocalRatsnest, m_toolMgr, _1 ) );
+    picker->SetClickHandler( std::bind( showLocalRatsnest, m_toolMgr, _1 ) );
     picker->SetSnapping( false );
     picker->Activate();
     Wait();
@@ -1113,7 +1137,9 @@ void PCB_EDITOR_CONTROL::SetTransitions()
     Go( &PCB_EDITOR_CONTROL::DrillOrigin,         PCB_ACTIONS::drillOrigin.MakeEvent() );
     Go( &PCB_EDITOR_CONTROL::HighlightNet,        PCB_ACTIONS::highlightNet.MakeEvent() );
     Go( &PCB_EDITOR_CONTROL::HighlightNetCursor,  PCB_ACTIONS::highlightNetCursor.MakeEvent() );
+    Go( &PCB_EDITOR_CONTROL::ShowLocalRatsnest,  PCB_ACTIONS::showLocalRatsnest.MakeEvent() );
 }
+
 
 
 const int PCB_EDITOR_CONTROL::WIDTH_STEP = 100000;

@@ -760,6 +760,18 @@ void BOARD::SetElementVisibility( int aPCB_VISIBLE, bool isEnabled )
 
         for ( int net = 1; net < GetNetCount(); net++ )
             GetConnectivity()->GetRatsnestForNet( net )->SetVisible( visible );
+        for ( auto track : Tracks() )
+            track->SetLocalRatsnestVisible( isEnabled );
+        for( auto mod : Modules() )
+            for ( auto pad : mod->PadsIter() )
+                pad->SetLocalRatsnestVisible( isEnabled );
+        for( int i = 0; i<GetAreaCount(); i++ )
+        {
+            auto zone = GetArea( i );
+            zone->SetLocalRatsnestVisible( isEnabled );
+        }
+
+        m_Status_Pcb = 0;
 
         break;
     }

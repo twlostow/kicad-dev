@@ -553,8 +553,16 @@ void PCB_LAYER_WIDGET::OnRenderEnable( int aId, bool isEnabled )
             galCanvas->GetGAL()->SetGridVisibility( myframe->IsGridVisible() );
             galCanvas->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
         }
+        else if ( aId == RATSNEST_VISIBLE )
+        {
+            galCanvas->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
+            galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), true );
+            // don't touch the layers. ratsnest is enabled on per-item basis.
+        }
         else
+        {
             galCanvas->GetView()->SetLayerVisible( ITEM_GAL_LAYER( aId ), isEnabled );
+        }
     }
 
     if( galCanvas && myframe->IsGalCanvasActive() )

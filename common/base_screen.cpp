@@ -91,8 +91,8 @@ void BASE_SCREEN::InitDataPoints( const wxSize& aPageSizeIU )
 
 double BASE_SCREEN::GetScalingFactor() const
 {
-    double scale = 1.0 / GetZoom();
-    return scale;
+    double zoom = GetZoom();
+    return 1.0 / ( zoom == 0.0 ? 1.0 : zoom );
 }
 
 

@@ -226,6 +226,14 @@ public:
         throw( IO_ERROR, boost::bad_pointer );
 
     /**
+     * Function RemoveLibrary
+     * removes a part library from the library list.
+     *
+     * @param aName - Name of part library to remove.
+     */
+    void RemoveLibrary( const wxString& aName );
+
+    /**
      * Function LoadAllLibraries
      * loads all of the project's libraries into this container, which should
      * be cleared before calling it.

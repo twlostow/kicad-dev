@@ -339,6 +339,22 @@ PART_LIB* PART_LIBS::AddLibrary( const wxString& aFileName, PART_LIBS::iterator&
 }
 
 
+void PART_LIBS::RemoveLibrary( const wxString& aName )
+{
+    if( aName.IsEmpty() )
+        return;
+
+    for( PART_LIBS::iterator it = begin(); it < end();  ++it )
+    {
+        if( it->GetName().CmpNoCase( aName ) == 0 )
+        {
+            erase( it );
+            return;
+        }
+    }
+}
+
+
 PART_LIB* PART_LIBS::FindLibrary( const wxString& aName )
 {
     for( PART_LIBS::iterator it = begin();  it!=end();  ++it )

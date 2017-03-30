@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2016 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 1992-2017 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2017 CERN
+ * @author Michele Castellana <michele.castellana@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,12 +44,10 @@
 
 /*  Forward declarations of all top-level window classes. */
 class wxAuiToolBar;
-class FOOTPRINTS_LISTBOX;
 class COMPONENTS_LISTBOX;
-class LIBRARY_LISTBOX;
 class DISPLAY_FOOTPRINTS_FRAME;
 class COMPONENT;
-class FP_LIB_TABLE;
+class FOOTPRINTS_TREE;
 
 namespace CV { struct IFACE; }
 
@@ -59,15 +59,11 @@ class CVPCB_MAINFRAME : public KIWAY_PLAYER
     friend struct CV::IFACE;
 
     wxArrayString             m_footprintListEntries;
-    wxString                  m_currentSearchPattern;
     bool                      m_keepCvpcbOpen;
     NETLIST                   m_netlist;
-    int                       m_filteringOptions;
     wxAuiToolBar*             m_mainToolBar;
-    FOOTPRINTS_LISTBOX*       m_footprintListBox;
-    LIBRARY_LISTBOX*          m_libListBox;
     COMPONENTS_LISTBOX*       m_compListBox;
-    wxTextCtrl*               m_tcFilterString;
+    FOOTPRINTS_TREE*          m_panelTree;
 
 public:
     wxArrayString             m_ModuleLibNames;
@@ -175,8 +171,11 @@ public:
     void             SetNewPkg( const wxString& aFootprintName );
 
     void             BuildCmpListBox();
-    void             BuildFOOTPRINTS_LISTBOX();
-    void             BuildLIBRARY_LISTBOX();
+
+    /**
+     * Refreshes the footprint tree contents.
+     */
+    void             BuildFpTree();
 
     /**
      * Create or Update the frame showing the current highlighted footprint
@@ -232,7 +231,7 @@ public:
     void             DisplayStatus();
 
     /**
-     * Function LoadFootprintFiles
+     * Function LoadFootprints
      * reads the list of footprint (*.mod files) and generate the list of footprints.
      * for each module are stored
      *      the module name
@@ -242,7 +241,7 @@ public:
      * fills m_footprints
      * @return true if libraries are found, false otherwise.
      */
-    bool             LoadFootprintFiles();
+    bool             LoadFootprints();
 
     /**
      * Function GetProjectFileParameters
@@ -283,7 +282,7 @@ public:
      * @return the LIB_ID of the selected footprint in footprint listview
      * or a empty string if no selection
      */
-    const wxString GetSelectedFootprint();
+    wxString GetSelectedFootprint() const;
 
 private:
     // UI event handlers.
@@ -291,7 +290,6 @@ private:
     void OnUpdateKeepOpenOnSave( wxUpdateUIEvent& event );
     void OnFilterFPbyKeywords( wxUpdateUIEvent& event );
     void OnFilterFPbyPinCount( wxUpdateUIEvent& event );
-    void OnFilterFPbyLibrary( wxUpdateUIEvent& event );
     void OnFilterFPbyKeyName( wxUpdateUIEvent& event );
 
     /**

@@ -13,6 +13,7 @@ include_directories(
     ../pcbnew/dialogs
     ../polygon
     ../common
+    ../common/dialogs
     ${GLM_INCLUDE_DIR}
     ${INC_AFTER}
     )
@@ -25,6 +26,7 @@ set( CVPCB_DIALOGS
     dialogs/dialog_display_options_base.cpp
     dialogs/dialog_config_equfiles_base.cpp
     dialogs/dialog_config_equfiles.cpp
+    dialogs/dialog_footprints_tree.cpp
     ../pcbnew/dialogs/dialog_fp_lib_table.cpp
     ../pcbnew/dialogs/dialog_fp_lib_table_base.cpp
     ../pcbnew/dialogs/dialog_fp_plugin_options.cpp

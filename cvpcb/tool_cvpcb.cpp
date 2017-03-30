@@ -92,24 +92,6 @@ void CVPCB_MAINFRAME::ReCreateHToolbar()
                             _( "Filter footprint list by pin count" ),
                             wxEmptyString );
 
-    m_mainToolBar->AddTool( ID_CVPCB_FOOTPRINT_DISPLAY_BY_LIBRARY_LIST,
-                            KiBitmap( module_library_list_xpm ),
-                            wxNullBitmap, true, NULL,
-                            _( "Filter footprint list by library" ),
-                            wxEmptyString );
-
-    m_mainToolBar->AddSeparator();
-    m_mainToolBar->AddTool( ID_CVPCB_FOOTPRINT_DISPLAY_BY_NAME,
-                            KiBitmap( module_name_filtered_list_xpm ),
-                            wxNullBitmap, true, NULL,
-                            _( "Filter footprint list using a partial name or a pattern" ),
-                            wxEmptyString );
-
-    m_tcFilterString = new wxTextCtrl( m_mainToolBar, ID_CVPCB_FILTER_TEXT_EDIT );
-
-    m_mainToolBar->AddControl( m_tcFilterString );
-
-
     // after adding the buttons to the toolbar, must call Realize() to reflect the changes
     m_mainToolBar->Realize();
 }

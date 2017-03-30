@@ -34,6 +34,7 @@
 #include <schframe.h>
 #include <invoke_sch_dialog.h>
 #include <common.h>
+#include <dialog_eeschema_tree.h>
 
 #include <eeschema_id.h>
 #include <general.h>
@@ -788,6 +789,7 @@ void LIB_EDIT_FRAME::SaveSettings( wxConfigBase* aCfg )
     aCfg->Write( repeatLibStepXEntry, (long) GetRepeatStep().x );
     aCfg->Write( repeatLibStepYEntry, (long) GetRepeatStep().y );
     aCfg->Write( showPinElectricalType, GetShowElectricalType() );
+    m_panelTree->SaveSettings( aCfg );
 }
 
 

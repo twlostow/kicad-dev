@@ -39,18 +39,27 @@
 #include <wildcards_and_files_ext.h>
 
 #include <wx/filename.h>
+#include <dialog_eeschema_tree.h>
+#include <lib_manager.h>
 
 
-extern int ExportPartId;
-
-
-void LIB_EDIT_FRAME::OnImportPart( wxCommandEvent& event )
+void LIB_EDIT_FRAME::ImportPart( wxCommandEvent& event )
 {
     m_lastDrawItem = NULL;
 
+    // Select either the library chosen in the panel tree or the currently modified library
+    PART_LIB* curLib = GetSelectedLib();
+
+    if( !curLib )
+    {
+        curLib = SelectLibraryFromList();
+
+        if( !curLib )
+            return;
+    }
+
     wxFileDialog dlg( this, _( "Import Component" ), m_mruPath,
-                      wxEmptyString, SchematicLibraryFileWildcard,
-                      wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+            wxEmptyString, SchematicLibraryFileWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
@@ -66,12 +75,8 @@ void LIB_EDIT_FRAME::OnImportPart( wxCommandEvent& event )
     }
     catch( const IO_ERROR& )
     {
-        wxString msg = wxString::Format( _(
-            "Unable to import library '%s'.  Error:\n"
-            "%s" ),
-            GetChars( fn.GetFullPath() )
-            );
-
+        wxString msg = wxString::Format( _( "Unable to import library '%s'." ),
+            GetChars( fn.GetFullPath() ) );
         DisplayError( this, msg );
         return;
     }
@@ -88,22 +93,24 @@ void LIB_EDIT_FRAME::OnImportPart( wxCommandEvent& event )
     }
 
     LIB_ALIAS* entry = lib->FindAlias( aliasNames[0] );
-
-    if( LoadOneLibraryPartAux( entry, lib.get() ) )
-    {
-        DisplayLibInfos();
-        GetScreen()->ClearUndoRedoList();
-        Zoom_Automatique( false );
-    }
+    m_libMgr->UpdatePart( entry->GetPart(), curLib->GetName() );
+    m_panelTree->UpdateLibrary( curLib->GetName() );
 }
 
 
-void LIB_EDIT_FRAME::OnExportPart( wxCommandEvent& event )
+void LIB_EDIT_FRAME::ExportPart( wxCommandEvent& event )
 {
-    wxString    msg, title;
-    bool        createLib = ( event.GetId() == ExportPartId ) ? false : true;
+    // Select either the library chosen in the panel tree or the currently modified library
+    PART_LIB* curLib = GetSelectedLib();
 
-    LIB_PART*   part = GetCurPart();
+    if( !curLib )
+    {
+        DisplayError( this, _( "You need to select destination library first." ) );
+        return;
+    }
+
+    wxString msg;
+    LIB_PART* part = GetSelectedPart();
 
     if( !part )
     {
@@ -114,9 +121,7 @@ void LIB_EDIT_FRAME::OnExportPart( wxCommandEvent& event )
     wxFileName fn = part->GetName().Lower();
     fn.SetExt( SchematicLibraryFileExtension );
 
-    title = createLib ? _( "New Library" ) : _( "Export Component" );
-
-    wxFileDialog dlg( this, title, m_mruPath, fn.GetFullName(),
+    wxFileDialog dlg( this, _( "Export Component" ), m_mruPath, fn.GetFullName(),
                       SchematicLibraryFileWildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     if( dlg.ShowModal() == wxID_CANCEL )
@@ -141,12 +146,6 @@ void LIB_EDIT_FRAME::OnExportPart( wxCommandEvent& event )
     }
 
     m_mruPath = fn.GetPath();
-
-    msg.Printf( _( "'%s' - OK" ), GetChars( fn.GetFullPath() ) );
-    DisplayInfoMessage( this, _( "This library will not be available until it is loaded by "
-                                 "Eeschema.\n\n"
-                                 "Modify the Eeschema library configuration if you want to "
-                                 "include it as part of this project." ) );
 
     msg.Printf( _( "'%s' - Export OK" ), GetChars( fn.GetFullPath() ) );
     SetStatusText( msg );

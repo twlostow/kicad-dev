@@ -73,7 +73,7 @@ void LIB_EDIT_FRAME::GetComponentFromRedoList( wxCommandEvent& event )
     // which calls delete <previous part>.
     // <previous part> is now put in undo list and is owned by this list
     // Just set the current part to the part which come from the redo list
-    m_my_part = part;
+    m_curPart = part;
 
     if( !part )
         return;
@@ -116,7 +116,7 @@ void LIB_EDIT_FRAME::GetComponentFromUndoList( wxCommandEvent& event )
     // which calls delete <previous part>.
     // <previous part> is now put in redo list and is owned by this list.
     // Just set the current part to the part which come from the undo list
-    m_my_part = part;
+    m_curPart = part;
 
     if( !part )
         return;

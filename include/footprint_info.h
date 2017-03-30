@@ -50,7 +50,7 @@ class FP_LIB_TABLE;
 class FOOTPRINT_LIST;
 class FOOTPRINT_LIST_IMPL;
 class FOOTPRINT_ASYNC_LOADER;
-class wxTopLevelWindow;
+class wxWindow;
 class KIWAY;
 
 
@@ -253,7 +253,7 @@ public:
      */
     virtual bool ReadFootprintFiles( FP_LIB_TABLE* aTable, const wxString* aNickname = NULL ) = 0;
 
-    void DisplayErrors( wxTopLevelWindow* aCaller = NULL );
+    void DisplayErrors( wxWindow* aCaller = NULL );
 
     FP_LIB_TABLE* GetTable() const
     {

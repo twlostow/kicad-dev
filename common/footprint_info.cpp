@@ -80,7 +80,7 @@ bool FOOTPRINT_INFO::InLibrary( const wxString& aLibrary ) const
 }
 
 
-void FOOTPRINT_LIST::DisplayErrors( wxTopLevelWindow* aWindow )
+void FOOTPRINT_LIST::DisplayErrors( wxWindow* aWindow )
 {
     // @todo: go to a more HTML !<table>! ? centric output, possibly with
     // recommendations for remedy of errors.  Add numeric error codes

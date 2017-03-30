@@ -257,7 +257,7 @@ private:
 public:
 
     LIB_PART( const wxString& aName, PART_LIB* aLibrary = NULL );
-    LIB_PART( LIB_PART& aPart, PART_LIB* aLibrary = NULL );
+    LIB_PART( const LIB_PART& aPart, PART_LIB* aLibrary = NULL );
 
     virtual ~LIB_PART();
 
@@ -279,9 +279,9 @@ public:
     const LIB_ID& GetLibId() const { return m_libId; }
     void SetLibId( const LIB_ID& aLibId ) { m_libId = aLibId; }
 
-    const wxString GetLibraryName();
+    const wxString GetLibraryName() const;
 
-    PART_LIB* GetLib()              { return m_library; }
+    PART_LIB* GetLib() const        { return m_library; }
 
     void SetLib( PART_LIB* aLibrary ) { m_library = aLibrary; }
 
@@ -289,9 +289,9 @@ public:
 
     size_t GetAliasCount() const    { return m_aliases.size(); }
 
-    LIB_ALIAS* GetAlias( size_t aIndex );
+    LIB_ALIAS* GetAlias( size_t aIndex ) const;
 
-    LIB_ALIAS* GetAlias( const wxString& aName );
+    LIB_ALIAS* GetAlias( const wxString& aName ) const;
 
     /**
      * Function AddAlias
@@ -682,6 +682,7 @@ public:
      * @return LIB_ITEMS& - Reference to the draw item object list.
      */
     LIB_ITEMS& GetDrawItemList() { return drawings; }
+    const LIB_ITEMS& GetDrawItemList() const { return drawings; }
 
     /**
      * Set the units per part count.

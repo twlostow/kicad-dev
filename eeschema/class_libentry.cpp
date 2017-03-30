@@ -49,7 +49,6 @@
 #include <lib_rectangle.h>
 #include <lib_text.h>
 
-
 // the separator char between the subpart id and the reference
 // 0 (no separator) or '.' or some other character
 int LIB_PART::m_subpartIdSeparator = 0;
@@ -206,7 +205,7 @@ LIB_PART::LIB_PART( const wxString& aName, PART_LIB* aLibrary ) :
 }
 
 
-LIB_PART::LIB_PART( LIB_PART& aPart, PART_LIB* aLibrary ) :
+LIB_PART::LIB_PART( const LIB_PART& aPart, PART_LIB* aLibrary ) :
     EDA_ITEM( aPart ),
     m_me( this, null_deleter() )
 {
@@ -223,7 +222,7 @@ LIB_PART::LIB_PART( LIB_PART& aPart, PART_LIB* aLibrary ) :
     m_dateModified        = aPart.m_dateModified;
     m_options             = aPart.m_options;
 
-    for( LIB_ITEM& oldItem : aPart.GetDrawItemList() )
+    for( const LIB_ITEM& oldItem : aPart.GetDrawItemList() )
     {
         if( oldItem.IsNew() )
             continue;
@@ -259,7 +258,7 @@ LIB_PART::~LIB_PART()
 }
 
 
-const wxString LIB_PART::GetLibraryName()
+const wxString LIB_PART::GetLibraryName() const
 {
     if( m_library )
         return m_library->GetName();
@@ -1861,7 +1860,7 @@ void LIB_PART::RemoveAllAliases()
 }
 
 
-LIB_ALIAS* LIB_PART::GetAlias( const wxString& aName )
+LIB_ALIAS* LIB_PART::GetAlias( const wxString& aName ) const
 {
     wxCHECK2_MSG( !aName.IsEmpty(), return NULL,
                   wxT( "Cannot get alias with an empty name.  Bad programmer!" ) );
@@ -1876,7 +1875,7 @@ LIB_ALIAS* LIB_PART::GetAlias( const wxString& aName )
 }
 
 
-LIB_ALIAS* LIB_PART::GetAlias( size_t aIndex )
+LIB_ALIAS* LIB_PART::GetAlias( size_t aIndex ) const
 {
     wxCHECK2_MSG( aIndex < m_aliases.size(), return NULL,
                   wxT( "Illegal alias list index, bad programmer." ) );

@@ -479,14 +479,14 @@ public:
      *
      * @return wxString - Full library file name with path and extension.
      */
-    wxString GetFullFileName()          { return fileName.GetFullPath(); }
+    wxString GetFullFileName() const    { return fileName.GetFullPath(); }
 
     /**
      * Function GetLogicalName
      * returns the logical name of the library.
      * @return wxString - The logical name of this library.
      */
-    const wxString GetLogicalName()
+    const wxString GetLogicalName() const
     {
         /*  for now is the filename without path or extension.
 

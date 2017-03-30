@@ -367,7 +367,7 @@ public:
      */
     bool IsEmpty() const
     {
-        return m_plugin->GetSymbolLibCount( fileName.GetFullPath() ) == 0;
+        return m_plugin->GetSymbolLibCount( fileName.GetFullPath(), m_properties.get() ) == 0;
     }
 
     /**
@@ -378,7 +378,7 @@ public:
      */
     int GetCount() const
     {
-        return (int) m_plugin->GetSymbolLibCount( fileName.GetFullPath() );
+        return (int) m_plugin->GetSymbolLibCount( fileName.GetFullPath(), m_properties.get() );
     }
 
     bool IsModified() const

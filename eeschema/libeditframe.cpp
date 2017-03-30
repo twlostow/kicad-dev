@@ -255,7 +255,6 @@ LIB_EDIT_FRAME::LIB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
             m_aliasName = part->GetName();
     }
 
-
     CreateOptionToolbar();
     DisplayLibInfos();
     DisplayCmpDoc();
@@ -370,9 +369,9 @@ double LIB_EDIT_FRAME::BestZoom()
      * search for line static const int VIEWPORT_EXTENT = 1000;
      * and replace by static const int VIEWPORT_EXTENT = 10000;
      */
-    int      dx, dy;
+    int dx, dy;
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     if( part )
     {
@@ -396,15 +395,15 @@ double LIB_EDIT_FRAME::BestZoom()
 
     // Reserve a 10% margin around component bounding box.
     double margin_scale_factor = 0.8;
-    double zx =(double) dx / ( margin_scale_factor * (double)size.x );
-    double zy = (double) dy / ( margin_scale_factor * (double)size.y );
+    double zx = (double) dx / ( margin_scale_factor * (double) size.x );
+    double zy = (double) dy / ( margin_scale_factor * (double) size.y );
 
     double bestzoom = std::max( zx, zy );
 
     // keep it >= minimal existing zoom (can happen for very small components
     // for instance when starting a new component
     if( bestzoom  < GetScreen()->m_ZoomList[0] )
-        bestzoom  = GetScreen()->m_ZoomList[0];
+        bestzoom = GetScreen()->m_ZoomList[0];
 
     return bestzoom;
 }
@@ -417,7 +416,7 @@ void LIB_EDIT_FRAME::UpdateAliasSelectList()
 
     m_aliasSelectBox->Clear();
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     if( !part )
         return;
@@ -440,7 +439,7 @@ void LIB_EDIT_FRAME::UpdatePartSelectList()
     if( m_partSelectBox->GetCount() != 0 )
         m_partSelectBox->Clear();
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     if( !part || part->GetUnitCount() <= 1 )
     {
@@ -451,7 +450,7 @@ void LIB_EDIT_FRAME::UpdatePartSelectList()
     {
         for( int i = 0; i < part->GetUnitCount(); i++ )
         {
-            wxString sub  = LIB_PART::SubReference( i+1, false );
+            wxString sub = LIB_PART::SubReference( i + 1, false );
             wxString unit = wxString::Format( _( "Unit %s" ), GetChars( sub ) );
             m_partSelectBox->Append( unit );
         }
@@ -481,7 +480,7 @@ void LIB_EDIT_FRAME::OnUpdateElectricalType( wxUpdateUIEvent& aEvent )
 
 void LIB_EDIT_FRAME::OnUpdateEditingPart( wxUpdateUIEvent& aEvent )
 {
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     aEvent.Enable( part != NULL );
 
@@ -522,9 +521,8 @@ void LIB_EDIT_FRAME::OnUpdateSaveCurrentLib( wxUpdateUIEvent& event )
 void LIB_EDIT_FRAME::OnUpdateViewDoc( wxUpdateUIEvent& event )
 {
     bool enable = false;
-
-    PART_LIB*    lib  = GetCurLib();
-    LIB_PART*       part = GetCurPart();
+    PART_LIB* lib  = GetCurLib();
+    LIB_PART* part = GetCurPart();
 
     if( part && lib )
     {
@@ -541,10 +539,8 @@ void LIB_EDIT_FRAME::OnUpdateViewDoc( wxUpdateUIEvent& event )
 
 void LIB_EDIT_FRAME::OnUpdatePinByPin( wxUpdateUIEvent& event )
 {
-    LIB_PART*      part = GetCurPart();
-
+    LIB_PART* part = GetCurPart();
     event.Enable( part && ( part->GetUnitCount() > 1 || m_showDeMorgan ) );
-
     event.Check( m_editPinsPerPartOrConvert );
 }
 
@@ -561,7 +557,7 @@ void LIB_EDIT_FRAME::OnUpdatePartNumber( wxUpdateUIEvent& event )
     if( m_partSelectBox == NULL )
         return;
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     // Using the typical event.Enable() call doesn't seem to work with wxGTK
     // so use the pointer to alias combobox to directly enable or disable.
@@ -574,7 +570,7 @@ void LIB_EDIT_FRAME::OnUpdateDeMorganNormal( wxUpdateUIEvent& event )
     if( m_mainToolBar == NULL )
         return;
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     event.Enable( GetShowDeMorgan() || ( part && part->HasConversion() ) );
     event.Check( m_convert <= 1 );
@@ -586,7 +582,7 @@ void LIB_EDIT_FRAME::OnUpdateDeMorganConvert( wxUpdateUIEvent& event )
     if( m_mainToolBar == NULL )
         return;
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     event.Enable( GetShowDeMorgan() || ( part && part->HasConversion() ) );
     event.Check( m_convert > 1 );
@@ -775,10 +771,12 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_POPUP_LIBEDIT_END_CREATE_ITEM:
         m_canvas->MoveCursorToCrossHair();
+
         if( m_drawItem )
         {
             EndDrawGraphicItem( &dc );
         }
+
         break;
 
     case ID_POPUP_LIBEDIT_BODY_EDIT_ITEM:
@@ -881,7 +879,7 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             if( !m_drawItem || m_drawItem->Type() != LIB_PIN_T )
                 break;
 
-            LIB_PART*      part = GetCurPart();
+            LIB_PART* part = GetCurPart();
 
             SaveCopyInUndoList( part );
 
@@ -1129,7 +1127,7 @@ void LIB_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
     m_canvas->EndMouseCapture( ID_NO_TOOL_SELECTED, m_canvas->GetDefaultCursor(),
                                wxEmptyString );
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     switch( id )
     {
@@ -1219,7 +1217,7 @@ void LIB_EDIT_FRAME::OnRotateItem( wxCommandEvent& aEvent )
 
     if( !m_drawItem->InEditMode() )
     {
-        LIB_PART*      part = GetCurPart();
+        LIB_PART* part = GetCurPart();
 
         SaveCopyInUndoList( part );
         m_drawItem->SetUnit( m_unit );
@@ -1242,6 +1240,7 @@ void LIB_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
 {
     INSTALL_UNBUFFERED_DC( dc, m_canvas );
     SCH_SCREEN* screen = GetScreen();
+
     // Allows block rotate operation on hot key.
     if( screen->m_BlockLocate.GetState() != STATE_NO_BLOCK )
     {
@@ -1266,7 +1265,7 @@ void LIB_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
 LIB_ITEM* LIB_EDIT_FRAME::LocateItemUsingCursor( const wxPoint& aPosition,
                                                  const KICAD_T aFilterList[] )
 {
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     if( !part )
         return NULL;
@@ -1284,7 +1283,7 @@ LIB_ITEM* LIB_EDIT_FRAME::LocateItemUsingCursor( const wxPoint& aPosition,
 
 LIB_ITEM* LIB_EDIT_FRAME::locateItem( const wxPoint& aPosition, const KICAD_T aFilterList[] )
 {
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     if( !part )
         return NULL;
@@ -1315,7 +1314,7 @@ LIB_ITEM* LIB_EDIT_FRAME::locateItem( const wxPoint& aPosition, const KICAD_T aF
 
             selectMenu.AppendSeparator();
 
-            for( int i = 0;  i < m_collectedItems.GetCount() && i < MAX_SELECT_ITEM_IDS;  i++ )
+            for( int i = 0; i < m_collectedItems.GetCount() && i < MAX_SELECT_ITEM_IDS; i++ )
             {
                 wxString    text = m_collectedItems[i]->GetSelectMenuText();
                 BITMAP_DEF  xpm = m_collectedItems[i]->GetMenuImage();
@@ -1353,7 +1352,7 @@ void LIB_EDIT_FRAME::deleteItem( wxDC* aDC )
 
     m_canvas->CrossHairOff( aDC );
 
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     SaveCopyInUndoList( part );
 
@@ -1408,7 +1407,7 @@ void LIB_EDIT_FRAME::OnSelectItem( wxCommandEvent& aEvent )
     int index = id - ID_SELECT_ITEM_START;
 
     if( (id >= ID_SELECT_ITEM_START && id <= ID_SELECT_ITEM_END)
-        && (index >= 0 && index < m_collectedItems.GetCount()) )
+        && ( index >= 0 && index < m_collectedItems.GetCount() ) )
     {
         LIB_ITEM* item = m_collectedItems[index];
         m_canvas->SetAbortRequest( false );
@@ -1432,7 +1431,7 @@ void LIB_EDIT_FRAME::OnOpenPinTable( wxCommandEvent& aEvent )
 
 bool LIB_EDIT_FRAME::SynchronizePins()
 {
-    LIB_PART*      part = GetCurPart();
+    LIB_PART* part = GetCurPart();
 
     return !m_editPinsPerPartOrConvert && ( part &&
         ( part->HasConversion() || part->IsMulti() ) );

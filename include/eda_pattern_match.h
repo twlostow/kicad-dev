@@ -58,7 +58,7 @@ public:
     virtual wxString const& GetPattern() const = 0;
 
     /**
-     * Return the location of a match iff a given candidate string matches the set pattern.
+     * Return the location of a match if a given candidate string matches the set pattern.
      * Otherwise, return EDA_PATTERN_NOT_FOUND.
      */
     virtual int Find( const wxString& aCandidate ) const = 0;

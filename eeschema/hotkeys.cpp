@@ -766,10 +766,6 @@ bool LIB_EDIT_FRAME::OnHotKey( wxDC* aDC, int aHotKey, const wxPoint& aPosition,
         }
         break;
 
-    case HK_LIBEDIT_LOAD_PART:
-        LoadOneLibraryPart( cmd );
-        break;
-
     case HK_LIBEDIT_CREATE_PIN:
         if( ! itemInEdit )
         {

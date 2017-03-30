@@ -675,7 +675,7 @@ void LIB_EDIT_FRAME::CreateNewLibraryPart( wxCommandEvent& event )
         new_part->LockUnits( false );
 
     m_unit = 1;
-    m_convert  = 1;
+    m_convert = 1;
 
     DisplayLibInfos();
     DisplayCmpDoc();

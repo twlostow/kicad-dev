@@ -55,10 +55,8 @@ void LIB_EDIT_FRAME::OnImportPart( wxCommandEvent& event )
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
 
-    wxFileName  fn = dlg.GetPath();
-
+    wxFileName fn = dlg.GetPath();
     m_mruPath = fn.GetPath();
-
     std::unique_ptr<PART_LIB> lib;
 
     try
@@ -79,14 +77,13 @@ void LIB_EDIT_FRAME::OnImportPart( wxCommandEvent& event )
     }
 
     wxArrayString aliasNames;
-
     lib->GetAliasNames( aliasNames );
 
     if( aliasNames.IsEmpty() )
     {
         wxString msg = wxString::Format( _( "Part library file '%s' is empty." ),
                                          GetChars( fn.GetFullPath() ) );
-        DisplayError( this,  msg );
+        DisplayError( this, msg );
         return;
     }
 
@@ -115,7 +112,6 @@ void LIB_EDIT_FRAME::OnExportPart( wxCommandEvent& event )
     }
 
     wxFileName fn = part->GetName().Lower();
-
     fn.SetExt( SchematicLibraryFileExtension );
 
     title = createLib ? _( "New Library" ) : _( "Export Component" );

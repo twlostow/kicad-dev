@@ -210,8 +210,8 @@ public:
      * Function OnPlotCurrentComponent
      * plot the current component in SVG or PNG format.
      */
-    void OnPlotCurrentComponent( wxCommandEvent& event );
-    void Process_Special_Functions( wxCommandEvent& event );
+    void OnPlotCurrentComponent( wxCommandEvent& aEvent );
+    void Process_Special_Functions( wxCommandEvent& aEvent );
     void OnSelectTool( wxCommandEvent& aEvent );
 
     /**
@@ -271,12 +271,12 @@ public:
      * to load.  If there is no current selected library, the user is prompted to select
      * a library name and then select component to load.
      */
-    void LoadOneLibraryPart( wxCommandEvent& event );
+    void LoadOneLibraryPart( wxCommandEvent& aEvent );
 
-    void OnViewEntryDoc( wxCommandEvent& event );
-    void OnCheckComponent( wxCommandEvent& event );
-    void OnSelectBodyStyle( wxCommandEvent& event );
-    void OnEditPin( wxCommandEvent& event );
+    void OnViewEntryDoc( wxCommandEvent& aEvent );
+    void OnCheckComponent( wxCommandEvent& aEvent );
+    void OnSelectBodyStyle( wxCommandEvent& aEvent );
+    void OnEditPin( wxCommandEvent& aEvent );
     void OnSelectItem( wxCommandEvent& aEvent );
 
     void OnOpenPinTable( wxCommandEvent& aEvent );
@@ -284,19 +284,24 @@ public:
     void OnSaveCurrentPart( wxCommandEvent& aEvent );
 
     void OnUpdateSelectTool( wxUpdateUIEvent& aEvent );
-    void OnUpdateEditingPart( wxUpdateUIEvent& event );
-    void OnUpdateNotEditingPart( wxUpdateUIEvent& event );
-    void OnUpdateUndo( wxUpdateUIEvent& event );
-    void OnUpdateRedo( wxUpdateUIEvent& event );
-    void OnUpdateSaveCurrentLib( wxUpdateUIEvent& event );
-    void OnUpdateViewDoc( wxUpdateUIEvent& event );
-    void OnUpdatePinByPin( wxUpdateUIEvent& event );
-    void OnUpdatePinTable( wxUpdateUIEvent& event );
-    void OnUpdatePartNumber( wxUpdateUIEvent& event );
-    void OnUpdateDeMorganNormal( wxUpdateUIEvent& event );
-    void OnUpdateDeMorganConvert( wxUpdateUIEvent& event );
-    void OnUpdateSelectAlias( wxUpdateUIEvent& event );
+    void OnUpdateSelectedLib( wxUpdateUIEvent& aEvent );
+    void OnUpdateEditingPart( wxUpdateUIEvent& aEvent );
+    void OnUpdateNotEditingPart( wxUpdateUIEvent& aEvent );
+    void OnUpdatePartModified( wxUpdateUIEvent& aEvent );
+    void OnUpdateLibModified( wxUpdateUIEvent& aEvent );
+    void OnUpdateClipboardNotEmpty( wxUpdateUIEvent& aEvent );
+    void OnUpdateUndo( wxUpdateUIEvent& aEvent );
+    void OnUpdateRedo( wxUpdateUIEvent& aEvent );
+    void OnUpdateSaveCurrentLib( wxUpdateUIEvent& aEvent );
+    void OnUpdateViewDoc( wxUpdateUIEvent& aEvent );
+    void OnUpdatePinByPin( wxUpdateUIEvent& aEvent );
+    void OnUpdatePinTable( wxUpdateUIEvent& aEvent );
+    void OnUpdatePartNumber( wxUpdateUIEvent& aEvent );
+    void OnUpdateDeMorganNormal( wxUpdateUIEvent& aEvent );
+    void OnUpdateDeMorganConvert( wxUpdateUIEvent& aEvent );
+    void OnUpdateSelectAlias( wxUpdateUIEvent& aEvent );
     void OnUpdateElectricalType( wxUpdateUIEvent& aEvent );
+    void OnUpdateSearchTree( wxUpdateUIEvent& aEvent );
 
     void UpdateAliasSelectList();
     void UpdatePartSelectList();

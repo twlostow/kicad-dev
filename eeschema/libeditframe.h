@@ -32,13 +32,13 @@
 #define LIBEDITFRM_H_
 
 #include <sch_base_frame.h>
-#include <class_sch_screen.h>
 
 #include <lib_draw_item.h>
 #include <lib_collectors.h>
 
 
 class SCH_EDIT_FRAME;
+class SCH_SCREEN;
 class PART_LIB;
 class LIB_PART;
 class LIB_ALIAS;

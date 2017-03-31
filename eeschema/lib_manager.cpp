@@ -294,7 +294,7 @@ PART_LIB* LIB_MANAGER::GetLibraryCopy( const wxString& aLibrary )
 }
 
 
-LIB_PART* LIB_MANAGER::GetPart( const wxString& aPart, const wxString& aLibrary ) const
+LIB_PART* LIB_MANAGER::GetPart( const wxString& aPart, const wxString& aLibrary, bool& aIsAlias ) const
 {
     PART_LIB* library = nullptr;
 
@@ -308,8 +308,21 @@ LIB_PART* LIB_MANAGER::GetPart( const wxString& aPart, const wxString& aLibrary 
     if( !library )
         library = getOriginalLib( aLibrary );
 
+    if( library )
+    {
+        auto alias = library->FindAlias( aPart );
+        aIsAlias = !( alias->GetPart()->GetName() == alias->GetName() );
+    }
+
     return library ? library->FindPart( aPart ) : nullptr;
 }
+
+LIB_PART* LIB_MANAGER::GetPart( const wxString& aPart, const wxString& aLibrary ) const
+{
+    bool dummy;
+    return GetPart( aPart, aLibrary, dummy );
+}
+
 
 
 LIB_PART* LIB_MANAGER::GetPartCopy( const wxString& aPart, const wxString& aLibrary )

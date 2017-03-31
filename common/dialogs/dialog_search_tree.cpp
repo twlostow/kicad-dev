@@ -196,20 +196,29 @@ wxString SEARCH_TREE::GetComponent( const ITEM_ID& aItem ) const
     return GetText( GetItemAtLevel( aItem, 1 ) );
 }
 
+bool SEARCH_TREE::SetItemFont( const ITEM_ID& aItem, bool aBold, bool aItalic )
+{
+    if( !aItem.IsOk() )
+        return false;
+
+    auto font = m_tree->GetItemFont( aItem );
+    font.SetStyle( aItalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL );
+    font.SetWeight( aBold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL );
+    m_tree->SetItemFont( aItem, font );
+    return true;
+}
 
 bool SEARCH_TREE::SetModified( const ITEM_ID& aItem, bool aModified )
 {
     if( !aItem.IsOk() )
         return false;
 
-    m_tree->SetItemBold( aItem, aModified );
     ITEM_DATA* data = static_cast<ITEM_DATA*>( m_tree->GetItemData( aItem ) );
     assert( data );
     data->m_modified = aModified;
 
     return true;
 }
-
 
 bool SEARCH_TREE::IsModified( const ITEM_ID& aItem ) const
 {

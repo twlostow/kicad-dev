@@ -313,13 +313,21 @@ public:
     wxString GetComponent( const ITEM_ID& aItem ) const;
 
     /**
+     * Sets the font for an item.
+     * @param aItem is the item name to be marked.
+     * @param aBold makes the item displayed with a bold font
+     * @param aItalic makes the item displayed with an italic font
+     * @return False in case of an error, true otherwise.
+     */
+    bool SetItemFont( const ITEM_ID& aItem, bool aBold, bool aItalic );
+
+	/**
      * Marks an item as (un)modified.
      * @param aItem is the item name to be marked.
-     * @param aParent is an optional parent. If empty, then aItem might be a parent node.
      * @param aModified decides whether the item should be marked as modified or not.
      * @return False in case of an error, true otherwise.
      */
-    bool SetModified( const ITEM_ID& aItem, bool aModified = true );
+    bool SetModified( const ITEM_ID& aItem, bool aModified = true);
 
     /**
      * Returns true if aItem has been modified.

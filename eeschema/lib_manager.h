@@ -108,6 +108,13 @@ public:
     LIB_PART* GetPart( const wxString& aPart, const wxString& aLibrary ) const;
 
     /**
+     * Returns the most recent version of a part (either from the part buffer or from the original
+     * library) or nullptr if it does not exist. Also passes the info if the part is a real part or
+     * an alias.
+     */
+    LIB_PART* GetPart( const wxString& aPart, const wxString& aLibrary, bool& aIsAlias ) const;
+
+    /**
      * Returns the part copy from the buffer. In case it does not exist yet, the copy is created.
      * LIB_MANAGER retains the ownership.
      */

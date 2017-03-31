@@ -215,6 +215,7 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
     }
 
     SetModified( libId, m_libMgr->IsLibraryModified( aLibName ) );
+    SetItemFont( libId, m_libMgr->IsLibraryModified( aLibName ), false );
 
     const auto& parts = m_libMgr->GetPartNames( aLibName );
 
@@ -237,6 +238,8 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
 
     for( const auto& partName : parts )
     {
+        bool isAlias;
+
         if( ( m_filteringOptions & SEARCH_TREE::FILTER_BY_NAME ) && !libNameMatch
                 && !matchKeywords( partName ) )
             continue;
@@ -245,7 +248,7 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
             && patternFilter.Find( partName.Lower() ) == EDA_PATTERN_NOT_FOUND )
             continue;
 
-        const LIB_PART* part = m_libMgr->GetPart( partName, aLibName );
+        const LIB_PART* part = m_libMgr->GetPart( partName, aLibName, isAlias );
 
         if( !part )
             continue;
@@ -269,6 +272,7 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
         }
 
         SetModified( itemId, m_libMgr->IsPartModified( partName, aLibName ) );
+        SetItemFont( itemId, m_libMgr->IsPartModified( partName, aLibName ), isAlias );
     }
 
     // After filtering there is nothing left, so do not display the library

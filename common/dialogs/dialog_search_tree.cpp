@@ -208,6 +208,17 @@ bool SEARCH_TREE::SetItemFont( const ITEM_ID& aItem, bool aBold, bool aItalic )
     return true;
 }
 
+bool SEARCH_TREE::SetItemColor( const ITEM_ID& aItem, wxColour aColour )
+{
+    if( !aItem.IsOk() )
+        return false;
+
+    m_tree->SetItemTextColour( aItem, aColour );
+
+    return true;
+}
+
+
 bool SEARCH_TREE::SetModified( const ITEM_ID& aItem, bool aModified )
 {
     if( !aItem.IsOk() )

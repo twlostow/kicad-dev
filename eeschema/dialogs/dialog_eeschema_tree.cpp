@@ -65,18 +65,21 @@ EESCHEMA_TREE::EESCHEMA_TREE( LIB_EDIT_FRAME* aParent )
     m_menuLibrary->Append( ID_LIBEDIT_REMOVE_LIBRARY, _( "Remove library" ) );
     m_menuLibrary->AppendSeparator();
     m_menuLibrary->Append( ID_LIBEDIT_NEW_PART, _( "New component..." ) );
-    m_menuLibrary->Append( ID_LIBEDIT_PASTE_PART, _( "Paste component" ) );
     m_menuLibrary->Append( ID_LIBEDIT_IMPORT_PART, _( "Import component..." ) );
+    m_menuLibrary->Append( ID_LIBEDIT_IMPORT_PART, _( "Paste component..." ) );
 
     m_menuComponent.reset( new wxMenu() );
-    m_menuComponent->Append( ID_LIBEDIT_EDIT_PART, _( "Edit" ) );
     m_menuComponent->Append( ID_LIBEDIT_CUT_PART, _( "Cut" ) );
     m_menuComponent->Append( ID_LIBEDIT_COPY_PART, _( "Copy" ) );
+    m_menuComponent->Append( ID_LIBEDIT_PASTE_PART, _( "Paste" ) );
     m_menuComponent->Append( ID_LIBEDIT_RENAME_PART, _( "Rename" ) );
     m_menuComponent->Append( ID_LIBEDIT_REMOVE_PART, _( "Remove" ) );
+    m_menuComponent->AppendSeparator();
     m_menuComponent->Append( ID_LIBEDIT_EXPORT_PART, _( "Export..." ) );
     m_menuComponent->Append( ID_LIBEDIT_SAVE_PART, _( "Save" ) );
     m_menuComponent->Append( ID_LIBEDIT_REVERT_PART, _( "Revert" ) );
+    m_menuComponent->AppendSeparator();
+    m_menuComponent->Append( ID_LIBEDIT_PART_PROPERTIES, _( "Component Properties..." ) );
     m_menuComponent->AppendSeparator();
 
     // Append the library menu to the component menu
@@ -85,6 +88,9 @@ EESCHEMA_TREE::EESCHEMA_TREE( LIB_EDIT_FRAME* aParent )
         wxMenuItem* menuItem = m_menuLibrary->FindItemByPosition( i );
         m_menuComponent->Append( menuItem->GetId(), menuItem->GetItemLabel() );
     }
+
+    getTree()->Connect( wxEVT_TREE_ITEM_ACTIVATED, wxCommandEventHandler( EESCHEMA_TREE::OnItemActivated ), NULL, this );
+    getTree()->Connect( wxEVT_TREE_SEL_CHANGED, wxCommandEventHandler( EESCHEMA_TREE::OnSelectionChanged ), NULL, this );
 }
 
 
@@ -236,6 +242,15 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
         libNameMatch = patternFilter.Find( aLibName.Lower() ) != EDA_PATTERN_NOT_FOUND;
     }
 
+    struct TREE_ENTRY
+    {
+        wxString name;
+        bool isAlias;
+        const LIB_PART *part;
+    };
+
+    std::vector<TREE_ENTRY> treeEntries;
+
     for( const auto& partName : parts )
     {
         bool isAlias;
@@ -253,17 +268,34 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
         if( !part )
             continue;
 
-        ITEM_ID itemId = InsertItem( partName, libId );
+        TREE_ENTRY entry;
 
-        if( current && partName == CurrentComponent() )
+        entry.name = partName;
+        entry.isAlias = isAlias;
+        entry.part = part;
+
+        treeEntries.push_back( entry );
+    }
+
+    std::sort ( treeEntries.begin(), treeEntries.end(), [] ( const TREE_ENTRY a, const TREE_ENTRY b ) {
+        //if( a.isAlias < b.isAlias )
+        //    return 1;
+        return a.name.CmpNoCase( b.name );
+    });
+
+    for ( const auto& entry : treeEntries )
+    {
+        ITEM_ID itemId = InsertItem( entry.name, libId );
+
+        if( current && entry.name == CurrentComponent() )
         {
             SetCurrent( itemId );
             current = false;
         }
 
-        if( part->IsMulti() )
+        if( entry.part->IsMulti() )
         {
-            for( int u = 1; u <= part->GetUnitCount(); ++u )
+            for( int u = 1; u <= entry.part->GetUnitCount(); ++u )
             {
                 wxString unitName = _( "Unit" );
                 unitName += " " + LIB_PART::SubReference( u, false );
@@ -271,8 +303,10 @@ void EESCHEMA_TREE::UpdateLibrary( const wxString& aLibName )
             }
         }
 
-        SetModified( itemId, m_libMgr->IsPartModified( partName, aLibName ) );
-        SetItemFont( itemId, m_libMgr->IsPartModified( partName, aLibName ), isAlias );
+        bool modified =  m_libMgr->IsPartModified( entry.name, aLibName );
+        SetModified( itemId, modified );
+        SetItemFont( itemId, modified, entry.isAlias );
+        SetItemColor( itemId, entry.isAlias ? *wxLIGHT_GREY : *wxBLACK );
     }
 
     // After filtering there is nothing left, so do not display the library

@@ -90,6 +90,8 @@ public:
 protected:
     void OnLeftDClick( wxMouseEvent& aEvent ) override;
     void OnRightClick( wxMouseEvent& aEvent ) override;
+    virtual void OnSelectionChanged( wxCommandEvent& aEvent );
+    virtual void OnItemActivated( wxCommandEvent& aEvent );
 
 private:
     // Right-click context menus

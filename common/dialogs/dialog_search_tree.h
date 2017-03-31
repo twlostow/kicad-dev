@@ -321,6 +321,9 @@ public:
      */
     bool SetItemFont( const ITEM_ID& aItem, bool aBold, bool aItalic );
 
+    // idem
+    bool SetItemColor( const ITEM_ID& aItem, wxColour aColour );
+
 	/**
      * Marks an item as (un)modified.
      * @param aItem is the item name to be marked.
@@ -417,6 +420,7 @@ protected:
      */
     virtual void OnTextChanged( wxCommandEvent& aEvent ) override;
     virtual void OnLeftDClick( wxMouseEvent& aEvent ) override;
+    
 
     /*
      * If you override this methods you MUST call this function.

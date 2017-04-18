@@ -58,6 +58,6 @@ void PCB_ACTIONS::RegisterAllTools( TOOL_MANAGER* aToolManager )
     aToolManager->RegisterTool( new POINT_EDITOR );
     aToolManager->RegisterTool( new PCBNEW_CONTROL );
     aToolManager->RegisterTool( new PCB_EDITOR_CONTROL );
-    aToolManager->RegisterTool( new PLACEMENT_TOOL );
+    aToolManager->RegisterTool( new ALIGN_DISTRIBUTE_TOOL );
     aToolManager->RegisterTool( new MICROWAVE_TOOL );
 }

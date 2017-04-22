@@ -195,21 +195,32 @@ int MICROWAVE_TOOL::addMicrowaveFootprint( const TOOL_EVENT& aEvent )
 
     frame.SetToolID( info.toolId, wxCURSOR_PENCIL, info.name );
 
-    ITEM_CREATOR moduleCreator = [this, &info] ( const TOOL_EVENT& aAddingEvent ) {
-            auto module = info.creatorFunc();
+    struct MICROWAVE_PLACER : public INTERACTIVE_PLACER_BASE
+    {
+        MICROWAVE_TOOL_INFO& m_info;
+
+        MICROWAVE_PLACER( MICROWAVE_TOOL_INFO& aInfo ) :
+            m_info( aInfo ) {};
+
+        std::unique_ptr<BOARD_ITEM> CreateItem() override
+        {
+            auto module = m_info.creatorFunc();
 
             // Module has been added in the legacy backend,
             // so we have to remove it before committing the change
             // @todo LEGACY
             if( module )
             {
-                board()->Remove( module.get() );
+                m_board->Remove( module.get() );
             }
 
-            return module;
+            return std::unique_ptr<BOARD_ITEM>( module.release() );
+        }
     };
 
-    doInteractiveItemPlacement( moduleCreator,  _( "Place microwave feature" ) );
+    MICROWAVE_PLACER placer ( info );
+
+    doInteractiveItemPlacement( &placer,  _( "Place microwave feature" ) );
 
     frame.SetToolID( ID_NO_TOOL_SELECTED, wxCURSOR_DEFAULT, wxEmptyString );
 

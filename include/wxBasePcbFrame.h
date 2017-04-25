@@ -482,7 +482,7 @@ public:
      * It shows the connections from a pad to the nearest connected pad
      * @param aModule = module to consider.
      */
-     void build_ratsnest_module( MODULE *mod, wxPoint aMoveVector );
+    void build_ratsnest_module( MODULE *mod, wxPoint aMoveVector );
 
     /**
      * Function TraceModuleRatsNest
@@ -528,7 +528,7 @@ public:
      */
     void BuildAirWiresTargetsList( BOARD_CONNECTED_ITEM* aItemRef,
                                    const wxPoint& aPosition,
-                                    int aNet );
+                                   int aNet );
 
     /**
      * Function TestForActiveLinksInRatsnest
@@ -568,7 +568,7 @@ public:
      * search connections between tracks and pads and propagate pad net codes to the track
      * segments.
      */
-    void ComputeLegacyConnections ();
+    void ComputeLegacyConnections();
 
     /* Functions relative to Undo/redo commands:
      */

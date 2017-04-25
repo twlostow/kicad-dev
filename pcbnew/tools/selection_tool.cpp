@@ -802,7 +802,7 @@ void SELECTION_TOOL::selectAllItemsOnSheet( wxString& aSheetpath )
     std::list<int> netcodeList;
     for( MODULE* mmod : modList )
     {
-        for( D_PAD* pad = mmod->Pads().GetFirst(); pad; pad = pad->Next() )
+        for( auto pad : mmod->Pads() )
         {
             if( pad->IsConnected() )
             {
@@ -823,6 +823,7 @@ void SELECTION_TOOL::selectAllItemsOnSheet( wxString& aSheetpath )
     for( int netCode : netcodeList )
     {
         std::list<BOARD_CONNECTED_ITEM*> netPads;
+// fixme
     //    ratsnest->GetNetItems( netCode, netPads, (RN_ITEM_TYPE)( RN_PADS ) );
         for( BOARD_CONNECTED_ITEM* mitem : netPads )
         {

@@ -229,7 +229,7 @@ void MODULE::ClearAllNets()
 {
     // Force the ORPHANED dummy net info for all pads.
     // ORPHANED dummy net does not depend on a board
-    for( D_PAD* pad = Pads(); pad; pad = pad->Next() )
+    for( D_PAD* pad = PadsList(); pad; pad = pad->Next() )
         pad->SetNetCode( NETINFO_LIST::ORPHANED );
 }
 
@@ -364,7 +364,7 @@ void MODULE::CopyNetlistSettings( MODULE* aModule, bool aCopyLocalSettings )
         aModule->SetThermalGap( GetThermalGap() );
     }
 
-    for( D_PAD* pad = aModule->Pads();  pad;  pad = pad->Next() )
+    for( D_PAD* pad = aModule->PadsList();  pad;  pad = pad->Next() )
     {
         // Fix me: if aCopyLocalSettings == true, for "multiple" pads
         // (set of pads having the same name/number) this is broken
@@ -677,7 +677,7 @@ unsigned MODULE::GetUniquePadCount( INCLUDE_NPTH_T aIncludeNPTH ) const
     std::set<wxUint32> usedNames;
 
     // Create a set of used pad numbers
-    for( D_PAD* pad = Pads(); pad; pad = pad->Next() )
+    for( D_PAD* pad = PadsList(); pad; pad = pad->Next() )
     {
         // Skip pads not on copper layers (used to build complex
         // solder paste shapes for instance)
@@ -1025,14 +1025,14 @@ void MODULE::MoveAnchorPosition( const wxPoint& aMoveVector )
     m_Value->SetDrawCoord();
 
     // Update the pad local coordinates.
-    for( D_PAD* pad = Pads(); pad; pad = pad->Next() )
+    for( D_PAD* pad = PadsList(); pad; pad = pad->Next() )
     {
         pad->SetPos0( pad->GetPos0() + moveVector );
         pad->SetDrawCoord();
     }
 
     // Update the draw element coordinates.
-    for( EDA_ITEM* item = GraphicalItems(); item; item = item->Next() )
+    for( EDA_ITEM* item = GraphicalItemsList(); item; item = item->Next() )
     {
         switch( item->Type() )
         {
@@ -1110,7 +1110,7 @@ BOARD_ITEM* MODULE::Duplicate( const BOARD_ITEM* aItem,
         new_pad = new D_PAD( *static_cast<const D_PAD*>( aItem ) );
 
         if( aAddToModule )
-            Pads().PushBack( new_pad );
+            PadsList().PushBack( new_pad );
 
         new_item = new_pad;
         break;
@@ -1127,7 +1127,7 @@ BOARD_ITEM* MODULE::Duplicate( const BOARD_ITEM* aItem,
             TEXTE_MODULE* new_text = new TEXTE_MODULE( *old_text );
 
             if( aAddToModule )
-                GraphicalItems().PushBack( new_text );
+                GraphicalItemsList().PushBack( new_text );
 
             new_item = new_text;
         }
@@ -1140,7 +1140,7 @@ BOARD_ITEM* MODULE::Duplicate( const BOARD_ITEM* aItem,
                 *static_cast<const EDGE_MODULE*>(aItem) );
 
         if( aAddToModule )
-            GraphicalItems().PushBack( new_edge );
+            GraphicalItemsList().PushBack( new_edge );
 
         new_item = new_edge;
         break;
@@ -1171,7 +1171,7 @@ wxString MODULE::GetNextPadName( bool aFillSequenceGaps ) const
     std::set<int> usedNumbers;
 
     // Create a set of used pad numbers
-    for( D_PAD* pad = Pads(); pad; pad = pad->Next() )
+    for( D_PAD* pad = PadsList(); pad; pad = pad->Next() )
     {
         int padNumber = getTrailingInt( pad->GetPadName() );
         usedNumbers.insert( padNumber );
@@ -1236,7 +1236,7 @@ bool MODULE::BuildPolyCourtyard()
     std::vector< DRAWSEGMENT* > list_front;
     std::vector< DRAWSEGMENT* > list_back;
 
-    for( BOARD_ITEM* item = GraphicalItems(); item; item = item->Next() )
+    for( BOARD_ITEM* item = GraphicalItemsList(); item; item = item->Next() )
     {
         if( item->GetLayer() == B_CrtYd && item->Type() == PCB_MODULE_EDGE_T )
             list_back.push_back( static_cast< DRAWSEGMENT* > ( item ) );

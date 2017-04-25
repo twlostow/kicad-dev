@@ -237,7 +237,7 @@ bool BRDITEMS_PLOTTER::PlotAllTextsModule( MODULE* aModule )
             PlotTextModule( &aModule->Value(), GetValueColor() );
     }
 
-    for( BOARD_ITEM *item = aModule->GraphicalItems().GetFirst(); item; item = item->Next() )
+    for( BOARD_ITEM *item = aModule->GraphicalItemsList().GetFirst(); item; item = item->Next() )
     {
         textModule = dyn_cast<TEXTE_MODULE*>( item );
 
@@ -440,7 +440,7 @@ void BRDITEMS_PLOTTER::Plot_Edges_Modules()
 {
     for( MODULE* module = m_board->m_Modules;  module;  module = module->Next() )
     {
-        for( BOARD_ITEM* item = module->GraphicalItems().GetFirst(); item; item = item->Next() )
+        for( BOARD_ITEM* item = module->GraphicalItemsList().GetFirst(); item; item = item->Next() )
         {
             EDGE_MODULE* edge = dyn_cast<EDGE_MODULE*>( item );
 
@@ -819,7 +819,7 @@ void BRDITEMS_PLOTTER::PlotDrillMarks()
 
     for( MODULE *Module = m_board->m_Modules; Module != NULL; Module = Module->Next() )
     {
-        for( D_PAD *pad = Module->Pads(); pad != NULL; pad = pad->Next() )
+        for( D_PAD *pad = Module->PadsList(); pad != NULL; pad = pad->Next() )
         {
             if( pad->GetDrillSize().x == 0 )
                 continue;

@@ -1378,6 +1378,20 @@ void SELECTION_TOOL::select( BOARD_ITEM* aItem )
         // If multiple items are selected, do not show the information about the selected item
         m_frame->SetCurItem( NULL, true );
     }
+
+    if (m_selection.Size() == 1)
+    {
+        if (auto t=  dyn_cast<TRACK*>( m_selection[0] ) )
+        {
+            auto pads = board()->GetConnectivity()->GetConnectedPads( t );
+            printf("---> track %p\n", t);
+
+            for (auto p : pads)
+                printf("        - pad %p\n", p);
+
+        }
+    }
+
 }
 
 

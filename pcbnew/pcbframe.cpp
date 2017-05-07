@@ -114,6 +114,7 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_TOOL( ID_SAVE_BOARD, PCB_EDIT_FRAME::Files_io )
     EVT_TOOL( ID_OPEN_MODULE_EDITOR, PCB_EDIT_FRAME::Process_Special_Functions )
     EVT_TOOL( ID_OPEN_MODULE_VIEWER, PCB_EDIT_FRAME::Process_Special_Functions )
+    EVT_TOOL( ID_MENU_RATSNEST_COLORS_AND_VISIBILITY, PCB_EDIT_FRAME::Process_Special_Functions )
 
     // Menu Files:
     EVT_MENU( ID_MAIN_MENUBAR, PCB_EDIT_FRAME::Process_Special_Functions )
@@ -507,7 +508,7 @@ void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard )
     if( IsGalCanvasActive() )
     {
         aBoard->GetConnectivity()->Build( aBoard );
-        
+
         // reload the worksheet
         SetPageSettings( aBoard->GetPageSettings() );
     }
@@ -932,7 +933,10 @@ bool PCB_EDIT_FRAME::IsElementVisible( GAL_LAYER_ID aElement ) const
 
 void PCB_EDIT_FRAME::SetElementVisibility( GAL_LAYER_ID aElement, bool aNewState )
 {
-    GetGalCanvas()->GetView()->SetLayerVisible( aElement , aNewState );
+    if ( aElement != LAYER_RATSNEST )
+    {
+        GetGalCanvas()->GetView()->SetLayerVisible( aElement , aNewState );
+    }
     GetBoard()->SetElementVisibility( aElement, aNewState );
     m_Layers->SetRenderState( aElement, aNewState );
 }

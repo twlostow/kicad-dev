@@ -21,6 +21,7 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#define PROFILE
 #ifdef PROFILE
 #include <profile.h>
 #endif
@@ -138,7 +139,15 @@ void CONNECTIVITY_DATA::addRatsnestCluster( std::shared_ptr<CN_CLUSTER> aCluster
 
 void CONNECTIVITY_DATA::RecalculateRatsnest()
 {
+#ifdef PROFILE
+    PROF_COUNTER cnt("propagate-nets");
+#endif
+
     m_connAlgo->PropagateNets();
+
+#ifdef PROFILE
+    cnt.Show();
+#endif
 
     int lastNet = m_connAlgo->NetCount();
 
@@ -407,7 +416,7 @@ const
     {
         for( auto connected : citem->ConnectedItems() )
         {
-            if( connected->Parent()->Type() == PCB_TRACE_T )
+            if( connected->Valid() &&  ( connected->Parent()->Type() == PCB_TRACE_T || connected->Parent()->Type() == PCB_VIA_T ) )
                 tracks.insert( static_cast<TRACK*> ( connected->Parent() ) );
         }
     }
@@ -429,7 +438,7 @@ const
     {
         for( auto connected : citem->ConnectedItems() )
         {
-            if( connected->Parent()->Type() == PCB_PAD_T )
+            if( connected->Valid() && connected->Parent()->Type() == PCB_PAD_T )
                 pads.insert( static_cast<D_PAD*> ( connected->Parent() ) );
         }
     }
@@ -551,4 +560,30 @@ void CONNECTIVITY_DATA::GetUnconnectedEdges( std::vector<CN_EDGE>& aEdges) const
             }
         }
     }
+}
+
+const std::vector<BOARD_CONNECTED_ITEM*> CONNECTIVITY_DATA::GetConnectedItems( const BOARD_CONNECTED_ITEM* aItem, const VECTOR2I& aAnchor, KICAD_T aTypes[] )
+{
+    auto& entry = m_connAlgo->ItemEntry( aItem );
+    std::vector<BOARD_CONNECTED_ITEM* > rv;
+
+    for( auto cnItem : entry.GetItems() )
+    {
+        for( auto anchor : cnItem->Anchors() )
+        {
+            if ( anchor->Pos() == aAnchor )
+            {
+                for( int i = 0; aTypes[i] > 0; i++ )
+                {
+                    if ( cnItem->Parent()->Type() == aTypes[i] )
+                    {
+                        rv.push_back( cnItem->Parent() );
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return rv;
 }

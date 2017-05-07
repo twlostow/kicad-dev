@@ -421,7 +421,7 @@ public:
      *         current input location.
      * @throw IO_ERROR with the location within the input file of the problem.
      */
-    void Unexpected( int aTok ) throw( IO_ERROR );
+    virtual void Unexpected( int aTok ) throw( IO_ERROR );
 
     /**
      * Function Unexpected
@@ -430,7 +430,7 @@ public:
      *         current input location.
      * @throw IO_ERROR with the location within the input file of the problem.
      */
-    void Unexpected( const char* aToken ) throw( IO_ERROR );
+    virtual void Unexpected( const char* aToken ) throw( IO_ERROR );
 
     /**
      * Function Duplicate

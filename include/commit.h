@@ -43,6 +43,7 @@ enum CHANGE_TYPE {
     ///> Flag to indicate the change is already applied,
     ///> just notify observers (not compatible with CHT_MODIFY)
     CHT_DONE    = 8,
+    CHT_NONE    = 16,
     CHT_FLAGS   = CHT_DONE
 };
 
@@ -136,6 +137,8 @@ public:
     {
         return m_changes.empty();
     }
+
+    CHANGE_TYPE GetItemStatus( const EDA_ITEM *aItem );
 
 protected:
     struct COMMIT_LINE

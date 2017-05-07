@@ -37,14 +37,30 @@
 #include <memory>
 #include <richio.h>
 
+#include <gal/color4d.h>
 
 class LINE_READER;
 class BOARD;
 class BOARD_DESIGN_SETTINGS;
 
 
+class NET_RATSNEST_PREFS
+{
+public:
+    NET_RATSNEST_PREFS() {};
+    ~NET_RATSNEST_PREFS() {};
+
+    void Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControlBits ) const
+        throw( IO_ERROR );
+
+    bool        m_showRatsnest = true;
+    bool m_useCustomColor = false;
+    KIGFX::COLOR4D     m_color;
+};
+
 DECL_SET_FOR_SWIG( STRINGSET, wxString )
 
+typedef std::shared_ptr<NET_RATSNEST_PREFS> NET_RATSNEST_PREFS_PTR;
 
 /**
  * Class NETCLASS
@@ -85,6 +101,8 @@ protected:
     int         m_diffPairWidth;
     int         m_diffPairGap;
 
+    std::shared_ptr<NET_RATSNEST_PREFS> m_rnPrefs;
+
 public:
 
     static const char Default[];        ///< the name of the default NETCLASS
@@ -97,6 +115,11 @@ public:
     NETCLASS( const wxString& aName );
 
     ~NETCLASS();
+
+    NET_RATSNEST_PREFS_PTR RatsnestPrefs()
+    {
+        return m_rnPrefs;
+    }
 
     wxString GetClass() const
     {

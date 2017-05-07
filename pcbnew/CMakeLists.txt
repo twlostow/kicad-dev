@@ -118,6 +118,8 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_modedit_options_base.cpp
     dialogs/dialog_netlist.cpp
     dialogs/dialog_netlist_fbp.cpp
+    dialogs/dialog_net_visibility_and_colors.cpp
+    dialogs/dialog_net_visibility_and_colors_base.cpp
     dialogs/dialog_pcb_text_properties.cpp
     dialogs/dialog_pcb_text_properties_base.cpp
     dialogs/dialog_pns_settings.cpp

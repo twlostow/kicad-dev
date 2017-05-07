@@ -50,30 +50,29 @@ COMMIT& COMMIT::Stage( EDA_ITEM* aItem, CHANGE_TYPE aChangeType )
 
     switch( aChangeType & CHT_TYPE )
     {
-        case CHT_ADD:
-            assert( m_changedItems.find( aItem ) == m_changedItems.end() );
-            makeEntry( aItem, CHT_ADD | flag  );
-            return *this;
+    case CHT_ADD:
+        assert( m_changedItems.find( aItem ) == m_changedItems.end() );
+        makeEntry( aItem, CHT_ADD | flag  );
+        return *this;
 
-        case CHT_REMOVE:
-            assert( m_changedItems.find( aItem ) == m_changedItems.end() );
-            makeEntry( aItem, CHT_REMOVE | flag );
-            return *this;
+    case CHT_REMOVE:
+        makeEntry( aItem, CHT_REMOVE | flag );
+        return *this;
 
-        case CHT_MODIFY:
-        {
-            EDA_ITEM* parent = parentObject( aItem );
+    case CHT_MODIFY:
+    {
+        EDA_ITEM* parent = parentObject( aItem );
 
-            if( m_changedItems.find( parent ) != m_changedItems.end() )
-                return *this; // item has been already modified once
+        if( m_changedItems.find( parent ) != m_changedItems.end() )
+            return *this;     // item has been already modified once
 
-            makeEntry( parent, CHT_MODIFY | flag, parent->Clone() );
+        makeEntry( parent, CHT_MODIFY | flag, parent->Clone() );
 
-            return *this;
-        }
+        return *this;
+    }
 
-        default:
-            assert( false );
+    default:
+        assert( false );
     }
 
     return *this;
@@ -109,8 +108,8 @@ COMMIT& COMMIT::Stage( const PICKED_ITEMS_LIST& aItems, UNDO_REDO_T aModFlag )
     for( unsigned int i = 0; i < aItems.GetCount(); i++ )
     {
         UNDO_REDO_T change_type = aItems.GetPickedItemStatus( i );
-        EDA_ITEM* item = aItems.GetPickedItem( i );
-        EDA_ITEM* copy = NULL;
+        EDA_ITEM*   item    = aItems.GetPickedItem( i );
+        EDA_ITEM*   copy    = NULL;
 
         if( change_type == UR_UNSPECIFIED )
             change_type = aItems.m_Status;
@@ -135,16 +134,34 @@ COMMIT& COMMIT::Stage( const PICKED_ITEMS_LIST& aItems, UNDO_REDO_T aModFlag )
 }
 
 
+template <class Container, class F>
+void eraseIf( Container& c, F&& f )
+{
+    c.erase( std::remove_if( c.begin(),
+                    c.end(),
+                    std::forward<F>( f ) ),
+            c.end() );
+}
+
+
 void COMMIT::makeEntry( EDA_ITEM* aItem, CHANGE_TYPE aType, EDA_ITEM* aCopy )
 {
     // Expect an item copy if it is going to be modified
     assert( !!aCopy == ( ( aType & CHT_TYPE ) == CHT_MODIFY ) );
 
+
+    if( m_changedItems.find( aItem ) != m_changedItems.end() )
+    {
+        eraseIf( m_changes, [aItem] ( const COMMIT_LINE& aEnt ) {
+            return aEnt.m_item == aItem;
+        } );
+    }
+
     COMMIT_LINE ent;
 
-    ent.m_item = aItem;
-    ent.m_type = aType;
-    ent.m_copy = aCopy;
+    ent.m_item  = aItem;
+    ent.m_type  = aType;
+    ent.m_copy  = aCopy;
 
     m_changedItems.insert( aItem );
     m_changes.push_back( ent );
@@ -163,7 +180,7 @@ CHANGE_TYPE COMMIT::convert( UNDO_REDO_T aType ) const
 
     default:
         assert( false );
-        // fall through
+    // fall through
 
     case UR_CHANGED:
     case UR_MOVED:
@@ -175,4 +192,3 @@ CHANGE_TYPE COMMIT::convert( UNDO_REDO_T aType ) const
         return CHT_MODIFY;
     }
 }
-

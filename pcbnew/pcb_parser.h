@@ -278,6 +278,10 @@ class PCB_PARSER : public PCB_LEXER
      */
     int parseVersion() throw( IO_ERROR, PARSE_ERROR );
 
+    void Unexpected( int aTok ) throw( IO_ERROR ) override ;
+    void Unexpected( const char* text ) throw( IO_ERROR ) override ;
+
+
 public:
 
     PCB_PARSER( LINE_READER* aReader = NULL ) :

@@ -43,6 +43,7 @@
 #include <class_board.h>
 #include <class_module.h>
 #include <class_track.h>
+#include <class_netclass.h>
 
 
 /*********************************************************/
@@ -55,13 +56,27 @@ NETINFO_ITEM::NETINFO_ITEM( BOARD* aParent, const wxString& aNetName, int aNetCo
 {
     m_parent   = aParent;
     m_NetClassName = NETCLASS::Default;
+    m_rnPrefs.reset ( new NET_RATSNEST_PREFS );
 }
 
 
 NETINFO_ITEM::~NETINFO_ITEM()
 {
-    // m_NetClass is not owned by me.
 }
+
+/*NETINFO_ITEM::NETINFO_ITEM( const NETINFO_ITEM& aOther ) :
+    BOARD_ITEM( this ),
+{
+    m_NetCode = aOther.m_NetCode;
+    m_Netname = aOther.m_Netname;
+    m_ShortNetname = aOther.m_ShortNetname;
+    m_NetClassName = aOther.m_NetClassName;
+    m_NetClass = aOther.m_NetClass;
+    m_parent = aOther.m_parent;
+
+    if(aOther.m_rnPrefs)
+        m_rnPrefs.reset ( new NET_RATSNEST_PREFS ( *aOther.m_rnPrefs ) );
+}*/
 
 
 /**

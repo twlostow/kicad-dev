@@ -899,6 +899,10 @@ public:
 
     ITEM_MAP_ENTRY& ItemEntry( const BOARD_CONNECTED_ITEM* aItem )
     {
+        if ( m_itemMap.find (aItem) == m_itemMap.end() )
+        {
+            printf("FUCK [%p]!\n", aItem) ;
+        }
         return m_itemMap[ aItem ];
     }
 

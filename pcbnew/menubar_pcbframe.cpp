@@ -219,6 +219,11 @@ void preparePreferencesMenu( PCB_EDIT_FRAME* aFrame, wxMenu* aParentMenu )
                  _( "Configure the interactive router." ),
                  KiBitmap( add_tracks_xpm ) ); // fixme: icon
 
+    AddMenuItem( aParentMenu, ID_MENU_RATSNEST_COLORS_AND_VISIBILITY,
+                  _( "&Ratsnest Colors and Visibility" ),
+                  _( "Set up colors and visibility of ratsnest lines." ),
+                  KiBitmap( add_tracks_xpm ) ); // fixme: icon
+
     // Language submenu
     aParentMenu->AppendSeparator();
     Pgm().AddMenuLanguageList( aParentMenu );
@@ -845,4 +850,3 @@ void prepareExportMenu( wxMenu* aParentMenu )
                  _( "Export component file (*.cmp) for Eeschema footprint field back-annotation" ),
                  KiBitmap( create_cmp_file_xpm ) );
 }
-

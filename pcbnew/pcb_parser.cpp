@@ -559,6 +559,8 @@ void PCB_PARSER::parseHeader() throw( IO_ERROR, PARSE_ERROR )
     {
         m_requiredVersion = parseInt( FromUTF8().mb_str( wxConvUTF8 ) );
         m_tooRecent = ( m_requiredVersion > SEXPR_BOARD_FILE_VERSION );
+
+        printf( "too recent: %p\n", m_tooRecent );
         NeedRIGHT();
 
         // Skip the host name and host build version information.
@@ -3066,4 +3068,14 @@ PCB_TARGET* PCB_PARSER::parsePCB_TARGET() throw( IO_ERROR, PARSE_ERROR )
     }
 
     return target.release();
+}
+
+void PCB_PARSER::Unexpected( int aTok ) throw( IO_ERROR )
+{
+    DSNLEXER::Unexpected( aTok );
+}
+
+void PCB_PARSER::Unexpected( const char* text ) throw( IO_ERROR )
+{
+    DSNLEXER::Unexpected( text );
 }

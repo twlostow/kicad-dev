@@ -861,10 +861,16 @@ void BOARD::Add( BOARD_ITEM* aBoardItem, ADD_MODE aMode )
         m_Status_Pcb = 0;
         break;
 
+
     case PCB_DIMENSION_T:
     case PCB_LINE_T:
     case PCB_TEXT_T:
     case PCB_TARGET_T:
+    case PCB_CONSTRAINT_LINEAR_T:
+    case PCB_CONSTRAINT_ANGLE_T:
+    case PCB_CONSTRAINT_DATUM_T:
+
+        printf("Add %p\n", aBoardItem );
         if( aMode == ADD_APPEND )
             m_Drawings.PushBack( aBoardItem );
         else
@@ -946,6 +952,10 @@ void BOARD::Remove( BOARD_ITEM* aBoardItem )
     case PCB_LINE_T:
     case PCB_TEXT_T:
     case PCB_TARGET_T:
+    case PCB_CONSTRAINT_LINEAR_T:
+    case PCB_CONSTRAINT_ANGLE_T:
+    case PCB_CONSTRAINT_DATUM_T:
+
         m_Drawings.Remove( aBoardItem );
         break;
 
@@ -2879,4 +2889,10 @@ D_PAD* BOARD::GetPad( unsigned aIndex ) const
     }
 
     return nullptr;
+}
+
+// FIXME: MOVE
+ANCHOR::~ANCHOR()
+{
+
 }

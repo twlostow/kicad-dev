@@ -106,6 +106,10 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_graphic_item_properties.cpp
     dialogs/dialog_graphic_item_properties_base.cpp
     dialogs/dialog_graphic_item_properties_for_Modedit.cpp
+    dialogs/dialog_graphic_arc_properties_base.cpp
+    dialogs/dialog_graphic_arc_properties.cpp
+    dialogs/dialog_graphic_segment_properties_base.cpp
+    dialogs/dialog_graphic_segment_properties.cpp
     dialogs/dialog_global_deletion.cpp
     dialogs/dialog_global_deletion_base.cpp
     dialogs/dialog_keepout_area_properties.cpp
@@ -206,6 +210,7 @@ set( PCBNEW_CLASS_SRCS
     build_BOM_from_board.cpp
     class_pcb_layer_widget.cpp
     class_pcb_layer_box_selector.cpp
+    class_constraint.cpp
     clean.cpp
     connect.cpp
     controle.cpp
@@ -297,6 +302,7 @@ set( PCBNEW_CLASS_SRCS
     tools/edit_points.cpp
     tools/edit_constraints.cpp
     tools/point_editor.cpp
+    tools/outline_editor.cpp
     tools/drawing_tool.cpp
     tools/edit_tool.cpp
     tools/position_relative_tool.cpp

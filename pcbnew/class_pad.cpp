@@ -44,6 +44,7 @@
 #include <polygon_test_point_inside.h>
 #include <convert_to_biu.h>
 #include <convert_basic_shapes_to_polygon.h>
+#include <anchor.h>
 
 
 /**
@@ -1334,4 +1335,9 @@ void D_PAD::ImportSettingsFromMaster( const D_PAD& aMasterPad )
     default:
         ;
     }
+}
+
+const std::vector<ANCHOR*> D_PAD::GetAnchors()
+{
+
 }

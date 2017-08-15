@@ -53,6 +53,8 @@ const KICAD_T GENERAL_COLLECTOR::AllBoardItems[] = {
     PCB_MODULE_T,                // in m_Modules
     PCB_ZONE_T,                  // in m_Zones
     PCB_ZONE_AREA_T,             // in m_ZoneDescriptorList
+    PCB_CONSTRAINT_LINEAR_T,             // in m_Drawings
+
     EOT
 };
 

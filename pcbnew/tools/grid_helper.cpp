@@ -35,18 +35,75 @@ using namespace std::placeholders;
 
 #include <view/view.h>
 #include <view/view_controls.h>
+#include <view/view_group.h>
+
 #include <gal/graphics_abstraction_layer.h>
 
 #include <geometry/shape_line_chain.h>
 
 #include "grid_helper.h"
 
+class GRID_HELPER::PREVIEW : public KIGFX::VIEW_GROUP
+{
+private:
+    GRID_HELPER* m_parent;
+
+public:
+
+
+    PREVIEW( GRID_HELPER* aParent ) :
+        m_parent( aParent )
+    {};
+
+
+    ///> @copydoc VIEW_ITEM::ViewBBox()
+    virtual const BOX2I ViewBBox() const override
+    {
+        BOX2I b;
+
+        b.SetMaximum();
+        return b;
+    }
+
+    ///> @copydoc VIEW_ITEM::ViewDraw()
+    virtual void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override
+    {
+        auto gal = aView->GetGAL();
+
+        gal->SetFillColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
+        gal->SetStrokeColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
+        gal->SetIsFill( true );
+        gal->PushDepth();
+        gal->SetLayerDepth( gal->GetMinDepth() );
+
+        gal->SetLineWidth( 1.0 );
+        int n = 0;
+        gal->SetIsStroke( true );
+
+        float size = aView->ToWorld( 10 );
+
+        for ( const auto& a : m_parent->m_currentAnchorSet )
+        {
+            gal->DrawRectangle( a->GetPos() - size / 2, a->GetPos() + size / 2 );
+        }
+
+        gal->PopDepth();
+    }
+
+    ///> @copydoc VIEW_ITEM::ViewGetLayers()
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const override
+    {
+        aCount = 1;
+        aLayers[0] = LAYER_GP_OVERLAY;
+    }
+};
+
 
 GRID_HELPER::GRID_HELPER( PCB_BASE_FRAME* aFrame ) :
     m_frame( aFrame )
 {
     m_diagonalAuxAxesEnable = true;
-    KIGFX::VIEW* view = m_frame->GetGalCanvas()->GetView();
+    auto view = m_frame->GetGalCanvas()->GetView();
 
     m_viewAxis.SetSize( 20000 );
     m_viewAxis.SetStyle( KIGFX::ORIGIN_VIEWITEM::CROSS );
@@ -60,24 +117,20 @@ GRID_HELPER::GRID_HELPER( PCB_BASE_FRAME* aFrame ) :
     m_viewSnapPoint.SetDrawAtZero( true );
     view->Add( &m_viewSnapPoint );
     view->SetVisible( &m_viewSnapPoint, false );
+
+    m_preview = new PREVIEW ( this );
+    view->Add ( m_preview );
 }
 
 
 GRID_HELPER::~GRID_HELPER()
 {
+    auto view = m_frame->GetGalCanvas()->GetView();
+    view->Remove ( m_preview );
+    view->Remove ( &m_viewAxis ) ;
 }
 
 
-void GRID_HELPER::SetGrid( int aSize )
-{
-    assert( false );
-}
-
-
-void GRID_HELPER::SetOrigin( const VECTOR2I& aOrigin )
-{
-    assert( false );
-}
 
 
 VECTOR2I GRID_HELPER::GetGrid() const
@@ -121,8 +174,9 @@ VECTOR2I GRID_HELPER::Align( const VECTOR2I& aPoint ) const
     const VECTOR2D gridOffset( GetOrigin() );
     const VECTOR2D gridSize( GetGrid() );
 
-    VECTOR2I nearest( KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x,
-                      KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
+    VECTOR2I nearest( KiROUND(
+                     ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x,
+            KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
 
     if( !m_auxAxis )
         return nearest;
@@ -144,13 +198,14 @@ VECTOR2I GRID_HELPER::AlignToSegment( const VECTOR2I& aPoint, const SEG& aSeg )
     const VECTOR2D gridOffset( GetOrigin() );
     const VECTOR2D gridSize( GetGrid() );
 
-    VECTOR2I nearest( KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x,
-                      KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
+    VECTOR2I nearest( KiROUND(
+                     ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x,
+            KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
 
-    pts[0] = aSeg.A;
-    pts[1] = aSeg.B;
-    pts[2] = aSeg.IntersectLines( SEG( nearest, nearest + VECTOR2I( 1, 0 ) ) );
-    pts[3] = aSeg.IntersectLines( SEG( nearest, nearest + VECTOR2I( 0, 1 ) ) );
+    pts[0]  = aSeg.A;
+    pts[1]  = aSeg.B;
+    pts[2]  = aSeg.IntersectLines( SEG( nearest, nearest + VECTOR2I( 1, 0 ) ) );
+    pts[3]  = aSeg.IntersectLines( SEG( nearest, nearest + VECTOR2I( 0, 1 ) ) );
 
     int min_d = std::numeric_limits<int>::max();
 
@@ -172,7 +227,7 @@ VECTOR2I GRID_HELPER::AlignToSegment( const VECTOR2I& aPoint, const SEG& aSeg )
 }
 
 
-VECTOR2I GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos, BOARD_ITEM* aItem )
+VECTOR2I GRID_HELPER::BestDragOrigin( const VECTOR2I& aMousePos, BOARD_ITEM* aItem )
 {
     clearAnchors();
     computeAnchors( aItem, aMousePos );
@@ -180,11 +235,11 @@ VECTOR2I GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos, BOARD_ITEM* aIt
     double worldScale = m_frame->GetGalCanvas()->GetGAL()->GetWorldScale();
     double lineSnapMinCornerDistance = 50.0 / worldScale;
 
-    ANCHOR* nearestOutline = nearestAnchor( aMousePos, OUTLINE, LSET::AllLayersMask() );
-    ANCHOR* nearestCorner = nearestAnchor( aMousePos, CORNER, LSET::AllLayersMask() );
-    ANCHOR* nearestOrigin = nearestAnchor( aMousePos, ORIGIN, LSET::AllLayersMask() );
+    ANCHOR* nearestOutline  = nearestAnchor( aMousePos, AF_OUTLINE, LSET::AllLayersMask() );
+    ANCHOR* nearestCorner   = nearestAnchor( aMousePos, AF_CORNER, LSET::AllLayersMask() );
+    ANCHOR* nearestOrigin   = nearestAnchor( aMousePos, AF_ORIGIN, LSET::AllLayersMask() );
     ANCHOR* best = NULL;
-    double minDist = std::numeric_limits<double>::max();
+    double  minDist = std::numeric_limits<double>::max();
 
     if( nearestOrigin )
     {
@@ -211,7 +266,7 @@ VECTOR2I GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos, BOARD_ITEM* aIt
             best = nearestOutline;
     }
 
-    return best ? best->pos : aMousePos;
+    return best ? best->GetPos() : aMousePos;
 }
 
 
@@ -230,7 +285,7 @@ std::set<BOARD_ITEM*> GRID_HELPER::queryVisible( const BOX2I& aArea ) const
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( it->first );
 
         if( view->IsVisible( item ) )
-            items.insert ( item );
+            items.insert( item );
     }
 
     return items;
@@ -242,7 +297,8 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
     double worldScale = m_frame->GetGalCanvas()->GetGAL()->GetWorldScale();
     int snapRange = (int) ( 100.0 / worldScale );
 
-    BOX2I bb( VECTOR2I( aOrigin.x - snapRange / 2, aOrigin.y - snapRange / 2 ), VECTOR2I( snapRange, snapRange ) );
+    BOX2I bb( VECTOR2I( aOrigin.x - snapRange / 2, aOrigin.y - snapRange / 2 ), VECTOR2I( snapRange,
+                    snapRange ) );
 
     clearAnchors();
 
@@ -252,7 +308,7 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
     }
 
     LSET layers( aDraggedItem->GetLayer() );
-    ANCHOR* nearest = nearestAnchor( aOrigin, CORNER | SNAPPABLE, layers );
+    auto nearest = nearestAnchor( aOrigin, AF_CORNER | AF_SNAPPABLE, layers );
 
     VECTOR2I nearestGrid = Align( aOrigin );
     double gridDist = ( nearestGrid - aOrigin ).EuclideanNorm();
@@ -263,9 +319,9 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
 
         if( nearest && snapDist < gridDist )
         {
-            m_viewSnapPoint.SetPosition( nearest->pos );
+            m_viewSnapPoint.SetPosition( nearest->GetPos() );
             m_frame->GetGalCanvas()->GetView()->SetVisible( &m_viewSnapPoint, true );
-            return nearest->pos;
+            return nearest->GetPos();
         }
     }
 
@@ -276,153 +332,216 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
 
 void GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos )
 {
+    #if 0
     VECTOR2I origin;
 
     switch( aItem->Type() )
     {
-        case PCB_MODULE_T:
-        {
-            MODULE* mod = static_cast<MODULE*>( aItem );
+    case PCB_MODULE_T:
+    {
+        MODULE* mod = static_cast<MODULE*>( aItem );
 
-            for( auto pad : mod->Pads() )
+        for( auto pad : mod->Pads() )
+        {
+            if( pad->GetBoundingBox().Contains( wxPoint( aRefPos.x, aRefPos.y ) ) )
             {
-                if( pad->GetBoundingBox().Contains( wxPoint( aRefPos.x, aRefPos.y ) ) )
-                {
-                    addAnchor( pad->GetPosition(), CORNER | SNAPPABLE, pad );
-                    break;
-                }
+                addAnchor( pad->GetPosition(), CORNER | SNAPPABLE, pad );
+                break;
             }
-
-            // if the cursor is not over a pad, then drag the module by its origin
-            addAnchor( mod->GetPosition(), ORIGIN | SNAPPABLE, mod );
-            break;
         }
 
-        case PCB_PAD_T:
-        {
-            D_PAD* pad = static_cast<D_PAD*>( aItem );
-            addAnchor( pad->GetPosition(), CORNER | SNAPPABLE, pad );
+        // if the cursor is not over a pad, then drag the module by its origin
+        addAnchor( mod->GetPosition(), ORIGIN | SNAPPABLE, mod );
+        break;
+    }
 
-            break;
-        }
-
-        case PCB_MODULE_EDGE_T:
-        case PCB_LINE_T:
-        {
-            DRAWSEGMENT* dseg = static_cast<DRAWSEGMENT*>( aItem );
-            VECTOR2I start = dseg->GetStart();
-            VECTOR2I end = dseg->GetEnd();
-            //PCB_LAYER_ID layer = dseg->GetLayer();
-
-            switch( dseg->GetShape() )
-            {
-                case S_CIRCLE:
-                {
-                    int r = ( start - end ).EuclideanNorm();
-
-                    addAnchor( start, ORIGIN | SNAPPABLE, dseg );
-                    addAnchor( start + VECTOR2I( -r, 0 ), OUTLINE | SNAPPABLE, dseg );
-                    addAnchor( start + VECTOR2I( r, 0 ), OUTLINE | SNAPPABLE, dseg );
-                    addAnchor( start + VECTOR2I( 0, -r ), OUTLINE | SNAPPABLE, dseg );
-                    addAnchor( start + VECTOR2I( 0, r ), OUTLINE | SNAPPABLE, dseg );
-                    break;
-                }
-
-                case S_ARC:
-                {
-                    origin = dseg->GetCenter();
-                    addAnchor( dseg->GetArcStart(), CORNER | SNAPPABLE, dseg );
-                    addAnchor( dseg->GetArcEnd(), CORNER | SNAPPABLE, dseg );
-                    addAnchor( origin, ORIGIN | SNAPPABLE, dseg );
-                    break;
-                }
-
-                case S_SEGMENT:
-                {
-                    origin.x = start.x + ( start.x - end.x ) / 2;
-                    origin.y = start.y + ( start.y - end.y ) / 2;
-                    addAnchor( start, CORNER | SNAPPABLE, dseg );
-                    addAnchor( end, CORNER | SNAPPABLE, dseg );
-                    addAnchor( origin, ORIGIN, dseg );
-                    break;
-                }
-
-                default:
-                {
-                    origin = dseg->GetStart();
-                    addAnchor( origin, ORIGIN | SNAPPABLE, dseg );
-                    break;
-                }
-            }
-            break;
-        }
-
-        case PCB_TRACE_T:
-        {
-            TRACK* track = static_cast<TRACK*>( aItem );
-            VECTOR2I start = track->GetStart();
-            VECTOR2I end = track->GetEnd();
-            origin.x = start.x + ( start.x - end.x ) / 2;
-            origin.y = start.y + ( start.y - end.y ) / 2;
-            addAnchor( start, CORNER | SNAPPABLE, track );
-            addAnchor( end, CORNER | SNAPPABLE, track );
-            addAnchor( origin, ORIGIN, track);
-            break;
-        }
-
-        case PCB_VIA_T:
-            addAnchor( aItem->GetPosition(), CORNER | SNAPPABLE, aItem );
-            break;
-
-        case PCB_ZONE_AREA_T:
-        {
-            const SHAPE_POLY_SET* outline = static_cast<const ZONE_CONTAINER*>( aItem )->Outline();
-
-            SHAPE_LINE_CHAIN lc;
-            lc.SetClosed( true );
-
-            for( auto iter = outline->CIterateWithHoles(); iter; iter++ )
-            {
-                addAnchor( *iter, CORNER, aItem );
-                lc.Append( *iter );
-            }
-
-            addAnchor( lc.NearestPoint( aRefPos ), OUTLINE, aItem );
-
-            break;
-        }
-
-        case PCB_MODULE_TEXT_T:
-        case PCB_TEXT_T:
-            addAnchor( aItem->GetPosition(), ORIGIN, aItem );
-        default:
+    case PCB_PAD_T:
+    {
+        D_PAD* pad = static_cast<D_PAD*>( aItem );
+        addAnchor( pad->GetPosition(), CORNER | SNAPPABLE, pad );
 
         break;
-   }
+    }
+
+    case PCB_MODULE_EDGE_T:
+    case PCB_LINE_T:
+    {
+        DRAWSEGMENT*    dseg = static_cast<DRAWSEGMENT*>( aItem );
+        VECTOR2I    start = dseg->GetStart();
+        VECTOR2I    end = dseg->GetEnd();
+        // PCB_LAYER_ID layer = dseg->GetLayer();
+
+        switch( dseg->GetShape() )
+        {
+        case S_CIRCLE:
+        {
+            int r = ( start - end ).EuclideanNorm();
+
+            addAnchor( start, ORIGIN | SNAPPABLE, dseg );
+            addAnchor( start + VECTOR2I( -r, 0 ), OUTLINE | SNAPPABLE, dseg );
+            addAnchor( start + VECTOR2I( r, 0 ), OUTLINE | SNAPPABLE, dseg );
+            addAnchor( start + VECTOR2I( 0, -r ), OUTLINE | SNAPPABLE, dseg );
+            addAnchor( start + VECTOR2I( 0, r ), OUTLINE | SNAPPABLE, dseg );
+            break;
+        }
+
+        case S_ARC:
+        {
+            origin = dseg->GetCenter();
+            addAnchor( dseg->GetArcStart(), CORNER | SNAPPABLE, dseg );
+            addAnchor( dseg->GetArcEnd(), CORNER | SNAPPABLE, dseg );
+            addAnchor( origin, ORIGIN | SNAPPABLE, dseg );
+            break;
+        }
+
+        case S_SEGMENT:
+        {
+            origin.x = start.x + ( start.x - end.x ) / 2;
+            origin.y = start.y + ( start.y - end.y ) / 2;
+            addAnchor( start, CORNER | SNAPPABLE, dseg );
+            addAnchor( end, CORNER | SNAPPABLE, dseg );
+            addAnchor( origin, ORIGIN, dseg );
+            break;
+        }
+
+        default:
+        {
+            origin = dseg->GetStart();
+            addAnchor( origin, ORIGIN | SNAPPABLE, dseg );
+            break;
+        }
+        }
+
+        break;
+    }
+
+    case PCB_TRACE_T:
+    {
+        TRACK* track = static_cast<TRACK*>( aItem );
+        VECTOR2I start = track->GetStart();
+        VECTOR2I end = track->GetEnd();
+        origin.x = start.x + ( start.x - end.x ) / 2;
+        origin.y = start.y + ( start.y - end.y ) / 2;
+        addAnchor( start, CORNER | SNAPPABLE, track );
+        addAnchor( end, CORNER | SNAPPABLE, track );
+        addAnchor( origin, ORIGIN, track );
+        break;
+    }
+
+    case PCB_VIA_T:
+        addAnchor( aItem->GetPosition(), CORNER | SNAPPABLE, aItem );
+        break;
+
+    case PCB_ZONE_AREA_T:
+    {
+        const SHAPE_POLY_SET* outline = static_cast<const ZONE_CONTAINER*>( aItem )->Outline();
+
+        SHAPE_LINE_CHAIN lc;
+        lc.SetClosed( true );
+
+        for( auto iter = outline->CIterateWithHoles(); iter; iter++ )
+        {
+            addAnchor( *iter, CORNER, aItem );
+            lc.Append( *iter );
+        }
+
+        addAnchor( lc.NearestPoint( aRefPos ), OUTLINE, aItem );
+
+        break;
+    }
+
+    case PCB_MODULE_TEXT_T:
+    case PCB_TEXT_T:
+        addAnchor( aItem->GetPosition(), ORIGIN, aItem );
+
+    default:
+
+        break;
+    }
+    #endif
 }
 
-
-GRID_HELPER::ANCHOR* GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers )
+ANCHOR* GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int aFlags,
+        LSET aMatchLayers )
 {
     double minDist = std::numeric_limits<double>::max();
-    ANCHOR* best = NULL;
+    ANCHOR* best = nullptr;
 
-    for( ANCHOR& a : m_anchors )
+    for( auto a : m_anchors )
     {
-        if( !aMatchLayers[a.item->GetLayer()] )
+        if( !aMatchLayers[a->GetOwner()->GetLayer()] )
             continue;
 
-        if( ( aFlags & a.flags ) != aFlags )
+        if( ( aFlags & a->GetFlags() ) != aFlags )
             continue;
 
-        double dist = a.Distance( aPos );
+        double dist = a->Distance( aPos );
 
         if( dist < minDist )
         {
             minDist = dist;
-            best = &a;
+            best = a;
         }
     }
 
     return best;
+}
+
+const VECTOR2I GRID_HELPER::Snap( ) const
+{
+    if ( m_currentAnchor )
+    {
+        return (*m_currentAnchor)->GetPos();
+    } else {
+        auto controls = m_frame->GetGalCanvas()->GetViewControls();
+        return controls->GetCursorPosition();
+    }
+}
+
+void GRID_HELPER::SetSnapMode( int aMode )
+{
+    m_snapMode = aMode;
+    Update();
+}
+
+void GRID_HELPER::Update( )
+{
+    auto controls = m_frame->GetGalCanvas()->GetViewControls();
+    auto mousePos = controls->GetMousePosition();
+    double worldScale = m_frame->GetGalCanvas()->GetGAL()->GetWorldScale();
+    int snapRange = (int) ( 100.0 / worldScale );
+
+    m_currentAnchorSet.clear();
+
+    BOX2I bb( VECTOR2I( mousePos.x - snapRange / 2, mousePos.y - snapRange / 2 ), VECTOR2I( snapRange,
+                    snapRange ) );
+
+    for( BOARD_ITEM* item : queryVisible( bb ) )
+    {
+        const auto anchors = item->GetAnchors();
+        //
+        std::copy( anchors.begin(), anchors.end(), std::back_inserter(m_currentAnchorSet) );
+//        printf("%p : %d anchors\n", item, anchors.size() );
+    }
+
+    printf("Total anchors : %d\n", m_anchors.size() );
+
+    int size = m_frame->GetGalCanvas()->GetView()->ToWorld( 10 );
+
+    for ( const auto a : m_currentAnchorSet )
+    {
+        auto p = a->GetPos();
+        int dx = std::abs(p.x - mousePos.x);
+        int dy = std::abs(p.y - mousePos.y);
+
+        if ( dx < size / 2 && dy < size / 2 )
+        {
+            controls->ForceCursorPosition( true, p );
+            m_currentAnchor = a;
+            return;
+        }
+    }
+
+    m_currentAnchor = boost::none;
+    controls->ForceCursorPosition( false );
 }

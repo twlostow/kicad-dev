@@ -258,3 +258,8 @@ void BOARD_ITEM::DeleteStructure()
 
     delete this;
 }
+
+const std::vector<ANCHOR*> BOARD_ITEM::GetAnchors()
+{
+    return std::vector<ANCHOR*>();
+}

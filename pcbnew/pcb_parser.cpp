@@ -44,6 +44,7 @@
 #include <class_pad.h>
 #include <class_track.h>
 #include <class_zone.h>
+#include <class_constraint.h>
 #include <kicad_plugin.h>
 #include <pcb_plot_params_parser.h>
 #include <pcb_plot_params.h>
@@ -534,6 +535,10 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
 
         case T_target:
             m_board->Add( parsePCB_TARGET(), ADD_APPEND );
+            break;
+
+        case T_constraint_linear:
+            m_board->Add( parseCONSTRAINT_LINEAR(), ADD_APPEND );
             break;
 
         default:
@@ -2489,6 +2494,71 @@ D_PAD* PCB_PARSER::parseD_PAD( MODULE* aParent )
     }
 
     return pad.release();
+}
+
+CONSTRAINT_LINEAR* PCB_PARSER::parseCONSTRAINT_LINEAR()
+{
+    wxCHECK_MSG( CurTok() == T_constraint_linear, NULL,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as CONSTRAINT_LINEAR." ) );
+
+    std::unique_ptr< CONSTRAINT_LINEAR > constraint( new CONSTRAINT_LINEAR( m_board ) );
+
+    VECTOR2I pt;
+    T token;
+
+
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
+    {
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
+        token = NextTok();
+
+        switch( token )
+        {
+        case T_start:
+            pt.x = parseBoardUnits( "start x" );
+            pt.y = parseBoardUnits( "start y" );
+            constraint->SetP0( pt );
+            break;
+
+        case T_end:
+            pt.x = parseBoardUnits( "end x" );
+            pt.y = parseBoardUnits( "end y" );
+            constraint->SetP1( pt );
+            break;
+
+        case T_measure_line_origin:
+            pt.x = parseBoardUnits( "measure line origin x" );
+            pt.y = parseBoardUnits( "measure line origin y" );
+            constraint->SetMeasureLineOrigin( pt );
+            break;
+
+        case T_angle:
+            constraint->SetAngle( parseDouble( "angle" ) / 10.0  );
+            break;
+
+        case T_distance:
+            constraint->SetLength( parseBoardUnits( "distance" ) );
+            break;
+
+        case T_layer:
+            constraint->SetLayer( parseBoardItemLayer() );
+            break;
+
+        case T_tstamp:
+            constraint->SetTimeStamp( parseHex() );
+            break;
+
+
+        default:
+            Expecting( "start, end, measure_line_origin, angle, distance, layer, tstamp" );
+        }
+
+        NeedRIGHT();
+    }
+
+    return constraint.release();
 }
 
 

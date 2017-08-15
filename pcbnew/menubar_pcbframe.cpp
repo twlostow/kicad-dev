@@ -351,6 +351,11 @@ void preparePlaceMenu( wxMenu* aParentMenu )
 
     aParentMenu->AppendSeparator();
 
+    //AddMenuItem( aParentMenu, ID_PCB_PLACE_LINEAR_CONSTRAINT_BUTT,
+    //             _( "La&yer Alignment Target" ), _( "Add layer alignment target" ),
+    //             KiBitmap( add_mires_xpm ) );
+
+
     AddMenuItem( aParentMenu, ID_PCB_PLACE_OFFSET_COORD_BUTT,
                  _( "Drill and &Place Offset" ),
                  _( "Place origin point for drill and place files" ),

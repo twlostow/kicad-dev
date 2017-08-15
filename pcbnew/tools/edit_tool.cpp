@@ -60,6 +60,8 @@ using namespace std::placeholders;
 
 #include <dialogs/dialog_move_exact.h>
 #include <dialogs/dialog_track_via_properties.h>
+#include <dialogs/dialog_graphic_segment_properties.h>
+#include <dialogs/dialog_graphic_arc_properties.h>
 #include <dialogs/dialog_exchange_modules.h>
 
 #include <tools/tool_event_utils.h>
@@ -281,8 +283,9 @@ bool EDIT_TOOL::Init()
     menu.AddItem( PCB_ACTIONS::rotateCw, SELECTION_CONDITIONS::NotEmpty );
     menu.AddItem( PCB_ACTIONS::flip, SELECTION_CONDITIONS::NotEmpty );
     menu.AddItem( PCB_ACTIONS::remove, SELECTION_CONDITIONS::NotEmpty );
-    menu.AddItem( PCB_ACTIONS::properties, SELECTION_CONDITIONS::Count( 1 )
-                      || SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
+    menu.AddItem( PCB_ACTIONS::properties, SELECTION_CONDITIONS::NotEmpty );
+    /*SELECTION_CONDITIONS::Count( 1 )
+                      || SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );*/
 
     menu.AddItem( PCB_ACTIONS::moveExact, SELECTION_CONDITIONS::NotEmpty );
     menu.AddItem( PCB_ACTIONS::positionRelative, SELECTION_CONDITIONS::NotEmpty );
@@ -578,6 +581,58 @@ bool EDIT_TOOL::changeTrackWidthOnClick( const SELECTION& selection )
     return false;
 }
 
+
+int EDIT_TOOL::invokePropertiesDialog( const SELECTION& aSelection )
+{
+    if( ( SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) )( aSelection ) )
+    {
+        if ( !changeTrackWidthOnClick( aSelection ) )
+        {
+            DIALOG_TRACK_VIA_PROPERTIES dlg( frame(), aSelection );
+
+            if( dlg.ShowModal() )
+            {
+                dlg.Apply( *m_commit );
+                m_commit->Push( _( "Edit track/via properties" ) );
+            }
+        }
+    }
+    if ( SELECTION_CONDITIONS::OnlyType( PCB_LINE_T ) ( aSelection ) )
+    {
+        auto allArcs = std::all_of( aSelection.begin(), aSelection.end(), []( EDA_ITEM *item ){ return static_cast<DRAWSEGMENT*>( item )->GetShape() == S_ARC; } );
+        auto allSegs = std::all_of( aSelection.begin(), aSelection.end(), []( EDA_ITEM *item ){ return static_cast<DRAWSEGMENT*>( item )->GetShape() == S_SEGMENT; } );
+
+        if ( allSegs )
+        {
+            DIALOG_GRAPHIC_SEGMENT_PROPERTIES dlg( frame(), aSelection );
+
+            if( dlg.ShowModal() )
+            {
+                dlg.Apply( *m_commit );
+                m_commit->Push( _( "Edit graphic segment properties" ) );
+            }
+            return 1;
+        }
+        else if ( allArcs )
+        {
+            DIALOG_GRAPHIC_ARC_PROPERTIES dlg( frame(), aSelection );
+
+            if( dlg.ShowModal() )
+            {
+                dlg.Apply( *m_commit );
+                m_commit->Push( _( "Edit graphic arc properties" ) );
+            }
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
 int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
 {
     PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
@@ -587,21 +642,7 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     if( selection.Empty() )
         return 0;
 
-    // Tracks & vias are treated in a special way:
-    if( ( SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) )( selection ) )
-    {
-        if ( !changeTrackWidthOnClick( selection ) )
-        {
-            DIALOG_TRACK_VIA_PROPERTIES dlg( editFrame, selection );
-
-            if( dlg.ShowModal() )
-            {
-                dlg.Apply( *m_commit );
-                m_commit->Push( _( "Edit track/via properties" ) );
-            }
-        }
-    }
-    else if( selection.Size() == 1 ) // Properties are displayed when there is only one item selected
+    if( !invokePropertiesDialog( selection ) && selection.Size() == 1 ) // Properties are displayed when there is only one item selected
     {
         // Display properties dialog
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.Front() );

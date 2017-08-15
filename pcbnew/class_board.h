@@ -44,8 +44,11 @@
 #include <class_zone_settings.h>
 #include <pcb_plot_params.h>
 #include <board_item_container.h>
+#include <anchor.h>
 
 #include <memory>
+
+
 
 using std::unique_ptr;
 

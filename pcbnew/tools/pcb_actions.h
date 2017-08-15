@@ -143,6 +143,9 @@ public:
 
     /// Activation of the drawing tool (dimension)
     static TOOL_ACTION drawDimension;
+    static TOOL_ACTION drawLinearConstraint;
+    static TOOL_ACTION drawAngleConstraint;
+    static TOOL_ACTION drawDatumConstraint;
 
     /// Activation of the drawing tool (drawing a ZONE)
     static TOOL_ACTION drawZone;
@@ -200,11 +203,12 @@ public:
     /// Activation of the Push and Shove settings dialogs
     static TOOL_ACTION routerActivateSettingsDialog;
     static TOOL_ACTION routerActivateDpDimensionsDialog;
+    static TOOL_ACTION switchLinePosture;
 
 
     /// Activation of the Push and Shove router (inline dragging mode)
     static TOOL_ACTION routerInlineDrag;
-    
+
     // Point Editor
     /// Break outline (insert additional points to an edge)
     static TOOL_ACTION pointEditorAddCorner;

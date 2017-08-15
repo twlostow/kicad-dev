@@ -34,6 +34,7 @@
 #include <tools/edit_tool.h>
 #include <tools/drawing_tool.h>
 #include <tools/point_editor.h>
+#include <tools/outline_editor.h>
 #include <tools/pcbnew_control.h>
 #include <tools/pcb_editor_control.h>
 #include <tools/placement_tool.h>
@@ -56,7 +57,8 @@ void PCB_ACTIONS::RegisterAllTools( TOOL_MANAGER* aToolManager )
     aToolManager->RegisterTool( new EDIT_TOOL );
     aToolManager->RegisterTool( new PAD_TOOL );
     aToolManager->RegisterTool( new DRAWING_TOOL );
-    aToolManager->RegisterTool( new POINT_EDITOR );
+    //aToolManager->RegisterTool( new POINT_EDITOR );
+    aToolManager->RegisterTool( new OUTLINE_EDITOR );
     aToolManager->RegisterTool( new PCBNEW_CONTROL );
     aToolManager->RegisterTool( new PCB_EDITOR_CONTROL );
     aToolManager->RegisterTool( new ALIGN_DISTRIBUTE_TOOL );

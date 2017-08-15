@@ -50,6 +50,7 @@ class TEXTE_MODULE;
 class DIMENSION;
 class PCB_TARGET;
 class MARKER_PCB;
+class CONSTRAINT_LINEAR;
 
 namespace KIGFX
 {
@@ -205,6 +206,7 @@ protected:
     void draw( const DIMENSION* aDimension, int aLayer );
     void draw( const PCB_TARGET* aTarget );
     void draw( const MARKER_PCB* aMarker );
+    void draw( const CONSTRAINT_LINEAR* aConstraint, int aLayer  );
 
     /**
      * Function getLineThickness()

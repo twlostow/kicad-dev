@@ -44,6 +44,8 @@ using namespace std::placeholders;
 #include <class_dimension.h>
 #include <class_zone.h>
 #include <class_edge_mod.h>
+#include <class_constraint.h>
+
 
 #include <connectivity.h>
 
@@ -615,6 +617,11 @@ void BOARD_ITEM::SwapData( BOARD_ITEM* aImage )
     case PCB_DIMENSION_T:
         std::swap( *((DIMENSION*)this), *((DIMENSION*)aImage) );
         break;
+
+    case PCB_CONSTRAINT_LINEAR_T:
+        std::swap( *((CONSTRAINT_LINEAR*)this), *((CONSTRAINT_LINEAR*)aImage) );
+        break;
+
 
     case PCB_ZONE_T:
     default:

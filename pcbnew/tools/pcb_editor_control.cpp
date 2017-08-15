@@ -782,6 +782,7 @@ int PCB_EDITOR_CONTROL::ZoneUnfillAll( const TOOL_EVENT& aEvent )
 static bool mergeZones( BOARD_COMMIT& aCommit, std::vector<ZONE_CONTAINER *>& aOriginZones,
         std::vector<ZONE_CONTAINER *>& aMergedZones )
 {
+    printf("merge %d zones\n", aOriginZones.size());
     for( unsigned int i = 1; i < aOriginZones.size(); i++ )
     {
         aOriginZones[0]->Outline()->BooleanAdd( *aOriginZones[i]->Outline(),
@@ -793,6 +794,8 @@ static bool mergeZones( BOARD_COMMIT& aCommit, std::vector<ZONE_CONTAINER *>& aO
     // We should have one polygon with hole
     // We can have 2 polygons with hole, if the 2 initial polygons have only one common corner
     // and therefore cannot be merged (they are dectected as intersecting)
+    printf("outlines : %d\n", aOriginZones[0]->Outline()->OutlineCount());
+
     // but we should never have more than 2 polys
     if( aOriginZones[0]->Outline()->OutlineCount() > 1 )
     {
@@ -869,6 +872,7 @@ int PCB_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
 
     if( mergeZones( commit, toMerge, merged ) )
     {
+
         commit.Push( _( "Merge zones" ) );
 
         for( auto item : merged )

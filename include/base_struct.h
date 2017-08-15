@@ -141,7 +141,7 @@ typedef const INSPECTOR_FUNC& INSPECTOR;    /// std::function passed to nested u
 
 #define EDA_ITEM_ALL_FLAGS -1
 
-typedef unsigned STATUS_FLAGS;
+typedef uint64_t STATUS_FLAGS;
 
 /**
  * Class EDA_ITEM
@@ -254,6 +254,9 @@ public:
     void ClearFlags( STATUS_FLAGS aMask = EDA_ITEM_ALL_FLAGS ) { m_Flags &= ~aMask; }
     STATUS_FLAGS GetFlags() const { return m_Flags; }
 
+    uint32_t GetUserFlags() const;
+    void SetUserFlags( uint32_t aFlags, int value );
+    
     /**
      * Function SetForceVisible
      * is used to set and cleag force visible flag used to force the item to be drawn

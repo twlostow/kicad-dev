@@ -360,6 +360,8 @@ target_link_libraries( common
 
 
 set( PCB_COMMON_SRCS
+    dialogs/dialog_ask_for_value_base.cpp
+    dialogs/dialog_ask_for_value.cpp
     base_screen.cpp
     eda_text.cpp
     class_page_info.cpp

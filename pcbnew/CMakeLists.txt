@@ -107,6 +107,10 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_graphic_item_properties.cpp
     dialogs/dialog_graphic_item_properties_base.cpp
     dialogs/dialog_graphic_item_properties_for_Modedit.cpp
+    dialogs/dialog_graphic_arc_properties_base.cpp
+    dialogs/dialog_graphic_arc_properties.cpp
+    dialogs/dialog_graphic_segment_properties_base.cpp
+    dialogs/dialog_graphic_segment_properties.cpp
     dialogs/dialog_global_deletion.cpp
     dialogs/dialog_global_deletion_base.cpp
     dialogs/dialog_keepout_area_properties.cpp

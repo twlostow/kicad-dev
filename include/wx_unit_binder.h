@@ -27,6 +27,7 @@
 
 #include <common.h>
 #include <wx/spinbutt.h>
+#include <boost/optional.hpp>
 
 class wxTextEntry;
 class wxSpinButton;
@@ -43,9 +44,10 @@ public:
      * @param aUnitLabel is the units label displayed next to the text field.
      * @param aSpinButton is an optional spin button (for adjusting the input value)
      */
-    WX_UNIT_BINDER( wxWindow* aParent, wxTextEntry* aTextInput, wxStaticText* aUnitLabel, wxSpinButton* aSpinButton = NULL );
+    WX_UNIT_BINDER( wxWindow* aParent, wxTextEntry* aTextInput, wxStaticText* aUnitLabel, wxSpinButton* aSpinButton = NULL, EDA_UNITS_T aForceUnits = DEFAULT_UNITS );
 
     virtual ~WX_UNIT_BINDER();
+
 
     /**
      * Function SetValue
@@ -54,11 +56,21 @@ public:
      */
     virtual void SetValue( int aValue );
 
+    virtual void SetValue( double aValue );
+
+    virtual void SetValue( boost::optional<int> aValue );
+
+    virtual void SetValue( boost::optional<double> aValue );
+
+    bool HasValue() const;
+
     /**
      * Function GetValue
      * Returns the current value in Internal Units.
      */
     virtual int GetValue() const;
+
+    virtual double GetValueDbl() const;
 
     /**
      * Function Valid
@@ -84,6 +96,8 @@ protected:
 
     ///> Currently used units.
     EDA_UNITS_T   m_units;
+
+    bool m_hasValue;
 
     ///> Step size (added/subtracted difference if spin buttons are used).
     int m_step;

@@ -145,6 +145,7 @@ enum EDA_UNITS_T {
     MILLIMETRES = 1,
     UNSCALED_UNITS = 2,
     DEGREES = 3,
+    DEFAULT_UNITS = 4
 };
 
 

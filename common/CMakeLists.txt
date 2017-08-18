@@ -342,12 +342,15 @@ set( COMMON_SRCS
 
     geometry/seg.cpp
     geometry/shape.cpp
+    geometry/shape_arc.cpp
     geometry/shape_line_chain.cpp
     geometry/shape_poly_set.cpp
     geometry/shape_collisions.cpp
     geometry/shape_file_io.cpp
     geometry/convex_hull.cpp
+    geometry/outline_shape_builder.cpp
     )
+
 add_library( common STATIC ${COMMON_SRCS} )
 add_dependencies( common lib-dependencies )
 add_dependencies( common version_header )

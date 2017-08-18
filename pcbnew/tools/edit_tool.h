@@ -230,6 +230,8 @@ private:
         return item;
     }
 
+    int invokePropertiesDialog( const SELECTION& aSelection );
+
     std::unique_ptr<BOARD_COMMIT> m_commit;
 };
 

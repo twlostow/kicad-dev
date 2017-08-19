@@ -682,7 +682,7 @@ void PCB_BASE_FRAME::UpdateStatusBar()
             formatter = wxT( "Ro %f  Th %f" );
             break;
 
-        case DEGREES:
+        default:
             wxASSERT( false );
             break;
         }

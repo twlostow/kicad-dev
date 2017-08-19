@@ -34,6 +34,7 @@
 #include <tools/pcb_actions.h>
 #include <tools/selection_tool.h>
 
+#include <gal/graphics_abstraction_layer.h>
 
 ZONE_CREATE_HELPER::ZONE_CREATE_HELPER( DRAWING_TOOL& aTool,
                    const PARAMS& aParams ):
@@ -198,12 +199,12 @@ bool ZONE_CREATE_HELPER::OnFirstPoint()
 
         if( m_zone )
         {
-            // set up poperties from zone
             const auto& settings = *m_parentView.GetPainter()->GetSettings();
             COLOR4D color = settings.GetColor( nullptr, m_zone->GetLayer() );
 
-            m_previewItem.SetStrokeColor( color );
-            m_previewItem.SetFillColor( color.WithAlpha( 0.2 ) );
+            m_previewItem.SetLineWidth( 2.0 * m_parentView.GetGAL()->GetWorldScale() );
+            m_previewItem.SetStrokeColor( color.Brighten( 0.2 ) );
+            m_previewItem.SetFillColor( color.WithAlpha( 0.4 ) );
 
             m_parentView.SetVisible( &m_previewItem, true );
         }
@@ -228,9 +229,12 @@ void ZONE_CREATE_HELPER::OnGeometryChange( const POLYGON_GEOM_MANAGER& aMgr )
 
 void ZONE_CREATE_HELPER::OnComplete( const POLYGON_GEOM_MANAGER& aMgr )
 {
-    auto& finalPoints = aMgr.GetLockedInPoints();
+    SHAPE_LINE_CHAIN finalPoints = aMgr.GetLockedInPoints();
 
-    if( finalPoints.size() < 3 )
+    finalPoints.SetClosed( true );
+    finalPoints.Simplify( );
+
+    if( finalPoints.PointCount() < 3 )
     {
         // just scrap the zone in progress
         m_zone = nullptr;

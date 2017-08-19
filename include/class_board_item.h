@@ -39,7 +39,7 @@
 class BOARD;
 class BOARD_ITEM_CONTAINER;
 class EDA_DRAW_PANEL;
-
+class ANCHOR;
 
 /**
  * Enum STROKE_T
@@ -334,6 +334,16 @@ public:
     static std::string FormatInternalUnits( const wxSize& aSize );
 
     virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
+
+    /**
+     * Function GetAnchors()
+     * Returns a set of anchors attached to the item. The anchors can be used for snapping
+     * or mechanical constraints.
+     *
+     * @return A std::vector containg a list of anchors. Pointer ownership belongs to the caller.
+     */
+
+    virtual const std::vector<ANCHOR*> GetAnchors();
 };
 
 #endif /* BOARD_ITEM_STRUCT_H */

@@ -37,24 +37,22 @@ POLYGON_ITEM::POLYGON_ITEM():
 {
 }
 
-void POLYGON_ITEM::SetPoints( const std::vector<VECTOR2I>& aLockedPts,
-                              const std::vector<VECTOR2I>& aLeaderPts )
+void POLYGON_ITEM::SetPoints( const SHAPE_LINE_CHAIN& aLockedInPts,
+                              const SHAPE_LINE_CHAIN& aLeaderPts )
 {
-    m_lockedChain.Clear();
-    m_leaderChain.Clear();
-
     m_polyfill.RemoveAllContours();
     m_polyfill.NewOutline();
 
-    for( auto& pt: aLockedPts )
+    m_lockedChain = aLockedInPts;
+    m_leaderChain = aLeaderPts;
+
+    for( const auto& pt: aLockedInPts )
     {
-        m_lockedChain.Append( pt, false );
         m_polyfill.Append( pt );
     }
 
-    for( auto& pt: aLeaderPts )
+    for( const auto& pt: aLeaderPts )
     {
-        m_leaderChain.Append( pt, false );
         m_polyfill.Append( pt );
     }
 }

@@ -24,6 +24,7 @@
 
 
 #include <geometry/shape.h>
+#include <geometry/shape_line_chain.h>
 
 bool SHAPE::Parse( std::stringstream& aStream )
 {
@@ -36,4 +37,10 @@ const std::string SHAPE::Format() const
 {
     assert( false );
     return std::string( "" );
+}
+
+const SHAPE_LINE_CHAIN SHAPE::ConvertToPolyline( bool aWire, int aOffset, double aApproximationAccuracy )
+{
+    assert( false );
+    return SHAPE_LINE_CHAIN();
 }

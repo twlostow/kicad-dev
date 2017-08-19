@@ -49,7 +49,10 @@ public:
     };
 
     OUTLINE_SHAPE_BUILDER()
-    {};
+    {
+        m_allowedShapeTypes = { SHT_LINE, SHT_CORNER_90, SHT_CORNER_45, SHT_CORNER_ARC_90, SHT_CORNER_ARC_45 };
+        m_shapeType = SHT_LINE;
+    };
 
     ~OUTLINE_SHAPE_BUILDER() {};
 
@@ -73,13 +76,14 @@ public:
         return m_shapeType;
     }
 
-    void NextShapeType()
+    void SetAllowedShapeTypes( std::vector<SHAPE_TYPE> aAllowedTypes )
     {
-        m_shapeType = (SHAPE_TYPE) ( (int) (m_shapeType) + 1 );
-
-        if( m_shapeType == SHT_LAST )
-            m_shapeType = SHT_LINE;
+        m_allowedShapeTypes = aAllowedTypes;
     }
+
+    bool IsShapeTypeAllowed( SHAPE_TYPE aType ) const;
+
+    void NextShapeType();
 
     void SetStart( const VECTOR2I& aStart )
     {
@@ -122,7 +126,7 @@ public:
     }
 
     bool    Construct( std::vector<SHAPE*>& aShape );
-    bool    Construct( std::vector<SHAPE_LINE_CHAIN>& aShape );
+    bool    Construct( SHAPE_LINE_CHAIN& aShape );
 
 private:
 
@@ -137,6 +141,7 @@ private:
     bool m_diagonal = false;
     double m_arcApproxFactor = 0.01;
     VECTOR2I m_start, m_end;
+    std::vector<SHAPE_TYPE> m_allowedShapeTypes;
 };
 
 #endif

@@ -25,7 +25,12 @@
 #define PREVIEW_POLYGON_GEOM_MANAGER__H_
 
 #include <vector>
+#include <memory>
+
 #include <math/vector2d.h>
+#include <geometry/shape_line_chain.h>
+
+class OUTLINE_SHAPE_BUILDER;
 
 /**
  * Class that handles the drawing of a polygon, including
@@ -125,7 +130,7 @@ public:
     /**
      * Get the "locked-in" points that describe the polygon itself
      */
-    const std::vector<VECTOR2I>& GetLockedInPoints() const;
+    const SHAPE_LINE_CHAIN& GetLockedInPoints() const;
 
     /**
      * Get the points comprising the leader line (the line from the
@@ -133,8 +138,10 @@ public:
      *
      * How this is drawn will depend on the LEADER_MODE
      */
-    const std::vector<VECTOR2I>& GetLeaderLinePoints() const;
+    const SHAPE_LINE_CHAIN& GetLeaderLinePoints() const;
 
+    OUTLINE_SHAPE_BUILDER* GetOutlineBuilder() const;
+    
 private:
 
     /**
@@ -146,14 +153,14 @@ private:
     ///> The "user" of the polygon data that is informed when the geometry changes
     CLIENT& m_client;
 
-    ///> The current mode of the leader line
-    LEADER_MODE m_leaderMode;
+    ///> Shape builder objects
+    std::unique_ptr<OUTLINE_SHAPE_BUILDER> m_shapeBuilder;
 
     ///> Point that have been "locked in"
-    std::vector<VECTOR2I> m_lockedPoints;
+    SHAPE_LINE_CHAIN m_lockedPoints;
 
     ///> Points in the temporary "leader" line(s)
-    std::vector<VECTOR2I> m_leaderPts;
+    SHAPE_LINE_CHAIN m_leaderPts;
 };
 
 #endif // PREVIEW_POLYGON_GEOM_MANAGER__H_

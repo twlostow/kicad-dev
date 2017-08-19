@@ -44,7 +44,7 @@
 #include <polygon_test_point_inside.h>
 #include <convert_to_biu.h>
 #include <convert_basic_shapes_to_polygon.h>
-
+#include <anchor.h>
 
 /**
  * Helper function
@@ -1393,9 +1393,18 @@ void D_PAD::ImportSettingsFromMaster( const D_PAD& aMasterPad )
     MergePrimitivesAsPolygon();
 }
 
+
 void D_PAD::SwapData( BOARD_ITEM* aImage )
 {
     assert( aImage->Type() == PCB_PAD_T );
 
     std::swap( *((MODULE*) this), *((MODULE*) aImage) );
 }
+
+
+const std::vector<ANCHOR*> D_PAD::GetAnchors()
+{
+    std::vector<ANCHOR*> rv;
+    return rv;
+}
+

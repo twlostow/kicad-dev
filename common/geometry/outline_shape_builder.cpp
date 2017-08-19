@@ -178,8 +178,47 @@ bool OUTLINE_SHAPE_BUILDER::Construct( std::vector<SHAPE*>& aShape )
 }
 
 
-bool OUTLINE_SHAPE_BUILDER::Construct( std::vector<SHAPE_LINE_CHAIN>& aShape )
+bool OUTLINE_SHAPE_BUILDER::Construct( SHAPE_LINE_CHAIN& aShape )
 {
-    // fixme
+    std::vector<SHAPE*> shapes;
+
+
+    if( !Construct( shapes ) )
+        return false;
+
+    aShape.Clear();
+
+    for( auto sh : shapes )
+    {
+        aShape.Append( sh->ConvertToPolyline( ) );
+        delete sh;
+    }
+
+    aShape.Simplify();
+
+    return true;
+}
+
+void OUTLINE_SHAPE_BUILDER::NextShapeType()
+{
+    for (;;)
+    {
+        m_shapeType = (SHAPE_TYPE) ( (int) (m_shapeType) + 1 );
+
+        if( m_shapeType == SHT_LAST )
+            m_shapeType = SHT_LINE;
+
+        for ( auto s : m_allowedShapeTypes )
+            if ( s == m_shapeType )
+                return;
+    }
+}
+
+bool OUTLINE_SHAPE_BUILDER::IsShapeTypeAllowed( SHAPE_TYPE aType ) const
+{
+    for ( auto s : m_allowedShapeTypes )
+        if ( s == aType )
+            return true;
+
     return false;
 }

@@ -1,4 +1,4 @@
-/**
+444444/**
  * @file class_board_item.cpp
  * @brief Class BOARD_ITEM definition and  some basic functions.
  */
@@ -259,8 +259,13 @@ void BOARD_ITEM::DeleteStructure()
     delete this;
 }
 
-
 void BOARD_ITEM::SwapData( BOARD_ITEM* aImage )
 {
     
+}
+
+
+const std::vector<ANCHOR*> BOARD_ITEM::GetAnchors()
+{
+    return std::vector<ANCHOR*>();
 }

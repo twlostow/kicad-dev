@@ -254,6 +254,8 @@ public:
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
 #endif
+
+    virtual const std::vector<ANCHOR*> GetAnchors() override;
 };
 
 #endif  // CLASS_DRAWSEGMENT_H_

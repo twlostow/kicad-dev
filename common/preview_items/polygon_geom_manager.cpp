@@ -23,14 +23,14 @@
 
 #include <preview_items/polygon_geom_manager.h>
 
-#include <geometry/direction45.h>
-
+#include <geometry/outline_shape_builder.h>
 
 POLYGON_GEOM_MANAGER::POLYGON_GEOM_MANAGER( CLIENT& aClient ):
-    m_client( aClient ),
-    m_leaderMode( LEADER_MODE::DIRECT )
-{}
-
+    m_client( aClient )
+{
+    m_shapeBuilder.reset ( new OUTLINE_SHAPE_BUILDER );
+    m_shapeBuilder->SetShapeType ( OUTLINE_SHAPE_BUILDER::SHT_CORNER_45 );
+}
 
 void POLYGON_GEOM_MANAGER::AddPoint( const VECTOR2I& aPt )
 {
@@ -39,17 +39,22 @@ void POLYGON_GEOM_MANAGER::AddPoint( const VECTOR2I& aPt )
     if( !IsPolygonInProgress() && !m_client.OnFirstPoint() )
         return;
 
-    if( m_leaderPts.size() > 1 )
+    if ( m_lockedPoints.PointCount() == 0 )
     {
-        // there are enough leader points - the next
-        // locked-in point is the end of the first leader
-        // segment
-        m_lockedPoints.push_back( m_leaderPts[1] );
+        m_lockedPoints.Append ( aPt );
     }
     else
     {
-        // no leader lines, directly add the cursor
-        m_lockedPoints.push_back( aPt );
+
+        updateLeaderPoints( aPt );
+
+        if( m_leaderPts.PointCount() > 1 )
+        {
+            // there are enough leader points - the next
+            // locked-in point is the end of the first leader
+            // segment
+            m_lockedPoints.Append( m_leaderPts );
+        }
     }
 
     m_client.OnGeometryChange( *this );
@@ -64,7 +69,7 @@ void POLYGON_GEOM_MANAGER::SetFinished()
 
 void POLYGON_GEOM_MANAGER::SetLeaderMode( LEADER_MODE aMode )
 {
-    m_leaderMode = aMode;
+
 }
 
 
@@ -76,28 +81,28 @@ void POLYGON_GEOM_MANAGER::SetCursorPosition( const VECTOR2I& aPos )
 
 bool POLYGON_GEOM_MANAGER::IsPolygonInProgress() const
 {
-    return m_lockedPoints.size() > 0;
+    return m_lockedPoints.PointCount() > 0;
 }
 
 
 bool POLYGON_GEOM_MANAGER::NewPointClosesOutline( const VECTOR2I& aPt ) const
 {
-    return m_lockedPoints.size() && m_lockedPoints[0] == aPt;
+    return m_lockedPoints.PointCount() && m_lockedPoints.CPoint( 0 ) == aPt;
 }
 
 
 void POLYGON_GEOM_MANAGER::DeleteLastCorner()
 {
-    if( m_lockedPoints.size() > 0 )
+    if( m_lockedPoints.PointCount() > 0 )
     {
-        m_lockedPoints.pop_back();
+        m_lockedPoints.Remove( -1 );
     }
 
     // update the new last segment (was previously
     // locked in), reusing last constraints
-    if( m_lockedPoints.size() > 0 )
+    if( m_lockedPoints.PointCount() > 0 )
     {
-        updateLeaderPoints( m_leaderPts.back() );
+        updateLeaderPoints( m_leaderPts.CPoint( -1 ) );
     }
 
     m_client.OnGeometryChange( *this );
@@ -106,8 +111,8 @@ void POLYGON_GEOM_MANAGER::DeleteLastCorner()
 
 void POLYGON_GEOM_MANAGER::Reset()
 {
-    m_lockedPoints.clear();
-    m_leaderPts.clear();
+    m_lockedPoints.Clear();
+    m_leaderPts.Clear();
 
     m_client.OnGeometryChange( *this );
 }
@@ -117,42 +122,33 @@ void POLYGON_GEOM_MANAGER::updateLeaderPoints( const VECTOR2I& aEndPoint )
 {
     SHAPE_LINE_CHAIN newChain;
 
-    if( m_leaderMode == LEADER_MODE::DEG45 )
+    if ( m_lockedPoints.PointCount() > 0 )
     {
-        // get a restricted 45/H/V line from the last fixed point to the cursor
-        DIRECTION_45 direction( m_lockedPoints.back() - aEndPoint );
-        newChain = direction.BuildInitialTrace( m_lockedPoints.back(), aEndPoint );
-
-        // Can also add chain back to start, but this rearely produces
-        // usable result
-        //DIRECTION_45 directionToStart( aEndPoint - m_lockedPoints.front() );
-        //newChain.Append( directionToStart.BuildInitialTrace( aEndPoint, m_lockedPoints.front() ) );
+        m_shapeBuilder->SetStart( m_lockedPoints.CPoint( -1 ) );
+        m_shapeBuilder->SetEnd( aEndPoint );
+        m_shapeBuilder->Construct( m_leaderPts );
     }
     else
     {
-        // direct segment
-        newChain = SHAPE_LINE_CHAIN( m_lockedPoints.back(), aEndPoint );
-    }
-
-    // rebuild leader point list from the chain
-    m_leaderPts.clear();
-
-    for( int i = 0; i < newChain.PointCount(); ++i )
-    {
-        m_leaderPts.push_back( newChain.Point( i ) );
+        m_leaderPts.Append ( aEndPoint );
     }
 
     m_client.OnGeometryChange( *this );
 }
 
 
-const std::vector<VECTOR2I>& POLYGON_GEOM_MANAGER::GetLockedInPoints() const
+const SHAPE_LINE_CHAIN& POLYGON_GEOM_MANAGER::GetLockedInPoints() const
 {
     return m_lockedPoints;
 }
 
 
-const std::vector<VECTOR2I>& POLYGON_GEOM_MANAGER::GetLeaderLinePoints() const
+const SHAPE_LINE_CHAIN& POLYGON_GEOM_MANAGER::GetLeaderLinePoints() const
 {
     return m_leaderPts;
+}
+
+OUTLINE_SHAPE_BUILDER* POLYGON_GEOM_MANAGER::GetOutlineBuilder() const
+{
+    return m_shapeBuilder.get();
 }

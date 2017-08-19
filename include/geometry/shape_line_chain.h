@@ -128,6 +128,26 @@ public:
     ~SHAPE_LINE_CHAIN()
     {}
 
+    std::vector<VECTOR2I>::iterator begin()
+    {
+        return m_points.begin();
+    }
+
+    std::vector<VECTOR2I>::iterator end()
+    {
+        return m_points.end();
+    }
+
+    std::vector<VECTOR2I>::const_iterator begin() const
+    {
+        return m_points.begin();
+    }
+
+    std::vector<VECTOR2I>::const_iterator end() const
+    {
+        return m_points.end();
+    }
+
     SHAPE* Clone() const override;
 
     /**

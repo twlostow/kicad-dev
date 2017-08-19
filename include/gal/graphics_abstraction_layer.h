@@ -289,6 +289,16 @@ public:
     }
 
     /**
+     * @brief Set the line width (in pixels).
+     *
+     * @param aLineWidth is the line width.
+     */
+    virtual void SetLinePixelWidth( double aLineWidth )
+    {
+        lineWidth = aLineWidth * worldScale;
+    }
+
+    /**
      * @brief Set the depth of the layer (position on the z-axis)
      *
      * @param aLayerDepth the layer depth for the objects.

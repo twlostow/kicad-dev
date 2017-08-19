@@ -347,6 +347,7 @@ set( COMMON_SRCS
     geometry/shape_poly_set.cpp
     geometry/shape_collisions.cpp
     geometry/shape_file_io.cpp
+    geometry/shape_segment.cpp
     geometry/convex_hull.cpp
     geometry/outline_shape_builder.cpp
     )

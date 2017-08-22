@@ -270,6 +270,17 @@ int POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 {
     const SELECTION& selection = m_selectionTool->GetSelection();
 
+
+    auto cond = SELECTION_CONDITIONS::HasType( PCB_CONSTRAINT_LINEAR_T ) ( selection );
+    cond |= SELECTION_CONDITIONS::HasType( PCB_LINE_T ) ( selection );
+
+    if( cond )
+    {
+        printf("Not for POINT_EDITOR!\n");
+        return 0;
+    }
+
+
     if( selection.Size() != 1 )
         return 0;
 

@@ -49,6 +49,7 @@ circle
 clearance
 comment
 company
+constraint_linear
 connect
 connect_pads
 copperpour
@@ -62,6 +63,7 @@ die_length
 dimension
 diff_pair_width
 diff_pair_gap
+distance
 drawings
 drill
 edge
@@ -102,6 +104,7 @@ layers
 left
 links
 locked
+measure_line_origin
 micro
 min_thickness
 mirror

@@ -30,6 +30,8 @@
 #include <class_module.h>
 #include <class_edge_mod.h>
 #include <class_zone.h>
+#include <class_constraint.h>
+
 #include <collectors.h>
 #include <wxPcbStruct.h>
 #include <kiway.h>
@@ -65,6 +67,8 @@ using namespace std::placeholders;
 #include <dialogs/dialog_track_via_properties.h>
 #include <dialogs/dialog_graphic_segment_properties.h>
 #include <dialogs/dialog_graphic_arc_properties.h>
+#include <dialogs/dialog_linear_constraint_properties.h>
+
 #include <dialogs/dialog_exchange_modules.h>
 
 #include <tools/tool_event_utils.h>
@@ -626,6 +630,18 @@ int EDIT_TOOL::invokePropertiesDialog( const SELECTION& aSelection )
                 m_commit->Push( _( "Edit track/via properties" ) );
             }
         }
+    }
+
+    if ( SELECTION_CONDITIONS::OnlyType( PCB_CONSTRAINT_LINEAR_T ) ( aSelection ) )
+    {
+        DIALOG_LINEAR_CONSTRAINT_PROPERTIES dlg( frame(), aSelection );
+
+        if( dlg.ShowModal() )
+        {
+            dlg.Apply( *m_commit );
+            m_commit->Push( _( "Edit linear constraint properties" ) );
+        }
+        return 1;
     }
 
     if ( SELECTION_CONDITIONS::OnlyType( PCB_LINE_T ) ( aSelection ) )

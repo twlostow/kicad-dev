@@ -80,6 +80,7 @@ public:
         DIMENSION,
         KEEPOUT,
         ZONE,
+        LINEAR_CONSTRAINT,
         GRAPHIC_POLYGON
     };
 
@@ -129,6 +130,7 @@ public:
      * The second click determines the end and the third click modifies its height.
      */
     int DrawDimension( const TOOL_EVENT& aEvent );
+    int DrawLinearConstraint( const TOOL_EVENT& aEvent );
 
     /**
      * Function DrawZone()

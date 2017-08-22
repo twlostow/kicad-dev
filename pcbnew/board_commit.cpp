@@ -208,6 +208,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry )
                 case PCB_MARKER_T:              // a marker used to show something
                 case PCB_ZONE_T:                // SEG_ZONE items are now deprecated
                 case PCB_ZONE_AREA_T:
+                case PCB_CONSTRAINT_LINEAR_T:
                     view->Remove( boardItem );
 
                     if( !( changeFlags & CHT_DONE ) )

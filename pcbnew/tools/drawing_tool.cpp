@@ -57,6 +57,7 @@
 #include <class_dimension.h>
 #include <class_zone.h>
 #include <class_module.h>
+#include <class_constraint.h>
 
 #include <tools/selection_tool.h>
 #include <tools/tool_event_utils.h>
@@ -67,7 +68,6 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_arc.h>
 #include <geometry/outline_shape_builder.h>
-
 
 using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
 
@@ -95,6 +95,10 @@ TOOL_ACTION PCB_ACTIONS::placeText( "pcbnew.InteractiveDrawing.text",
 TOOL_ACTION PCB_ACTIONS::drawDimension( "pcbnew.InteractiveDrawing.dimension",
         AS_GLOBAL, 0,
         _( "Add Dimension" ), _( "Add a dimension" ), NULL, AF_ACTIVATE );
+
+TOOL_ACTION PCB_ACTIONS::drawLinearConstraint( "pcbnew.InteractiveDrawing.linearConstraint",
+        AS_GLOBAL, 'A',
+        _( "Add Linear Constraint" ), _( "Add a linear constraint" ), NULL, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::drawZone( "pcbnew.InteractiveDrawing.zone",
         AS_GLOBAL, 0,
@@ -138,6 +142,12 @@ TOOL_ACTION PCB_ACTIONS::decWidth( "pcbnew.InteractiveDrawing.decWidth",
 TOOL_ACTION PCB_ACTIONS::arcPosture( "pcbnew.InteractiveDrawing.arcPosture",
         AS_CONTEXT, TOOL_ACTION::LegacyHotKey( HK_SWITCH_TRACK_POSTURE ),
         _( "Switch Arc Posture" ), _( "Switch the arc posture" ) );
+
+TOOL_ACTION linearConstraintOrientation( "pcbnew.InteractiveDrawing.linearConstraintOrientation", AS_CONTEXT,
+            ' ',
+            _( "Switch Constraint Posture/Angle" ),
+            _( "Cycles through possible postures of the currently drawn constraint." ),
+            change_entry_orient_xpm );
 
 /*
  * Contextual actions
@@ -215,6 +225,9 @@ bool DRAWING_TOOL::Init()
                               return m_mode == MODE::LINE;
                           };
 
+    auto drawingLinearConstraint = [this ] ( const SELECTION& aSel ) {
+                                       return m_mode == MODE::LINEAR_CONSTRAINT;
+                                   };
 
     auto& ctxMenu = m_menu.GetMenu();
 
@@ -224,6 +237,7 @@ bool DRAWING_TOOL::Init()
     // tool-specific actions
     ctxMenu.AddItem( closeZoneOutline, zoneActiveFunctor, 1000 );
     ctxMenu.AddItem( deleteLastPoint, canUndoPoint, 1000 );
+    ctxMenu.AddItem( linearConstraintOrientation, drawingLinearConstraint, 1000 );
     ctxMenu.AddItem( switchOutlinePosture, drawingOutline, 1000 );
     ctxMenu.AddItem( switchOutlineShape, drawingOutline, 1000 );
     ctxMenu.AddItem( changeCornerRadius, drawingOutline, 1000 );
@@ -897,6 +911,177 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
     if( step != SET_ORIGIN )
         delete dimension;
+
+    m_view->Remove( &preview );
+    m_frame->SetNoToolSelected();
+
+    return 0;
+}
+
+int DRAWING_TOOL::DrawLinearConstraint( const TOOL_EVENT& aEvent )
+{
+    std::unique_ptr<CONSTRAINT_LINEAR> constraint;
+    BOARD_COMMIT commit( frame() );
+    GRID_HELPER grid( frame () );
+
+    // Add a VIEW_GROUP that serves as a preview for the new item
+    KIGFX::VIEW_GROUP preview;
+
+    m_view->Add( &preview );
+
+    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+    m_controls->ShowCursor( true );
+    m_controls->SetSnapping( true );
+
+    SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::LINEAR_CONSTRAINT );
+
+    Activate();
+    //m_frame->SetToolID( ID_PCB_DIMENSION_BUTT, wxCURSOR_PENCIL, _( "Add " ) );
+    m_lineWidth = getSegmentWidth( getDrawingLayer() );
+
+    int orientAngle = 0;
+
+    enum LINEAR_CONSTRAINT_STEPS
+    {
+        SET_ORIGIN = 0,
+        SET_END,
+        SET_HEIGHT,
+        FINISHED
+    };
+    int step = SET_ORIGIN;
+
+    SEG baseline;
+
+    grid.SetSnapMode( GRID_HELPER::SM_CONSTRAIN );
+
+    // Main loop: keep receiving events
+    while( OPT_TOOL_EVENT evt = Wait() )
+    {
+        grid.Update( );
+        auto cursorPos = grid.Snap();
+
+        if( TOOL_EVT_UTILS::IsCancelInteractive( *evt ) )
+        {
+            if( step != SET_ORIGIN )    // start from the beginning
+            {
+                preview.Clear();
+
+                constraint.reset();
+                step = SET_ORIGIN;
+            }
+            else
+                break;
+
+            if( evt->IsActivate() ) // now finish unconditionally
+                break;
+        }
+        else if( evt->IsAction( &linearConstraintOrientation ) )
+        {
+            switch( orientAngle )
+            {
+                case 0: orientAngle = 90; break;
+                case 90: orientAngle = -1; break;
+                case -1: orientAngle = 0; break;
+                default: break;
+            }
+
+            printf("ang %d\n", orientAngle);
+            if( constraint )
+            {
+                constraint->SetAngle( orientAngle < 0 ? true : false, orientAngle );
+            }
+
+            m_view->Update( &preview );
+        }
+        else if( evt->IsClick( BUT_RIGHT ) )
+        {
+            m_menu.ShowContextMenu();
+        }
+        else if( evt->IsClick( BUT_LEFT ) )
+        {
+            switch( step )
+            {
+            case SET_ORIGIN:
+            {
+                PCB_LAYER_ID layer = getDrawingLayer();
+
+                if( layer == Edge_Cuts )        // dimensions are not allowed on EdgeCuts
+                    layer = Dwgs_User;
+
+                // Init the new item attributes
+                constraint.reset( new CONSTRAINT_LINEAR( board() ) );
+                constraint->SetLayer( layer );
+
+                constraint->SetP0( cursorPos );
+                constraint->SetP1( cursorPos );
+
+                preview.Add( constraint.get() );
+
+                m_controls->SetAutoPan( true );
+                m_controls->CaptureCursor( true );
+            }
+            break;
+
+            case SET_END:
+                baseline.B = cursorPos;
+                constraint->SetP1( baseline.B );
+                // Dimensions that have origin and end in the same spot are not valid
+                if( constraint->GetP0() == constraint->GetP1() )
+                    --step;
+
+                break;
+
+            case SET_HEIGHT:
+            {
+                //if( cursorPos != constraint->GetPosition() )
+                {
+                    //assert( constraint->GetOrigin() != constraint->GetEnd() );
+                    //assert( constraint->GetWidth() > 0 );
+
+
+                    preview.Remove( constraint.get() );
+
+                    commit.Add( constraint.release() );
+                    commit.Push( _( "Draw a linear constraint" ) );
+                    printf("Add Constraint!\n");
+                }
+            }
+            break;
+            }
+
+            if( ++step == FINISHED )
+            {
+                step = SET_ORIGIN;
+                m_controls->SetAutoPan( false );
+                m_controls->CaptureCursor( false );
+            }
+        }
+        else if( evt->IsMotion() )
+        {
+            switch( step )
+            {
+            case SET_END:
+                constraint->SetP1( cursorPos );
+                constraint->SetMeasureLineOrigin( cursorPos );
+
+
+                m_view->Update( &preview );
+                break;
+
+            case SET_HEIGHT:
+            {
+
+                constraint->SetMeasureLineOrigin( cursorPos );
+
+
+            }
+            break;
+            }
+
+            // Show a preview of the item
+            m_view->Update( &preview );
+        }
+    }
 
     m_view->Remove( &preview );
     m_frame->SetNoToolSelected();
@@ -1833,6 +2018,7 @@ void DRAWING_TOOL::setTransitions()
     Go( &DRAWING_TOOL::DrawCircle, PCB_ACTIONS::drawCircle.MakeEvent() );
     Go( &DRAWING_TOOL::DrawArc, PCB_ACTIONS::drawArc.MakeEvent() );
     Go( &DRAWING_TOOL::DrawDimension, PCB_ACTIONS::drawDimension.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawLinearConstraint, PCB_ACTIONS::drawLinearConstraint.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZone, PCB_ACTIONS::drawZone.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZoneKeepout, PCB_ACTIONS::drawZoneKeepout.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZoneCutout, PCB_ACTIONS::drawZoneCutout.MakeEvent() );

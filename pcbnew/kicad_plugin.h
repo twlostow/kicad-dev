@@ -78,8 +78,8 @@ class TEXTE_MODULE;
 class TRACK;
 class ZONE_CONTAINER;
 class TEXTE_PCB;
-
-
+class CONSTRAINT_BASE;
+class CONSTRAINT_LINEAR;
 
 /**
  * Class PCB_IO
@@ -225,6 +225,8 @@ private:
     void format( TRACK* aTrack, int aNestLevel = 0 ) const;
 
     void format( ZONE_CONTAINER* aZone, int aNestLevel = 0 ) const;
+
+    void format( CONSTRAINT_LINEAR* aConstraint, int aNestLevel = 0 ) const;
 
     void formatLayer( const BOARD_ITEM* aItem ) const;
 

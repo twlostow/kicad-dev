@@ -35,6 +35,7 @@
 #include <class_dimension.h>
 #include <class_pcb_target.h>
 #include <class_marker_pcb.h>
+#include <class_constraint.h>
 
 #include <layers_id_colors_and_visibility.h>
 #include <pcb_painter.h>
@@ -319,6 +320,10 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 
     case PCB_MARKER_T:
         draw( static_cast<const MARKER_PCB*>( item ) );
+        break;
+
+    case PCB_CONSTRAINT_LINEAR_T:
+        draw( static_cast<const CONSTRAINT_LINEAR*>( item ), aLayer );
         break;
 
     default:
@@ -1198,6 +1203,33 @@ void PCB_PAINTER::draw( const DIMENSION* aDimension, int aLayer )
     m_gal->SetLineWidth( text.GetThickness() );
     m_gal->SetTextAttributes( &text );
     m_gal->StrokeText( text.GetShownText(), position, text.GetTextAngleRadians() );
+}
+
+void PCB_PAINTER::draw( const CONSTRAINT_LINEAR* aConstraint, int aLayer )
+{
+    const COLOR4D& strokeColor = m_pcbSettings.GetColor( aConstraint, aLayer );
+
+    printf("drawConstraint!\n");
+
+    m_gal->SetStrokeColor( strokeColor );
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( true );
+    m_gal->SetLineWidth( getLineThickness( aConstraint->GetWidth() ) );
+
+    for ( const auto s : aConstraint->BuildShape( ) )
+    {
+        m_gal->DrawLine ( s.GetSeg().A, s.GetSeg().B );
+    }
+
+
+
+/*    // Draw text
+    TEXTE_PCB& text = aDimension->Text();
+    VECTOR2D position( text.GetTextPos().x, text.GetTextPos().y );
+
+    m_gal->SetLineWidth( text.GetThickness() );
+    m_gal->SetTextAttributes( &text );
+    m_gal->StrokeText( text.GetShownText(), position, text.GetTextAngleRadians() );*/
 }
 
 

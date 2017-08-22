@@ -350,7 +350,8 @@ set( COMMON_SRCS
     geometry/shape_segment.cpp
     geometry/convex_hull.cpp
     geometry/outline_shape_builder.cpp
-    )
+    geometry/constraint_solver.cpp
+)
 
 add_library( common STATIC ${COMMON_SRCS} )
 add_dependencies( common lib-dependencies )

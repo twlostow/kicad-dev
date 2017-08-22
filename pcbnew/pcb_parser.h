@@ -55,6 +55,8 @@ class PCB_TARGET;
 class VIA;
 class ZONE_CONTAINER;
 class MODULE_3D_SETTINGS;
+class CONSTRAINT_LINEAR;
+
 struct LAYER;
 
 
@@ -133,6 +135,7 @@ class PCB_PARSER : public PCB_LEXER
     ZONE_CONTAINER* parseZONE_CONTAINER();
     PCB_TARGET*     parsePCB_TARGET();
     BOARD*          parseBOARD();
+    CONSTRAINT_LINEAR*          parseCONSTRAINT_LINEAR();
 
     /**
      * Function parseBOARD_unchecked
@@ -256,10 +259,10 @@ class PCB_PARSER : public PCB_LEXER
         return parseInt();
     }
 
-    inline long parseHex()
+    inline uint64_t parseHex()
     {
         NextTok();
-        return strtol( CurText(), NULL, 16 );
+        return strtoull( CurText(), NULL, 16 );
     }
 
     bool parseBool();

@@ -44,6 +44,7 @@ using namespace std::placeholders;
 #include <class_dimension.h>
 #include <class_zone.h>
 #include <class_edge_mod.h>
+#include <class_constraint.h>
 
 #include <connectivity.h>
 

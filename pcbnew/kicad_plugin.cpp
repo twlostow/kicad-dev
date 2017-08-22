@@ -39,6 +39,7 @@
 #include <class_drawsegment.h>
 #include <class_pcb_target.h>
 #include <class_edge_mod.h>
+#include <class_constraint.h>
 #include <pcb_plot_params.h>
 #include <zones.h>
 #include <kicad_plugin.h>
@@ -509,6 +510,10 @@ void PCB_IO::Format( BOARD_ITEM* aItem, int aNestLevel ) const
         format( static_cast<ZONE_CONTAINER*>( aItem ), aNestLevel );
         break;
 
+    case PCB_CONSTRAINT_LINEAR_T:
+        format( static_cast<CONSTRAINT_LINEAR*>( aItem ), aNestLevel );
+        break;
+
     default:
         wxFAIL_MSG( wxT( "Cannot format item " ) + aItem->GetClass() );
     }
@@ -806,6 +811,25 @@ void PCB_IO::format( BOARD* aBoard, int aNestLevel ) const
         Format( aBoard->GetArea( i ), aNestLevel );
 }
 
+void PCB_IO::format( CONSTRAINT_LINEAR* aConstraint, int aNestLevel ) const
+{
+    m_out->Print( aNestLevel, "(constraint_linear" );
+
+    formatLayer( aConstraint );
+
+    if( aConstraint->GetTimeStamp() )
+        m_out->Print( 0, " (tstamp %lX)", (unsigned long)aConstraint->GetTimeStamp() );
+
+    m_out->Print( 0, "\n" );
+
+    m_out->Print( aNestLevel + 1, "(start %s)\n",               FMT_IU( (wxPoint) aConstraint->GetP0() ).c_str() );
+    m_out->Print( aNestLevel + 1, "(end %s)\n", FMT_IU( (wxPoint)  aConstraint->GetP1() ).c_str() );
+    m_out->Print( aNestLevel + 1, "(measure_line_origin %s)\n",       FMT_IU( (wxPoint) aConstraint->GetMeasureLineOrigin() ).c_str() );
+    m_out->Print( aNestLevel + 1, "(angle %s)\n", FMT_ANGLE( aConstraint->GetAngle() * 10.0 ).c_str() );
+    m_out->Print( aNestLevel + 1, "(distance %s)\n", FMT_IU( aConstraint->GetDistance() ).c_str() );
+
+    m_out->Print( aNestLevel, ")\n" );
+}
 
 void PCB_IO::format( DIMENSION* aDimension, int aNestLevel ) const
 {
@@ -927,7 +951,7 @@ void PCB_IO::format( DRAWSEGMENT* aSegment, int aNestLevel ) const
         m_out->Print( 0, " (tstamp %lX)", (unsigned long)aSegment->GetTimeStamp() );
 
     if( aSegment->GetStatus() )
-        m_out->Print( 0, " (status %X)", aSegment->GetStatus() );
+        m_out->Print( 0, " (status %lX)", aSegment->GetStatus() );
 
     m_out->Print( 0, ")\n" );
 }
@@ -1623,7 +1647,7 @@ void PCB_IO::format( TRACK* aTrack, int aNestLevel ) const
         m_out->Print( 0, " (tstamp %lX)", (unsigned long)aTrack->GetTimeStamp() );
 
     if( aTrack->GetStatus() != 0 )
-        m_out->Print( 0, " (status %X)", aTrack->GetStatus() );
+        m_out->Print( 0, " (status %lX)", aTrack->GetStatus() );
 
     m_out->Print( 0, ")\n" );
 }

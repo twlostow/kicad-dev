@@ -877,6 +877,10 @@ void BOARD::Add( BOARD_ITEM* aBoardItem, ADD_MODE aMode )
     case PCB_LINE_T:
     case PCB_TEXT_T:
     case PCB_TARGET_T:
+    case PCB_CONSTRAINT_LINEAR_T:
+    case PCB_CONSTRAINT_ANGLE_T:
+    case PCB_CONSTRAINT_DATUM_T:
+
         if( aMode == ADD_APPEND )
             m_Drawings.PushBack( aBoardItem );
         else
@@ -958,6 +962,10 @@ void BOARD::Remove( BOARD_ITEM* aBoardItem )
     case PCB_LINE_T:
     case PCB_TEXT_T:
     case PCB_TARGET_T:
+    case PCB_CONSTRAINT_LINEAR_T:
+    case PCB_CONSTRAINT_ANGLE_T:
+    case PCB_CONSTRAINT_DATUM_T:
+        printf("Remove CONSTRAINT\n");
         m_Drawings.Remove( aBoardItem );
         break;
 

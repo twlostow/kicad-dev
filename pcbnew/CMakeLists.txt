@@ -118,6 +118,8 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_layer_selection_base.cpp
     dialogs/dialog_layers_setup.cpp
     dialogs/dialog_layers_setup_base.cpp
+    dialogs/dialog_linear_constraint_properties_base.cpp
+    dialogs/dialog_linear_constraint_properties.cpp
     dialogs/dialog_modedit_display_options.cpp
     dialogs/dialog_modedit_options.cpp
     dialogs/dialog_modedit_options_base.cpp
@@ -211,6 +213,7 @@ set( PCBNEW_CLASS_SRCS
     build_BOM_from_board.cpp
     class_pcb_layer_widget.cpp
     class_pcb_layer_box_selector.cpp
+    class_constraint.cpp
     clean.cpp
     connect.cpp
     controle.cpp
@@ -302,6 +305,7 @@ set( PCBNEW_CLASS_SRCS
     tools/edit_points.cpp
     tools/edit_constraints.cpp
     tools/point_editor.cpp
+    tools/outline_editor.cpp
     tools/drawing_tool.cpp
     tools/edit_tool.cpp
     tools/position_relative_tool.cpp

@@ -46,7 +46,6 @@ void CONSTRAINT_BASE::SetLayer( PCB_LAYER_ID aLayer )
  : CONSTRAINT_BASE( aOther.GetParent(), PCB_CONSTRAINT_LINEAR_T )
  {
      m_Layer = aOther.m_Layer;
-     m_delta = aOther.m_delta;
      m_p0 =aOther.m_p0;
      m_p1 = aOther.m_p1;
      m_distance =aOther.m_distance ;
@@ -249,5 +248,23 @@ void CONSTRAINT_LINEAR::updateAngle()
         m_angle = RAD2DEG( atan2 (d.y, d.x) ) + 90.0;
         printf("angle %.1f\n", m_angle );
         m_distance  = d.EuclideanNorm();
+    } else {
+        if ( m_angle == 0.0 )
+            m_distance = std::abs(m_p1.y - m_p0.y);
+        else if ( m_angle == 90.0 )
+            m_distance = std::abs(m_p1.x - m_p0.x);
+
     }
+}
+
+const VECTOR2I CONSTRAINT_LINEAR::GetDisplacementVector() const
+{
+    printf("%p gdv ang %.1f dist %d\n", this, m_angle, m_distance );
+
+    VECTOR2D d = VECTOR2D(1.0, 0.0).Rotate( DEG2RAD ( m_angle - 90.0 ) ).Resize ( m_distance );
+    printf("%p d %.1f %.1f\n", this, d.x, d.y);
+
+    auto ii = VECTOR2I(d);
+    printf("%p ii %d %d\n", this ,ii.x, ii.y);
+    return ii;
 }

@@ -17,8 +17,12 @@ GS_SEGMENT::GS_SEGMENT( DRAWSEGMENT* aSeg )
     m_p0    = aSeg->GetStart();
     m_p1    = aSeg->GetEnd();
     m_dir   = m_p1 - m_p0;
+    m_midpoint = (m_p0 + m_p1) / 2;
     m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
     m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
+    auto anc_midpoint = new GS_ANCHOR( this, 2, m_midpoint );
+    anc_midpoint->SetConstrainable( false );
+    m_anchors.push_back( anc_midpoint );
     m_parent = aSeg;
 }
 
@@ -55,6 +59,8 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             m_anchors[1]->SetNextPos( m_anchors[1]->GetPos() );
         }
 
+        // m_anchors[2]->SetNextPos( (m_anchors[0]->GetNextPos() + m_anchors[1]->GetNextPos() ) / 2 );
+
         break;
 
     case 1:
@@ -78,17 +84,32 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             m_anchors[1]->SetNextPos( aP );
         }
 
+        // m_anchors[2]->SetNextPos( (m_anchors[0]->GetNextPos() + m_anchors[1]->GetNextPos() ) / 2 );
+
         break;
+
+    case 2:
+    {
+        auto dir = (m_anchors[0]->GetPos() - m_anchors[1]->GetPos());
+
+        SEG guide = SEG( m_anchors[2]->GetPos(), m_anchors[2]->GetPos() + dir.Perpendicular() );
+
+        auto delta = guide.LineProject(aP) - m_anchors[2]->GetPos();
+
+        m_anchors[0]->SetNextPos( m_anchors[0]->GetPos() + delta );
+        m_anchors[1]->SetNextPos( m_anchors[1]->GetPos() + delta );
+        break;
+    }
 
     default:
         assert( false );
     }
 
-    if( m_anchors[0]->PositionChanged() )
-        aChangedAnchors.push_back( m_anchors[0] );
+    for( int i = 0; i<2; i++ )
+        if( m_anchors[i]->PositionChanged() )
+            aChangedAnchors.push_back( m_anchors[i] );
 
-    if( m_anchors[1]->PositionChanged() )
-        aChangedAnchors.push_back( m_anchors[1] );
+
 }
 
 
@@ -96,6 +117,7 @@ void GS_SEGMENT::SaveState()
 {
     m_p0_saved  = m_p0;
     m_p1_saved  = m_p1;
+    // m_midpoint_saved = m_midpoint;
 }
 
 
@@ -103,8 +125,10 @@ void GS_SEGMENT::RestoreState()
 {
     m_p0    = m_p0_saved;
     m_p1    = m_p1_saved;
+    // m_midpoint = m_midpoint_saved;
     m_anchors[0]->SetPos( m_p0 );
     m_anchors[1]->SetPos( m_p1 );
+    m_anchors[2]->SetPos( (m_p0 + m_p1) / 2 );
 }
 
 
@@ -114,6 +138,8 @@ void GS_SEGMENT::UpdateAnchors()
     m_anchors[1]->UpdatePos();
     m_p0    = m_anchors[0]->GetPos();
     m_p1    = m_anchors[1]->GetPos();
+    m_anchors[2]->SetPos( (m_p0 + m_p1) / 2);
+    // m_midpoint    = m_anchors[2]->GetPos();
 }
 
 
@@ -123,9 +149,19 @@ GS_LINEAR_CONSTRAINT::GS_LINEAR_CONSTRAINT( CONSTRAINT_LINEAR* aConstraint ) : G
 {
     m_p0    = aConstraint->GetP0();
     m_p1    = aConstraint->GetP1();
-    m_dir   = aConstraint->GetDisplacementVector();
+    printf( "pre-get-disp\n" );
+    m_dir = aConstraint->GetDisplacementVector();
+    printf( "post-get-disp\n" );
     m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
     m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
+
+    m_origin = aConstraint->GetMeasureLineOrigin();
+
+    auto anc_origin = new GS_ANCHOR( this, 2, m_origin );
+    anc_origin->SetConstrainable( false );
+    m_anchors.push_back( anc_origin );
+
+    printf( "GetDisplacement %d %d\n", m_dir.x, m_dir.y );
     m_parent = aConstraint;
 }
 
@@ -134,6 +170,7 @@ void GS_LINEAR_CONSTRAINT::SaveState()
 {
     m_p0_saved  = m_p0;
     m_p1_saved  = m_p1;
+    m_origin_saved = m_origin;
 }
 
 
@@ -141,8 +178,10 @@ void GS_LINEAR_CONSTRAINT::RestoreState()
 {
     m_p0    = m_p0_saved;
     m_p1    = m_p1_saved;
+    m_origin = m_origin_saved;
     m_anchors[0]->SetPos( m_p0 );
     m_anchors[1]->SetPos( m_p1 );
+    m_anchors[2]->SetPos( m_origin );
 }
 
 
@@ -156,8 +195,10 @@ void GS_LINEAR_CONSTRAINT::UpdateAnchors()
 {
     m_anchors[0]->UpdatePos();
     m_anchors[1]->UpdatePos();
+    m_anchors[2]->UpdatePos();
     m_p0    = m_anchors[0]->GetPos();
     m_p1    = m_anchors[1]->GetPos();
+    m_origin = m_anchors[2]->GetPos();
 }
 
 
@@ -168,21 +209,44 @@ void GS_LINEAR_CONSTRAINT::MoveAnchor( int aId,
     switch( aId )
     {
     case 0:
+    {
+        auto    dp1 = m_anchors[1]->GetPos() - m_anchors[0]->GetPos();
+        auto    dp2 = m_anchors[2]->GetPos() - m_anchors[0]->GetPos();
         m_anchors[ 0 ]->SetNextPos( aP );
-        m_anchors[ 1 ]->SetNextPos( aP + m_dir );
+        m_anchors[ 1 ]->SetNextPos( aP + dp1 );
+        m_anchors[ 2 ]->SetNextPos( aP + dp2 );
+        aChangedAnchors.push_back( m_anchors[0] );
+        aChangedAnchors.push_back( m_anchors[1] );
+//        aChangedAnchors.push_back( m_anchors[2] );
         break;
+    }
 
     case 1:
-        m_anchors[ 0 ]->SetNextPos( aP - m_dir );
+    {
+        auto    dp1 = m_anchors[1]->GetPos() - m_anchors[0]->GetPos();
+        auto    dp2 = m_anchors[1]->GetPos() - m_anchors[2]->GetPos();
+
+        m_anchors[ 0 ]->SetNextPos( aP - dp1 );
         m_anchors[ 1 ]->SetNextPos( aP );
+        m_anchors[ 2 ]->SetNextPos( aP - dp2 );
+        aChangedAnchors.push_back( m_anchors[0] );
+        aChangedAnchors.push_back( m_anchors[1] );
+//        aChangedAnchors.push_back( m_anchors[2] );
         break;
+    }
+
+    case 2:
+    {
+        m_anchors[ 2 ]->SetNextPos( aP );
+        printf("cla %d %d\n", aP.x, aP.y );
+//        aChangedAnchors.push_back( m_anchors[2] );
+
+        break;
+    }
 
     default:
         break;
     }
-
-    aChangedAnchors.push_back( m_anchors[0] );
-    aChangedAnchors.push_back( m_anchors[1] );
 }
 
 
@@ -349,8 +413,8 @@ void GEOM_SOLVER::Add( BOARD_ITEM* aItem, bool aPrimary )
 
     case PCB_CONSTRAINT_LINEAR_T:
     {
-        auto c = static_cast<CONSTRAINT_LINEAR*>(aItem);
-        auto s = new GS_LINEAR_CONSTRAINT( c );
+        auto    c   = static_cast<CONSTRAINT_LINEAR*>(aItem);
+        auto    s   = new GS_LINEAR_CONSTRAINT( c );
         s->SetPrimary( aPrimary );
         m_items.push_back( s );
         return;
@@ -379,6 +443,35 @@ const std::vector<GS_ITEM*>& GEOM_SOLVER::AllItems()
     return m_items;
 }
 
+template<class T> T* createOrGetParent( GS_ITEM* aItem, bool aCopy )
+{
+    if ( aCopy )
+    {
+        T* item = new T( *static_cast<T*> (aItem->GetParent() ));
+        return item;
+    } else {
+        return static_cast<T*> (aItem->GetParent());
+    }
+
+}
+
+
+void GS_SEGMENT::Commit( BOARD_ITEM *aTarget )
+{
+   auto    ds  = static_cast<DRAWSEGMENT*> ( aTarget ? aTarget : GetParent() );
+
+   ds->SetStart( (wxPoint) GetStart() );
+   ds->SetEnd( (wxPoint) GetEnd() );
+}
+
+void GS_LINEAR_CONSTRAINT::Commit( BOARD_ITEM *aTarget )
+{
+   auto    ds  = static_cast<CONSTRAINT_LINEAR*> ( aTarget ? aTarget : GetParent() );
+   ds->SetP0( GetP0() );
+   ds->SetP1( GetP1() );
+   ds->SetMeasureLineOrigin( GetOrigin() );
+}
+
 
 bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
 {
@@ -398,6 +491,7 @@ bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
         auto current = Q.front();
         Q.pop_front();
 
+        printf( "Q size %d\n", Q.size() );
         auto scanLinks = [&] ( const GS_ANCHOR* link )
                          {
                              current->Link( link );

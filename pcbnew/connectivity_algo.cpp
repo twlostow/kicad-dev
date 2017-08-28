@@ -130,6 +130,7 @@ void CN_CLUSTER::Add( CN_ITEM* item )
 
         if( m_originPad && item->Net() != m_originNet )
         {
+            printf("%p: add pad %s conflict %s\n", this, (const char *) item->Parent()->GetNetname().c_str(), (const char *) OriginNetName().c_str() );
             m_conflicting = true;
         }
     }
@@ -746,15 +747,16 @@ void CN_CONNECTIVITY_ALGO::Build( const std::vector<BOARD_ITEM*>& aItems )
 
 void CN_CONNECTIVITY_ALGO::propagateConnections()
 {
+    printf("PropagateNets\n");
     for( auto cluster : m_connClusters )
     {
         if( cluster->IsConflicting() )
         {
-            wxLogTrace( "CN", "Conflicting nets in cluster %p\n", cluster.get() );
+            printf("Conflicting nets in cluster %p [net %s]\n", cluster.get(), (const char*) cluster->OriginNetName().c_str() );
         }
         else if( cluster->IsOrphaned() )
         {
-            wxLogTrace( "CN", "Skipping orphaned cluster %p [net: %s]\n", cluster.get(),
+            printf("Skipping orphaned cluster %p [net: %s]\n", cluster.get(),
                     (const char*) cluster->OriginNetName().c_str() );
         }
         else if( cluster->HasValidNet() )
@@ -778,14 +780,14 @@ void CN_CONNECTIVITY_ALGO::propagateConnections()
             }
 
             if( n_changed )
-                wxLogTrace( "CN", "Cluster %p : net : %d %s\n", cluster.get(),
+                printf("Cluster %p : net : %d %s\n", cluster.get(),
                         cluster->OriginNet(), (const char*) cluster->OriginNetName().c_str() );
             else
-                wxLogTrace( "CN", "Cluster %p : nothing to propagate\n", cluster.get() );
+                printf("Cluster %p : nothing to propagate\n", cluster.get() );
         }
         else
         {
-            wxLogTrace( "CN", "Cluster %p : connected to unused net\n", cluster.get() );
+            printf("Cluster %p : connected to unused net\n", cluster.get() );
         }
     }
 }

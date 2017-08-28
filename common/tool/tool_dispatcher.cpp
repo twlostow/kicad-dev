@@ -200,14 +200,19 @@ bool TOOL_DISPATCHER::handleMouseButton( wxEvent& aEvent, int aIndex, bool aMoti
             if( t - st->downTimestamp < DragTimeThreshold &&
                     st->dragMaxDelta < DragDistanceThreshold )
                 isClick = true;
-            else
+            else {
+                fprintf(stderr,"MouseUP\n");
                 evt = TOOL_EVENT( TC_MOUSE, TA_MOUSE_UP, args );
+            }
         }
         else
             isClick = true;
 
         if( isClick )
+        {
             evt = TOOL_EVENT( TC_MOUSE, TA_MOUSE_CLICK, args );
+            fprintf(stderr,"MouseClick\n");
+        }
 
         st->dragging = false;
     }
@@ -345,8 +350,12 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
             m_lastMousePos = pos;
         }
 
+
         for( unsigned int i = 0; i < m_buttons.size(); i++ )
             buttonEvents |= handleMouseButton( aEvent, i, motion );
+
+        if(buttonEvents)
+            fprintf(stderr,"BTTN %d\n", buttonEvents);
 
         if( !buttonEvents && motion )
         {

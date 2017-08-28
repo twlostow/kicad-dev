@@ -131,8 +131,16 @@ public:
         return m_id;
     }
 
+    void SetConstrainable( bool aConstrainable )
+    {
+        m_constrainable = aConstrainable;
+    }
+
+    bool IsConstrainable() const { return m_constrainable; };
+
 private:
 
+    bool m_constrainable = true;
     int m_flags;
     GS_ITEM* m_parent;
     VECTOR2I m_pos;
@@ -157,6 +165,7 @@ public:
     virtual void    SaveState() = 0;
     virtual void    RestoreState()  = 0;
     virtual void    UpdateAnchors() = 0;
+    virtual void Commit( BOARD_ITEM *aTarget = nullptr ) = 0;
 
     virtual bool IsSatisfied() const
     {
@@ -221,11 +230,12 @@ public:
     virtual void    SaveState() override;
     virtual void    RestoreState() override;
     virtual void    UpdateAnchors() override;
+    virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
 
 private:
 
-    VECTOR2I m_p0, m_p1, m_dir;
-    VECTOR2I m_p0_saved, m_p1_saved;
+    VECTOR2I m_p0, m_p1, m_dir, m_midpoint;
+    VECTOR2I m_p0_saved, m_p1_saved, m_midpoint_saved;
 };
 
 class GS_LINEAR_CONSTRAINT : public GS_ITEM
@@ -239,9 +249,17 @@ public:
     virtual void MoveAnchor( int aId,
             const VECTOR2I& aP,
             std::vector<GS_ANCHOR*>& aChangedAnchors ) override;
+
+    virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
+
+    const VECTOR2I& GetP0() const { return m_p0; }
+    const VECTOR2I& GetP1() const { return m_p1; }
+
+    const VECTOR2I& GetOrigin() const { return m_origin; }
+
 private:
-    VECTOR2I m_p0, m_p1, m_dir;
-    VECTOR2I m_p0_saved, m_p1_saved;
+    VECTOR2I m_p0, m_p1, m_dir, m_origin;
+    VECTOR2I m_p0_saved, m_p1_saved, m_origin_saved;
 };
 
 class GEOM_SOLVER
@@ -273,7 +291,6 @@ public:
     bool MoveAnchor( GS_ANCHOR *refAnchor, VECTOR2I pos );
 
     void Add ( BOARD_ITEM *aItem, bool aPrimary = false );
-    void CommitChanges();
     const std::vector<GS_ANCHOR*> AllAnchors();
     const std::vector<GS_ITEM*>& AllItems();
 

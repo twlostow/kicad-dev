@@ -67,16 +67,17 @@ OUTLINE_EDITOR::~OUTLINE_EDITOR()
 {
 }
 
+
 void OUTLINE_EDITOR::Reset( RESET_REASON aReason )
 {
-
 }
 
 
 bool OUTLINE_EDITOR::Init()
 {
     // Find the selection tool, so they can cooperate
-    m_selectionTool = static_cast<SELECTION_TOOL*>( m_toolMgr->FindTool( "pcbnew.InteractiveSelection" ) );
+    m_selectionTool =
+        static_cast<SELECTION_TOOL*>( m_toolMgr->FindTool( "pcbnew.InteractiveSelection" ) );
 
     if( !m_selectionTool )
     {
@@ -88,25 +89,24 @@ bool OUTLINE_EDITOR::Init()
     return true;
 }
 
+
 class GEOM_PREVIEW : public KIGFX::VIEW_ITEM
 {
 public:
     GEOM_PREVIEW( std::shared_ptr<GEOM_SOLVER> aSolver ) :
         m_solver( aSolver )
     {
-
     }
 
     ~GEOM_PREVIEW()
     {
-
     }
-
 
     ///> @copydoc VIEW_ITEM::ViewBBox()
     virtual const BOX2I ViewBBox() const override
     {
         BOX2I b;
+
         b.SetMaximum();
         return b;
     }
@@ -116,6 +116,34 @@ public:
     {
         auto gal = aView->GetGAL();
 
+        for( auto item : m_solver->m_items )
+        {
+            std::unique_ptr<BOARD_ITEM> copy(
+                     static_cast<BOARD_ITEM*> ( item->GetParent()->Clone() ) );
+
+            item->Commit( copy.get() );
+
+            gal->PushDepth();
+
+            int layers[KIGFX::VIEW::VIEW_MAX_LAYERS], layers_count;
+            copy->ViewGetLayers( layers, layers_count );
+            aView->SortLayers( layers, layers_count );
+
+            for( int i = 0; i < layers_count; i++ )
+            {
+                if( aView->IsLayerVisible( layers[i] ) )
+                {
+                    gal->AdvanceDepth();
+
+                    if( !aView->GetPainter()->Draw( copy.get(), layers[i] ) )
+                        copy->ViewDraw( layers[i], aView ); // Alternative drawing method
+                }
+            }
+
+            gal->PopDepth();
+        }
+
+
         gal->SetFillColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
         gal->SetStrokeColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
         gal->SetIsFill( true );
@@ -124,59 +152,46 @@ public:
 
         float size = aView->ToWorld( 10 );
         gal->SetLineWidth( 1.0 );
-        int n= 0;
+        int n = 0;
 
         gal->SetIsStroke( true );
 
 
-        for( auto item : m_solver->m_items )
-        {
-            if ( !item->IsPrimary() )
-                continue;
-
-            switch(item->Type() )
-            {
-                case GST_SEGMENT:
-                {
-                    auto s = static_cast<GS_SEGMENT*>(item);
-                    gal->DrawLine( s->GetStart(), s->GetEnd() );
-                }
-            }
-        }
         gal->SetIsStroke( false );
         gal->SetIsFill( true );
 
 
-
         for( auto item : m_solver->m_items )
         {
-            if ( !item->IsPrimary() )
+            if( !item->IsPrimary() )
                 continue;
 
-            for ( auto anchor : item->GetAnchors() )
+            for( auto anchor : item->GetAnchors() )
             {
-                gal->DrawRectangle( anchor->GetPos() - size / 2, anchor->GetPos() + size / 2 );
+                if( anchor->IsConstrainable() )
+                    gal->DrawRectangle( anchor->GetPos() - size / 2, anchor->GetPos() + size / 2 );
+                else
+                    gal->DrawCircle( anchor->GetPos(), size / 2 );
+
                 n++;
             }
         }
 
-    //    printf("Drawn %d anchors\n", n);
+        // printf("Drawn %d anchors\n", n);
 
         gal->PopDepth();
-
     }
 
     ///> @copydoc VIEW_ITEM::ViewGetLayers()
     virtual void ViewGetLayers( int aLayers[], int& aCount ) const override
     {
         aCount = 1;
-        aLayers[0] = LAYER_GP_OVERLAY ;
+        aLayers[0] = LAYER_GP_OVERLAY;
     }
 
 private:
     std::shared_ptr<GEOM_SOLVER> m_solver;
 };
-
 
 
 int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
@@ -185,60 +200,65 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
 
     auto cond = SELECTION_CONDITIONS::HasType( PCB_CONSTRAINT_LINEAR_T ) ( selection );
+
     cond |= SELECTION_CONDITIONS::HasType( PCB_LINE_T ) ( selection );
 
-    if(!cond)
+    if( !cond )
     {
-        printf("Not for OUTLINE_EDITOR!\n");
+        printf( "Not for OUTLINE_EDITOR!\n" );
         return 0;
     }
 
     Activate();
 
-    m_solver.reset ( new GEOM_SOLVER );
-    m_preview.reset ( new GEOM_PREVIEW ( m_solver ) );
+    m_solver.reset( new GEOM_SOLVER );
+    m_geomPreview.reset( new GEOM_PREVIEW( m_solver ) );
 
-    for ( auto item : board()->Drawings() )
+
+    for( auto item : board()->Drawings() )
     {
-        if( !selection.Contains(item) )
+        if( !selection.Contains( item ) )
             m_solver->Add( static_cast<BOARD_ITEM*> ( item ), false );
     }
 
-    for ( auto item : selection )
+    for( auto item : selection )
     {
         m_solver->Add( static_cast<BOARD_ITEM*> ( item ), true );
     }
 
     m_solver->FindOutlines();
 
-    view()->Update( m_preview.get() );
-    view()->Add( m_preview.get() );
+    view()->Add( m_geomPreview.get() );
+
+    for( auto item : m_solver->AllItems() )
+        if( item->IsPrimary() )
+            view()->Hide( item->GetParent() );
+
+
 
     bool modified = false;
     bool revert = false;
 
-
     // Main loop: keep receiving events
     while( OPT_TOOL_EVENT evt = Wait() )
     {
-
-        if ( !modified )
+        if( !modified )
             updateEditedAnchor( *evt );
 
         if( evt->IsDrag( BUT_LEFT ) && m_editedAnchor )
         {
             if( !modified )
             {
-
                 controls()->ForceCursorPosition( false );
-//                m_original = *m_editedAnchor;    // Save the original position
+// m_original = *m_editedAnchor;    // Save the original position
                 controls()->SetAutoPan( true );
                 m_solver->StartMove();
                 modified = true;
             }
 
             m_solver->MoveAnchor( m_editedAnchor, controls()->GetCursorPosition() );
-            view()->Update( m_preview.get() );
+
+            view()->Update( m_geomPreview.get() );
         }
         else if( evt->IsMouseUp( BUT_LEFT ) )
         {
@@ -246,57 +266,40 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
             if( modified )
             {
-                if ( m_solver->IsResultOK() )
+                if( m_solver->IsResultOK() )
                 {
                     BOARD_COMMIT commit( frame() );
 
-                    for ( auto item : m_solver->AllItems() )
-                    {
-                        if ( !item->IsPrimary() )
-                            continue;
-
-                        switch( item->Type() )
+                    for( auto item : m_solver->AllItems() )
+                        if( item->IsPrimary() )
                         {
-                            case GST_SEGMENT:
-                            {
-                                auto gs = static_cast<GS_SEGMENT*>( item );
-                                auto ds = static_cast<DRAWSEGMENT*> ( item->GetParent() );
-
-                                commit.Modify(ds);
-
-                                ds->SetStart( (wxPoint) gs->GetStart() );
-                                ds->SetEnd( (wxPoint) gs->GetEnd() );
-                                break;
-                            }
-
-
-                            default:
-                                break;
+                            commit.Modify( item->GetParent() );
+                            item->Commit();
                         }
-                    }
+
+
+
+                    // m_solver->UpdateBoardItems( false );
 
                     commit.Push( _( "Drag node" ) );
                     modified = false;
-
                 }
-
             }
 
             m_toolMgr->PassEvent();
         }
         else if( evt->IsCancel() )
         {
+            // Let the selection tool receive the event too
+            m_toolMgr->PassEvent();
 
-                // Let the selection tool receive the event too
-                m_toolMgr->PassEvent();
-
-                // Do not exit right now, let the selection clear the selection
-                //break;
+            // Do not exit right now, let the selection clear the selection
+            // break;
         }
-        else if (
-            evt->Matches( m_selectionTool->ClearedEvent ) ||
-            evt->Matches( m_selectionTool->UnselectedEvent ) ||
-            evt->Matches( m_selectionTool->SelectedEvent ) )
+        else if(
+            evt->Matches( m_selectionTool->ClearedEvent )
+            || evt->Matches( m_selectionTool->UnselectedEvent )
+            || evt->Matches( m_selectionTool->SelectedEvent ) )
         {
             break;
         }
@@ -306,8 +309,13 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
         }
     }
 
+    for( auto item : m_solver->AllItems() )
+        if( item->IsPrimary() )
+            view()->Hide( item->GetParent(), false );
 
-    view()->Remove( m_preview.get() );
+
+
+    view()->Remove( m_geomPreview.get() );
 
     return 0;
 }
@@ -319,9 +327,9 @@ void OUTLINE_EDITOR::setTransitions()
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::UnselectedEvent );
 }
 
+
 void OUTLINE_EDITOR::setEditedAnchor( GS_ANCHOR* aAnchor )
 {
-
     if( aAnchor )
     {
         controls()->ForceCursorPosition( true, aAnchor->GetPos() );
@@ -338,10 +346,11 @@ void OUTLINE_EDITOR::setEditedAnchor( GS_ANCHOR* aAnchor )
     m_editedAnchor = aAnchor;
 }
 
+
 void OUTLINE_EDITOR::updateEditedAnchor( const TOOL_EVENT& aEvent )
 {
     GS_ANCHOR* anchor = m_editedAnchor;
-    double snapRadius = view()->ToWorld(10.0);
+    double snapRadius = view()->ToWorld( 10.0 );
 
     if( aEvent.IsMotion() )
     {

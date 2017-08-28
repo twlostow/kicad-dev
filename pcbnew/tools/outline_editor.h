@@ -28,6 +28,10 @@
 #include <tools/pcb_tool.h>
 #include <memory>
 
+namespace KIGFX
+{
+    class VIEW_GROUP;
+};
 
 class SELECTION_TOOL;
 class ANCHOR;
@@ -71,12 +75,14 @@ private:
     void setEditedAnchor( GS_ANCHOR* aAnchor );
 
     std::shared_ptr<GEOM_SOLVER> m_solver;
-    std::shared_ptr<GEOM_PREVIEW> m_preview;
+    std::shared_ptr<GEOM_PREVIEW> m_geomPreview;
+    std::shared_ptr<KIGFX::VIEW_GROUP> m_itemsPreview;
 
     GS_ANCHOR* m_editedAnchor = nullptr;
 
     ///> Selection tool used for obtaining selected items
     SELECTION_TOOL* m_selectionTool;
+
 };
 
 #endif

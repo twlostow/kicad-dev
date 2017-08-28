@@ -579,6 +579,7 @@ bool EDIT_TOOL::changeTrackWidthOnClick( const SELECTION& selection )
     if ( selection.Size() == 1 && frame()->Settings().m_editActionChangesTrackWidth )
     {
         auto item = static_cast<BOARD_ITEM *>( selection[0] );
+        printf("ChangeOnClick!\n");
 
         m_commit->Modify( item );
 
@@ -690,7 +691,7 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
         return 0;
 
 	// Legacy properties dialogs are displayed when there is only one item selected
-    if( !invokePropertiesDialog( selection ) && selection.Size() == 1 ) 
+    if( !invokePropertiesDialog( selection ) && selection.Size() == 1 )
     {
         // Display properties dialog
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.Front() );

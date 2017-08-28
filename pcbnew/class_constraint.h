@@ -81,7 +81,6 @@ public:
 class CONSTRAINT_LINEAR : public CONSTRAINT_BASE
 {
     private:
-        VECTOR2I m_delta;
         VECTOR2I m_p0, m_p1;
         VECTOR2I m_measureOrigin;
         int m_distance;
@@ -102,13 +101,12 @@ class CONSTRAINT_LINEAR : public CONSTRAINT_BASE
         const std::vector<SHAPE_SEGMENT> BuildShape( ) const;
         const VECTOR2I& GetP0() const { return m_p0; }
         const VECTOR2I& GetP1() const { return m_p1; }
-        const VECTOR2I& GetDisplacementVector() const { return m_delta; }
+        const VECTOR2I GetDisplacementVector() const;
         int GetDistance() const { return m_distance; }
         double GetAngle() const { return m_angle; }
 
         void SetP0( const VECTOR2I& aP ) { m_p0 = aP; updateAngle(); }
         void SetP1( const VECTOR2I& aP ) { m_p1 = aP; updateAngle(); }
-        void SetDisplacementVector( const VECTOR2I& aP ) { m_delta = aP; m_p1 = m_p0 + m_delta; }
         void SetDistance( int  aLength ) { m_distance = aLength; }
 
         void SetAngle( bool aFree, double aAngle = 0.0)

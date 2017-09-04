@@ -128,6 +128,8 @@ public:
     {
         std::shared_ptr<EDIT_POINTS> points = std::make_shared<EDIT_POINTS>( aItem );
 
+        printf("MakeEditPoints %p\n", aItem);
+
         if( !aItem )
             return points;
 
@@ -600,6 +602,8 @@ void POINT_EDITOR::updatePoints()
     if( !item )
         return;
 
+    printf("updatePoints!\n");
+
     switch( item->Type() )
     {
     case PCB_LINE_T:
@@ -985,6 +989,7 @@ int POINT_EDITOR::removeCorner( const TOOL_EVENT& aEvent )
 
 int POINT_EDITOR::modifiedSelection( const TOOL_EVENT& aEvent )
 {
+    printf("ModifiedSel!\n");
     updatePoints();
     return 0;
 }

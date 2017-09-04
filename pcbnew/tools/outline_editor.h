@@ -70,13 +70,14 @@ public:
 private:
     ///> Updates which point is being edited.
     void updateEditedAnchor( const TOOL_EVENT& aEvent );
-
+    void updateOutline();
+    
     ///> Sets the current point being edited. NULL means none.
     void setEditedAnchor( GS_ANCHOR* aAnchor );
+    int modifiedSelection( const TOOL_EVENT& aEvent );
 
     std::shared_ptr<GEOM_SOLVER> m_solver;
     std::shared_ptr<GEOM_PREVIEW> m_geomPreview;
-    std::shared_ptr<KIGFX::VIEW_GROUP> m_itemsPreview;
 
     GS_ANCHOR* m_editedAnchor = nullptr;
 

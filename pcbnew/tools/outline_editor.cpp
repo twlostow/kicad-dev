@@ -57,39 +57,6 @@ using namespace std::placeholders;
 
 #include <pcb_painter.h>
 
-OUTLINE_EDITOR::OUTLINE_EDITOR() :
-    PCB_TOOL( "pcbnew.OutlineEditor" ), m_selectionTool( NULL )
-{
-}
-
-
-OUTLINE_EDITOR::~OUTLINE_EDITOR()
-{
-}
-
-
-void OUTLINE_EDITOR::Reset( RESET_REASON aReason )
-{
-}
-
-
-bool OUTLINE_EDITOR::Init()
-{
-    // Find the selection tool, so they can cooperate
-    m_selectionTool =
-        static_cast<SELECTION_TOOL*>( m_toolMgr->FindTool( "pcbnew.InteractiveSelection" ) );
-
-    if( !m_selectionTool )
-    {
-        DisplayError( NULL, wxT( "pcbnew.InteractiveSelection tool is not available" ) );
-        return false;
-    }
-
-
-    return true;
-}
-
-
 class GEOM_PREVIEW : public KIGFX::VIEW_ITEM
 {
 public:
@@ -194,6 +161,74 @@ private:
 };
 
 
+OUTLINE_EDITOR::OUTLINE_EDITOR() :
+    PCB_TOOL( "pcbnew.OutlineEditor" ), m_selectionTool( NULL )
+{
+    m_solver.reset( new GEOM_SOLVER );
+    m_geomPreview.reset( new GEOM_PREVIEW( m_solver ) );
+
+}
+
+
+OUTLINE_EDITOR::~OUTLINE_EDITOR()
+{
+}
+
+
+void OUTLINE_EDITOR::Reset( RESET_REASON aReason )
+{
+}
+
+
+bool OUTLINE_EDITOR::Init()
+{
+    // Find the selection tool, so they can cooperate
+    m_selectionTool =
+        static_cast<SELECTION_TOOL*>( m_toolMgr->FindTool( "pcbnew.InteractiveSelection" ) );
+
+    if( !m_selectionTool )
+    {
+        DisplayError( NULL, wxT( "pcbnew.InteractiveSelection tool is not available" ) );
+        return false;
+    }
+
+
+    return true;
+}
+
+
+
+
+void OUTLINE_EDITOR::updateOutline()
+{
+    SELECTION& selection = m_selectionTool->GetSelection();
+
+    if( !m_solver )
+        return;
+
+    printf("pre-clear\n");
+    m_solver->Clear();
+
+    int n = 0;
+    for( auto item : board()->Drawings() )
+    {
+        if( !selection.Contains( item ) )
+        {
+            m_solver->Add( static_cast<BOARD_ITEM*> ( item ), false );
+            n++;
+        }
+    }
+
+    for( auto item : selection )
+    {
+        m_solver->Add( static_cast<BOARD_ITEM*> ( item ), true );
+        n++;
+    }
+
+    printf("added %d items\n", n);
+    m_solver->FindOutlines();
+}
+
 int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 {
     SELECTION& selection = m_selectionTool->GetSelection();
@@ -211,24 +246,11 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
     Activate();
 
-    m_solver.reset( new GEOM_SOLVER );
-    m_geomPreview.reset( new GEOM_PREVIEW( m_solver ) );
-
-
-    for( auto item : board()->Drawings() )
-    {
-        if( !selection.Contains( item ) )
-            m_solver->Add( static_cast<BOARD_ITEM*> ( item ), false );
-    }
-
-    for( auto item : selection )
-    {
-        m_solver->Add( static_cast<BOARD_ITEM*> ( item ), true );
-    }
-
-    m_solver->FindOutlines();
-
     view()->Add( m_geomPreview.get() );
+
+    updateOutline();
+
+
 
     for( auto item : m_solver->AllItems() )
         if( item->IsPrimary() )
@@ -313,9 +335,9 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
         if( item->IsPrimary() )
             view()->Hide( item->GetParent(), false );
 
-
-
     view()->Remove( m_geomPreview.get() );
+
+
 
     return 0;
 }
@@ -325,6 +347,7 @@ void OUTLINE_EDITOR::setTransitions()
 {
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::SelectedEvent );
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::UnselectedEvent );
+    Go( &OUTLINE_EDITOR::modifiedSelection, PCB_ACTIONS::selectionModified.MakeEvent() );
 }
 
 
@@ -363,4 +386,11 @@ void OUTLINE_EDITOR::updateEditedAnchor( const TOOL_EVENT& aEvent )
 
     if( m_editedAnchor != anchor )
         setEditedAnchor( anchor );
+}
+
+int OUTLINE_EDITOR::modifiedSelection( const TOOL_EVENT& aEvent )
+{
+    printf("ModifiedSEL[outl]!\n");
+    updateOutline();
+    return 0;
 }

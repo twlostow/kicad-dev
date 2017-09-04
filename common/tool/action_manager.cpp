@@ -135,11 +135,12 @@ bool ACTION_MANAGER::RunHotKey( int aHotKey ) const
     // Choose the action that has the highest priority on the active tools stack
     // If there is none, run the global action associated with the hot key
     int highestPriority = -1, priority = -1;
-    const TOOL_ACTION* context = NULL;  // pointer to context action of the highest priority tool
     const TOOL_ACTION* global = NULL;   // pointer to global action, if there is no context action
+    std::vector<std::pair<int, const TOOL_ACTION*> > contextActions; // list of context actions (sorted by priority)
 
     for( const TOOL_ACTION* action : actions )
     {
+        printf("process action '%s'\n", action->GetName().c_str() );
         if( action->GetScope() == AS_GLOBAL )
         {
             // Store the global action for the hot key in case there was no possible
@@ -151,23 +152,31 @@ bool ACTION_MANAGER::RunHotKey( int aHotKey ) const
 
         TOOL_BASE* tool = m_toolMgr->FindTool( action->GetToolName() );
 
+
         if( tool )
         {
             // Choose the action that goes to the tool with highest priority
             // (i.e. is on the top of active tools stack)
             priority = m_toolMgr->GetPriority( tool->GetId() );
 
-            if( priority >= 0 && priority > highestPriority )
+            if( priority >= 0 )
             {
-                highestPriority = priority;
-                context = action;
+                highestPriority = std::max( priority, highestPriority );
+                contextActions.push_back( std::pair<int, const TOOL_ACTION*>( priority, action ) );
+
             }
         }
     }
 
-    if( context )
+    if( !contextActions.empty() )
     {
-        m_toolMgr->RunAction( *context, true );
+        for( const auto act : contextActions )
+        {
+            if ( act.first == highestPriority )
+            {
+                m_toolMgr->RunAction( *act.second, true );
+            }
+        }
         return true;
     }
     else if( global )
@@ -200,6 +209,8 @@ void ACTION_MANAGER::UpdateHotKeys()
     {
         TOOL_ACTION* action = actionName.second;
         int hotkey = processHotKey( action );
+
+        printf("action: '%s' key %d\n", actionName.first.c_str(), hotkey );
 
         if( hotkey > 0 )
         {

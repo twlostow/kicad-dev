@@ -57,6 +57,8 @@ enum GS_ITEM_TYPE
     GST_LINEAR_CONSTRAINT
 };
 
+class GS_SEGMENT;
+
 class GS_ANCHOR
 {
 public:
@@ -68,7 +70,10 @@ public:
         m_id( id ),
         m_changedPos( false )
     {
+
     }
+
+    GS_SEGMENT* NeighbourSegment( GS_SEGMENT *aCurrent );
 
     void SetPos( const VECTOR2I& aPos )
     {
@@ -232,6 +237,11 @@ public:
     virtual void    UpdateAnchors() override;
     virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
 
+    const SEG GetSeg() const
+    {
+        return SEG (m_p0, m_p1);
+    }
+
 private:
 
     VECTOR2I m_p0, m_p1, m_dir, m_midpoint;
@@ -280,6 +290,8 @@ public:
     GEOM_SOLVER();
     ~GEOM_SOLVER();
 
+
+    void Clear();
 
     GS_ANCHOR *FindAnchor ( VECTOR2I pos, double snapRadius );
     void StartMove();

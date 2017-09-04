@@ -11,6 +11,24 @@
 #include <class_board.h>
 #include <class_module.h>
 
+GS_SEGMENT* GS_ANCHOR::NeighbourSegment( GS_SEGMENT *aCurrent )
+{
+    GS_SEGMENT *rv = nullptr;
+    int count = 0;
+    for( auto link : m_linkedAnchors )
+    {
+        auto parent = link->GetParent();
+        if ( parent->Type() == GST_SEGMENT && parent != aCurrent )
+        {
+            rv = static_cast<GS_SEGMENT*>( parent );
+            count++;
+        }
+    }
+    if (count > 1)
+        return nullptr;
+    return rv;
+}
+
 GS_SEGMENT::GS_SEGMENT( DRAWSEGMENT* aSeg )
     : GS_ITEM( GST_SEGMENT, aSeg )
 {
@@ -48,10 +66,18 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
         }
         else if( m_constrain == CS_DIRECTION )
         {
+            auto neighbour = m_anchors[1]->NeighbourSegment( this );
             printf( "ConstrainDir!\n" );
             SEG s( aP, aP + m_dir );
-            m_anchors[0]->SetNextPos( aP );
-            m_anchors[1]->SetNextPos( s.LineProject( m_anchors[1]->GetPos() ) );
+
+            if (!neighbour)
+            {
+                m_anchors[0]->SetNextPos( aP );
+                m_anchors[1]->SetNextPos( s.LineProject( m_anchors[1]->GetPos() ) );
+            } else {
+                m_anchors[0]->SetNextPos( aP );
+                m_anchors[1]->SetNextPos( *neighbour->GetSeg().IntersectLines ( s ) );
+            }
         }
         else
         {
@@ -73,10 +99,19 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
         }
         else if( m_constrain == CS_DIRECTION )
         {
+            auto neighbour = m_anchors[0]->NeighbourSegment( this );
+
             printf( "ConstrainDir2!\n" );
             SEG s( aP, aP + m_dir );
-            m_anchors[1]->SetNextPos( aP );
-            m_anchors[0]->SetNextPos( s.LineProject( m_anchors[0]->GetPos() ) );
+
+            if (!neighbour)
+            {
+                m_anchors[1]->SetNextPos( aP );
+                m_anchors[0]->SetNextPos( s.LineProject( m_anchors[0]->GetPos() ) );
+            } else {
+                m_anchors[1]->SetNextPos( aP );
+                m_anchors[0]->SetNextPos( *neighbour->GetSeg().IntersectLines ( s ) );
+            }
         }
         else
         {
@@ -388,6 +423,7 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
 
 void GEOM_SOLVER::Add( BOARD_ITEM* aItem, bool aPrimary )
 {
+    printf("[%p] add %p items %d %p\n", this, aItem, m_items.size(), &m_items );
     switch( aItem->Type() )
     {
     case PCB_LINE_T:
@@ -419,6 +455,8 @@ void GEOM_SOLVER::Add( BOARD_ITEM* aItem, bool aPrimary )
         m_items.push_back( s );
         return;
     }
+    default:
+        break;
     }
 }
 
@@ -491,7 +529,6 @@ bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
         auto current = Q.front();
         Q.pop_front();
 
-        printf( "Q size %d\n", Q.size() );
         auto scanLinks = [&] ( const GS_ANCHOR* link )
                          {
                              current->Link( link );
@@ -523,6 +560,8 @@ bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
 
 void GEOM_SOLVER::FindOutlines()
 {
+    printf("find-outl: %d items\n", m_items.size() );
+
     m_allAnchors.Reserve( 10000 );
     m_allAnchors.Clear();
 
@@ -545,4 +584,17 @@ void GEOM_SOLVER::FindOutlines()
 
 
     printf( "total outline anchors : %d\n", m_anchors.size() );
+}
+
+void GEOM_SOLVER::Clear()
+{
+    m_allAnchors.Clear();
+
+    //for ( auto a : m_anchors )
+        //delete a;
+    //for ( auto item : m_items )
+        //delete item;
+
+    m_anchors.clear();
+    m_items.clear();
 }

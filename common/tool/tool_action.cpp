@@ -32,6 +32,7 @@ TOOL_ACTION::TOOL_ACTION( const std::string& aName, TOOL_ACTION_SCOPE aScope,
     m_menuItem( aMenuItem ), m_menuDescription( aMenuDesc ),
     m_icon( aIcon ), m_id( -1 ), m_flags( aFlags ), m_param( aParam )
 {
+    printf("Create-action '%s'\n", aName.c_str() );
     ACTION_MANAGER::GetActionList().push_back( this );
 }
 

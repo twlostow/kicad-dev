@@ -56,6 +56,7 @@ class VIA;
 class ZONE_CONTAINER;
 class MODULE_3D_SETTINGS;
 class CONSTRAINT_LINEAR;
+class MODULE_3D_SETTINGS;
 
 struct LAYER;
 

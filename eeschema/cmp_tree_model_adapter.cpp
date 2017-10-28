@@ -221,7 +221,7 @@ void CMP_TREE_MODEL_ADAPTER::AttachTo( wxDataViewCtrl* aDataViewCtrl )
 }
 
 
-LIB_ID CMP_TREE_MODEL_ADAPTER::GetAliasFor( wxDataViewItem aSelection ) const
+LIB_ID CMP_TREE_MODEL_ADAPTER::GetAliasFor( const wxDataViewItem& aSelection ) const
 {
     auto node = ToNode( aSelection );
 
@@ -234,7 +234,7 @@ LIB_ID CMP_TREE_MODEL_ADAPTER::GetAliasFor( wxDataViewItem aSelection ) const
 }
 
 
-int CMP_TREE_MODEL_ADAPTER::GetUnitFor( wxDataViewItem aSelection ) const
+int CMP_TREE_MODEL_ADAPTER::GetUnitFor( const wxDataViewItem& aSelection ) const
 {
     auto node = ToNode( aSelection );
     return node ? node->Unit : 0;

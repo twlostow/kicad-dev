@@ -35,7 +35,7 @@
 
 WX_UNIT_BINDER::WX_UNIT_BINDER( wxWindow* aParent, wxTextEntry* aTextInput,
                                 wxStaticText* aUnitLabel, wxSpinButton* aSpinButton, EDA_UNITS_T aForceUnits ) :
-    m_textCtrl( aTextInput ),
+    m_textEntry( aTextInput ),
     m_unitLabel( aUnitLabel ),
     m_units( g_UserUnit ),
     m_step( 1 ),

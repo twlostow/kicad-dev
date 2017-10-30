@@ -170,7 +170,7 @@ public:
     virtual void    SaveState() = 0;
     virtual void    RestoreState()  = 0;
     virtual void    UpdateAnchors() = 0;
-    virtual void Commit( BOARD_ITEM *aTarget = nullptr ) = 0;
+    //virtual void Commit( BOARD_ITEM *aTarget = nullptr ) = 0;
 
     virtual bool IsSatisfied() const
     {
@@ -223,8 +223,22 @@ protected:
 class GS_SEGMENT : public GS_ITEM
 {
 public:
-    GS_SEGMENT( DRAWSEGMENT* aSeg );
+    //GS_SEGMENT( DRAWSEGMENT* aSeg );
+
+    GS_SEGMENT( int x0, int y0, int x1, int y1 ) :
+        GS_ITEM( GST_SEGMENT, nullptr )
+    {
+        m_p0.x = x0;
+        m_p0.y = y0;
+        m_p1.x = x1;
+        m_p1.y = y1;
+        init();
+    }
+
     ~GS_SEGMENT();
+
+    void SetStart( const VECTOR2I& aP ) { m_p0 = aP; }
+    void SetEnd( const VECTOR2I& aP ) { m_p1 = aP; }
 
     const VECTOR2I& GetStart() const { return m_p0; }
     const VECTOR2I& GetEnd() const { return m_p1; }
@@ -235,7 +249,7 @@ public:
     virtual void    SaveState() override;
     virtual void    RestoreState() override;
     virtual void    UpdateAnchors() override;
-    virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
+    //virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
 
     const SEG GetSeg() const
     {
@@ -244,6 +258,8 @@ public:
 
 private:
 
+    void init();
+
     VECTOR2I m_p0, m_p1, m_dir, m_midpoint;
     VECTOR2I m_p0_saved, m_p1_saved, m_midpoint_saved;
 };
@@ -251,7 +267,9 @@ private:
 class GS_LINEAR_CONSTRAINT : public GS_ITEM
 {
 public:
-    GS_LINEAR_CONSTRAINT( CONSTRAINT_LINEAR* aConstraint );
+    //GS_LINEAR_CONSTRAINT( CONSTRAINT_LINEAR* aConstraint );
+    GS_LINEAR_CONSTRAINT( );
+
     virtual void SaveState();
     virtual void RestoreState();
     virtual bool IsSatisfied() const override;
@@ -260,7 +278,7 @@ public:
             const VECTOR2I& aP,
             std::vector<GS_ANCHOR*>& aChangedAnchors ) override;
 
-    virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
+    //virtual void Commit( BOARD_ITEM *aTarget = nullptr ) override;
 
     const VECTOR2I& GetP0() const { return m_p0; }
     const VECTOR2I& GetP1() const { return m_p1; }
@@ -302,7 +320,9 @@ public:
     bool IsResultOK() const;
     bool MoveAnchor( GS_ANCHOR *refAnchor, VECTOR2I pos );
 
-    void Add ( BOARD_ITEM *aItem, bool aPrimary = false );
+    //void Add ( BOARD_ITEM *aItem, bool aPrimary = false );
+    void Add ( GS_ITEM *aItem, bool aPrimary = false );
+
     const std::vector<GS_ANCHOR*> AllAnchors();
     const std::vector<GS_ITEM*>& AllItems();
 

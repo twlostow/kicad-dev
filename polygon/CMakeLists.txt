@@ -10,7 +10,7 @@ include_directories(
 
 set(POLYGON_SRCS
     math_for_graphics.cpp
-    PolyLine.cpp
+#    PolyLine.cpp
     polygon_test_point_inside.cpp
     clipper.cpp
 )

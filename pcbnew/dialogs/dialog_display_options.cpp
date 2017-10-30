@@ -142,11 +142,8 @@ bool DIALOG_DISPLAY_OPTIONS::TransferDataFromWindow()
     m_galOptsPanel->TransferDataFromWindow();
 
     // Apply changes to the GAL
-    KIGFX::VIEW* view = m_parent->GetGalCanvas()->GetView();
-    KIGFX::PCB_PAINTER* painter = static_cast<KIGFX::PCB_PAINTER*>( view->GetPainter() );
-    KIGFX::PCB_RENDER_SETTINGS* settings =
-            static_cast<KIGFX::PCB_RENDER_SETTINGS*>( painter->GetSettings() );
-    settings->LoadDisplayOptions( displ_opts );
+    KIGFX::PCB_VIEW* view = static_cast<KIGFX::PCB_VIEW*>( m_parent->GetGalCanvas()->GetView() );
+
     view->RecacheAllItems();
     view->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
 

@@ -74,7 +74,7 @@ public:
     TEXTE_PCB&      Text() const  { return *(const_cast<TEXTE_PCB*> (&m_text)); }
 
     void            Draw( EDA_DRAW_PANEL* panel, wxDC* DC,
-                          GR_DRAWMODE aColorMode, const wxPoint& offset = ZeroOffset ) {};
+                          GR_DRAWMODE aColorMode, const wxPoint& offset = ZeroOffset ) override {};
 
 };
 

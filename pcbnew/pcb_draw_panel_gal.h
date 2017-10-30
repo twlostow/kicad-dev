@@ -34,6 +34,7 @@ namespace KIGFX
     class RATSNEST_VIEWITEM;
     class PCB_VIEW;
 }
+
 class COLORS_DESIGN_SETTINGS;
 
 class PCB_DRAW_PANEL_GAL : public EDA_DRAW_PANEL_GAL

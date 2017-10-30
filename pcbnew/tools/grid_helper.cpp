@@ -471,7 +471,7 @@ void GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos )
 }
 
 
-GRID_HELPER::ANCHOR* GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers )
+ANCHOR* GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers )
 {
     double minDist = std::numeric_limits<double>::max();
     ANCHOR* best = nullptr;
@@ -555,4 +555,3 @@ void GRID_HELPER::Update( )
     m_currentAnchor = boost::none;
     controls->ForceCursorPosition( false );
 }
-

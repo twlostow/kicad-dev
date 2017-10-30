@@ -1209,8 +1209,6 @@ void PCB_PAINTER::draw( const CONSTRAINT_LINEAR* aConstraint, int aLayer )
 {
     const COLOR4D& strokeColor = m_pcbSettings.GetColor( aConstraint, aLayer );
 
-    printf("drawConstraint!\n");
-
     m_gal->SetStrokeColor( strokeColor );
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );

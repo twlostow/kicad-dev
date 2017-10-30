@@ -88,7 +88,7 @@ public:
             std::unique_ptr<BOARD_ITEM> copy(
                      static_cast<BOARD_ITEM*> ( item->GetParent()->Clone() ) );
 
-            item->Commit( copy.get() );
+            //item->Commit( copy.get() );
 
             gal->PushDepth();
 
@@ -214,14 +214,14 @@ void OUTLINE_EDITOR::updateOutline()
     {
         if( !selection.Contains( item ) )
         {
-            m_solver->Add( static_cast<BOARD_ITEM*> ( item ), false );
+            //m_solver->Add( static_cast<BOARD_ITEM*> ( item ), false );
             n++;
         }
     }
 
     for( auto item : selection )
     {
-        m_solver->Add( static_cast<BOARD_ITEM*> ( item ), true );
+        //m_solver->Add( static_cast<BOARD_ITEM*> ( item ), true );
         n++;
     }
 
@@ -232,7 +232,7 @@ void OUTLINE_EDITOR::updateOutline()
 int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 {
     SELECTION& selection = m_selectionTool->GetSelection();
-
+    printf("selection: %p\n",&selection );
 
     auto cond = SELECTION_CONDITIONS::HasType( PCB_CONSTRAINT_LINEAR_T ) ( selection );
 
@@ -296,7 +296,7 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
                         if( item->IsPrimary() )
                         {
                             commit.Modify( item->GetParent() );
-                            item->Commit();
+                            //item->Commit();
                         }
 
 

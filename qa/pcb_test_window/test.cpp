@@ -1,5 +1,5 @@
 #include <pcb_test_frame.h>
-// #include <tools/outline_editor.h>
+#include <tools/outline_editor.h>
 #include <tool/tool_manager.h>
 
 class OED_TEST_FRAME : public PCB_TEST_FRAME
@@ -34,7 +34,7 @@ wxFrame* CreateMainFrame( const std::string& aFileName )
 
 void OED_TEST_FRAME::registerTools()
 {
-//    m_toolManager->RegisterTool( new OUTLINE_EDITOR );
+    m_toolManager->RegisterTool( new OUTLINE_EDITOR );
     m_toolManager->InitTools();
     m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
 }

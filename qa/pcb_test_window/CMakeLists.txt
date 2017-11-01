@@ -36,7 +36,7 @@ add_executable(test_window
   ../../pcbnew/tools/selection.cpp
   ../../pcbnew/tools/selection_tool.cpp
   ../../pcbnew/tools/tool_event_utils.cpp
-  #../../pcbnew/tools/outline_editor.cpp
+  ../../pcbnew/tools/outline_editor.cpp
 )
 
 include_directories(

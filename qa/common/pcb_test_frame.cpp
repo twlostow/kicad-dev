@@ -103,9 +103,9 @@ public:
 
     virtual ~TEST_ACTIONS() {};
 
-    virtual boost::optional<TOOL_EVENT> TranslateLegacyId( int aId )
+    virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId )
     {
-        return boost::none;
+        return NULLOPT;
     }
 
     void RegisterAllTools( TOOL_MANAGER* aToolManager )
@@ -181,7 +181,7 @@ PCB_TEST_FRAME::PCB_TEST_FRAME( wxFrame* frame, const wxString& title, const wxP
     KIGFX::GAL_DISPLAY_OPTIONS options;
 
     m_galPanel.reset( new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0,
-                            0 ), wxDefaultSize, options, EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) );
+                            0 ), wxDefaultSize, options, EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) );
 
     m_galPanel->SetEvtHandlerEnabled( true );
     m_galPanel->SetFocus();

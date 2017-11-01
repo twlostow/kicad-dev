@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <math/vector2d.h>
-#include <boost/optional.hpp>
+#include <core/optional.h>
 #include <origin_viewitem.h>
 #include <anchor.h>
 
@@ -94,10 +94,10 @@ private:
     }
 
 
-    boost::optional<ANCHOR*> m_currentAnchor;
+    OPT<ANCHOR*> m_currentAnchor;
     PREVIEW *m_preview;
     PCB_BASE_FRAME* m_frame;
-    boost::optional<VECTOR2I> m_auxAxis;
+    OPT<VECTOR2I> m_auxAxis;
     bool m_diagonalAuxAxesEnable;
     KIGFX::ORIGIN_VIEWITEM m_viewSnapPoint, m_viewAxis;
     int m_snapMode;

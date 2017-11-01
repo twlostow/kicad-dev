@@ -27,7 +27,7 @@
 
 #include <common.h>
 #include <wx/spinbutt.h>
-#include <boost/optional.hpp>
+#include <core/optional.h>
 
 class wxTextEntry;
 class wxSpinButton;
@@ -58,9 +58,9 @@ public:
 
     virtual void SetValue( double aValue );
 
-    virtual void SetValue( boost::optional<int> aValue );
+    virtual void SetValue( OPT<int> aValue );
 
-    virtual void SetValue( boost::optional<double> aValue );
+    virtual void SetValue( OPT<double> aValue );
 
     bool HasValue() const;
 

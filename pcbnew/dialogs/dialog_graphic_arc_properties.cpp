@@ -34,7 +34,7 @@
 
 
 template <class Container>
-static boost::optional<int> uniqueFieldValue( const Container& cont,
+static OPT<int> uniqueFieldValue( const Container& cont,
         std::function<int (const BOARD_ITEM*)> getField )
 {
     int prev = 0;
@@ -45,7 +45,7 @@ static boost::optional<int> uniqueFieldValue( const Container& cont,
         int val = getField( static_cast<BOARD_ITEM*> ( item ) );
 
         if( !firstItem && val != prev )
-            return boost::optional<int>();
+            return OPT<int>();
 
         prev = val;
         firstItem = false;
@@ -56,7 +56,7 @@ static boost::optional<int> uniqueFieldValue( const Container& cont,
 
 
 template <class Container>
-static boost::optional<double> uniqueFieldValueDbl( const Container& cont,
+static OPT<double> uniqueFieldValueDbl( const Container& cont,
         std::function<double (const BOARD_ITEM*)> getField )
 {
     double prev = 0;
@@ -67,7 +67,7 @@ static boost::optional<double> uniqueFieldValueDbl( const Container& cont,
         double val = getField( static_cast<BOARD_ITEM*> ( item ) );
 
         if( !firstItem && val != prev )
-            return boost::optional<double>();
+            return OPT<double>();
 
         prev = val;
         firstItem = false;

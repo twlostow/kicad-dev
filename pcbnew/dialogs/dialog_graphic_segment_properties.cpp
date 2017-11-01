@@ -33,7 +33,7 @@
 #include <board_commit.h>
 
 template <class Container>
-static boost::optional<int> uniqueFieldValue( const Container& cont,
+static OPT<int> uniqueFieldValue( const Container& cont,
         std::function<int (const BOARD_ITEM*)> getField )
 {
     int prev = 0;
@@ -44,7 +44,7 @@ static boost::optional<int> uniqueFieldValue( const Container& cont,
         int val = getField( static_cast<BOARD_ITEM*> ( item ) );
 
         if( !firstItem && val != prev )
-            return boost::optional<int>();
+            return OPT<int>();
 
         prev = val;
         firstItem = false;

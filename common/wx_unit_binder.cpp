@@ -29,8 +29,6 @@
 #include <base_units.h>
 #include <wx/valnum.h>
 
-#include <boost/optional.hpp>
-
 #include "wx_unit_binder.h"
 
 WX_UNIT_BINDER::WX_UNIT_BINDER( wxWindow* aParent, wxTextEntry* aTextInput,
@@ -81,9 +79,9 @@ void WX_UNIT_BINDER::SetValue( double aValue )
     m_hasValue = true;
 }
 
-///> Sets wxTextCtrl to the value stored in boost::optional<T> or "<...>" if it is not available.
+///> Sets wxTextCtrl to the value stored in OPT<T> or "<...>" if it is not available.
 template<typename T>
-    void setCommonVal( const boost::optional<T>& aVal, wxTextEntry* aTxtEntry, WX_UNIT_BINDER& aBinder )
+    void setCommonVal( const OPT<T>& aVal, wxTextEntry* aTxtEntry, WX_UNIT_BINDER& aBinder )
 {
     if( aVal )
         aBinder.SetValue( *aVal );
@@ -91,7 +89,7 @@ template<typename T>
         aTxtEntry->SetValue( "<...>" );
 }
 
-void WX_UNIT_BINDER::SetValue( boost::optional<int> aValue )
+void WX_UNIT_BINDER::SetValue( OPT<int> aValue )
 {
     if ( !aValue )
     {
@@ -104,7 +102,7 @@ void WX_UNIT_BINDER::SetValue( boost::optional<int> aValue )
     }
 }
 
-void WX_UNIT_BINDER::SetValue( boost::optional<double> aValue )
+void WX_UNIT_BINDER::SetValue( OPT<double> aValue )
 {
     if ( !aValue )
     {
@@ -149,4 +147,3 @@ void WX_UNIT_BINDER::Enable( bool aEnable )
     wxWin->Enable( aEnable );
     m_unitLabel->Enable( aEnable );
 }
-

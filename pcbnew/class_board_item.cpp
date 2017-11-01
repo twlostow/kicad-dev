@@ -1,4 +1,4 @@
-444444/**
+/**
  * @file class_board_item.cpp
  * @brief Class BOARD_ITEM definition and  some basic functions.
  */
@@ -261,7 +261,7 @@ void BOARD_ITEM::DeleteStructure()
 
 void BOARD_ITEM::SwapData( BOARD_ITEM* aImage )
 {
-    
+
 }
 
 

@@ -169,7 +169,7 @@ void GRID_HELPER::SetAuxAxes( bool aEnable, const VECTOR2I& aOrigin, bool aEnabl
     }
     else
     {
-        m_auxAxis = boost::optional<VECTOR2I>();
+        m_auxAxis = OPT<VECTOR2I>();
         view->SetVisible( &m_viewAxis, false );
     }
 
@@ -552,6 +552,6 @@ void GRID_HELPER::Update( )
         }
     }
 
-    m_currentAnchor = boost::none;
+    m_currentAnchor = NULLOPT;
     controls->ForceCursorPosition( false );
 }

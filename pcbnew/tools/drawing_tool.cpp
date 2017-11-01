@@ -1368,7 +1368,7 @@ int DRAWING_TOOL::SetAnchor( const TOOL_EVENT& aEvent )
 
 
 bool DRAWING_TOOL::drawSegment( int aShape, DRAWSEGMENT*& aGraphic,
-        boost::optional<VECTOR2D> aStartingPoint )
+        OPT<VECTOR2D> aStartingPoint )
 {
     // Only two shapes are currently supported
     assert( aShape == S_SEGMENT || aShape == S_CIRCLE );

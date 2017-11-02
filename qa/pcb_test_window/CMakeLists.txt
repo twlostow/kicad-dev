@@ -39,6 +39,8 @@ add_executable(test_window
   ../../pcbnew/tools/outline_editor.cpp
 )
 
+include_directories(BEFORE ${INC_BEFORE})
+
 include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include
@@ -53,6 +55,10 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/qa/common
     ${Boost_INCLUDE_DIR}
 )
+
+include_directories(
+    ${INC_AFTER}
+    )
 
 target_link_libraries( test_window
     polygon

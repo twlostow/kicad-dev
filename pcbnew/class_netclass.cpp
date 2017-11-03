@@ -66,6 +66,8 @@ NETCLASS::NETCLASS( const wxString& aName ) :
     SetuViaDiameter( DEFAULT_UVIA_DIAMETER );
     SetDiffPairGap( DEFAULT_DIFF_PAIR_GAP );
     SetDiffPairWidth( DEFAULT_DIFF_PAIR_WIDTH );
+
+    m_rnPrefs.reset ( new NET_RATSNEST_PREFS );
 }
 
 
@@ -274,9 +276,20 @@ void NETCLASS::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
         aFormatter->Print( aNestLevel+1, "(diff_pair_width %s)\n", FMT_IU( GetDiffPairWidth() ).c_str() );
     }
 
+    if ( m_rnPrefs )
+    {
+        m_rnPrefs->Format( aFormatter, aNestLevel + 1, aControlBits );
+    }
 
     for( NETCLASS::const_iterator it = begin(); it != end(); ++it )
         aFormatter->Print( aNestLevel+1, "(add_net %s)\n", aFormatter->Quotew( *it ).c_str() );
 
     aFormatter->Print( aNestLevel, ")\n\n" );
+}
+
+void NET_RATSNEST_PREFS::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControlBits ) const throw( IO_ERROR )
+{
+    aFormatter->Print( aNestLevel+1, "(net_visible %d)\n", !!m_showRatsnest );
+    if( m_useCustomColor )
+        aFormatter->Print( aNestLevel+1, "(net_custom_color %.0f %.0f %.0f %.0f)\n", 255.0 * m_color.r, 255.0 * m_color.g, 255.0 * m_color.b, 255.0 * m_color.a );
 }

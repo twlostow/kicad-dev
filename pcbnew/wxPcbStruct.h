@@ -769,7 +769,7 @@ public:
     void OnConfigurePcbOptions( wxCommandEvent& aEvent );
     void InstallDisplayOptionsDialog( wxCommandEvent& aEvent );
     void InstallPcbGlobalDeleteFrame( const wxPoint& pos );
-
+    void InstallNetVisibilityAndColorsDialog();
     /**
      * Function GenFootprintsPositionFile
      * Calls DoGenFootprintsPositionFile to create a footprint position file

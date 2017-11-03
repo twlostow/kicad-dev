@@ -935,6 +935,11 @@ void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         StartMovePad( (D_PAD*) GetCurItem(), &dc, false );
         break;
 
+    case ID_MENU_RATSNEST_COLORS_AND_VISIBILITY:
+        InstallNetVisibilityAndColorsDialog();
+        break;
+
+
     case ID_POPUP_PCB_EDIT_PAD:
         InstallPadOptionsFrame( (D_PAD*) GetCurItem() );
         m_canvas->MoveCursorToCrossHair();

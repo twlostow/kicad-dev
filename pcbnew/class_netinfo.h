@@ -38,7 +38,7 @@
 #include <class_netclass.h>
 #include <class_board_item.h>
 
-
+#include <gal/color4d.h>
 
 class wxDC;
 class wxPoint;
@@ -82,6 +82,8 @@ private:
 
     BOARD*  m_parent;           ///< The parent board the net belongs to.
 
+    std::shared_ptr<NET_RATSNEST_PREFS> m_rnPrefs;
+
 public:
 
     NETINFO_ITEM( BOARD* aParent, const wxString& aNetName = wxEmptyString, int aNetCode = -1 );
@@ -102,6 +104,11 @@ public:
     {
     }
 #endif
+
+    NET_RATSNEST_PREFS_PTR RatsnestPrefs()
+    {
+        return m_rnPrefs;
+    }
 
     const wxPoint& GetPosition() const override
     {

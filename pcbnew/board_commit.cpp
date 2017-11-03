@@ -94,7 +94,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry )
                 wxASSERT( ent.m_item->Type() == PCB_MODULE_T );
                 wxASSERT( ent.m_copy->Type() == PCB_MODULE_T );
 
-                if( aCreateUndoEntry )
+                if( aCreateUndoEntry && frame )
                 {
                     ITEM_PICKER itemWrapper( ent.m_item, UR_CHANGED );
                     itemWrapper.SetLink( ent.m_copy );
@@ -270,21 +270,24 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry )
         }
     }
 
-    if( !m_editModules && aCreateUndoEntry )
+    if( !m_editModules && aCreateUndoEntry && frame )
         frame->SaveCopyInUndoList( undoList, UR_UNSPECIFIED );
 
-    if( TOOL_MANAGER* toolMgr = frame->GetToolManager() )
-        toolMgr->PostEvent( { TC_MESSAGE, TA_MODEL_CHANGE, AS_GLOBAL } );
+    if ( m_toolMgr )
+        m_toolMgr->PostEvent( { TC_MESSAGE, TA_MODEL_CHANGE, AS_GLOBAL } );
 
-    if ( !m_editModules )
+    if ( !m_editModules && frame )
     {
         auto panel = static_cast<PCB_DRAW_PANEL_GAL*>( frame->GetGalCanvas() );
         connectivity->RecalculateRatsnest();
         panel->RedrawRatsnest();
     }
 
-    frame->OnModify();
-    frame->UpdateMsgPanel();
+    if( frame )
+    {
+        frame->OnModify();
+        frame->UpdateMsgPanel();
+    }
 
     clear();
 }

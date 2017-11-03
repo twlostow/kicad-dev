@@ -51,7 +51,7 @@
 #include <hotkeys.h>
 #include <wildcards_and_files_ext.h>
 #include <class_board.h>
-#include <3d_viewer.h>
+//#include <3d_viewer.h>
 #include <fp_lib_table.h>
 #include <module_editor_frame.h>
 #include <modview_frame.h>

@@ -43,6 +43,9 @@ set( PCBNEW_PNS_SRCS
     router_preview_item.cpp
     router_tool.cpp
     length_tuner_tool.cpp
+    precompiled.cpp
+    precompiled.h
 )
 
 add_library( pnsrouter STATIC ${PCBNEW_PNS_SRCS} )
+add_precompiled_header( pnsrouter precompiled.h FORCEINCLUDE)

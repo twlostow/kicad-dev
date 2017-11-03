@@ -63,6 +63,9 @@ public:
      * Change selection event handler.
      */
     int OnSelectionChange( const TOOL_EVENT& aEvent );
+    int ChamferCorner( const TOOL_EVENT& aEvent );
+    int FilletCorner( const TOOL_EVENT& aEvent );
+    int BreakOutline( const TOOL_EVENT& aEvent );
 
     ///> Sets up handlers for various events.
     void setTransitions() override;
@@ -71,7 +74,8 @@ private:
     ///> Updates which point is being edited.
     void updateEditedAnchor( const TOOL_EVENT& aEvent );
     void updateOutline();
-    
+    void addToSolver( BOARD_ITEM* aItem, bool aPrimary );
+
     ///> Sets the current point being edited. NULL means none.
     void setEditedAnchor( GS_ANCHOR* aAnchor );
     int modifiedSelection( const TOOL_EVENT& aEvent );

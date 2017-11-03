@@ -57,6 +57,40 @@ using namespace std::placeholders;
 
 #include <pcb_painter.h>
 
+static TOOL_ACTION filletCorner( "pcbnew.OutlineEditor.chamfer",
+        AS_GLOBAL, 'X',
+        _( "" ), _( "" ), NULL, AF_ACTIVATE );
+
+static void commitToBoardItem( const GS_ITEM* aItem, BOARD_ITEM *aBoardItem )
+{
+    switch ( aItem->Type() )
+    {
+        case GST_LINEAR_CONSTRAINT:
+        {
+            auto c = static_cast<CONSTRAINT_LINEAR*> ( aBoardItem );
+            auto gc = static_cast<const GS_LINEAR_CONSTRAINT*> ( aItem );
+
+            c->SetP0( gc->GetP0() );
+            c->SetP1( gc->GetP1() );
+            c->SetMeasureLineOrigin( gc->GetOrigin() );
+
+        break;
+        }
+        case GST_SEGMENT:
+        {
+            auto s = static_cast<DRAWSEGMENT*> ( aBoardItem );
+            auto gs = static_cast<const GS_SEGMENT*> ( aItem );
+
+            //s->SetStart( (wxPoint) gs->GetStart() );
+            //s->SetEnd( (wxPoint) gs->GetEnd() );
+
+            s->SetStart( (wxPoint) gs->GetAnchors()[0]->GetPos() );
+            s->SetEnd( (wxPoint) gs->GetAnchors()[1]->GetPos() );
+        break;
+        }
+    }
+}
+
 class GEOM_PREVIEW : public KIGFX::VIEW_ITEM
 {
 public:
@@ -88,7 +122,7 @@ public:
             std::unique_ptr<BOARD_ITEM> copy(
                      static_cast<BOARD_ITEM*> ( item->GetParent()->Clone() ) );
 
-            //item->Commit( copy.get() );
+            commitToBoardItem( item, copy.get() );
 
             gal->PushDepth();
 
@@ -197,6 +231,45 @@ bool OUTLINE_EDITOR::Init()
 }
 
 
+void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
+{
+    switch( aItem->Type() )
+    {
+    case PCB_LINE_T:
+    {
+        auto ds = static_cast<DRAWSEGMENT*>(aItem);
+
+        if( ds->GetShape() == S_SEGMENT )
+        {
+            auto s = new GS_SEGMENT( ds->GetStart(), ds->GetEnd() );
+            s->SetParent( aItem );
+            s->SetPrimary( aPrimary );
+
+            if( ds->GetUserFlags() & DSF_CONSTRAIN_LENGTH )
+                s->Constrain( CS_LENGTH, true );
+
+            if( ds->GetUserFlags() & DSF_CONSTRAIN_DIRECTION )
+                s->Constrain( CS_DIRECTION, true );
+
+            m_solver->Add( s );
+        }
+
+        return;
+    }
+
+    case PCB_CONSTRAINT_LINEAR_T:
+    {
+        auto    c   = static_cast<CONSTRAINT_LINEAR*>(aItem);
+        auto    s   = new GS_LINEAR_CONSTRAINT ( c->GetP0(), c->GetP1(), c->GetDisplacementVector(), c->GetMeasureLineOrigin() );
+        s->SetParent( aItem );
+        s->SetPrimary( aPrimary );
+        m_solver->Add( s );
+        return;
+    }
+    default:
+        break;
+    }
+}
 
 
 void OUTLINE_EDITOR::updateOutline()
@@ -214,19 +287,42 @@ void OUTLINE_EDITOR::updateOutline()
     {
         if( !selection.Contains( item ) )
         {
-            //m_solver->Add( static_cast<BOARD_ITEM*> ( item ), false );
+            addToSolver( static_cast<BOARD_ITEM*> ( item ), false );
             n++;
         }
     }
 
     for( auto item : selection )
     {
-        //m_solver->Add( static_cast<BOARD_ITEM*> ( item ), true );
+        addToSolver( static_cast<BOARD_ITEM*> ( item ), true );
         n++;
     }
 
     printf("added %d items\n", n);
     m_solver->FindOutlines();
+}
+
+int OUTLINE_EDITOR::ChamferCorner( const TOOL_EVENT& aEvent )
+{
+
+}
+
+int OUTLINE_EDITOR::FilletCorner( const TOOL_EVENT& aEvent )
+{
+    SELECTION& selection = m_selectionTool->GetSelection();
+    if( !SELECTION_CONDITIONS::HasType( PCB_LINE_T ) ( selection ) )
+        return 0;
+
+    updateOutline();
+
+    printf("FilletCorner!\n");
+
+
+}
+
+int OUTLINE_EDITOR::BreakOutline( const TOOL_EVENT& aEvent )
+{
+
 }
 
 int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
@@ -251,6 +347,7 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
     updateOutline();
 
 
+    view()->Hide( &selection );
 
     for( auto item : m_solver->AllItems() )
         if( item->IsPrimary() )
@@ -290,18 +387,14 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
             {
                 if( m_solver->IsResultOK() )
                 {
-                    BOARD_COMMIT commit( frame() );
+                    BOARD_COMMIT commit( this );
 
                     for( auto item : m_solver->AllItems() )
                         if( item->IsPrimary() )
                         {
                             commit.Modify( item->GetParent() );
-                            //item->Commit();
+                            commitToBoardItem( item, item->GetParent() );
                         }
-
-
-
-                    // m_solver->UpdateBoardItems( false );
 
                     commit.Push( _( "Drag node" ) );
                     modified = false;
@@ -336,7 +429,7 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
             view()->Hide( item->GetParent(), false );
 
     view()->Remove( m_geomPreview.get() );
-
+    view()->Hide( &selection, false );
 
 
     return 0;
@@ -348,6 +441,7 @@ void OUTLINE_EDITOR::setTransitions()
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::SelectedEvent );
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::UnselectedEvent );
     Go( &OUTLINE_EDITOR::modifiedSelection, PCB_ACTIONS::selectionModified.MakeEvent() );
+    Go( &OUTLINE_EDITOR::FilletCorner, filletCorner.MakeEvent() );
 }
 
 

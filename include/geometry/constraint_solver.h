@@ -179,6 +179,16 @@ public:
 
     const std::vector<GS_ANCHOR*>& GetAnchors() const { return m_anchors; }
 
+    void SetParent( BOARD_ITEM* aParent )
+    {
+        m_parent = aParent;
+    }
+
+    BOARD_ITEM* GetParent() const
+    {
+        return m_parent;
+    }
+
     void SetPrimary( bool aPrimary )
     {
         m_primary = aPrimary;
@@ -192,11 +202,6 @@ public:
     GS_ITEM_TYPE Type() const
     {
         return m_type;
-    }
-
-    BOARD_ITEM* GetParent() const
-    {
-        return m_parent;
     }
 
     void Constrain( int aWhat, bool aEnabled )
@@ -224,6 +229,13 @@ class GS_SEGMENT : public GS_ITEM
 {
 public:
     //GS_SEGMENT( DRAWSEGMENT* aSeg );
+    GS_SEGMENT( const VECTOR2I& aP0, const VECTOR2I& aP1 ) :
+        GS_ITEM( GST_SEGMENT, nullptr )
+    {
+        m_p0 = aP0;
+        m_p1 = aP1;
+        init();
+    }
 
     GS_SEGMENT( int x0, int y0, int x1, int y1 ) :
         GS_ITEM( GST_SEGMENT, nullptr )
@@ -245,7 +257,7 @@ public:
 
     virtual void MoveAnchor( int aId,
             const VECTOR2I& aP,
-            std::vector<GS_ANCHOR*>& aChangedAnchors );
+            std::vector<GS_ANCHOR*>& aChangedAnchors ) override;
     virtual void    SaveState() override;
     virtual void    RestoreState() override;
     virtual void    UpdateAnchors() override;
@@ -264,16 +276,38 @@ private:
     VECTOR2I m_p0_saved, m_p1_saved, m_midpoint_saved;
 };
 
+class GS_ARC : public GS_ITEM
+{
+public:
+    //GS_ARC( DRAWSEGMENT* aSeg );
+    GS_ARC( const VECTOR2I& aP0, const VECTOR2I& aP1, const VECTOR2I& aCenter ) :
+        GS_ITEM( GST_ARC, nullptr )
+    {
+        m_p0 = aP0;
+        m_p1 = aP1;
+        m_center = aCenter;
+        //init();
+    }
+
+
+    ~GS_ARC() {};
+private:
+    VECTOR2I m_p0, m_p1, m_center;
+
+};
+
 class GS_LINEAR_CONSTRAINT : public GS_ITEM
 {
 public:
     //GS_LINEAR_CONSTRAINT( CONSTRAINT_LINEAR* aConstraint );
-    GS_LINEAR_CONSTRAINT( );
+    GS_LINEAR_CONSTRAINT( const VECTOR2I& aP0, const VECTOR2I& aP1, const VECTOR2I& aDirection, const VECTOR2I& aOrigin );
 
-    virtual void SaveState();
-    virtual void RestoreState();
+
+
+    virtual void SaveState() override;
+    virtual void RestoreState() override;
     virtual bool IsSatisfied() const override;
-    virtual void UpdateAnchors();
+    virtual void UpdateAnchors()override;
     virtual void MoveAnchor( int aId,
             const VECTOR2I& aP,
             std::vector<GS_ANCHOR*>& aChangedAnchors ) override;
@@ -282,8 +316,9 @@ public:
 
     const VECTOR2I& GetP0() const { return m_p0; }
     const VECTOR2I& GetP1() const { return m_p1; }
-
     const VECTOR2I& GetOrigin() const { return m_origin; }
+    const VECTOR2I& GetDirection() const { return m_dir; }
+
 
 private:
     VECTOR2I m_p0, m_p1, m_dir, m_origin;
@@ -319,6 +354,10 @@ public:
 
     bool IsResultOK() const;
     bool MoveAnchor( GS_ANCHOR *refAnchor, VECTOR2I pos );
+
+    bool FilletCorner( GS_SEGMENT *aSeg1, GS_SEGMENT *aSeg2, int aDistance );
+    bool FilletCorners( std::vector<GS_SEGMENT*> aSegs, int aDistance );
+
 
     //void Add ( BOARD_ITEM *aItem, bool aPrimary = false );
     void Add ( GS_ITEM *aItem, bool aPrimary = false );

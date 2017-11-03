@@ -11,47 +11,53 @@
 #include <class_board.h>
 #include <class_module.h>
 
-GS_SEGMENT* GS_ANCHOR::NeighbourSegment( GS_SEGMENT *aCurrent )
+GS_SEGMENT* GS_ANCHOR::NeighbourSegment( GS_SEGMENT* aCurrent )
 {
-    GS_SEGMENT *rv = nullptr;
+    GS_SEGMENT* rv = nullptr;
     int count = 0;
+
     for( auto link : m_linkedAnchors )
     {
         auto parent = link->GetParent();
-        if ( parent->Type() == GST_SEGMENT && parent != aCurrent )
+
+        if( parent->Type() == GST_SEGMENT && parent != aCurrent )
         {
             rv = static_cast<GS_SEGMENT*>( parent );
             count++;
         }
     }
-    if (count > 1)
+
+    if( count > 1 )
         return nullptr;
+
     return rv;
 }
 
+
 /*GS_SEGMENT::GS_SEGMENT( DRAWSEGMENT* aSeg )
-    : GS_ITEM( GST_SEGMENT, aSeg )
-{
-    m_p0    = aSeg->GetStart();
-    m_p1    = aSeg->GetEnd();
-    m_dir   = m_p1 - m_p0;
-    m_midpoint = (m_p0 + m_p1) / 2;
-    m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
-    m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
-    auto anc_midpoint = new GS_ANCHOR( this, 2, m_midpoint );
-    anc_midpoint->SetConstrainable( false );
-    m_anchors.push_back( anc_midpoint );
-    m_parent = aSeg;
-}
-*/
+ *   : GS_ITEM( GST_SEGMENT, aSeg )
+ *  {
+ *   m_p0    = aSeg->GetStart();
+ *   m_p1    = aSeg->GetEnd();
+ *   m_dir   = m_p1 - m_p0;
+ *   m_midpoint = (m_p0 + m_p1) / 2;
+ *   m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
+ *   m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
+ *   auto anc_midpoint = new GS_ANCHOR( this, 2, m_midpoint );
+ *   anc_midpoint->SetConstrainable( false );
+ *   m_anchors.push_back( anc_midpoint );
+ *   m_parent = aSeg;
+ *  }
+ */
 
 GS_SEGMENT::~GS_SEGMENT()
 {
 }
 
+
 void GS_SEGMENT::init()
 {
-    m_dir   = m_p1 - m_p0;
+    m_dir = m_p1 - m_p0;
     m_midpoint = (m_p0 + m_p1) / 2;
     m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
     m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
@@ -62,9 +68,10 @@ void GS_SEGMENT::init()
     SaveState();
 }
 
+
 void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*>& aChangedAnchors )
 {
-    printf( "MoveAnchor id %d constraint %x\n", aId, m_constrain );
+    //printf( "MoveAnchor id %d constraint %x\n", aId, m_constrain );
 
     switch( aId )
     {
@@ -83,16 +90,19 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             SEG s( aP, aP + m_dir );
 
 
-
-            if (!neighbour)
+            if( !neighbour )
             {
                 m_anchors[0]->SetNextPos( aP );
                 m_anchors[1]->SetNextPos( s.LineProject( m_anchors[1]->GetPos() ) );
-            } else {
-                printf( "ConstrainDir this %d %d %d %d neighbor %d %d %d %d!\n", m_p0.x, m_p0.y, m_p1.x, m_p1.y, neighbour->m_p0.x, neighbour->m_p0.y, neighbour->m_p1.x, neighbour->m_p1.y );
-
-                m_anchors[0]->SetNextPos( aP );
-                m_anchors[1]->SetNextPos( *neighbour->GetSeg().IntersectLines ( s ) );
+            }
+            else
+            {
+                auto ip = neighbour->GetSeg().IntersectLines( s );
+                if ( ip )
+                {
+                    m_anchors[0]->SetNextPos( aP );
+                    m_anchors[1]->SetNextPos( *ip );
+                }
             }
         }
         else
@@ -117,16 +127,22 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
         {
             auto neighbour = m_anchors[0]->NeighbourSegment( this );
 
-            printf( "ConstrainDir2!\n" );
+            //printf( "ConstrainDir2!\n" );
             SEG s( aP, aP + m_dir );
 
-            if (!neighbour)
+            if( !neighbour )
             {
                 m_anchors[1]->SetNextPos( aP );
                 m_anchors[0]->SetNextPos( s.LineProject( m_anchors[0]->GetPos() ) );
-            } else {
-                m_anchors[1]->SetNextPos( aP );
-                m_anchors[0]->SetNextPos( *neighbour->GetSeg().IntersectLines ( s ) );
+            }
+            else
+            {
+                auto ip = neighbour->GetSeg().IntersectLines( s );
+                if ( ip )
+                {
+                    m_anchors[1]->SetNextPos( aP );
+                    m_anchors[0]->SetNextPos( *ip );
+                }
             }
         }
         else
@@ -141,11 +157,11 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
 
     case 2:
     {
-        auto dir = (m_anchors[0]->GetPos() - m_anchors[1]->GetPos());
+        auto dir = (m_anchors[0]->GetPos() - m_anchors[1]->GetPos() );
 
         SEG guide = SEG( m_anchors[2]->GetPos(), m_anchors[2]->GetPos() + dir.Perpendicular() );
 
-        auto delta = guide.LineProject(aP) - m_anchors[2]->GetPos();
+        auto delta = guide.LineProject( aP ) - m_anchors[2]->GetPos();
 
         m_anchors[0]->SetNextPos( m_anchors[0]->GetPos() + delta );
         m_anchors[1]->SetNextPos( m_anchors[1]->GetPos() + delta );
@@ -160,13 +176,12 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
         if( m_anchors[i]->PositionChanged() )
             aChangedAnchors.push_back( m_anchors[i] );
 
-
 }
 
 
 void GS_SEGMENT::SaveState()
 {
-    printf("Save!\n");
+    //printf( "Save!\n" );
     m_p0_saved  = m_p0;
     m_p1_saved  = m_p1;
     // m_midpoint_saved = m_midpoint;
@@ -175,7 +190,7 @@ void GS_SEGMENT::SaveState()
 
 void GS_SEGMENT::RestoreState()
 {
-    printf("Restore!\n");
+    //printf( "Restore!\n" );
     m_p0    = m_p0_saved;
     m_p1    = m_p1_saved;
     // m_midpoint = m_midpoint_saved;
@@ -191,41 +206,31 @@ void GS_SEGMENT::UpdateAnchors()
     m_anchors[1]->UpdatePos();
     m_p0    = m_anchors[0]->GetPos();
     m_p1    = m_anchors[1]->GetPos();
-    m_anchors[2]->SetPos( (m_p0 + m_p1) / 2);
+    m_anchors[2]->SetPos( (m_p0 + m_p1) / 2 );
     // m_midpoint    = m_anchors[2]->GetPos();
 
-    printf("update-anchors %d %d %d %d\n", m_p0.x, m_p0.y, m_p1.x, m_p1.y );
+    //printf( "update-anchors %d %d %d %d\n", m_p0.x, m_p0.y, m_p1.x, m_p1.y );
 }
 
-GS_LINEAR_CONSTRAINT::GS_LINEAR_CONSTRAINT( ) : GS_ITEM (
+
+GS_LINEAR_CONSTRAINT::GS_LINEAR_CONSTRAINT( const VECTOR2I& aP0,
+        const VECTOR2I& aP1,
+        const VECTOR2I& aDirection,
+        const VECTOR2I& aOrigin )
+    : GS_ITEM(
             GST_LINEAR_CONSTRAINT,
             nullptr )
 {
-}
-
-#if 0
-GS_LINEAR_CONSTRAINT::GS_LINEAR_CONSTRAINT( CONSTRAINT_LINEAR* aConstraint ) : GS_ITEM(
-            GST_LINEAR_CONSTRAINT,
-            aConstraint )
-{
-    m_p0    = aConstraint->GetP0();
-    m_p1    = aConstraint->GetP1();
-    printf( "pre-get-disp\n" );
-    m_dir = aConstraint->GetDisplacementVector();
-    printf( "post-get-disp\n" );
+    m_p0    = aP0;
+    m_p1    = aP1;
+    m_dir   = aDirection;
+    m_origin = aOrigin;
     m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
     m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
-
-    m_origin = aConstraint->GetMeasureLineOrigin();
-
     auto anc_origin = new GS_ANCHOR( this, 2, m_origin );
     anc_origin->SetConstrainable( false );
     m_anchors.push_back( anc_origin );
-
-    printf( "GetDisplacement %d %d\n", m_dir.x, m_dir.y );
-    m_parent = aConstraint;
 }
-#endif
 
 
 void GS_LINEAR_CONSTRAINT::SaveState()
@@ -279,7 +284,7 @@ void GS_LINEAR_CONSTRAINT::MoveAnchor( int aId,
         m_anchors[ 2 ]->SetNextPos( aP + dp2 );
         aChangedAnchors.push_back( m_anchors[0] );
         aChangedAnchors.push_back( m_anchors[1] );
-//        aChangedAnchors.push_back( m_anchors[2] );
+// aChangedAnchors.push_back( m_anchors[2] );
         break;
     }
 
@@ -293,15 +298,15 @@ void GS_LINEAR_CONSTRAINT::MoveAnchor( int aId,
         m_anchors[ 2 ]->SetNextPos( aP - dp2 );
         aChangedAnchors.push_back( m_anchors[0] );
         aChangedAnchors.push_back( m_anchors[1] );
-//        aChangedAnchors.push_back( m_anchors[2] );
+// aChangedAnchors.push_back( m_anchors[2] );
         break;
     }
 
     case 2:
     {
         m_anchors[ 2 ]->SetNextPos( aP );
-        printf("cla %d %d\n", aP.x, aP.y );
-//        aChangedAnchors.push_back( m_anchors[2] );
+        //printf( "cla %d %d\n", aP.x, aP.y );
+// aChangedAnchors.push_back( m_anchors[2] );
 
         break;
     }
@@ -328,7 +333,7 @@ GS_ANCHOR* GEOM_SOLVER::FindAnchor( VECTOR2I pos, double snapRadius )
     {
         auto d = anchor->GetPos() - pos;
 
-        printf("d %d %d\n",d.x, d.y);
+        //printf( "d %d %d\n", d.x, d.y );
 
         if( abs( d.x ) <= snapRadius && abs( d.y ) <= snapRadius )
             return anchor;
@@ -376,13 +381,13 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
 
     m_lastResultOk = false;
 
-    printf( "move-a %p (%d %d)\n", refAnchor, pos.x, pos.y );
+    //printf( "move-a %p (%d %d)\n", refAnchor, pos.x, pos.y );
 
     for( auto item : m_items )
         item->RestoreState();
 
-    for( auto anchor : m_anchors )
-        printf( " a %p parent %p\n", anchor, anchor->GetParent() );
+    //for( auto anchor : m_anchors )
+    //    printf( " a %p parent %p\n", anchor, anchor->GetParent() );
 
     const int iterLimit = 100;
     int iter = 0;
@@ -391,7 +396,7 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
 
     while( !Q.empty() && iter < iterLimit )
     {
-        printf( "iter %d disps %d\n", iter, Q.size() );
+        //printf( "iter %d disps %d\n", iter, Q.size() );
         iter++;
 
         std::set<GS_ANCHOR*> moved;
@@ -400,15 +405,15 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
         {
             if( moved.find( displacement.anchor ) == moved.end() )
             {
-                printf( "do %p\n", displacement.anchor );
+                //printf( "do %p\n", displacement.anchor );
                 std::vector<GS_ANCHOR*> changedAnchors;
                 displacement.anchor->GetParent()->MoveAnchor(
                         displacement.anchor->GetId(), displacement.p, changedAnchors );
-                printf( "changed links : %d\n", changedAnchors.size() );
+                //printf( "changed links : %d\n", changedAnchors.size() );
 
                 for( auto am : changedAnchors )
                 {
-                    printf( "  change %p\n", am );
+                    //printf( "  change %p\n", am );
                     moved.insert( am );
                 }
             }
@@ -416,15 +421,15 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
 
         Q.clear();
 
-        printf( "Moved links : %d\n", moved.size() );
+        //printf( "Moved links : %d\n", moved.size() );
 
         for( auto anchor : moved )
         {
-            printf( "anchr %p\N", anchor );
+        //    printf( "anchr %p\N", anchor );
 
             for( auto link : anchor->GetLinks() )
             {
-                printf( "- provess link: %p\n", link );
+        //        printf( "- provess link: %p\n", link );
                 Q.push_back( DISPLACEMENT( link, anchor->GetNextPos() ) );
             }
         }
@@ -433,7 +438,7 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
 
         for( auto anchor : moved )
         {
-            printf( "update %p %p\n", anchor, anchor->GetParent() );
+        //    printf( "update %p %p\n", anchor, anchor->GetParent() );
             anchor->GetParent()->UpdateAnchors();
         }
 
@@ -441,61 +446,28 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
             break;
     }
 
+    m_lastResultOk = true;
+
     if( iter == iterLimit )
         m_lastResultOk = false;
 
-    m_lastResultOk = true;
+
+    if( !m_lastResultOk )
+    {
+        printf("Unable to solve after %d iterations\n", iter);
+    } else {
+        printf("%d iterations\n", iter);
+    }
+
 
     return m_lastResultOk;
 }
 
 
-void GEOM_SOLVER::Add ( GS_ITEM *aItem, bool aPrimary )
+void GEOM_SOLVER::Add( GS_ITEM* aItem, bool aPrimary )
 {
     m_items.push_back( aItem );
 }
-
-#if 0
-void GEOM_SOLVER::Add( BOARD_ITEM* aItem, bool aPrimary )
-{
-    printf("[%p] add %p items %d %p\n", this, aItem, m_items.size(), &m_items );
-    switch( aItem->Type() )
-    {
-    case PCB_LINE_T:
-    {
-        auto ds = static_cast<DRAWSEGMENT*>(aItem);
-
-        if( ds->GetShape() == S_SEGMENT )
-        {
-            auto s = new GS_SEGMENT( ds );
-            s->SetPrimary( aPrimary );
-
-            if( ds->GetUserFlags() & DSF_CONSTRAIN_LENGTH )
-                s->Constrain( CS_LENGTH, true );
-
-            if( ds->GetUserFlags() & DSF_CONSTRAIN_DIRECTION )
-                s->Constrain( CS_DIRECTION, true );
-
-            m_items.push_back( s );
-        }
-
-        return;
-    }
-
-    case PCB_CONSTRAINT_LINEAR_T:
-    {
-        auto    c   = static_cast<CONSTRAINT_LINEAR*>(aItem);
-        auto    s   = new GS_LINEAR_CONSTRAINT( c );
-        s->SetPrimary( aPrimary );
-        m_items.push_back( s );
-        return;
-    }
-    default:
-        break;
-    }
-}
-#endif
-
 
 const std::vector<GS_ANCHOR*> GEOM_SOLVER::AllAnchors()
 {
@@ -517,35 +489,42 @@ const std::vector<GS_ITEM*>& GEOM_SOLVER::AllItems()
     return m_items;
 }
 
-template<class T> T* createOrGetParent( GS_ITEM* aItem, bool aCopy )
-{
-    if ( aCopy )
-    {
-        T* item = new T( *static_cast<T*> (aItem->GetParent() ));
-        return item;
-    } else {
-        return static_cast<T*> (aItem->GetParent());
-    }
 
+template <class T>
+T* createOrGetParent( GS_ITEM* aItem, bool aCopy )
+{
+    if( aCopy )
+    {
+        T* item = new T( *static_cast<T*> (aItem->GetParent() ) );
+        return item;
+    }
+    else
+    {
+        return static_cast<T*> (aItem->GetParent() );
+    }
 }
 
 
 #if 0
-void GS_SEGMENT::Commit( BOARD_ITEM *aTarget )
+void GS_SEGMENT::Commit( BOARD_ITEM* aTarget )
 {
-   auto    ds  = static_cast<DRAWSEGMENT*> ( aTarget ? aTarget : GetParent() );
+    auto ds = static_cast<DRAWSEGMENT*> ( aTarget ? aTarget : GetParent() );
 
-   ds->SetStart( (wxPoint) GetStart() );
-   ds->SetEnd( (wxPoint) GetEnd() );
+    ds->SetStart( (wxPoint) GetStart() );
+    ds->SetEnd( (wxPoint) GetEnd() );
 }
 
-void GS_LINEAR_CONSTRAINT::Commit( BOARD_ITEM *aTarget )
+
+void GS_LINEAR_CONSTRAINT::Commit( BOARD_ITEM* aTarget )
 {
-   auto    ds  = static_cast<CONSTRAINT_LINEAR*> ( aTarget ? aTarget : GetParent() );
-   ds->SetP0( GetP0() );
-   ds->SetP1( GetP1() );
-   ds->SetMeasureLineOrigin( GetOrigin() );
+    auto ds = static_cast<CONSTRAINT_LINEAR*> ( aTarget ? aTarget : GetParent() );
+
+    ds->SetP0( GetP0() );
+    ds->SetP1( GetP1() );
+    ds->SetMeasureLineOrigin( GetOrigin() );
 }
+
+
 #endif
 
 bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
@@ -560,7 +539,8 @@ bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
         processed.insert( a );
     }
 
-     printf("Init: %d a\n", Q.size() );
+    //printf( "Init: %d a\n", Q.size() );
+
     while( !Q.empty() )
     {
         auto current = Q.front();
@@ -597,7 +577,7 @@ bool GEOM_SOLVER::findOutlineElements( GS_ITEM* aItem )
 
 void GEOM_SOLVER::FindOutlines()
 {
-    printf("find-outl: %d items\n", m_items.size() );
+    //printf( "find-outl: %d items\n", m_items.size() );
 
     m_allAnchors.Reserve( 10000 );
     m_allAnchors.Clear();
@@ -606,7 +586,8 @@ void GEOM_SOLVER::FindOutlines()
     {
         const auto& ia = item->GetAnchors();
 
-        printf("item %p %d anchors primary %d\n", item, ia.size(), !!item->IsPrimary() );
+    //    printf( "item %p %d anchors primary %d\n", item, ia.size(), !!item->IsPrimary() );
+
         for( const auto& anchor : ia )
         {
             m_allAnchors.Add( anchor );
@@ -626,15 +607,55 @@ void GEOM_SOLVER::FindOutlines()
     printf( "total outline anchors : %d\n", m_anchors.size() );
 }
 
+
 void GEOM_SOLVER::Clear()
 {
     m_allAnchors.Clear();
 
-    //for ( auto a : m_anchors )
-        //delete a;
-    //for ( auto item : m_items )
-        //delete item;
+    // for ( auto a : m_anchors )
+    // delete a;
+    // for ( auto item : m_items )
+    // delete item;
 
     m_anchors.clear();
     m_items.clear();
+}
+
+bool GEOM_SOLVER::FilletCorner( GS_SEGMENT *aSeg1, GS_SEGMENT *aSeg2, int aDistance )
+{
+    if( aSeg1->GetStart() == aSeg2->GetEnd() )
+    {
+        std::swap(aSeg1, aSeg2);
+    }
+
+    if ( aSeg1->GetEnd() != aSeg1->GetStart() )
+    {
+        return false;
+    }
+
+    auto s1 = aSeg1->GetSeg();
+    auto s2 = aSeg2->GetSeg();
+
+    auto l1 = s1.Length();
+    auto l2 = s2.Length();
+
+    if (l1 < aDistance || l2 < aDistance )
+        return false;
+
+    auto s1b_next = s1.A + (s1.B - s1.A).Resize( l1 - aDistance );
+    auto s2a_next = s2.A + (s2.B - s2.A).Resize( aDistance );
+
+    aSeg1->SetEnd( s1b_next );
+    aSeg2->SetStart( s2a_next );
+
+    auto newSeg = new GS_SEGMENT( s1b_next, s2a_next );
+
+    Add( newSeg, true );
+
+    return true;
+}
+
+bool GEOM_SOLVER::FilletCorners( std::vector<GS_SEGMENT*> aSegs, int aDistance )
+{
+
 }

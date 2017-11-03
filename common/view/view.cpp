@@ -528,7 +528,7 @@ void VIEW::SetViewport( const BOX2D& aViewport )
 
 void VIEW::SetMirror( bool aMirrorX, bool aMirrorY )
 {
-    wxASSERT_MSG( !aMirrorY, _( "Mirroring for Y axis is not supported yet" ) );
+//    wxASSERT_MSG( !aMirrorY, _( "Mirroring for Y axis is not supported yet" ) );
 
     m_mirrorX = aMirrorX;
     m_mirrorY = aMirrorY;

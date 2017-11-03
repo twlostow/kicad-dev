@@ -63,7 +63,7 @@ int LIB_PART::m_subpartFirstId = 'A';
 const wxChar traceSchLibMem[] = wxT( "KICAD_TRACE_SCH_LIB_MEM" );     // public
 
 
-LIB_ALIAS::LIB_ALIAS( const wxString& aName, LIB_PART* aRootPart ):
+LIB_ALIAS::LIB_ALIAS( const wxString& aName, LIB_PART* aRootPart ) :
     EDA_ITEM( LIB_ALIAS_T ),
     shared( aRootPart )
 {
@@ -75,7 +75,7 @@ LIB_ALIAS::LIB_ALIAS( const LIB_ALIAS& aAlias, LIB_PART* aRootPart ) :
     EDA_ITEM( aAlias ),
     shared( aRootPart )
 {
-    name   = aAlias.name;
+    name = aAlias.name;
 
     description = aAlias.description;
     keyWords = aAlias.keyWords;
@@ -88,9 +88,9 @@ LIB_ALIAS::~LIB_ALIAS()
     wxASSERT_MSG( shared, wxT( "~LIB_ALIAS() without a LIB_PART" ) );
 
     wxLogTrace( traceSchLibMem,
-                wxT( "%s: destroying alias:'%s' of part:'%s'." ),
-                GetChars( wxString::FromAscii( __WXFUNCTION__ ) ), GetChars( name ),
-                GetChars( shared->GetName() ) );
+            wxT( "%s: destroying alias:'%s' of part:'%s'." ),
+            GetChars( wxString::FromAscii( __WXFUNCTION__ ) ), GetChars( name ),
+            GetChars( shared->GetName() ) );
 
     if( shared )
         shared->RemoveAlias( this );
@@ -170,7 +170,7 @@ int LibraryEntryCompare( const LIB_ALIAS* aItem1, const LIB_ALIAS* aItem2 )
 /// http://www.boost.org/doc/libs/1_55_0/libs/smart_ptr/sp_techniques.html#weak_without_shared
 struct null_deleter
 {
-    void operator()(void const *) const
+    void operator()( void const* ) const
     {
     }
 };
@@ -180,15 +180,15 @@ LIB_PART::LIB_PART( const wxString& aName, PART_LIB* aLibrary ) :
     EDA_ITEM( LIB_PART_T ),
     m_me( this, null_deleter() )
 {
-    m_name                = aName;
-    m_library             = aLibrary;
-    m_dateModified        = 0;
-    m_unitCount           = 1;
-    m_pinNameOffset       = 40;
-    m_options             = ENTRY_NORMAL;
-    m_unitsLocked         = false;
-    m_showPinNumbers      = true;
-    m_showPinNames        = true;
+    m_name = aName;
+    m_library = aLibrary;
+    m_dateModified = 0;
+    m_unitCount = 1;
+    m_pinNameOffset = 40;
+    m_options = ENTRY_NORMAL;
+    m_unitsLocked = false;
+    m_showPinNumbers = true;
+    m_showPinNames = true;
 
     // Create the default alias if the name parameter is not empty.
     if( !aName.IsEmpty() )
@@ -206,22 +206,55 @@ LIB_PART::LIB_PART( const wxString& aName, PART_LIB* aLibrary ) :
 }
 
 
+LIB_PART* LIB_PART::Clone() const
+{
+    LIB_PART* rv = new LIB_PART( GetName() );
+
+// LIB_ITEMS_CONTAINER m_drawings;         ///< Drawing items of this part.
+
+    rv->m_name  = m_name;
+    rv->m_libId = m_libId;
+    rv->m_pinNameOffset = m_pinNameOffset;      ///< The offset in mils to draw the pin name.  Set to 0
+    ///< to draw the pin name above the pin.
+    rv->m_unitsLocked = m_unitsLocked;          ///< True if part has multiple units and changing
+    ///< one unit does not automatically change another unit.
+    rv->m_showPinNames = m_showPinNames;        ///< Determines if part pin names are visible.
+    rv->m_showPinNumbers = m_showPinNumbers;    ///< Determines if part pin numbers are visible.
+    rv->m_dateModified = m_dateModified;        ///< Date the part was last modified.
+    rv->m_options = m_options;                  ///< Special part features such as POWER or NORMAL.)
+    rv->m_unitCount = m_unitCount;
+    rv->m_FootprintList = m_FootprintList;
+    rv->m_library = nullptr;
+
+    for ( const auto &dwg : m_drawings )
+    {
+        auto cloned = (LIB_ITEM*)dwg.Clone();
+        //printf("clone : %p %s\n", cloned, (const char *)dwg.GetClass() );
+        cloned->SetParent( rv );
+        if( cloned->Type() != LIB_RECTANGLE_T )
+        rv->m_drawings.push_back( cloned );
+    }
+
+    return rv;
+}
+
+
 LIB_PART::LIB_PART( LIB_PART& aPart, PART_LIB* aLibrary ) :
     EDA_ITEM( aPart ),
     m_me( this, null_deleter() )
 {
     LIB_ITEM* newItem;
 
-    m_library             = aLibrary;
-    m_name                = aPart.m_name;
-    m_FootprintList       = aPart.m_FootprintList;
-    m_unitCount           = aPart.m_unitCount;
-    m_unitsLocked         = aPart.m_unitsLocked;
-    m_pinNameOffset       = aPart.m_pinNameOffset;
-    m_showPinNumbers      = aPart.m_showPinNumbers;
-    m_showPinNames        = aPart.m_showPinNames;
-    m_dateModified        = aPart.m_dateModified;
-    m_options             = aPart.m_options;
+    m_library = aLibrary;
+    m_name = aPart.m_name;
+    m_FootprintList = aPart.m_FootprintList;
+    m_unitCount = aPart.m_unitCount;
+    m_unitsLocked = aPart.m_unitsLocked;
+    m_pinNameOffset     = aPart.m_pinNameOffset;
+    m_showPinNumbers    = aPart.m_showPinNumbers;
+    m_showPinNames  = aPart.m_showPinNames;
+    m_dateModified  = aPart.m_dateModified;
+    m_options = aPart.m_options;
 
     for( LIB_ITEM& oldItem : aPart.m_drawings )
     {
@@ -244,9 +277,9 @@ LIB_PART::LIB_PART( LIB_PART& aPart, PART_LIB* aLibrary ) :
 LIB_PART::~LIB_PART()
 {
     wxLogTrace( traceSchLibMem,
-                wxT( "%s: destroying part '%s' with alias list count of %llu." ),
-                GetChars( wxString::FromAscii( __WXFUNCTION__ ) ), GetChars( GetName() ),
-                (long long unsigned) m_aliases.size() );
+            wxT( "%s: destroying part '%s' with alias list count of %llu." ),
+            GetChars( wxString::FromAscii( __WXFUNCTION__ ) ), GetChars( GetName() ),
+            (long long unsigned) m_aliases.size() );
 
     // If the part is being deleted directly rather than through the library,
     // delete all of the aliases.
@@ -256,6 +289,8 @@ LIB_PART::~LIB_PART()
         m_aliases.pop_back();
         delete alias;
     }
+
+    printf("[%p] destroy!\n", this);
 }
 
 
@@ -283,12 +318,12 @@ wxString LIB_PART::SubReference( int aUnit, bool aAddSeparator )
         // use one letter if letter = A .. Z or a ... z, and 2 letters otherwise
         // first letter is expected to be 'A' or 'a' (i.e. 26 letters are available)
         int u;
-        aUnit -= 1;     // Unit number starts to 1. now to 0.
+        aUnit -= 1;             // Unit number starts to 1. now to 0.
 
         while( aUnit >= 26 )    // more than one letter are needed
         {
             u = aUnit / 26;
-            subRef << wxChar( m_subpartFirstId + u -1 );
+            subRef << wxChar( m_subpartFirstId + u - 1 );
             aUnit %= 26;
         }
 
@@ -314,9 +349,9 @@ void LIB_PART::SetName( const wxString& aName )
 
 
 void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
-            int aMulti, int aConvert, const PART_DRAW_OPTIONS& aOpts )
+        int aMulti, int aConvert, const PART_DRAW_OPTIONS& aOpts )
 {
-    BASE_SCREEN*   screen = aPanel ? aPanel->GetScreen() : NULL;
+    BASE_SCREEN* screen = aPanel ? aPanel->GetScreen() : NULL;
 
     GRSetDrawMode( aDc, aOpts.draw_mode );
 
@@ -326,8 +361,8 @@ void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
      *   printing in black and white
      *   If the color is not the default color (aColor != -1 )
      */
-    if( ! ( screen && screen->m_IsPrinting && GetGRForceBlackPenState() )
-            && ( aOpts.color == COLOR4D::UNSPECIFIED ) )
+    if( !( screen && screen->m_IsPrinting && GetGRForceBlackPenState() )
+        && ( aOpts.color == COLOR4D::UNSPECIFIED ) )
     {
         for( LIB_ITEM& drawItem : m_drawings )
         {
@@ -354,13 +389,13 @@ void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
             if( drawItem.Type() == LIB_FIELD_T )        // TODO dead code?
             {
                 drawItem.Draw( aPanel, aDc, aOffset, aOpts.color,
-                               aOpts.draw_mode, (void*) NULL, aOpts.transform );
+                        aOpts.draw_mode, (void*) NULL, aOpts.transform );
             }
 
             // Now, draw only the background for items with
             // m_Fill == FILLED_WITH_BG_BODYCOLOR:
             drawItem.Draw( aPanel, aDc, aOffset, aOpts.color,
-                           aOpts.draw_mode, (void*) false, aOpts.transform );
+                    aOpts.draw_mode, (void*) false, aOpts.transform );
         }
     }
 
@@ -399,6 +434,7 @@ void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
             LIB_PIN& pin = dynamic_cast<LIB_PIN&>( drawItem );
 
             uintptr_t flags = 0;
+
             if( aOpts.show_pin_text )
                 flags |= PIN_DRAW_TEXTS;
 
@@ -412,28 +448,28 @@ void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
                 flags |= PIN_DANGLING_HIDDEN;
 
             drawItem.Draw( aPanel, aDc, aOffset, aOpts.color,
-                           aOpts.draw_mode, (void*) flags, aOpts.transform );
+                    aOpts.draw_mode, (void*) flags, aOpts.transform );
 
             ++pin_index;
         }
         else if( drawItem.Type() == LIB_FIELD_T )
         {
             drawItem.Draw( aPanel, aDc, aOffset, aOpts.color,
-                           aOpts.draw_mode, (void*) NULL, aOpts.transform );
+                    aOpts.draw_mode, (void*) NULL, aOpts.transform );
         }
         else
         {
             bool forceNoFill = drawItem.m_Fill == FILLED_WITH_BG_BODYCOLOR;
             drawItem.Draw( aPanel, aDc, aOffset, aOpts.color,
-                           aOpts.draw_mode, (void*) forceNoFill,
-                           aOpts.transform );
+                    aOpts.draw_mode, (void*) forceNoFill,
+                    aOpts.transform );
         }
     }
 
     // Enable this to draw the anchor of the component.
 #if 0
     int len = aDc->DeviceToLogicalXRel( 3 );
-    EDA_RECT* const clipbox  = aPanel ? aPanel->GetClipBox() : NULL;
+    EDA_RECT* const clipbox = aPanel ? aPanel->GetClipBox() : NULL;
 
     GRLine( clipbox, aDc, aOffset.x, aOffset.y - len, aOffset.x,
             aOffset.y + len, 0, aOpts.color );
@@ -454,7 +490,7 @@ void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
 
 
 void LIB_PART::Plot( PLOTTER* aPlotter, int aUnit, int aConvert,
-                          const wxPoint& aOffset, const TRANSFORM& aTransform )
+        const wxPoint& aOffset, const TRANSFORM& aTransform )
 {
     wxASSERT( aPlotter != NULL );
 
@@ -498,8 +534,9 @@ void LIB_PART::Plot( PLOTTER* aPlotter, int aUnit, int aConvert,
     }
 }
 
+
 void LIB_PART::PlotLibFields( PLOTTER* aPlotter, int aUnit, int aConvert,
-                                  const wxPoint& aOffset, const TRANSFORM& aTransform )
+        const wxPoint& aOffset, const TRANSFORM& aTransform )
 {
     wxASSERT( aPlotter != NULL );
 
@@ -519,13 +556,15 @@ void LIB_PART::PlotLibFields( PLOTTER* aPlotter, int aUnit, int aConvert,
 
         // The reference is a special case: we should change the basic text
         // to add '?' and the part id
-        LIB_FIELD& field = (LIB_FIELD&) item;
-        wxString tmp = field.GetShownText();
+        LIB_FIELD&  field = (LIB_FIELD&) item;
+        wxString    tmp = field.GetShownText();
+
         if( field.GetId() == REFERENCE )
         {
             wxString text = field.GetFullText( aUnit );
             field.SetText( text );
         }
+
         item.Plot( aPlotter, aOffset, fill, aTransform );
         field.SetText( tmp );
     }
@@ -545,9 +584,10 @@ void LIB_PART::RemoveDrawItem( LIB_ITEM* aItem, EDA_DRAW_PANEL* aPanel, wxDC* aD
         if( field->GetId() < MANDATORY_FIELDS )
         {
             wxLogWarning( _(
-                "An attempt was made to remove the %s field from component %s in library %s." ),
-                GetChars( field->GetName() ), GetChars( GetName() ),
-                GetChars( GetLibraryName() ) );
+                            "An attempt was made to remove the %s field from component %s in library %s." ),
+                    GetChars( field->GetName() ),
+                    GetChars( GetName() ),
+                    GetChars( GetLibraryName() ) );
             return;
         }
     }
@@ -560,7 +600,7 @@ void LIB_PART::RemoveDrawItem( LIB_ITEM* aItem, EDA_DRAW_PANEL* aPanel, wxDC* aD
         {
             if( aDc != NULL )
                 aItem->Draw( aPanel, aDc, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED,
-                             g_XorMode, NULL, DefaultTransform );
+                        g_XorMode, NULL, DefaultTransform );
 
             items.erase( i );
             SetModified();
@@ -621,7 +661,7 @@ void LIB_PART::GetPins( LIB_PINS& aList, int aUnit, int aConvert )
     {
         // Unit filtering:
         if( aUnit && item.m_Unit && ( item.m_Unit != aUnit ) )
-             continue;
+            continue;
 
         // Shape filtering:
         if( aConvert && item.m_Convert && ( item.m_Convert != aConvert ) )
@@ -654,40 +694,43 @@ bool LIB_PART::PinsConflictWith( LIB_PART& aOtherPart, bool aTestNums, bool aTes
         bool aTestType, bool aTestOrientation, bool aTestLength )
 {
     LIB_PINS thisPinList;
-    GetPins( thisPinList, /* aUnit */ 0, /* aConvert */ 0 );
+
+    GetPins( thisPinList,    /* aUnit */ 0,    /* aConvert */ 0 );
 
     for( LIB_PIN* eachThisPin : thisPinList )
     {
         wxASSERT( eachThisPin );
         LIB_PINS otherPinList;
-        aOtherPart.GetPins( otherPinList, /* aUnit */ 0, /* aConvert */ 0 );
+        aOtherPart.GetPins( otherPinList,    /* aUnit */ 0,    /* aConvert */ 0 );
         bool foundMatch = false;
 
         for( LIB_PIN* eachOtherPin : otherPinList )
         {
             wxASSERT( eachOtherPin );
+
             // Same position?
             if( eachThisPin->GetPosition() != eachOtherPin->GetPosition() )
                 continue;
 
             // Same number?
-            if( aTestNums && ( eachThisPin->GetNumber() != eachOtherPin->GetNumber() ))
+            if( aTestNums && ( eachThisPin->GetNumber() != eachOtherPin->GetNumber() ) )
                 continue;
 
             // Same name?
-            if( aTestNames && ( eachThisPin->GetName() != eachOtherPin->GetName() ))
+            if( aTestNames && ( eachThisPin->GetName() != eachOtherPin->GetName() ) )
                 continue;
 
             // Same electrical type?
-            if( aTestType && ( eachThisPin->GetType() != eachOtherPin->GetType() ))
+            if( aTestType && ( eachThisPin->GetType() != eachOtherPin->GetType() ) )
                 continue;
 
             // Same orientation?
-            if( aTestOrientation && ( eachThisPin->GetOrientation() != eachOtherPin->GetOrientation() ))
+            if( aTestOrientation
+                && ( eachThisPin->GetOrientation() != eachOtherPin->GetOrientation() ) )
                 continue;
 
             // Same length?
-            if( aTestLength && ( eachThisPin->GetLength() != eachOtherPin->GetLength() ))
+            if( aTestLength && ( eachThisPin->GetLength() != eachOtherPin->GetLength() ) )
                 continue;
 
             foundMatch = true;
@@ -708,7 +751,7 @@ bool LIB_PART::PinsConflictWith( LIB_PART& aOtherPart, bool aTestNums, bool aTes
 
 bool LIB_PART::Save( OUTPUTFORMATTER& aFormatter )
 {
-    LIB_FIELD&  value = GetValueField();
+    LIB_FIELD& value = GetValueField();
 
     // First line: it s a comment (component name for readers)
     aFormatter.Print( 0, "#\n# %s\n#\n", TO_UTF8( value.GetText() ) );
@@ -737,11 +780,11 @@ bool LIB_PART::Save( OUTPUTFORMATTER& aFormatter )
     }
 
     aFormatter.Print( 0, " %d %d %c %c %d %c %c\n",
-                      0, m_pinNameOffset,
-                      m_showPinNumbers ? 'Y' : 'N',
-                      m_showPinNames ? 'Y' : 'N',
-                      m_unitCount, m_unitsLocked ? 'L' : 'F',
-                      m_options == ENTRY_POWER ? 'P' : 'N' );
+            0, m_pinNameOffset,
+            m_showPinNumbers ? 'Y' : 'N',
+            m_showPinNames ? 'Y' : 'N',
+            m_unitCount, m_unitsLocked ? 'L' : 'F',
+            m_options == ENTRY_POWER ? 'P' : 'N' );
 
     if( !SaveDateAndTime( aFormatter ) )
         return false;
@@ -753,7 +796,7 @@ bool LIB_PART::Save( OUTPUTFORMATTER& aFormatter )
     // may have their own save policy so there is a separate loop for them.
     // Empty fields are saved, because the user may have set visibility,
     // size and orientation
-    for( int i = 0;  i < MANDATORY_FIELDS;  ++i )
+    for( int i = 0; i < MANDATORY_FIELDS; ++i )
     {
         if( !fields[i].Save( aFormatter ) )
             return false;
@@ -835,13 +878,13 @@ bool LIB_PART::Save( OUTPUTFORMATTER& aFormatter )
 
 bool LIB_PART::Load( LINE_READER& aLineReader, wxString& aErrorMsg )
 {
-    int      unused;
-    char*    p;
-    char*    componentName;
-    char*    prefix = NULL;
-    char*    line;
+    int unused;
+    char*   p;
+    char*   componentName;
+    char*   prefix = NULL;
+    char*   line;
 
-    bool     result;
+    bool result;
     wxString Msg;
 
     line = aLineReader.Line();
@@ -851,31 +894,31 @@ bool LIB_PART::Load( LINE_READER& aLineReader, wxString& aErrorMsg )
     if( strcmp( p, "DEF" ) != 0 )
     {
         aErrorMsg.Printf( wxT( "DEF command expected in line %d, aborted." ),
-                          aLineReader.LineNumber() );
+                aLineReader.LineNumber() );
         return false;
     }
 
     // Read DEF line:
-    char drawnum = 0;
-    char drawname = 0;
+    char    drawnum     = 0;
+    char    drawname    = 0;
 
-    if( ( componentName = strtok( NULL, " \t\n" ) ) == NULL  // Part name:
-        || ( prefix = strtok( NULL, " \t\n" ) ) == NULL      // Prefix name:
-        || ( p = strtok( NULL, " \t\n" ) ) == NULL           // NumOfPins:
+    if( ( componentName = strtok( NULL, " \t\n" ) ) == NULL     // Part name:
+        || ( prefix = strtok( NULL, " \t\n" ) ) == NULL         // Prefix name:
+        || ( p = strtok( NULL, " \t\n" ) ) == NULL              // NumOfPins:
         || sscanf( p, "%d", &unused ) != 1
-        || ( p = strtok( NULL, " \t\n" ) ) == NULL           // TextInside:
+        || ( p = strtok( NULL, " \t\n" ) ) == NULL              // TextInside:
         || sscanf( p, "%d", &m_pinNameOffset ) != 1
-        || ( p = strtok( NULL, " \t\n" ) ) == NULL           // DrawNums:
+        || ( p = strtok( NULL, " \t\n" ) ) == NULL              // DrawNums:
         || sscanf( p, "%c", &drawnum ) != 1
-        || ( p = strtok( NULL, " \t\n" ) ) == NULL           // DrawNums:
+        || ( p = strtok( NULL, " \t\n" ) ) == NULL              // DrawNums:
         || sscanf( p, "%c", &drawname ) != 1
-        || ( p = strtok( NULL, " \t\n" ) ) == NULL           // m_unitCount:
+        || ( p = strtok( NULL, " \t\n" ) ) == NULL              // m_unitCount:
         || sscanf( p, "%d", &m_unitCount ) != 1 )
     {
         aErrorMsg.Printf( wxT( "Wrong DEF format in line %d, skipped." ),
-                          aLineReader.LineNumber() );
+                aLineReader.LineNumber() );
 
-        while( (line = aLineReader.ReadLine()) != NULL )
+        while( (line = aLineReader.ReadLine() ) != NULL )
         {
             p = strtok( line, " \t\n" );
 
@@ -938,17 +981,17 @@ bool LIB_PART::Load( LINE_READER& aLineReader, wxString& aErrorMsg )
         // This is the error flag ( if an error occurs, result = false)
         result = true;
 
-        if( *line == '#' )      // a comment
+        if( *line == '#' ) // a comment
             continue;
 
-        if( p == NULL )         // empty line
+        if( p == NULL ) // empty line
             continue;
 
         if( line[0] == 'T'  &&  line[1] == 'i' )
             result = LoadDateAndTime( aLineReader );
         else if( *line == 'F' )
             result = LoadField( aLineReader, Msg );
-        else if( strcmp( p, "ENDDEF" ) == 0 )   // End of component description
+        else if( strcmp( p, "ENDDEF" ) == 0 ) // End of component description
             goto ok;
         else if( strcmp( p, "DRAW" ) == 0 )
             result = LoadDrawEntries( aLineReader, Msg );
@@ -967,7 +1010,7 @@ bool LIB_PART::Load( LINE_READER& aLineReader, wxString& aErrorMsg )
                 aErrorMsg.Printf( wxT( "error occurred at line %d " ), aLineReader.LineNumber() );
             else
                 aErrorMsg.Printf( wxT( "error <%s> occurred at line %d " ),
-                                  GetChars( Msg ), aLineReader.LineNumber() );
+                        GetChars( Msg ), aLineReader.LineNumber() );
 
             return false;
         }
@@ -1003,31 +1046,31 @@ bool LIB_PART::LoadDrawEntries( LINE_READER& aLineReader, wxString& aErrorMsg )
         switch( line[0] )
         {
         case 'A':    // Arc
-            newEntry = ( LIB_ITEM* ) new LIB_ARC( this );
+            newEntry = (LIB_ITEM*) new LIB_ARC( this );
             break;
 
         case 'C':    // Circle
-            newEntry = ( LIB_ITEM* ) new LIB_CIRCLE( this );
+            newEntry = (LIB_ITEM*) new LIB_CIRCLE( this );
             break;
 
         case 'T':    // Text
-            newEntry = ( LIB_ITEM* ) new LIB_TEXT( this );
+            newEntry = (LIB_ITEM*) new LIB_TEXT( this );
             break;
 
         case 'S':    // Square
-            newEntry = ( LIB_ITEM* ) new LIB_RECTANGLE( this );
+            newEntry = (LIB_ITEM*) new LIB_RECTANGLE( this );
             break;
 
         case 'X':    // Pin Description
-            newEntry = ( LIB_ITEM* ) new LIB_PIN( this );
+            newEntry = (LIB_ITEM*) new LIB_PIN( this );
             break;
 
         case 'P':    // Polyline
-            newEntry = ( LIB_ITEM* ) new LIB_POLYLINE( this );
+            newEntry = (LIB_ITEM*) new LIB_POLYLINE( this );
             break;
 
         case 'B':    // Bezier Curves
-            newEntry = ( LIB_ITEM* ) new LIB_BEZIER( this );
+            newEntry = (LIB_ITEM*) new LIB_BEZIER( this );
             break;
 
         case '#':    // Comment
@@ -1035,7 +1078,7 @@ bool LIB_PART::LoadDrawEntries( LINE_READER& aLineReader, wxString& aErrorMsg )
 
         case '\n':
         case '\r':
-        case 0:   // empty line
+        case 0:    // empty line
             continue;
 
         default:
@@ -1046,7 +1089,7 @@ bool LIB_PART::LoadDrawEntries( LINE_READER& aLineReader, wxString& aErrorMsg )
         if( !newEntry->Load( aLineReader, aErrorMsg ) )
         {
             aErrorMsg.Printf( wxT( "error '%s' in DRAW command %c" ),
-                              GetChars( aErrorMsg ), line[0] );
+                    GetChars( aErrorMsg ), line[0] );
             delete newEntry;
 
             // Flush till end of draw section
@@ -1123,8 +1166,8 @@ bool LIB_PART::LoadField( LINE_READER& aLineReader, wxString& aErrorMsg )
 
 bool LIB_PART::LoadFootprints( LINE_READER& aLineReader, wxString& aErrorMsg )
 {
-    char* line;
-    char* p;
+    char*   line;
+    char*   p;
 
     while( true )
     {
@@ -1160,7 +1203,7 @@ const EDA_RECT LIB_PART::GetUnitBoundingBox( int aUnit, int aConvert ) const
         if( item.m_Convert > 0 && ( ( aConvert > 0 ) && ( aConvert != item.m_Convert ) ) )
             continue;
 
-        if ( ( item.Type() == LIB_FIELD_T ) && !( ( LIB_FIELD& ) item ).IsVisible() )
+        if( ( item.Type() == LIB_FIELD_T ) && !( (LIB_FIELD&) item ).IsVisible() )
             continue;
 
         if( initialized )
@@ -1216,7 +1259,7 @@ void LIB_PART::SetFields( const std::vector <LIB_FIELD>& aFields )
 {
     deleteAllFields();
 
-    for( unsigned i=0;  i<aFields.size();  ++i )
+    for( unsigned i = 0; i<aFields.size(); ++i )
     {
         // drawings is a ptr_vector, new and copy an object on the heap.
         LIB_FIELD* field = new LIB_FIELD( aFields[i] );
@@ -1229,14 +1272,14 @@ void LIB_PART::SetFields( const std::vector <LIB_FIELD>& aFields )
 
 void LIB_PART::GetFields( LIB_FIELDS& aList )
 {
-    LIB_FIELD*  field;
+    LIB_FIELD* field;
 
     // The only caller of this function is the library field editor, so it
     // establishes policy here.
 
     // Grab the MANDATORY_FIELDS first, in expected order given by
     // enum NumFieldType
-    for( int id=0;  id<MANDATORY_FIELDS;  ++id )
+    for( int id = 0; id<MANDATORY_FIELDS; ++id )
     {
         field = GetField( id );
 
@@ -1249,10 +1292,10 @@ void LIB_PART::GetFields( LIB_FIELDS& aList )
     // Now grab all the rest of fields.
     for( LIB_ITEM& item : m_drawings[ LIB_FIELD_T ] )
     {
-        field = ( LIB_FIELD* ) &item;
+        field = (LIB_FIELD*) &item;
 
         if( (unsigned) field->GetId() < MANDATORY_FIELDS )
-            continue;  // was added above
+            continue; // was added above
 
         aList.push_back( *field );
     }
@@ -1263,7 +1306,7 @@ LIB_FIELD* LIB_PART::GetField( int aId )
 {
     for( LIB_ITEM& item : m_drawings[ LIB_FIELD_T ] )
     {
-        LIB_FIELD* field = ( LIB_FIELD* ) &item;
+        LIB_FIELD* field = (LIB_FIELD*) &item;
 
         if( field->GetId() == aId )
             return field;
@@ -1277,7 +1320,7 @@ LIB_FIELD* LIB_PART::FindField( const wxString& aFieldName )
 {
     for( LIB_ITEM& item : m_drawings[ LIB_FIELD_T ] )
     {
-        LIB_FIELD* field = ( LIB_FIELD* ) &item;
+        LIB_FIELD* field = (LIB_FIELD*) &item;
 
         if( field->GetName() == aFieldName )
             return field;
@@ -1290,6 +1333,7 @@ LIB_FIELD* LIB_PART::FindField( const wxString& aFieldName )
 LIB_FIELD& LIB_PART::GetValueField()
 {
     LIB_FIELD* field = GetField( VALUE );
+
     wxASSERT( field != NULL );
     return *field;
 }
@@ -1298,6 +1342,7 @@ LIB_FIELD& LIB_PART::GetValueField()
 LIB_FIELD& LIB_PART::GetReferenceField()
 {
     LIB_FIELD* field = GetField( REFERENCE );
+
     wxASSERT( field != NULL );
     return *field;
 }
@@ -1306,6 +1351,7 @@ LIB_FIELD& LIB_PART::GetReferenceField()
 LIB_FIELD& LIB_PART::GetFootprintField()
 {
     LIB_FIELD* field = GetField( FOOTPRINT );
+
     wxASSERT( field != NULL );
     return *field;
 }
@@ -1318,12 +1364,12 @@ bool LIB_PART::SaveDateAndTime( OUTPUTFORMATTER& aFormatter )
     if( m_dateModified == 0 )
         return true;
 
-    sec  = m_dateModified & 63;
-    min  = ( m_dateModified >> 6 ) & 63;
-    hour = ( m_dateModified >> 12 ) & 31;
-    day  = ( m_dateModified >> 17 ) & 31;
-    mon  = ( m_dateModified >> 22 ) & 15;
-    year = ( m_dateModified >> 26 ) + 1990;
+    sec     = m_dateModified & 63;
+    min     = ( m_dateModified >> 6 ) & 63;
+    hour    = ( m_dateModified >> 12 ) & 31;
+    day     = ( m_dateModified >> 17 ) & 31;
+    mon     = ( m_dateModified >> 22 ) & 15;
+    year    = ( m_dateModified >> 26 ) + 1990;
 
     aFormatter.Print( 0, "Ti %d/%d/%d %d:%d:%d\n", year, mon, day, hour, min, sec );
 
@@ -1333,7 +1379,7 @@ bool LIB_PART::SaveDateAndTime( OUTPUTFORMATTER& aFormatter )
 
 bool LIB_PART::LoadDateAndTime( char* aLine )
 {
-    int   year, mon, day, hour, min, sec;
+    int year, mon, day, hour, min, sec;
 
     year = mon = day = hour = min = sec = 0;
     strtok( aLine, " \r\t\n" );
@@ -1398,7 +1444,7 @@ int LIB_PART::SelectItems( EDA_RECT& aRect, int aUnit, int aConvert, bool aEditP
             if( item.Type() != LIB_PIN_T )
                 continue;
 
-             // Specific rules for pins.
+            // Specific rules for pins.
             if( aEditPinByPin || m_unitsLocked
                 || ( item.m_Convert && item.m_Convert != aConvert ) )
                 continue;
@@ -1450,13 +1496,13 @@ void LIB_PART::DeleteSelectedItems()
     {
         if( item->Type() == LIB_FIELD_T )
         {
-#if 0   // Set to 1 to allows fields deletion on block delete or other global command
-            LIB_FIELD& field = ( LIB_FIELD& ) *item;
+#if 0       // Set to 1 to allows fields deletion on block delete or other global command
+            LIB_FIELD& field = (LIB_FIELD&) *item;
 
-            if( (field.GetId() == REFERENCE) || (field.m_FieldId == VALUE) ||
-                (field.m_Attributs & TEXT_NO_VISIBLE) )
+            if( (field.GetId() == REFERENCE) || (field.m_FieldId == VALUE)
+                || (field.m_Attributs & TEXT_NO_VISIBLE) )
 #endif
-                item->ClearFlags( SELECTED );
+            item->ClearFlags( SELECTED );
         }
 
         if( !item->IsSelected() )
@@ -1469,7 +1515,7 @@ void LIB_PART::DeleteSelectedItems()
 
 void LIB_PART::CopySelectedItems( const wxPoint& aOffset )
 {
-    std::vector< LIB_ITEM* > tmp;
+    std::vector<LIB_ITEM*> tmp;
 
     for( LIB_ITEM& item : m_drawings )
     {
@@ -1538,7 +1584,7 @@ void LIB_PART::RotateSelectedItems( const wxPoint& aCenter )
 
 
 LIB_ITEM* LIB_PART::LocateDrawItem( int aUnit, int aConvert,
-                                    KICAD_T aType, const wxPoint& aPoint )
+        KICAD_T aType, const wxPoint& aPoint )
 {
     for( LIB_ITEM& item : m_drawings )
     {
@@ -1556,15 +1602,16 @@ LIB_ITEM* LIB_PART::LocateDrawItem( int aUnit, int aConvert,
 
 
 LIB_ITEM* LIB_PART::LocateDrawItem( int aUnit, int aConvert, KICAD_T aType,
-                                    const wxPoint& aPoint, const TRANSFORM& aTransform )
+        const wxPoint& aPoint, const TRANSFORM& aTransform )
 {
     /* we use LocateDrawItem( int aUnit, int convert, KICAD_T type, const
      * wxPoint& pt ) to search items.
      * because this function uses DefaultTransform as orient/mirror matrix
      * we temporary copy aTransform in DefaultTransform
      */
-    LIB_ITEM* item;
-    TRANSFORM transform = DefaultTransform;
+    LIB_ITEM*   item;
+    TRANSFORM   transform = DefaultTransform;
+
     DefaultTransform = aTransform;
 
     item = LocateDrawItem( aUnit, aConvert, aType, aPoint );
@@ -1600,7 +1647,7 @@ void LIB_PART::SetUnitCount( int aCount )
         // Temporary storage for new items, as adding new items directly to
         // m_drawings may cause the buffer reallocation which invalidates the
         // iterators
-        std::vector< LIB_ITEM* > tmp;
+        std::vector<LIB_ITEM*> tmp;
 
         for( LIB_ITEM& item : m_drawings )
         {
@@ -1631,7 +1678,7 @@ void LIB_PART::SetConversion( bool aSetConvert )
     // Duplicate items to create the converted shape
     if( aSetConvert )
     {
-        std::vector< LIB_ITEM* > tmp;     // Temporarily store the duplicated pins here.
+        std::vector<LIB_ITEM*> tmp;     // Temporarily store the duplicated pins here.
 
         for( LIB_ITEM& item : m_drawings )
         {
@@ -1648,7 +1695,7 @@ void LIB_PART::SetConversion( bool aSetConvert )
         }
 
         // Transfer the new pins to the LIB_PART.
-        for( unsigned i = 0;  i < tmp.size();  i++ )
+        for( unsigned i = 0; i < tmp.size(); i++ )
             m_drawings.push_back( tmp[i] );
     }
     else
@@ -1674,7 +1721,7 @@ wxArrayString LIB_PART::GetAliasNames( bool aIncludeRoot ) const
 
     LIB_ALIASES::const_iterator it;
 
-    for( it=m_aliases.begin();  it != m_aliases.end();  ++it )
+    for( it = m_aliases.begin(); it != m_aliases.end(); ++it )
     {
         if( !aIncludeRoot && (*it)->IsRoot() )
             continue;
@@ -1689,7 +1736,7 @@ wxArrayString LIB_PART::GetAliasNames( bool aIncludeRoot ) const
 bool LIB_PART::HasAlias( const wxString& aName ) const
 {
     wxCHECK2_MSG( !aName.IsEmpty(), return false,
-                  wxT( "Cannot get alias with an empty name, bad programmer." ) );
+            wxT( "Cannot get alias with an empty name, bad programmer." ) );
 
     for( size_t i = 0; i < m_aliases.size(); i++ )
     {
@@ -1704,7 +1751,7 @@ bool LIB_PART::HasAlias( const wxString& aName ) const
 void LIB_PART::SetAliases( const wxArrayString& aAliasList )
 {
     wxCHECK_RET( !m_library,
-                 wxT( "Part aliases cannot be changed when they are owned by a library." ) );
+            wxT( "Part aliases cannot be changed when they are owned by a library." ) );
 
     if( aAliasList == GetAliasNames() )
         return;
@@ -1733,12 +1780,12 @@ void LIB_PART::SetAliases( const wxArrayString& aAliasList )
 }
 
 
-#if 0   // this version looked suspect to me, it did not rename a deleted root
+#if 0    // this version looked suspect to me, it did not rename a deleted root
 
 void LIB_PART::RemoveAlias( const wxString& aName )
 {
     wxCHECK_RET( m_library == NULL,
-                 wxT( "Part aliases cannot be changed when they are owned by a library." ) );
+            wxT( "Part aliases cannot be changed when they are owned by a library." ) );
     wxCHECK_RET( !aName.IsEmpty(), wxT( "Cannot get alias with an empty name." ) );
 
     LIB_ALIASES::iterator it;
@@ -1753,6 +1800,7 @@ void LIB_PART::RemoveAlias( const wxString& aName )
     }
 }
 
+
 #else
 void LIB_PART::RemoveAlias( const wxString& aName )
 {
@@ -1761,6 +1809,8 @@ void LIB_PART::RemoveAlias( const wxString& aName )
     if( a )
         RemoveAlias( a );
 }
+
+
 #endif
 
 
@@ -1777,12 +1827,12 @@ LIB_ALIAS* LIB_PART::RemoveAlias( LIB_ALIAS* aAlias )
         bool rename = aAlias->IsRoot();
 
         wxLogTrace( traceSchLibMem,
-                    wxT( "%s: part:'%s', alias:'%s', alias count %llu, reference count %ld." ),
-                    GetChars( wxString::FromAscii( __WXFUNCTION__ ) ),
-                    GetChars( m_name ),
-                    GetChars( aAlias->GetName() ),
-                    (long long unsigned) m_aliases.size(),
-                    m_me.use_count() );
+                wxT( "%s: part:'%s', alias:'%s', alias count %llu, reference count %ld." ),
+                GetChars( wxString::FromAscii( __WXFUNCTION__ ) ),
+                GetChars( m_name ),
+                GetChars( aAlias->GetName() ),
+                (long long unsigned) m_aliases.size(),
+                m_me.use_count() );
 
         it = m_aliases.erase( it );
 
@@ -1813,7 +1863,7 @@ void LIB_PART::RemoveAllAliases()
 LIB_ALIAS* LIB_PART::GetAlias( const wxString& aName )
 {
     wxCHECK2_MSG( !aName.IsEmpty(), return NULL,
-                  wxT( "Cannot get alias with an empty name.  Bad programmer!" ) );
+            wxT( "Cannot get alias with an empty name.  Bad programmer!" ) );
 
     for( size_t i = 0; i < m_aliases.size(); i++ )
     {
@@ -1828,7 +1878,7 @@ LIB_ALIAS* LIB_PART::GetAlias( const wxString& aName )
 LIB_ALIAS* LIB_PART::GetAlias( size_t aIndex )
 {
     wxCHECK2_MSG( aIndex < m_aliases.size(), return NULL,
-                  wxT( "Illegal alias list index, bad programmer." ) );
+            wxT( "Illegal alias list index, bad programmer." ) );
 
     return m_aliases[aIndex];
 }
@@ -1837,8 +1887,8 @@ LIB_ALIAS* LIB_PART::GetAlias( size_t aIndex )
 void LIB_PART::AddAlias( const wxString& aName )
 {
     wxCHECK_RET( !HasAlias( aName ),
-                 wxT( "Part <" ) + GetName() + wxT( "> already has an alias <" ) +
-                 aName + wxT( ">.  Bad programmer." ) );
+            wxT( "Part <" ) + GetName() + wxT( "> already has an alias <" ) +
+            aName + wxT( ">.  Bad programmer." ) );
 
     m_aliases.push_back( new LIB_ALIAS( aName, this ) );
 }

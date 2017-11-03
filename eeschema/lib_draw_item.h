@@ -410,6 +410,10 @@ public:
 
     FILL_T GetFillMode() const { return m_Fill; }
 
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
+
+    virtual const BOX2I ViewBBox() const override;
+
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
 #endif

@@ -117,6 +117,11 @@ public:
 
     EDA_ITEM* Clone() const override;
 
+    const std::vector<wxPoint>& GetPoints() const
+    {
+        return m_PolyPoints;        // list of points (>= 2)
+    }
+
 private:
 
     /**

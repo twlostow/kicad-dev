@@ -55,8 +55,8 @@ SCH_PLUGIN* SCH_IO_MGR::FindPlugin( SCH_FILE_T aFileType )
     {
     case SCH_LEGACY:
         return new SCH_LEGACY_PLUGIN();
-    case SCH_EAGLE:
-        return new SCH_EAGLE_PLUGIN();
+//    case SCH_EAGLE:
+  //      return new SCH_EAGLE_PLUGIN();
     case SCH_KICAD:
         return NULL;
     }

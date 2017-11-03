@@ -2701,6 +2701,8 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDrawEntries( std::unique_ptr< LIB_PART >& aPar
 
     line = aReader.ReadLine();
 
+    printf("LoadDrawEntries!\n");
+
     while( line )
     {
         if( strCompare( "ENDDRAW", line, &line ) )

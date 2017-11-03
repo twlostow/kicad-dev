@@ -158,3 +158,24 @@ COLOR4D LIB_ITEM::GetDefaultColor()
 {
     return GetLayerColor( LAYER_DEVICE );
 }
+
+void LIB_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
+{
+    aLayers[0] = LAYER_GP_OVERLAY;
+    aCount = 1;
+}
+
+const BOX2I LIB_ITEM::ViewBBox() const
+{
+    auto bb_old = GetBoundingBox();
+
+    BOX2I bb;
+
+    bb.SetOrigin( bb_old.GetOrigin() );
+    bb.SetSize( bb_old.GetSize() );
+
+    printf("bb %d %d %d %d\n", bb.GetOrigin().x, bb.GetOrigin().y, bb.GetSize().x, bb.GetSize().y );
+
+    return bb;
+
+}

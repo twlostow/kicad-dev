@@ -267,6 +267,8 @@ public:
 
     virtual ~LIB_PART();
 
+    LIB_PART* Clone() const override; // should not be inline, to save the ~ 6 bytes per call site.
+
     PART_SPTR    SharedPtr()
     {
         // clone a shared pointer

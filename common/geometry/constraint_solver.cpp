@@ -89,7 +89,6 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
 
             SEG s( aP, aP + m_dir );
 
-
             if( !neighbour )
             {
                 m_anchors[0]->SetNextPos( aP );
@@ -97,7 +96,9 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             }
             else
             {
-                auto ip = neighbour->GetSeg().IntersectLines( s );
+                const auto& na = neighbour->GetAnchors();
+
+                auto ip = SEG(na[0]->GetPos(), na[1]->GetPos()).IntersectLines( s );
                 if ( ip )
                 {
                     m_anchors[0]->SetNextPos( aP );
@@ -137,7 +138,10 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             }
             else
             {
-                auto ip = neighbour->GetSeg().IntersectLines( s );
+                const auto& na = neighbour->GetAnchors();
+
+                auto ip = SEG(na[0]->GetPos(), na[1]->GetPos()).IntersectLines( s );
+
                 if ( ip )
                 {
                     m_anchors[1]->SetNextPos( aP );

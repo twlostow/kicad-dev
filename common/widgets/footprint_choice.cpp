@@ -22,6 +22,9 @@
 #include <wx/dc.h>
 #include <wx/pen.h>
 
+
+namespace S_P = std::placeholders;
+
 wxDEFINE_EVENT( EVT_INTERACTIVE_CHOICE, wxCommandEvent );
 
 
@@ -54,12 +57,12 @@ void FOOTPRINT_CHOICE::DoSetPopupControl( wxComboPopup* aPopup )
     GetVListBoxComboPopup()->Bind( wxEVT_LEFT_UP, &FOOTPRINT_CHOICE::OnMouseUp, this );
     GetVListBoxComboPopup()->Bind( wxEVT_LEFT_DCLICK, &FOOTPRINT_CHOICE::TryVetoMouse, this );
     GetVListBoxComboPopup()->Bind(
-            wxEVT_LISTBOX, std::bind( &FOOTPRINT_CHOICE::TryVetoSelect, this, _1, true ) );
-    Bind( wxEVT_COMBOBOX, std::bind( &FOOTPRINT_CHOICE::TryVetoSelect, this, _1, false ) );
+            wxEVT_LISTBOX, std::bind( &FOOTPRINT_CHOICE::TryVetoSelect, this, S_P::_1, true ) );
+    Bind( wxEVT_COMBOBOX, std::bind( &FOOTPRINT_CHOICE::TryVetoSelect, this, S_P::_1, false ) );
     GetVListBoxComboPopup()->Bind(
-            wxEVT_CHAR_HOOK, std::bind( &FOOTPRINT_CHOICE::TrySkipSeparator, this, _1, true ) );
+            wxEVT_CHAR_HOOK, std::bind( &FOOTPRINT_CHOICE::TrySkipSeparator, this, S_P::_1, true ) );
     GetVListBoxComboPopup()->Bind( wxEVT_CHAR_HOOK, &FOOTPRINT_CHOICE::OnKeyUp, this );
-    Bind( wxEVT_KEY_DOWN, std::bind( &FOOTPRINT_CHOICE::TrySkipSeparator, this, _1, false ) );
+    Bind( wxEVT_KEY_DOWN, std::bind( &FOOTPRINT_CHOICE::TrySkipSeparator, this, S_P::_1, false ) );
 }
 
 

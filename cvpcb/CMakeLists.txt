@@ -140,6 +140,7 @@ set_target_properties( cvpcb_kiface PROPERTIES
     OUTPUT_NAME     cvpcb
     PREFIX          ${KIFACE_PREFIX}
     SUFFIX          ${KIFACE_SUFFIX}
+    COTIRE_ADD_UNITY_BUILD FALSE 
     )
 target_link_libraries( cvpcb_kiface
     3d-viewer
@@ -153,6 +154,11 @@ target_link_libraries( cvpcb_kiface
     ${GDI_PLUS_LIBRARIES}
     ${OPENMP_LIBRARIES}         # used by 3d viewer
     )
+
+if( KICAD_PRECOMPILE_HEADERS )
+  cotire(cvpcb_kiface)
+endif()
+
 
 if( BUILD_GITHUB_PLUGIN )
     target_link_libraries( cvpcb_kiface github_plugin )

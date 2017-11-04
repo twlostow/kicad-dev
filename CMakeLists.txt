@@ -39,7 +39,7 @@ cmake_minimum_required( VERSION 2.8.12 FATAL_ERROR )
 # Path to local CMake modules.
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules )
 
-include( PrecompiledHeader )
+
 
 #
 # KiCad build options should be added below.
@@ -78,6 +78,14 @@ option( KICAD_USE_OCE
 option( KICAD_INSTALL_DEMOS
     "Install kicad demos and examples (default ON)"
     ON )
+
+option( KICAD_PRECOMPILE_HEADERS
+    "Enable header precompilation (experimental, gives huge build time speedup, default OFF)"
+    OFF )
+
+if( KICAD_PRECOMPILE_HEADERS )
+  include( cotire )
+endif()
 
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
@@ -826,6 +834,10 @@ if( UNIX AND NOT APPLE )
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share
         COMPONENT resources
         )
+endif()
+
+if (KICAD_PRECOMPILE_HEADERS)
+  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_BIND_NO_PLACEHOLDERS" )
 endif()
 
 #include( CTest )

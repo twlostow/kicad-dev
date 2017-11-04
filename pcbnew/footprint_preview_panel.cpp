@@ -31,12 +31,14 @@
 #include <class_board.h>
 #include <ki_mutex.h>
 
-#include <boost/bind.hpp>
 #include <make_unique.h>
 #include <class_colors_design_settings.h>
 
 #include <wx/stattext.h>
 
+#include <functional>
+
+using namespace std::placeholders;
 
 /**
  * Threadsafe interface class between loader thread and panel class.

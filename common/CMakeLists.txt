@@ -74,6 +74,15 @@ target_link_libraries( gal
 )
 
 
+
+if( KICAD_PRECOMPILE_HEADERS )
+  set_target_properties( gal PROPERTIES
+    COTIRE_ADD_UNITY_BUILD FALSE )
+
+  cotire(gal)
+endif()
+
+
 # Only for win32 cross compilation using MXE
 if( WIN32 AND MSYS )
     add_definitions( -DGLEW_STATIC )
@@ -548,6 +557,16 @@ target_link_libraries( dsntest common ${wxWidgets_LIBRARIES} rt )
 add_dependencies( dsntest lib-dependencies )
 
 target_link_libraries( pcbcommon )
+
+
+if( KICAD_PRECOMPILE_HEADERS )
+  set_target_properties( common PROPERTIES
+    COTIRE_ADD_UNITY_BUILD FALSE )
+  cotire(common)
+  set_target_properties( pcbcommon PROPERTIES
+    COTIRE_ADD_UNITY_BUILD FALSE )
+  cotire(pcbcommon)
+endif()
 
 
 # _kiway.so

@@ -319,7 +319,13 @@ set_target_properties( eeschema_kiface PROPERTIES
     OUTPUT_NAME     eeschema
     PREFIX          ${KIFACE_PREFIX}
     SUFFIX          ${KIFACE_SUFFIX}
+    COTIRE_ADD_UNITY_BUILD FALSE 
     )
+
+if( KICAD_PRECOMPILE_HEADERS )
+  cotire(eeschema_kiface)
+endif()
+
 
 # The KIFACE is in eeschema.cpp, export it:
 set_source_files_properties( eeschema.cpp PROPERTIES

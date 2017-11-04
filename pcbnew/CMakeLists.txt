@@ -619,7 +619,12 @@ set_target_properties( pcbnew_kiface PROPERTIES
     OUTPUT_NAME     pcbnew
     PREFIX          ${KIFACE_PREFIX}
     SUFFIX          ${KIFACE_SUFFIX}
+    COTIRE_ADD_UNITY_BUILD FALSE
     )
+
+if( KICAD_PRECOMPILE_HEADERS )
+  cotire(pcbnew_kiface)
+endif()
 
 if ( KICAD_BUILD_TESTS )
     if ( UNIX )

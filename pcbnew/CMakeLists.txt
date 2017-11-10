@@ -607,36 +607,23 @@ if( PCBNEW_LINK_MAPS )
 endif()
 
 # the main pcbnew program, in DSO form.
-add_library( pcbnew_kiface MODULE
+add_library( pcbnew_kiface SHARED
     pcbnew.cpp
     ${PCBNEW_SRCS}
     ${PCBNEW_COMMON_SRCS}
     ${PCBNEW_SCRIPTING_SRCS}
     )
+
+
 set_target_properties( pcbnew_kiface PROPERTIES
     # Decorate OUTPUT_NAME with PREFIX and SUFFIX, creating something like
     # _pcbnew.so, _pcbnew.dll, or _pcbnew.kiface
     OUTPUT_NAME     pcbnew
+    COTIRE_ENABLE_PRECOMPILED_HEADER TRUE
     PREFIX          ${KIFACE_PREFIX}
     SUFFIX          ${KIFACE_SUFFIX}
-    COTIRE_ADD_UNITY_BUILD FALSE
     )
 
-if( KICAD_PRECOMPILE_HEADERS )
-  cotire(pcbnew_kiface)
-endif()
-
-if ( KICAD_BUILD_TESTS )
-    if ( UNIX )
-	add_custom_command(TARGET pcbnew_kiface POST_BUILD
-	 COMMAND ln -sf _pcbnew.kiface lib_pcbnew_kiface.so )
-    else()
-	add_custom_command(TARGET pcbnew_kiface POST_BUILD
-	 COMMAND copy _pcbnew.kiface lib_pcbnew_kiface.dll )
-    endif()
-
-
-endif ()
 
 if( ${OPENMP_FOUND} )
     set_target_properties( pcbnew_kiface PROPERTIES
@@ -832,4 +819,8 @@ if( APPLE )
             COMMENT "Copying wxPython into ${PYTHON_DEST}"
             )
     endif()
+endif()
+
+if( KICAD_PRECOMPILE_HEADERS )
+  cotire(pcbnew_kiface)
 endif()

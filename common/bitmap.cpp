@@ -32,6 +32,7 @@
 #include <common.h>
 #include <bitmaps.h>
 #include <pgm_base.h>
+#include <menus_helpers.h>
 
 wxBitmap KiBitmap( BITMAP_DEF aBitmap )
 {
@@ -53,7 +54,7 @@ wxBitmap* KiBitmapNew( BITMAP_DEF aBitmap )
 }
 
 wxMenuItem* AddMenuItem( wxMenu* aMenu, int aId, const wxString& aText,
-                         const wxBitmap&  aImage, wxItemKind aType = wxITEM_NORMAL )
+                         const wxBitmap&  aImage, wxItemKind aType )
 {
     wxMenuItem* item;
 
@@ -85,7 +86,7 @@ wxMenuItem* AddMenuItem( wxMenu* aMenu, int aId, const wxString& aText,
 
 wxMenuItem* AddMenuItem( wxMenu* aMenu, int aId, const wxString& aText,
                          const wxString& aHelpText, const wxBitmap& aImage,
-                         wxItemKind aType = wxITEM_NORMAL )
+                         wxItemKind aType )
 {
     wxMenuItem* item;
 

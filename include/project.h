@@ -35,7 +35,6 @@
 /// Currently an environment variable, eventually a project variable.
 #define PROJECT_VAR_NAME            wxT( "KIPRJMOD" )
 
-
 class wxConfigBase;
 class PARAM_CFG_ARRAY;
 class FP_LIB_TABLE;
@@ -260,7 +259,7 @@ public:
     // non-virtuals resident in PCBNEW link image(s).  By being non-virtual, these
     // functions can get linked into the KIFACE that needs them, and only there.
     // In fact, the other KIFACEs don't even know they exist.
-#if defined(PCBNEW) || defined(CVPCB)
+//#if defined(PCBNEW) || defined(CVPCB)
     /**
      * Return the table of footprint libraries without Kiway, only from within
      * pcbnew.
@@ -275,10 +274,10 @@ public:
      * @return a pointer to an instance of the 3D cache manager or NULL on failure
      */
     S3D_CACHE* Get3DCacheManager( bool updateProjDir = false );
-#endif
+//#endif
 
 
-#if defined(EESCHEMA)
+//#if defined(EESCHEMA)
     // These are all prefaced with "Sch"
     PART_LIBS*  SchLibs();
 
@@ -287,7 +286,7 @@ public:
 
     /// Accessor for project symbol library table.
     SYMBOL_LIB_TABLE* SchSymbolLibTable();
-#endif
+//#endif
 
     //-----</KIFACE Specific APIs>-----------------------------------------------
 

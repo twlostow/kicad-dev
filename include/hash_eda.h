@@ -26,6 +26,9 @@
  * @brief Hashing functions for EDA_ITEMs.
  */
 
+#ifndef __HASH_EDA_H
+#define __HASH_EDA_H
+
 #include <cstdlib>
 
 class EDA_ITEM;
@@ -34,16 +37,16 @@ class EDA_ITEM;
 ///> The properties might be combined using the bitwise 'or' operator.
 enum HASH_FLAGS
 {
-    POSITION    = 0x01,
+    HF_POSITION    = 0x01,
 
     ///> use coordinates relative to the parent object
-    REL_COORD   = 0x02,
-    ROTATION    = 0x04,
-    LAYER       = 0x08,
-    NET         = 0x10,
-    REFERENCE   = 0x20,
-    VALUE       = 0x40,
-    ALL         = 0xff
+    HF_REL_COORD   = 0x02,
+    HF_ROTATION    = 0x04,
+    HF_LAYER       = 0x08,
+    HF_NET         = 0x10,
+    HF_REFERENCE   = 0x20,
+    HF_VALUE       = 0x40,
+    HF_ALL         = 0xff
 };
 
 /*
@@ -51,4 +54,6 @@ enum HASH_FLAGS
  * @param aItem is the item for which the hash will be computed.
  * @return Hash value.
  */
-std::size_t hash_eda( const EDA_ITEM* aItem, int aFlags = HASH_FLAGS::ALL );
+std::size_t hash_eda( const EDA_ITEM* aItem, int aFlags = HASH_FLAGS::HF_ALL );
+
+#endif // __HASH_EDA_H

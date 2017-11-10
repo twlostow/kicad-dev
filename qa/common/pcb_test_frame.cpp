@@ -228,3 +228,13 @@ void PCB_TEST_FRAME::OnExit( wxCommandEvent& WXUNUSED( event ) )
     // true is to force the frame to close
     Close( true );
 }
+
+void PCB_TEST_FRAME::AddMenuAction( wxMenu *where, const TOOL_ACTION* aAction )
+{
+    where->Append( m_lastActionId++, aAction->GetMenuItem() );
+}
+
+void PCB_TEST_FRAME::OnMenuAction( wxCommandEvent& event )
+{
+
+}

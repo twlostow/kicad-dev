@@ -22,7 +22,15 @@ if( MINGW )
     list( APPEND IDF3_FILES ${CMAKE_SOURCE_DIR}/common/streamwrapper.cpp )
 endif( MINGW )
 
+
 add_library( idf3 STATIC ${IDF3_FILES} )
+
+if( KICAD_PRECOMPILE_HEADERS )
+  set_target_properties( idf3 PROPERTIES
+    COTIRE_ADD_UNITY_BUILD FALSE )
+
+  cotire(idf3)
+endif()
 
 add_executable( idfcyl idf_cylinder.cpp )
 add_executable( idfrect idf_rect.cpp )

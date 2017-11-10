@@ -77,7 +77,9 @@ target_link_libraries( gal
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( gal PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_PREFIX_HEADER_IGNORE_PATH "${CMAKE_SOURCE_DIR}/common/gal/opengl/bitmap_font_img.c"
+ )
 
   cotire(gal)
 endif()
@@ -329,6 +331,7 @@ set( COMMON_SRCS
     view/view.cpp
     view/view_item.cpp
     view/view_group.cpp
+    view/view_overlay.cpp
 
     math/math_util.cpp
 
@@ -562,6 +565,8 @@ target_link_libraries( pcbcommon )
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( common PROPERTIES
     COTIRE_ADD_UNITY_BUILD FALSE )
+    #set_source_files_properties( common/gal/opengl/bitmap_font_img.c PROPERTIES COTIRE_EXCLUDED TRUE )
+
   cotire(common)
   set_target_properties( pcbcommon PROPERTIES
     COTIRE_ADD_UNITY_BUILD FALSE )

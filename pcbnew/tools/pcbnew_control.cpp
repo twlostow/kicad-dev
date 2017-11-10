@@ -487,6 +487,8 @@ int PCBNEW_CONTROL::CursorControl( const TOOL_EVENT& aEvent )
     VECTOR2D cursor = getViewControls()->GetCursorPosition();
     VECTOR2I gridSize = gridHelper.GetGrid();
 
+    printf("gcp %.1f %.1f\n", cursor.x, cursor.y );
+
     if( fastMove )
         gridSize = gridSize * 10;
 

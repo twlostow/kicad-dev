@@ -416,6 +416,7 @@ VECTOR2D WX_VIEW_CONTROLS::GetCursorPosition( bool aEnableSnapping ) const
 {
     if( m_settings.m_forceCursorPosition )
     {
+        printf("FORCED\n");
         return m_settings.m_forcedPosition;
     }
     else

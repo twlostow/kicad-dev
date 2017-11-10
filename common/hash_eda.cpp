@@ -38,12 +38,11 @@ static inline size_t hash_board_item( const BOARD_ITEM* aItem, int aFlags )
 {
     size_t ret = 0;
 
-    if( aFlags & LAYER )
+    if( aFlags & HF_LAYER )
         ret ^= hash<unsigned long long>{}( aItem->GetLayerSet().to_ullong() );
 
     return ret;
 }
-
 
 size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
 {
@@ -57,13 +56,13 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
 
             ret ^= hash_board_item( module, aFlags );
 
-            if( aFlags & POSITION )
+            if( aFlags & HF_POSITION )
             {
                 ret ^= hash<int>{}( module->GetPosition().x );
                 ret ^= hash<int>{}( module->GetPosition().y );
             }
 
-            if( aFlags & ROTATION )
+            if( aFlags & HF_ROTATION )
                 ret ^= hash<double>{}( module->GetOrientation() );
 
             for( const BOARD_ITEM* i = module->GraphicalItemsList(); i; i = i->Next() )
@@ -87,9 +86,9 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
             ret ^= hash<int>{}( pad->GetDelta().x << 4 );
             ret ^= hash<int>{}( pad->GetDelta().y << 5 );
 
-            if( aFlags & POSITION )
+            if( aFlags & HF_POSITION )
             {
-                if( aFlags & REL_COORD )
+                if( aFlags & HF_REL_COORD )
                 {
                     ret ^= hash<int>{}( pad->GetPos0().x );
                     ret ^= hash<int>{}( pad->GetPos0().y );
@@ -101,10 +100,10 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
                 }
             }
 
-            if( aFlags & ROTATION )
+            if( aFlags & HF_ROTATION )
                 ret ^= hash<double>{}( pad->GetOrientation() );
 
-            if( aFlags & NET )
+            if( aFlags & HF_NET )
                 ret ^= hash<int>{}( pad->GetNetCode() << 6 );
         }
         break;
@@ -113,10 +112,10 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
         {
             const TEXTE_MODULE* text = static_cast<const TEXTE_MODULE*>( aItem );
 
-            if( !( aFlags & REFERENCE ) && text->GetType() == TEXTE_MODULE::TEXT_is_REFERENCE )
+            if( !( aFlags & HF_REFERENCE ) && text->GetType() == TEXTE_MODULE::TEXT_is_REFERENCE )
                 break;
 
-            if( !( aFlags & VALUE ) && text->GetType() == TEXTE_MODULE::TEXT_is_VALUE )
+            if( !( aFlags & HF_VALUE ) && text->GetType() == TEXTE_MODULE::TEXT_is_VALUE )
                 break;
 
             ret ^= hash_board_item( text, aFlags );
@@ -129,9 +128,9 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
             ret ^= hash<int>{}( text->GetHorizJustify() );
             ret ^= hash<int>{}( text->GetVertJustify() );
 
-            if( aFlags & POSITION )
+            if( aFlags & HF_POSITION )
             {
-                if( aFlags & REL_COORD )
+                if( aFlags & HF_REL_COORD )
                 {
                     ret ^= hash<int>{}( text->GetPos0().x );
                     ret ^= hash<int>{}( text->GetPos0().y );
@@ -143,7 +142,7 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
                 }
             }
 
-            if( aFlags & ROTATION )
+            if( aFlags & HF_ROTATION )
                 ret ^= hash<double>{}( text->GetTextAngle() );
         }
         break;
@@ -157,9 +156,9 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
             ret ^= hash<int>{}( segment->GetWidth() );
             ret ^= hash<int>{}( segment->GetRadius() );
 
-            if( aFlags & POSITION )
+            if( aFlags & HF_POSITION )
             {
-                if( aFlags & REL_COORD )
+                if( aFlags & HF_REL_COORD )
                 {
                     ret ^= hash<int>{}( segment->GetStart0().x );
                     ret ^= hash<int>{}( segment->GetStart0().y );
@@ -175,7 +174,7 @@ size_t hash_eda( const EDA_ITEM* aItem, int aFlags )
                 }
             }
 
-            if( aFlags & ROTATION )
+            if( aFlags & HF_ROTATION )
                 ret ^= hash<double>{}( segment->GetAngle() );
         }
         break;

@@ -34,8 +34,7 @@
 #include <limits.h>
 #include <bitmaps.h>
 
-#include <wx/valnum.h>
-#include <wx/tglbtn.h>
+#include <wx/wx.h>
 
 #include "project.h"
 #include "panel_prev_model.h"

@@ -43,11 +43,11 @@ static const int HOTKEY_MIN_WIDTH = 100;
  */
 enum ID_WHKL_MENU_IDS
 {
-    ID_EDIT = 2001,
-    ID_RESET,
-    ID_DEFAULT,
-    ID_RESET_ALL,
-    ID_DEFAULT_ALL,
+    ID_WHKL_EDIT = 2001,
+    ID_WHKL_RESET,
+    ID_WHKL_DEFAULT,
+    ID_WHKL_RESET_ALL,
+    ID_WHKL_DEFAULT_ALL,
 };
 
 
@@ -376,12 +376,12 @@ void WIDGET_HOTKEY_LIST::OnContextMenu( wxTreeListEvent& aEvent )
 
     wxMenu menu;
 
-    menu.Append( ID_EDIT, _( "Edit..." ) );
-    menu.Append( ID_RESET, _( "Undo Changes" ) );
-    menu.Append( ID_DEFAULT, _( "Restore Default" ) );
+    menu.Append( ID_WHKL_EDIT, _( "Edit..." ) );
+    menu.Append( ID_WHKL_RESET, _( "Undo Changes" ) );
+    menu.Append( ID_WHKL_DEFAULT, _( "Restore Default" ) );
     menu.Append( wxID_SEPARATOR );
-    menu.Append( ID_RESET_ALL, _( "Undo All Changes" ) );
-    menu.Append( ID_DEFAULT_ALL, _( "Restore All to Default" ) );
+    menu.Append( ID_WHKL_RESET_ALL, _( "Undo All Changes" ) );
+    menu.Append( ID_WHKL_DEFAULT_ALL, _( "Restore All to Default" ) );
 
     PopupMenu( &menu );
 }
@@ -391,23 +391,23 @@ void WIDGET_HOTKEY_LIST::OnMenu( wxCommandEvent& aEvent )
 {
     switch( aEvent.GetId() )
     {
-    case ID_EDIT:
+    case ID_WHKL_EDIT:
         EditItem( m_context_menu_item );
         break;
 
-    case ID_RESET:
+    case ID_WHKL_RESET:
         ResetItem( m_context_menu_item );
         break;
 
-    case ID_DEFAULT:
+    case ID_WHKL_DEFAULT:
         ResetItemToDefault( m_context_menu_item );
         break;
 
-    case ID_RESET_ALL:
+    case ID_WHKL_RESET_ALL:
         TransferDataToControl();
         break;
 
-    case ID_DEFAULT_ALL:
+    case ID_WHKL_DEFAULT_ALL:
         TransferDefaultsToControl();
         break;
 

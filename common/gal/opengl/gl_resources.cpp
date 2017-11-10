@@ -31,8 +31,8 @@
 namespace KIGFX {
     namespace BUILTIN_FONT {
 
-#include "bitmap_font_img.c"
-#include "bitmap_font_desc.c"
+#include "bitmap_font_img.cpp"
+#include "bitmap_font_desc.cpp"
 
         const FONT_GLYPH_TYPE* LookupGlyph( unsigned int aCodepoint )
         {

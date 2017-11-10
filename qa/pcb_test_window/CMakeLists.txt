@@ -35,6 +35,7 @@ add_executable(test_window
   ../../pcbnew/tools/pcb_tool.cpp
   ../../pcbnew/tools/selection.cpp
   ../../pcbnew/tools/selection_tool.cpp
+  # ../../pcbnew/tools/drawing_tool.cpp
   ../../pcbnew/tools/tool_event_utils.cpp
   ../../pcbnew/tools/outline_editor.cpp
 )

@@ -29,6 +29,7 @@
 #include <wx/app.h>
 
 #include <memory>
+#include <map>
 
 using std::unique_ptr;
 
@@ -37,6 +38,7 @@ class BOARD;
 
 class TOOL_MANAGER;
 class TOOL_DISPATCHER;
+class TOOL_ACTION;
 class ACTIONS;
 
 
@@ -71,13 +73,19 @@ public:
     void SetBoard( BOARD * b);
     BOARD* LoadAndDisplayBoard ( const std::string& filename );
 
+    void AddMenuAction( wxMenu *where, const TOOL_ACTION* aAction );
+
 protected:
 
     virtual void OnExit(wxCommandEvent& event);
     virtual void OnMotion( wxMouseEvent& aEvent );
     virtual void OnMenuFileOpen( wxCommandEvent& WXUNUSED(event) );
+    virtual void OnMenuAction( wxCommandEvent& event );
 
     void buildView();
+
+    std::map<int, TOOL_ACTION*> m_actionMap;
+    int m_lastActionId = 100000;
 
     unique_ptr < PCB_DRAW_PANEL_GAL > m_galPanel;
     unique_ptr < BOARD > m_board;

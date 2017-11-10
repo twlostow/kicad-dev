@@ -17,5 +17,12 @@ set(POLYGON_SRCS
 
 add_library(polygon STATIC ${POLYGON_SRCS})
 
+if( KICAD_PRECOMPILE_HEADERS )
+  set_target_properties( polygon PROPERTIES
+    COTIRE_ADD_UNITY_BUILD FALSE )
+
+  cotire(polygon)
+endif()
+
 add_dependencies( polygon lib-dependencies )
 

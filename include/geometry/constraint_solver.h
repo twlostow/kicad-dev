@@ -34,12 +34,17 @@
 #include <geometry/seg.h>
 #include <geometry/point_set.h>
 
+#include <view/view_overlay.h>
+
 class BOARD_ITEM;
 class GS_ITEM;
 class DRAWSEGMENT;
 class CONSTRAINT_LINEAR;
 class GEOM_SOLVER;
 class GEOM_PREVIEW;
+class SHAPE_SEGMENT;
+class SHAPE_ARC;
+
 
 enum GS_CONSTRAINT_TYPE
 {
@@ -143,7 +148,9 @@ public:
 
     bool IsConstrainable() const { return m_constrainable; };
 
-private:
+
+protected:
+
 
     bool m_constrainable = true;
     int m_flags;
@@ -178,6 +185,8 @@ public:
     }
 
     const std::vector<GS_ANCHOR*>& GetAnchors() const { return m_anchors; }
+
+    GS_ANCHOR* GetAnchor( int x ) { return m_anchors[x]; }
 
     void SetParent( BOARD_ITEM* aParent )
     {
@@ -217,12 +226,24 @@ public:
         return (m_constrain & aWhat) == aWhat;
     }
 
+    void SetSolver( GEOM_SOLVER *aSolver )
+    {
+        m_solver = aSolver;
+    }
+
+    bool IsNull() const { return m_isNull; }
+    void SetIsNull( bool aNull)  { m_isNull = aNull; }
+
 protected:
+    VECTOR2I m_savedState[4];
+
+    GEOM_SOLVER *m_solver;
     GS_ITEM_TYPE m_type;
     int m_constrain = 0;
     std::vector<GS_ANCHOR*> m_anchors;
     BOARD_ITEM* m_parent = nullptr;
     bool m_primary = false;
+    bool m_isNull = false;
 };
 
 class GS_SEGMENT : public GS_ITEM
@@ -271,9 +292,9 @@ public:
 private:
 
     void init();
+    GS_SEGMENT* neighbourSegment( int aRefAnchor );
 
     VECTOR2I m_p0, m_p1, m_dir, m_midpoint;
-    VECTOR2I m_p0_saved, m_p1_saved, m_midpoint_saved;
 };
 
 class GS_ARC : public GS_ITEM
@@ -286,12 +307,32 @@ public:
         m_p0 = aP0;
         m_p1 = aP1;
         m_center = aCenter;
-        //init();
+        init();
     }
 
-
     ~GS_ARC() {};
+
+    void SetP0( const VECTOR2I& aP ) { m_p0 = aP; }
+    void SetP1( const VECTOR2I& aP ) { m_p1 = aP; }
+    void SetCenter( const VECTOR2I& aP ) { m_center = aP; }
+
+    const VECTOR2I& GetP0() const { return m_p0; }
+    const VECTOR2I& GetP1() const { return m_p1; }
+    const VECTOR2I& GetCenter() const { return m_center; }
+
+    virtual void MoveAnchor( int aId,
+            const VECTOR2I& aP,
+            std::vector<GS_ANCHOR*>& aChangedAnchors ) override;
+    virtual void    SaveState() override;
+    virtual void    RestoreState() override;
+    virtual void    UpdateAnchors() override;
+
+    const SHAPE_ARC GetArc() const;
+
 private:
+
+    void init();
+
     VECTOR2I m_p0, m_p1, m_center;
 
 };
@@ -322,7 +363,6 @@ public:
 
 private:
     VECTOR2I m_p0, m_p1, m_dir, m_origin;
-    VECTOR2I m_p0_saved, m_p1_saved, m_origin_saved;
 };
 
 class GEOM_SOLVER
@@ -368,6 +408,13 @@ public:
 
     bool findOutlineElements( GS_ITEM* aItem );
     void FindOutlines();
+    int findNeighbours( GS_SEGMENT *current, int refAnchor, std::vector<GS_SEGMENT*>& aSegs );
+
+    void SetOverlay(std::unique_ptr<KIGFX::VIEW_OVERLAY> aOverlay )
+    {
+        m_overlay=std::move(aOverlay);
+    }
+    std::unique_ptr<KIGFX::VIEW_OVERLAY> m_overlay;
 
 private:
     const int c_epsilon = 1;

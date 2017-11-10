@@ -28,6 +28,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <memory>
 
 #include <math/box2.h>
 #include <gal/definitions.h>
@@ -39,6 +40,7 @@ class GAL;
 class VIEW_ITEM;
 class VIEW_GROUP;
 class VIEW_RTREE;
+class VIEW_OVERLAY;
 
 /**
  * Class VIEW.
@@ -651,6 +653,7 @@ public:
 
     static const int VIEW_MAX_LAYERS = 512;      ///< maximum number of layers that may be shown
 
+    std::unique_ptr<VIEW_OVERLAY> MakeOverlay();
 
 private:
     struct VIEW_LAYER

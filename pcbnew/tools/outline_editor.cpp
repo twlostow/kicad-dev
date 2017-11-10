@@ -30,6 +30,8 @@ using namespace std::placeholders;
 #include <gal/graphics_abstraction_layer.h>
 #include <geometry/seg.h>
 #include <geometry/constraint_solver.h>
+#include <geometry/shape_arc.h>
+
 
 #include <confirm.h>
 
@@ -86,6 +88,20 @@ static void commitToBoardItem( const GS_ITEM* aItem, BOARD_ITEM *aBoardItem )
 
             s->SetStart( (wxPoint) gs->GetAnchors()[0]->GetPos() );
             s->SetEnd( (wxPoint) gs->GetAnchors()[1]->GetPos() );
+        break;
+        }
+        case GST_ARC:
+        {
+            auto s = static_cast<DRAWSEGMENT*> ( aBoardItem );
+            auto gs = static_cast<const GS_ARC*> ( aItem );
+
+            //s->SetStart( (wxPoint) gs->GetStart() );
+            //s->SetEnd( (wxPoint) gs->GetEnd() );
+            s->SetShape( S_ARC );
+            s->SetArcStart( (wxPoint) gs->GetP0() );
+            s->SetCenter( (wxPoint) gs->GetCenter() );
+            s->SetAngle( gs->GetArc().GetCentralAngle() * 10.0);
+
         break;
         }
     }
@@ -160,7 +176,6 @@ public:
 
         gal->SetIsStroke( false );
         gal->SetIsFill( true );
-
 
         for( auto item : m_solver->m_items )
         {
@@ -239,8 +254,10 @@ void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
     {
         auto ds = static_cast<DRAWSEGMENT*>(aItem);
 
-        if( ds->GetShape() == S_SEGMENT )
+        switch( ds->GetShape() )
         {
+            case S_SEGMENT:
+            {
             auto s = new GS_SEGMENT( ds->GetStart(), ds->GetEnd() );
             s->SetParent( aItem );
             s->SetPrimary( aPrimary );
@@ -252,6 +269,30 @@ void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
                 s->Constrain( CS_DIRECTION, true );
 
             m_solver->Add( s );
+            break;
+            }
+            case S_ARC:
+            {
+                auto s = new GS_ARC( ds->GetArcStart(), ds->GetArcEnd(), ds->GetCenter() );
+                s->SetParent( aItem );
+                s->SetPrimary( aPrimary );
+
+                if( ds->GetUserFlags() & DSF_CONSTRAIN_START_ANGLE )
+                    s->Constrain( CS_START_ANGLE, true );
+
+                if( ds->GetUserFlags() & DSF_CONSTRAIN_CENTRAL_ANGLE )
+                    s->Constrain( CS_CENTRAL_ANGLE, true );
+
+                if( ds->GetUserFlags() & DSF_CONSTRAIN_RADIUS )
+                    s->Constrain( CS_RADIUS, true );
+
+                printf("Add ARC!\n");
+
+                m_solver->Add( s );
+
+                break;
+
+            }
         }
 
         return;
@@ -343,6 +384,7 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
     Activate();
 
     view()->Add( m_geomPreview.get() );
+    m_solver->SetOverlay( view()->MakeOverlay() );
 
     updateOutline();
 

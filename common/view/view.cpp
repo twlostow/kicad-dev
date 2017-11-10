@@ -31,6 +31,8 @@
 #include <view/view_group.h>
 #include <view/view_item.h>
 #include <view/view_rtree.h>
+#include <view/view_overlay.h>
+
 #include <gal/definitions.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <painter.h>
@@ -1393,6 +1395,14 @@ void VIEW::Update( VIEW_ITEM* aItem, int aUpdateFlags )
 
     viewData->m_requiredUpdate |= aUpdateFlags;
 
+}
+
+std::unique_ptr<VIEW_OVERLAY> VIEW::MakeOverlay()
+{
+    std::unique_ptr<VIEW_OVERLAY> overlay( new VIEW_OVERLAY );
+    printf("**** CREATE OV %p\n", overlay.get() );
+    Add ( overlay.get() );
+    return overlay;
 }
 
 const int VIEW::TOP_LAYER_MODIFIER = -VIEW_MAX_LAYERS;

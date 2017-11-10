@@ -22,10 +22,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#ifndef __GRID_TRICKS_H
+#define __GRID_TRICKS_H
 
 #include <wx/grid.h>
 #include <wx/event.h>
-
 
 /**
  * Class GRID_TRICKS
@@ -94,3 +95,4 @@ protected:
     virtual void cutcopy( bool doCut );
 };
 
+#endif

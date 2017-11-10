@@ -1,5 +1,6 @@
 #include <pcb_test_frame.h>
 #include <tools/outline_editor.h>
+#include <tools/pcb_actions.h>
 #include <tool/tool_manager.h>
 
 class OED_TEST_FRAME : public PCB_TEST_FRAME
@@ -13,6 +14,13 @@ public:
         PCB_TEST_FRAME( frame, title, pos, size, style )
     {
         registerTools();
+
+        auto menuBar = GetMenuBar();
+        wxMenu* drawMenu = new wxMenu;
+
+        menuBar->Append( drawMenu, wxT( "&Draw" ) );
+
+        //AddMenuAction( drawMenu, &PCB_ACTIONS::drawOutline );
     }
 
     void registerTools();
@@ -23,6 +31,7 @@ public:
 wxFrame* CreateMainFrame( const std::string& aFileName )
 {
     auto frame = new OED_TEST_FRAME( nullptr, wxT( "Outline Editor Test" ) );
+
 
     if( aFileName != "" )
     {

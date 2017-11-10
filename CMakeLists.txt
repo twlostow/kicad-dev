@@ -838,6 +838,44 @@ endif()
 
 if (KICAD_PRECOMPILE_HEADERS)
   set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_BIND_NO_PLACEHOLDERS" )
+
+
+  set_property(GLOBAL
+    PROPERTY COTIRE_PREFIX_HEADER_INCLUDE_PRIORITY_PATH
+        "${OPENGL_INCLUDE_DIR}"
+        "${Boost_INCLUDE_DIR}"
+        )
+
+
+  set_property(GLOBAL
+    PROPERTY COTIRE_PREFIX_HEADER_IGNORE_PATH
+        "${CMAKE_SOURCE_DIR}/include/netlist_lexer.h"
+        "${CMAKE_SOURCE_DIR}/include/pcb_plot_params_lexer.h"
+        "${CMAKE_SOURCE_DIR}/include/page_layout_reader_lexer.h"
+        "${CMAKE_SOURCE_DIR}/include/pcb_lexer.h"
+        "${CMAKE_SOURCE_DIR}/include/fp_lib_table_lexer.h"
+        "${CMAKE_SOURCE_DIR}/include/lib_table_lexer.h"
+        "${CMAKE_SOURCE_DIR}/include/unit_format.h"
+        "${CMAKE_SOURCE_DIR}/include/base_units.h"
+        "${CMAKE_SOURCE_DIR}/include/convert_to_biu.h"
+        "${CMAKE_SOURCE_DIR}/include/class_page_info.h"
+        "${CMAKE_SOURCE_DIR}/include/project.h"
+        "${CMAKE_SOURCE_DIR}/include/search_stack.h"
+        "${CMAKE_SOURCE_DIR}/include/kiface_i.h"
+        "${CMAKE_SOURCE_DIR}/include/fp_lib_table.h"
+        "${CMAKE_SOURCE_DIR}/include/lib_table_base.h"
+        "${CMAKE_SOURCE_DIR}/include/kiway.h"
+        "${CMAKE_SOURCE_DIR}/include/bin_mod.h"
+        "${CMAKE_SOURCE_DIR}/common/gal/opengl/gl_resources.h"
+        "${CMAKE_SOURCE_DIR}/eeschema/cmp_library_lexer.h"
+        "${CMAKE_SOURCE_DIR}/eeschema/template_fieldnames_lexer.h"
+        "${CMAKE_SOURCE_DIR}/pcbnew/specctra_lexer.h"
+        "${CMAKE_SOURCE_DIR}/common/gal/opengl/bitmap_font_img.c"
+        "${CMAKE_SOURCE_DIR}/common/gal/opengl/bitmap_font_desc.c"
+        "${CMAKE_BUILD_DIR}/config.h"
+
+
+  )
 endif()
 
 #include( CTest )
@@ -857,6 +895,8 @@ if( UNIX AND NOT APPLE )
     include( CPack )
 
 endif()
+
+
 
 #================================================
 # Let CMake look in these directories for nested

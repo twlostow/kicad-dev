@@ -219,7 +219,7 @@ void ACTION_MANAGER::UpdateHotKeys()
         }
     }
 
-#ifdef DEBUG
+/*#ifdef DEBUG
     // Check if there are two global actions assigned to the same hotkey
     for( const auto& action_list : m_actionHotKeys )
     {
@@ -233,7 +233,8 @@ void ACTION_MANAGER::UpdateHotKeys()
 
         assert( global_actions_cnt <= 1 );
     }
-#endif /* not NDEBUG */
+#endif 
+*/
 }
 
 

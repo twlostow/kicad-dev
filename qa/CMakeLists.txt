@@ -10,7 +10,8 @@ if( KICAD_SCRIPTING_MODULES )
 
 endif()
 
-add_subdirectory( geometry )
+#add_subdirectory( geometry )
 add_subdirectory( pcb_test_window )
-add_subdirectory( constraint_solver )
-add_subdirectory( sch_lib_test_window )
+#add_subdirectory( constraint_solver )
+#add_subdirectory( sch_lib_test_window )
+#add_subdirectory( lib_table_window )

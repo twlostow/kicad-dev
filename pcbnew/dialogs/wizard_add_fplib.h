@@ -24,6 +24,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#ifndef __WIZARD_FPLIB_TABLE_H
+#define __WIZARD_FPLIB_TABLE_H
+
 #include <wizard_add_fplib_base.h>
 #include <io_mgr.h>
 #include <core/optional.h>
@@ -277,3 +280,5 @@ protected:
     // path to the most recently used download directory from Github.
     wxString m_lastGithubDownloadDirectory;
 };
+
+#endif

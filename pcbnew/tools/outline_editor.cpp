@@ -375,6 +375,8 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
     cond |= SELECTION_CONDITIONS::HasType( PCB_LINE_T ) ( selection );
 
+    m_solver->SetOverlay( view()->MakeOverlay() );
+
     if( !cond )
     {
         printf( "Not for OUTLINE_EDITOR!\n" );
@@ -384,7 +386,6 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
     Activate();
 
     view()->Add( m_geomPreview.get() );
-    m_solver->SetOverlay( view()->MakeOverlay() );
 
     updateOutline();
 
@@ -482,6 +483,7 @@ void OUTLINE_EDITOR::setTransitions()
 {
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::SelectedEvent );
     Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::UnselectedEvent );
+    Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::ClearedEvent );
     Go( &OUTLINE_EDITOR::modifiedSelection, PCB_ACTIONS::selectionModified.MakeEvent() );
     Go( &OUTLINE_EDITOR::FilletCorner, filletCorner.MakeEvent() );
 }

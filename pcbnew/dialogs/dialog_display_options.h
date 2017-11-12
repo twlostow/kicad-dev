@@ -25,6 +25,10 @@
 /**
  * @file pcbnew/dialogs/dialog_display_options.h
  */
+
+#ifndef __DIALOG_DISPLAY_OPTIONS_H_
+#define __DIALOG_DISPLAY_OPTIONS_H_
+
 #include <dialog_display_options_base.h>
 
 class GAL_OPTIONS_PANEL;
@@ -44,3 +48,4 @@ private:
    GAL_OPTIONS_PANEL* m_galOptsPanel;
 };
 
+#endif

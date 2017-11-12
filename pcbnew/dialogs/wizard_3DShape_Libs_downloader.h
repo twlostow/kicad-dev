@@ -24,6 +24,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#ifndef __WIZARD_3DSHAPE_LIBS_DONWLOADER_H
+#define __WIZARD_3DSHAPE_LIBS_DONWLOADER_H
+
 #include <wizard_3DShape_Libs_downloader_base.h>
 
 class KIWAY_PLAYER;
@@ -152,3 +155,5 @@ protected:
     wxWizardPageSimple* m_githubListDlg;
     wxWizardPageSimple* m_reviewDlg;
 };
+
+#endif

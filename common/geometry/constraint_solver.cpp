@@ -106,6 +106,9 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
 {
     // printf( "MoveAnchor id %d constraint %x\n", aId, m_constrain );
 
+    if (m_anchors[aId ]->GetPos() == aP )
+        return;
+
     switch( aId )
     {
     case 0:
@@ -123,10 +126,23 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             //std::vector<GS_SEGMENT*> neighbours;
             auto neighbour = neighbourSegment( aId );
 
-            /*if ( GetSeg().ContainsPoint( aP ))
-            {
+            auto s = GetSeg();
+            m_solver->m_overlay->SetIsStroke(true);
+            m_solver->m_overlay->SetLineWidth(500000.0);
 
-            }*/
+            if( s.Collinear( aP ) ) // trivial case
+            {
+                printf("Trivial Case!\n");
+                m_solver->m_overlay->SetStrokeColor(GREEN);
+                m_solver->m_overlay->Circle( aP, 1000000.0 );
+                m_anchors[ aId ]->SetNextPos( aP );
+                m_anchors[ 1-aId ]->SetNextPos( m_anchors[1-aId]->GetPos() );
+
+                aChangedAnchors.push_back( m_anchors[aId] );
+                aChangedAnchors.push_back( m_anchors[1-aId] );
+                return;
+
+            }
 
             //if( m_solver->findNeighbours( this, aId, neighbours ) )
             if( neighbour )
@@ -135,8 +151,6 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                     {
                         SEG moved ( aP, aP + m_dir );
 
-                        m_solver->m_overlay->SetIsStroke(true);
-                        m_solver->m_overlay->SetLineWidth(500000.0);
 
                         if(aId == 0)
                         {
@@ -144,20 +158,19 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                             m_solver->m_overlay->Line( neighbour->GetSeg() );
 
                             auto ip =  neighbour->GetSeg().IntersectLines( moved );
-                            m_solver->m_overlay->Circle(m_anchors[0]->GetPos(), 1000000.0 );
+                            //m_solver->m_overlay->Circle(m_anchors[0]->GetPos(), 1000000.0 );
                             if( ip )
                             {
                                 m_solver->m_overlay->Line( aP, *ip );
+                                m_anchors[0]->SetNextPos( aP );
+                                m_anchors[1]->SetNextPos( *ip );
                             }
 
-                            m_anchors[0]->SetNextPos( aP );
-                            m_anchors[1]->SetNextPos( *ip );
+
                         }
 
                         if(aId == 1)
                         {
-//                            m_solver->m_overlay->SetStrokeColor(RED);
-
                             m_solver->m_overlay->SetStrokeColor(RED);
                             m_solver->m_overlay->Line( neighbour->GetSeg() );
 
@@ -166,10 +179,11 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                             if( ip )
                             {
                                 m_solver->m_overlay->Line( aP, *ip );
+                                m_anchors[1]->SetNextPos( aP );
+                                m_anchors[0]->SetNextPos( *ip );
+
                             }
 
-                            m_anchors[1]->SetNextPos( aP );
-                            m_anchors[0]->SetNextPos( *ip );
 
                         }
 
@@ -206,23 +220,7 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                 m_anchors[1 - aId]->SetNextPos( s.LineProject( m_anchors[1 - aId]->GetPos() ) );
             }
 
-/*            else
- *           {
- *               const auto& na_a = neighbour_a->GetAnchors();
- *               const auto& na_b = neighbour_b->GetAnchors();
- *
- *               printf("CASE 2 (LP)\n");
- *
- *               auto ip1 = SEG(na_a[0]->GetPos(), na_a[1]->GetPos()).IntersectLines( s );
- *               auto ip2 = SEG(na_b[0]->GetPos(), na_b[1]->GetPos()).IntersectLines( s );
- *
- *               if(ip1 && ip2)
- *               {
- *                   m_anchors[ aId ]->SetNextPos( *ip1 );
- *                   m_anchors[ 1-aId ]->SetNextPos( *ip2 );
- *               }
- *
- *           }*/
+
         }
         else
         {
@@ -504,7 +502,7 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
     // for( auto anchor : m_anchors )
     // printf( " a %p parent %p\n", anchor, anchor->GetParent() );
 
-    const int iterLimit = 10;
+    const int iterLimit = 100;
     int iter = 0;
 
     Q.push_back( DISPLACEMENT( refAnchor, pos ) );
@@ -513,6 +511,9 @@ bool GEOM_SOLVER::MoveAnchor( GS_ANCHOR* refAnchor, VECTOR2I pos )
     {
         // printf( "iter %d disps %d\n", iter, Q.size() );
         iter++;
+
+        for ( auto a:m_anchors )
+            a->SetPositionChanged(false);
 
         std::set<GS_ANCHOR*> moved;
 

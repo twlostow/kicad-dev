@@ -111,6 +111,11 @@ public:
         m_changedPos = false;
     }
 
+    void SetPositionChanged ( bool aChanged )
+    {
+        m_changedPos = aChanged;
+    }
+
     bool PositionChanged() const
     {
         return m_changedPos;

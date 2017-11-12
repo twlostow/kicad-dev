@@ -372,10 +372,10 @@ add_custom_target(
 
 if( COMPILER_SUPPORTS_WSHADOW )
     # .cpp files are compiled with extra ${WSHADOW_FLAGS}, but not .cxx files
-    set_source_files_properties(
-        ${PCBNEW_SRCS} ${PCBNEW_COMMON_SRCS} ${PCBNEW_SCRIPTING_DIALOGS} ${PCBNEW_SCRIPTING_PYTHON_HELPERS}
-        PROPERTIES COMPILE_FLAGS ${WSHADOW_FLAGS}
-    )
+    #set_source_files_properties(
+    #    ${PCBNEW_SRCS} ${PCBNEW_COMMON_SRCS} ${PCBNEW_SCRIPTING_DIALOGS} ${PCBNEW_SCRIPTING_PYTHON_HELPERS}
+    #    PROPERTIES COMPILE_FLAGS ${WSHADOW_FLAGS}
+    #)
 endif()
 
 
@@ -389,11 +389,11 @@ if( KICAD_SCRIPTING )
 
     # Swig generated files do not use the override specifier, therefore
     # disable suggest-override warnings
-    if( COMPILER_SUPPORTS_WSUGGEST_OVERRIDE )
-        set_source_files_properties( pcbnew_wrap.cxx pcbnewPYTHON_wrap.cxx
-            PROPERTIES COMPILE_FLAGS -Wno-suggest-override
-        )
-    endif()
+    #if( COMPILER_SUPPORTS_WSUGGEST_OVERRIDE )
+    #    set_source_files_properties( pcbnew_wrap.cxx pcbnewPYTHON_wrap.cxx
+    #        PROPERTIES COMPILE_FLAGS -Wno-suggest-override
+    #    )
+    #endif()
 endif()
 
 
@@ -626,9 +626,9 @@ set_target_properties( pcbnew_kiface PROPERTIES
 
 
 if( ${OPENMP_FOUND} )
-    set_target_properties( pcbnew_kiface PROPERTIES
-        COMPILE_FLAGS   ${OpenMP_CXX_FLAGS}
-        )
+    #set_target_properties( pcbnew_kiface PROPERTIES
+    #    COMPILE_FLAGS   ${OpenMP_CXX_FLAGS}
+    #    )
 endif()
 
 target_link_libraries( pcbnew_kiface

@@ -374,6 +374,95 @@ void LIB_EDIT_FRAME::OnRemovePart( wxCommandEvent& aEvent )
     m_libMgr->RemovePart( libId.GetLibItemName(), libId.GetLibNickname() );
 }
 
+void LIB_EDIT_FRAME::OnCopyPart( wxCommandEvent& aEvent )
+{
+    int unit = 0;
+    LIB_ID libId = m_treePane->GetCmpTree()->GetSelectedLibId( &unit );
+    LIB_PART* part = m_libMgr->GetBufferedPart( libId.GetLibItemName(), libId.GetLibNickname() );
+
+    if(!part)
+        return;
+
+    m_copiedPart.reset( new LIB_PART( *part ) );
+
+    printf("Copied %s\n", (const char *) m_copiedPart->GetName().c_str() );
+}
+
+void LIB_EDIT_FRAME::OnCutPart( wxCommandEvent& aEvent )
+{
+    int unit = 0;
+    LIB_ID partId = m_treePane->GetCmpTree()->GetSelectedLibId( &unit );
+    LIB_PART* part = m_libMgr->GetBufferedPart( partId.GetLibItemName(), partId.GetLibNickname() );
+
+    if(!part)
+        return;
+
+    LIB_ID libId = getTargetLibId();
+
+    m_copiedPart.reset( new LIB_PART( *part ) );
+
+    printf("Cut %s\n", (const char *) m_copiedPart->GetName().c_str() );
+
+    if( isCurrentPart( libId ) )
+        emptyScreen();
+
+    m_libMgr->RemovePart( libId.GetLibItemName(), libId.GetLibNickname() );
+}
+
+void LIB_EDIT_FRAME::OnPastePart( wxCommandEvent& aEvent )
+{
+    printf("PASTE!\n");
+}
+
+void LIB_EDIT_FRAME::OnDuplicatePart( wxCommandEvent& aEvent )
+{
+    wxString lib = getTargetLib();
+
+    if( !m_libMgr->LibraryExists( lib ) )
+    {
+        lib = SelectLibraryFromList();
+
+        if( !m_libMgr->LibraryExists( lib ) )
+            return;
+    }
+
+    int unit = 0;
+    LIB_ID libId = m_treePane->GetCmpTree()->GetSelectedLibId( &unit );
+    LIB_PART* part = m_libMgr->GetBufferedPart( libId.GetLibItemName(), libId.GetLibNickname() );
+
+    if(!part)
+    {
+        printf("No current part?\n");
+        return;
+    }
+    printf("Duplicate [%p]!\n", part);
+
+    auto newPart ( *part );
+    newPart.SetName( generateNameForPastedPart( part ) );
+
+    m_libMgr->UpdatePart( &newPart, lib );
+}
+
+const wxString LIB_EDIT_FRAME::generateNameForPastedPart( LIB_PART *aOriginal )
+{
+    bool found;
+    int i = 0;
+    wxString newName;
+
+    do {
+        wxString suffix = wxT(" (copy)");
+        if ( i != 0 )
+            suffix.Printf( wxT(" (copy %d)"), i );
+
+        newName = aOriginal->GetName( ) + suffix;
+        i++;
+
+        found = false;
+    } while (found);
+
+    return newName;
+}
+
 
 void LIB_EDIT_FRAME::OnRevertPart( wxCommandEvent& aEvent )
 {

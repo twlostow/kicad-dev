@@ -39,6 +39,7 @@
 #include <lib_draw_item.h>
 #include <lib_collectors.h>
 
+#include <core/optional.h>
 
 class SCH_EDIT_FRAME;
 class SYMBOL_LIB_TABLE;
@@ -287,6 +288,11 @@ public:
      * Removes a part from the working copy of a library.
      */
     void OnRemovePart( wxCommandEvent& aEvent );
+
+    void OnCopyPart( wxCommandEvent& aEvent );
+    void OnCutPart( wxCommandEvent& aEvent );
+    void OnPastePart( wxCommandEvent& aEvent );
+    void OnDuplicatePart( wxCommandEvent& aEvent );
 
     void OnSelectAlias( wxCommandEvent& event );
     void OnSelectPart( wxCommandEvent& event );
@@ -713,6 +719,11 @@ public:
     bool isCurrentPart( const LIB_ID& aLibId ) const;
 
     void emptyScreen();
+
+private:
+    const wxString generateNameForPastedPart( LIB_PART *aOriginal );
+
+    std::unique_ptr<LIB_PART> m_copiedPart;
 
     DECLARE_EVENT_TABLE()
 };

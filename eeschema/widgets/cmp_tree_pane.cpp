@@ -64,6 +64,11 @@ CMP_TREE_PANE::CMP_TREE_PANE( LIB_EDIT_FRAME* aParent, LIB_MANAGER* aLibMgr )
     menuPart->Append( ID_LIBEDIT_SAVE_PART, _( "Save" ) );
     menuPart->Append( ID_LIBEDIT_REVERT_PART, _( "Revert" ) );
     menuPart->AppendSeparator();
+    menuPart->Append( ID_LIBEDIT_CUT_PART, _( "Cut component" ) );
+    menuPart->Append( ID_LIBEDIT_COPY_PART, _( "Copy component" ) );
+    menuPart->Append( ID_LIBEDIT_PASTE_PART, _( "Paste component" ) );
+    menuPart->Append( ID_LIBEDIT_DUPLICATE_PART, _( "Duplicate component" ) );
+    menuPart->AppendSeparator();
 
     // Append the library menu to the component menu
     for( size_t i = 0; i < menuLibrary->GetMenuItemCount(); ++i )

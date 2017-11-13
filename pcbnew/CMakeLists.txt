@@ -251,7 +251,6 @@ set( PCBNEW_CLASS_SRCS
     magnetic_tracks_functions.cpp
     menubar_modedit.cpp
     menubar_pcbframe.cpp
-    minimun_spanning_tree.cpp
     modedit.cpp
     modedit_onclick.cpp
     modeditoptions.cpp
@@ -620,6 +619,8 @@ set_target_properties( pcbnew_kiface PROPERTIES
     # _pcbnew.so, _pcbnew.dll, or _pcbnew.kiface
     OUTPUT_NAME     pcbnew
     COTIRE_ENABLE_PRECOMPILED_HEADER TRUE
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
     PREFIX          ${KIFACE_PREFIX}
     SUFFIX          ${KIFACE_SUFFIX}
     )

@@ -78,8 +78,9 @@ target_link_libraries( gal
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( gal PROPERTIES
     COTIRE_ADD_UNITY_BUILD FALSE
-    COTIRE_PREFIX_HEADER_IGNORE_PATH "${CMAKE_SOURCE_DIR}/common/gal/opengl/bitmap_font_img.c"
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
  )
+
 
   cotire(gal)
 endif()
@@ -564,12 +565,16 @@ target_link_libraries( pcbcommon )
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( common PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
-    #set_source_files_properties( common/gal/opengl/bitmap_font_img.c PROPERTIES COTIRE_EXCLUDED TRUE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+ )
 
   cotire(common)
   set_target_properties( pcbcommon PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+ )
+
   cotire(pcbcommon)
 endif()
 

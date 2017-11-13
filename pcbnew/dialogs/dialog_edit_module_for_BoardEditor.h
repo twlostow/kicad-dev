@@ -28,6 +28,7 @@
 
 
 #include <dialog_edit_module_for_BoardEditor_base.h>
+#include <wx/textctrl.h>
 #include <wx/valnum.h>
 
 class PANEL_PREV_3D;

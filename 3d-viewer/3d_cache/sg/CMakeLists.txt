@@ -81,7 +81,10 @@ if( NOT ${S3DSG_VERSION_FILE} STREQUAL "S3DSG_VERSION_FILE-NOTFOUND" )
 
     set_target_properties( kicad_3dsg
             PROPERTIES SOVERSION
-            ${KICADSG_VERSION_MAJOR}.${KICADSG_VERSION_MINOR}.${KICADSG_VERSION_PATCH} )
+            ${KICADSG_VERSION_MAJOR}.${KICADSG_VERSION_MINOR}.${KICADSG_VERSION_PATCH}
+            COTIRE_ADD_UNITY_BUILD FALSE
+            COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+            )
 
     message( STATUS "S3DSG version: ${KICADSG_VERSION_MAJOR}.${KICADSG_VERSION_MINOR}.${KICADSG_VERSION_PATCH}" )
 else()
@@ -94,6 +97,11 @@ unset( S3DSG_VERSION_FILE CACHE )
 target_compile_definitions( kicad_3dsg PRIVATE -DCOMPILE_SGLIB )
 
 target_link_libraries( kicad_3dsg ${wxWidgets_LIBRARIES} )
+
+if( KICAD_PRECOMPILE_HEADERS )
+  cotire(kicad_3dsg)
+endif()
+
 
 install( TARGETS
     kicad_3dsg

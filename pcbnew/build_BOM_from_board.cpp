@@ -37,6 +37,8 @@
 #include <class_board.h>
 #include <class_module.h>
 
+#include <wildcards_and_files_ext.h>
+
 #include <wx/listimpl.cpp>
 
 /* creates a BOM list rom board
@@ -56,10 +58,7 @@
  *  12;"C1,C4,C5,C6";"CP6";4;"47uF";;;
  */
 
-const wxString CsvFileExtension( wxT( "csv" ) );    // BOM file extension
-
-const wxString CsvFileWildcard( _( "Comma separated value files (*.csv)|*.csv" ) );
-
+static const wxString CsvFileExtension( wxT( "csv" ) );    // BOM file extension
 
 class cmp
 {

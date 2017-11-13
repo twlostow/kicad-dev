@@ -19,10 +19,11 @@ add_library(polygon STATIC ${POLYGON_SRCS})
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( polygon PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+ )
 
   cotire(polygon)
 endif()
 
 add_dependencies( polygon lib-dependencies )
-

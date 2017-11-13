@@ -41,10 +41,10 @@ WX_DEFINE_ARRAY_PTR( wxWizardPageSimple*, WizardPages );
 ///////////////////////////////////////////////////////////////////////////////
 /// Class WIZARD_FPLIB_TABLE_BASE
 ///////////////////////////////////////////////////////////////////////////////
-class WIZARD_FPLIB_TABLE_BASE : public wxWizard 
+class WIZARD_FPLIB_TABLE_BASE : public wxWizard
 {
 	private:
-	
+
 	protected:
 		wxStaticText* m_staticText1;
 		wxRadioButton* m_radioAddLocal;
@@ -71,7 +71,7 @@ class WIZARD_FPLIB_TABLE_BASE : public wxWizard
 		wxStaticText* m_staticText12;
 		wxRadioButton* m_radioGlobal;
 		wxRadioButton* m_radioProject;
-		
+
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnWizardFinished( wxWizardEvent& event ) { event.Skip(); }
 		virtual void OnPageChanged( wxWizardEvent& event ) { event.Skip(); }
@@ -81,14 +81,14 @@ class WIZARD_FPLIB_TABLE_BASE : public wxWizard
 		virtual void OnSelectAllGH( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUnselectAllGH( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChangeSearch( wxCommandEvent& event ) { event.Skip(); }
-		
-	
+
+
 	public:
-		
+
 		WIZARD_FPLIB_TABLE_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Add Footprint Libraries Wizard"), const wxBitmap& bitmap = wxArtProvider::GetBitmap( wxART_HELP_BOOK, wxART_FRAME_ICON ), const wxPoint& pos = wxDefaultPosition, long style = wxCAPTION|wxCLOSE_BOX|wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxRESIZE_BORDER );
 		WizardPages m_pages;
 		~WIZARD_FPLIB_TABLE_BASE();
-	
+
 };
 
 #endif //__WIZARD_ADD_FPLIB_BASE_H__

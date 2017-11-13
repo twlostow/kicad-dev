@@ -22,6 +22,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#ifndef __DIALOG_TRACK_VIA_PROPERTIES_H
+#define __DIALOG_TRACK_VIA_PROPERTIES_H
+
 #include <dialogs/dialog_track_via_properties_base.h>
 #include <wx_unit_binder.h>
 #include <core/optional.h>
@@ -90,3 +93,5 @@ private:
     ///> Fixme
     bool m_haveUniqueNet;
 };
+
+#endif

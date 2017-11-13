@@ -27,7 +27,9 @@ add_library( idf3 STATIC ${IDF3_FILES} )
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( idf3 PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+ )
 
   cotire(idf3)
 endif()

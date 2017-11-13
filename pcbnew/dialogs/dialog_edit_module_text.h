@@ -28,6 +28,7 @@
 #define DIALOG_EDIT_MODULE_TEXT_H
 
 #include <dialog_edit_module_text_base.h>
+#include <wx/textctrl.h>
 #include <wx/valnum.h>
 
 /*************** **************/

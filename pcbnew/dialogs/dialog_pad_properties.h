@@ -36,6 +36,7 @@
 #include <pcbnew.h>
 #include <wxBasePcbFrame.h>
 #include <base_units.h>
+#include <wx/textentry.h>
 #include <wx/valnum.h>
 
 #include <class_board.h>

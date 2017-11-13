@@ -112,7 +112,9 @@ add_library(3d-viewer STATIC ${3D-VIEWER_SRCS})
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( 3d-viewer PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+ )
 
   cotire(3d-viewer)
 endif()

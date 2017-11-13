@@ -22,6 +22,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+ #ifndef __DIALOG_LINEAR_CONSTRAINT_PROPERTIES_H_
+ #define __DIALOG_LINEAR_CONSTRAINT_PROPERTIES_H_
+
 class SELECTION;
 class COMMIT;
 
@@ -71,3 +74,5 @@ private:
 
     WX_UNIT_BINDER m_distance;
 };
+
+#endif

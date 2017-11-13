@@ -22,6 +22,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#ifndef __DIALOG_DXF_IMPORT_H
+#define __DIALOG_DXF_IMPORT_H
+
 #include <dialog_dxf_import_base.h>
 #include <wxPcbStruct.h>
 #include <dxf2brd_items.h>
@@ -62,3 +65,5 @@ private:
     int  GetPCBGridUnits( void );
     void GetPCBGridOffsets( double &aXOffset, double &aYOffset );
 };
+
+#endif

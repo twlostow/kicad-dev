@@ -19,6 +19,9 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __SIZE_MENU_H
+#define __SIZE_MENU_H
+
 #include <tool/context_menu.h>
 
 class BOARD;
@@ -58,3 +61,5 @@ protected:
     ///> Whether the generated menu should contain via sizes.
     bool m_vias;
 };
+
+#endif

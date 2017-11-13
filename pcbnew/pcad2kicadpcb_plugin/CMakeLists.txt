@@ -30,3 +30,12 @@ set( PCAD2PCBNEW_SRCS
 
 add_library( pcad2kicadpcb STATIC ${PCAD2PCBNEW_SRCS} )
 add_dependencies( pcad2kicadpcb pcbcommon )
+
+if( KICAD_PRECOMPILE_HEADERS )
+    set_target_properties( pcad2kicadpcb PROPERTIES
+      COTIRE_ADD_UNITY_BUILD FALSE
+      COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+    )
+
+  cotire(pcad2kicadpcb)
+endif()

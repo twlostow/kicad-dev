@@ -50,7 +50,9 @@ add_library( pnsrouter STATIC ${PCBNEW_PNS_SRCS} )
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( pnsrouter PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h" )
+
 
   cotire(pnsrouter)
 endif()

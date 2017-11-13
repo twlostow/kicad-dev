@@ -754,7 +754,9 @@ add_library( bitmaps STATIC ${CPP_LIST} )
 
 if( KICAD_PRECOMPILE_HEADERS )
   set_target_properties( bitmaps PROPERTIES
-    COTIRE_ADD_UNITY_BUILD FALSE )
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_CXX_PREFIX_HEADER_INIT "${CMAKE_SOURCE_DIR}/stdafx.h"
+ )
 
   cotire(bitmaps)
 endif()

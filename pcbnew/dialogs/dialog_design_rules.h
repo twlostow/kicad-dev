@@ -36,6 +36,7 @@
 #include <dialog_design_rules_base.h>
 
 #include <float.h>
+#include <wx/textctrl.h>
 #include <wx/valnum.h>
 
 

@@ -100,6 +100,8 @@ set( BMAPS_SMALL
     pintype_noconnect
     tree_nosel
     tree_sel
+    read_only
+    empty_bitmap
     )
 
 

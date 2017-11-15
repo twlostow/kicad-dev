@@ -261,12 +261,12 @@ TOOL_ACTION PCB_ACTIONS::selectionModified( "pcbnew.InteractiveEdit.ModifiedSele
         "", "", nullptr, AF_NOTIFY );
 
 TOOL_ACTION PCB_ACTIONS::flip( "pcbnew.InteractiveEdit.flip",
-        AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_FLIP_ITEM ),
+        AS_GLOBAL, 0,
         _( "Flip" ), _( "Flips selected item(s)" ), nullptr );
 
 
 TOOL_ACTION PCB_ACTIONS::properties( "pcbnew.InteractiveEdit.properties",
-        AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_EDIT_ITEM ),
+        AS_GLOBAL, 0,
         _( "Properties" ), _( "Displays item properties dialog" ), nullptr );
 
 TOOL_ACTION PCB_ACTIONS::highlightNet( "pcbnew.EditorControl.highlightNet",
@@ -295,7 +295,7 @@ TOOL_ACTION PCB_ACTIONS::rotateCw( "pcbnew.InteractiveEdit.rotateCw",
         nullptr, AF_NONE, (void*) -1 );
 
 TOOL_ACTION PCB_ACTIONS::rotateCcw( "pcbnew.InteractiveEdit.rotateCcw",
-        AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_ROTATE_ITEM ),
+        AS_GLOBAL, 0,
         _( "Rotate Counterclockwise" ), _( "Rotates selected item(s) counterclockwise" ),
         nullptr, AF_NONE, (void*) 1 );
 

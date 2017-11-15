@@ -523,5 +523,7 @@ EXTERN_BITMAP( sim_tune_xpm )
 EXTERN_BITMAP( sim_probe_xpm )
 EXTERN_BITMAP( sim_add_signal_xpm )
 EXTERN_BITMAP( sim_settings_xpm )
+EXTERN_BITMAP( empty_bitmap_xpm )
+EXTERN_BITMAP( read_only_xpm )
 
 #endif  // BITMAPS_H_

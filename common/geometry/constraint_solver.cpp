@@ -23,6 +23,7 @@ GS_SEGMENT* GS_ANCHOR::NeighbourSegment( GS_SEGMENT* aCurrent )
     for( auto link : m_linkedAnchors )
     {
         auto parent = link->GetParent();
+        printf("scan %p parent %p\n", link, parent );
 
         if( parent->Type() == GST_SEGMENT && parent != aCurrent )
         {
@@ -112,6 +113,11 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
     if( m_anchors[aId ]->GetPos() == aP )
         return;
 
+    m_solver->m_overlay->SetStrokeColor( GREEN );
+    m_solver->m_overlay->Circle( m_anchors[aId]->GetPos(), 1000000.0 );
+
+    //printf("****\n\n\n\n links : %d\n\n\n\n", m_anchors[aId]->GetLinkCount() );
+
     switch( aId )
     {
     case 0:
@@ -136,8 +142,8 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
             if( s.Collinear( aP ) )    // trivial case
             {
                 printf( "Trivial Case!\n" );
-                m_solver->m_overlay->SetStrokeColor( GREEN );
-                m_solver->m_overlay->Circle( aP, 1000000.0 );
+                //m_solver->m_overlay->SetStrokeColor( GREEN );
+                //m_solver->m_overlay->Circle( aP, 1000000.0 );
                 m_anchors[ aId ]->SetNextPos( aP );
                 m_anchors[ 1 - aId ]->SetNextPos( m_anchors[1 - aId]->GetPos() );
 
@@ -146,9 +152,25 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                 return;
             }
 
+            printf("neighbour %p id %d\n", neighbour, aId );
+
+            if ( !m_anchors[aId]->IsLinked() )
+            {
+                m_anchors[ aId ]->SetNextPos( GetSeg().LineProject(aP) );
+                m_anchors[ 1 - aId ]->SetNextPos( m_anchors[1 - aId]->GetPos() );
+
+                aChangedAnchors.push_back( m_anchors[aId] );
+                aChangedAnchors.push_back( m_anchors[1 - aId] );
+
+                return;
+            }
+
             // if( m_solver->findNeighbours( this, aId, neighbours ) )
             if( neighbour )
             {
+
+                            m_solver->m_overlay->SetStrokeColor( YELLOW );
+                            m_solver->m_overlay->Line( neighbour->GetSeg() );
                 // if( aId == 1 )
                 {
                     SEG moved( aP, aP + m_dir );
@@ -157,14 +179,14 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                     if( aId == 0 )
                     {
                         m_solver->m_overlay->SetStrokeColor( YELLOW );
-                        m_solver->m_overlay->Line( neighbour->GetSeg() );
+                        //m_solver->m_overlay->Line( neighbour->GetSeg() );
 
                         auto ip = neighbour->GetSeg().IntersectLines( moved );
 
                         // m_solver->m_overlay->Circle(m_anchors[0]->GetPos(), 1000000.0 );
                         if( ip )
                         {
-                            m_solver->m_overlay->Line( aP, *ip );
+                        //    m_solver->m_overlay->Line( aP, *ip );
                             m_anchors[0]->SetNextPos( aP );
                             m_anchors[1]->SetNextPos( *ip );
                         }
@@ -172,21 +194,21 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
 
                     if( aId == 1 )
                     {
-                        m_solver->m_overlay->SetStrokeColor( RED );
-                        m_solver->m_overlay->Line( neighbour->GetSeg() );
+                    //    m_solver->m_overlay->SetStrokeColor( RED );
+                    //    m_solver->m_overlay->Line( neighbour->GetSeg() );
 
                         auto ip = neighbour->GetSeg().IntersectLines( moved );
 
                         if( ip )
                         {
-                            m_solver->m_overlay->Line( aP, *ip );
+                    //        m_solver->m_overlay->Line( aP, *ip );
                             m_anchors[1]->SetNextPos( aP );
                             m_anchors[0]->SetNextPos( *ip );
                         }
                     }
 
-                    m_solver->m_overlay->SetStrokeColor( WHITE );
-                    m_solver->m_overlay->Line( GetSeg() );
+                    //m_solver->m_overlay->SetStrokeColor( WHITE );
+                    //m_solver->m_overlay->Line( GetSeg() );
                 }
             }
             else
@@ -244,6 +266,14 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
                         SetIsNull( false );
                     }
                 }
+            } else {
+                auto a2 = m_anchors[2]->GetPos();
+                auto s = GetSeg();
+                auto proj = SEG(a2, a2 + (s.B -s.A).Perpendicular() ).LineProject ( aP ) ;
+                auto delta = proj - a2;
+
+                m_anchors[0]->SetNextPos( m_anchors[0]->GetPos() + delta );
+                m_anchors[1]->SetNextPos( m_anchors[1]->GetPos() + delta );
             }
         }
 
@@ -786,6 +816,21 @@ void GS_ARC::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*>& a
             break;
         }
 
+
+        case CS_START_ANGLE | CS_CENTRAL_ANGLE:
+        {
+            double newR;
+            VECTOR2I center;
+            if ( aId == 0 || aId == 1 )
+            {
+
+            }
+
+            break;
+        }
+
+        case CS_RADIUS:
+            break;
 
     default:
         assert( false );

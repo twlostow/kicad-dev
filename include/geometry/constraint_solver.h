@@ -153,7 +153,15 @@ public:
 
     bool IsConstrainable() const { return m_constrainable; };
 
+    bool IsLinked() const
+    {
+        return m_linkedAnchors.size() > 1;
+    }
 
+    int GetLinkCount() const
+    {
+        return m_linkedAnchors.size();
+    }
 protected:
 
 

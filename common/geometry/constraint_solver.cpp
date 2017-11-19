@@ -17,9 +17,6 @@ GS_SEGMENT* GS_ANCHOR::NeighbourSegment( GS_SEGMENT* aCurrent )
     GS_SEGMENT* rv = nullptr;
     int count = 0;
 
-    if( !aCurrent )
-        return nullptr;
-
     for( auto link : m_linkedAnchors )
     {
         auto parent = link->GetParent();
@@ -41,51 +38,10 @@ GS_SEGMENT* GS_ANCHOR::NeighbourSegment( GS_SEGMENT* aCurrent )
 
 GS_SEGMENT* GS_SEGMENT::neighbourSegment( int aRefAnchor )
 {
-    return GetAnchor( 1 - aRefAnchor )->NeighbourSegment( this );
+    return GetAnchor( aRefAnchor )->NeighbourSegment( this );
 }
 
 
-#if 0
-int GEOM_SOLVER::findNeighbours( GS_SEGMENT* current, int refAnchor,
-        std::vector<GS_SEGMENT*>& aSegs )
-{
-    if( !current )
-        return 0;
-
-    auto    s_a = current->GetAnchor( refAnchor )->NeighbourSegment( current );
-    auto    s_b = current->GetAnchor( 1 - refAnchor )->NeighbourSegment( current );
-
-    GS_SEGMENT* s_aa    = nullptr;
-    GS_SEGMENT* s_bb    = nullptr;
-
-    if( s_a )
-        s_aa = s_a->GetAnchor( refAnchor )->NeighbourSegment( s_a );
-
-    if( s_b )
-        s_bb = s_b->GetAnchor( 1 - refAnchor )->NeighbourSegment( s_b );
-
-    aSegs = { s_aa, s_a, s_b, s_bb };
-    return 1;
-}
-
-
-#endif
-
-/*GS_SEGMENT::GS_SEGMENT( DRAWSEGMENT* aSeg )
- *   : GS_ITEM( GST_SEGMENT, aSeg )
- *  {
- *   m_p0    = aSeg->GetStart();
- *   m_p1    = aSeg->GetEnd();
- *   m_dir   = m_p1 - m_p0;
- *   m_midpoint = (m_p0 + m_p1) / 2;
- *   m_anchors.push_back( new GS_ANCHOR( this, 0, m_p0 ) );
- *   m_anchors.push_back( new GS_ANCHOR( this, 1, m_p1 ) );
- *   auto anc_midpoint = new GS_ANCHOR( this, 2, m_midpoint );
- *   anc_midpoint->SetConstrainable( false );
- *   m_anchors.push_back( anc_midpoint );
- *   m_parent = aSeg;
- *  }
- */
 
 GS_SEGMENT::~GS_SEGMENT()
 {
@@ -133,7 +89,7 @@ void GS_SEGMENT::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*
         else if( m_constrain == CS_DIRECTION )
         {
             // std::vector<GS_SEGMENT*> neighbours;
-            auto neighbour = neighbourSegment( aId );
+            auto neighbour = neighbourSegment( 1 - aId );
 
             auto s = GetSeg();
             m_solver->m_overlay->SetIsStroke( true );
@@ -821,10 +777,78 @@ void GS_ARC::MoveAnchor( int aId, const VECTOR2I& aP, std::vector<GS_ANCHOR*>& a
         {
             double newR;
             VECTOR2I center;
-            if ( aId == 0 || aId == 1 )
-            {
 
+            switch( aId )
+            {
+                case ANC_CENTER:
+                {
+                    auto delta = aP - m_anchors[aId]->GetPos();
+                    m_anchors[0]->SetNextPos( m_anchors[0]->GetPos() + delta );
+                    m_anchors[1]->SetNextPos( m_anchors[1]->GetPos() + delta );
+                    m_anchors[2]->SetNextPos( m_anchors[2]->GetPos() + delta );
+                    break;
+                }
+                case ANC_START:
+                case ANC_END:
+                {
+                    auto n_start = m_anchors[ ANC_START ]->NeighbourSegment();
+                    auto n_end = m_anchors[ ANC_END ]->NeighbourSegment();
+
+                    printf("N_START %d N_END %d\n", n_start? 1: 0, n_end ? 1 : 0);
+
+                    if( n_start && n_end )
+                    {
+                        printf("CaseB\n");
+                        auto n = ( aId == ANC_START ? n_start : n_end );
+
+                        auto apex = (n_start ->GetSeg().IntersectLines( n_end->GetSeg() ) );
+
+                        assert( apex );
+
+                        auto p = n->GetSeg().LineProject( aP );
+
+                        SHAPE_ARC oldArc = GetArc();
+                        auto newRadius = (p - *apex).EuclideanNorm();
+
+                        auto v = (n->GetSeg().B - n->GetSeg().A).Perpendicular();
+
+                        auto c = p + v.Resize( newRadius );
+
+                        if( n->GetSeg().Side(c) != n->GetSeg().Side(oldArc.GetCenter() ))
+                        {
+                            c = p - v.Resize( newRadius );
+                        }
+
+
+
+                        m_solver->m_overlay->SetStrokeColor( GREEN );
+                        m_solver->m_overlay->Circle( c, 1000000.0 );
+
+
+                        SHAPE_ARC movedArc;
+
+                        printf("old sa %.1f ca %.1f\n", oldArc.GetStartAngle(), oldArc.GetCentralAngle() );
+                        movedArc.ConstructFromCornerAndAngles( p, oldArc.GetStartAngle(), oldArc.GetCentralAngle(), newRadius );
+                        printf("new sa %.1f ca %.1f\n", movedArc.GetStartAngle(), movedArc.GetCentralAngle() );
+                        m_solver->m_overlay->SetStrokeColor( RED );
+                        m_solver->m_overlay->Arc( movedArc.GetCenter(), movedArc.GetRadius(), movedArc.GetStartAngle() * M_PI/180.0, movedArc.GetEndAngle() * M_PI/180.0);
+
+
+                    }
+
+                    //auto newRadius =
+
+
+                    break;
+                }
             }
+
+
+            break;
+        }
+
+        case CS_RADIUS | CS_CENTRAL_ANGLE:
+        {
 
             break;
         }

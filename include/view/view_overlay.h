@@ -20,6 +20,7 @@ public:
     virtual ~VIEW_OVERLAY();
 
     struct COMMAND;
+    struct COMMAND_ARC;
     struct COMMAND_LINE;
     struct COMMAND_CIRCLE;
     struct COMMAND_SET_STROKE;

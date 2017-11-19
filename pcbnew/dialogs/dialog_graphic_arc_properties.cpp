@@ -59,8 +59,8 @@ template <class Container>
 static OPT<double> uniqueFieldValueDbl( const Container& cont,
         std::function<double (const BOARD_ITEM*)> getField )
 {
-    double prev = 0;
-    bool firstItem = true;
+    double  prev = 0;
+    bool    firstItem = true;
 
     for( auto item : cont )
     {
@@ -288,6 +288,19 @@ bool DIALOG_GRAPHIC_ARC_PROPERTIES::Apply( COMMIT& aCommit )
         if( m_fixPosition->Get3StateValue() != wxCHK_UNDETERMINED )
             ds->SetUserFlags( DSF_CONSTRAIN_POSITION,
                     m_fixPosition->Get3StateValue() == wxCHK_CHECKED );
+
+
+        if( m_fixRadius->Get3StateValue() != wxCHK_UNDETERMINED )
+            ds->SetUserFlags( DSF_CONSTRAIN_RADIUS,
+                    m_fixRadius->Get3StateValue() == wxCHK_CHECKED );
+
+        if( m_fixStartAngle->Get3StateValue() != wxCHK_UNDETERMINED )
+            ds->SetUserFlags( DSF_CONSTRAIN_START_ANGLE,
+                    m_fixStartAngle->Get3StateValue() == wxCHK_CHECKED );
+
+        if( m_fixCentralAngle->Get3StateValue() != wxCHK_UNDETERMINED )
+            ds->SetUserFlags( DSF_CONSTRAIN_CENTRAL_ANGLE,
+                    m_fixCentralAngle->Get3StateValue() == wxCHK_CHECKED );
     }
 
     return true;

@@ -78,7 +78,7 @@ public:
 
     }
 
-    GS_SEGMENT* NeighbourSegment( GS_SEGMENT *aCurrent );
+    GS_SEGMENT* NeighbourSegment( GS_SEGMENT *aCurrent = nullptr );
 
     void SetPos( const VECTOR2I& aPos )
     {
@@ -313,6 +313,13 @@ private:
 class GS_ARC : public GS_ITEM
 {
 public:
+
+    enum ANCHOR_ID {
+        ANC_START = 0,
+        ANC_END,
+        ANC_CENTER
+    };
+
     //GS_ARC( DRAWSEGMENT* aSeg );
     GS_ARC( const VECTOR2I& aP0, const VECTOR2I& aP1, const VECTOR2I& aCenter ) :
         GS_ITEM( GST_ARC, nullptr )
@@ -428,6 +435,8 @@ public:
         m_overlay=std::move(aOverlay);
     }
     std::unique_ptr<KIGFX::VIEW_OVERLAY> m_overlay;
+
+
 
 private:
     const int c_epsilon = 1;

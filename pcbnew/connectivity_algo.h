@@ -439,6 +439,8 @@ public:
     ITER begin() { return m_items.begin(); };
     ITER end() { return m_items.end(); };
 
+    CN_ITEM* operator[] ( int aIndex ) { return m_items[aIndex]; }
+
     std::vector<CN_ANCHOR_PTR>& Anchors() { return m_anchors; }
 
     template <class T>
@@ -750,6 +752,8 @@ void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc, bool aDirty
 class CN_CONNECTIVITY_ALGO
 {
 public:
+    typedef std::function<void(wxString, int, int)> PROGRESS_REPORTER;
+
     enum CLUSTER_SEARCH_MODE
     {
         CSM_PROPAGATE,
@@ -806,6 +810,7 @@ public:
     CLUSTERS m_connClusters;
     CLUSTERS m_ratsnestClusters;
     std::vector<bool> m_dirtyNets;
+    PROGRESS_REPORTER m_progressReporter;
 
     void    searchConnections( bool aIncludeZones = false );
 
@@ -883,6 +888,8 @@ public:
 
     void    PropagateNets();
     void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
+    void    FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones );
+
     bool    CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport );
 
     const CLUSTERS& GetClusters();
@@ -894,6 +901,7 @@ public:
     void ForEachItem(  std::function<void(CN_ITEM*)> aFunc );
 
     void MarkNetAsDirty( int aNet );
+    void SetProgressReporter( PROGRESS_REPORTER aReporter );
 
 };
 

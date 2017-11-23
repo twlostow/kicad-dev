@@ -32,8 +32,10 @@
 #include <set>
 #include <list>
 #include <algorithm>
+#include <unordered_set>
 
 #include <common.h>
+#include <md5_hash.h>
 
 #include <geometry/shape.h>
 #include <geometry/shape_line_chain.h>
@@ -865,6 +867,162 @@ void SHAPE_POLY_SET::Fracture( POLYGON_MODE aFastMode )
 }
 
 
+void SHAPE_POLY_SET::unfractureSingle( SHAPE_POLY_SET::POLYGON& aPoly )
+{
+    assert( aPoly.size() == 1 );
+
+    struct EDGE
+    {
+        int m_index = 0;
+        SHAPE_LINE_CHAIN* m_poly = nullptr;
+        bool m_duplicate = false;
+
+        EDGE( SHAPE_LINE_CHAIN *aPolygon, int aIndex ) :
+            m_index(aIndex),
+            m_poly(aPolygon)
+            {}
+
+        bool compareSegs( const SEG& s1, const SEG& s2) const
+        {
+            return (s1.A == s2.A && s1.B == s2.B) || (s1.A == s2.B && s1.B == s2.A);
+        }
+
+        bool operator==( const EDGE& aOther ) const
+        {
+            return compareSegs( m_poly->CSegment(m_index), aOther.m_poly->CSegment(aOther.m_index) );
+        }
+
+        bool operator!=( const EDGE& aOther ) const
+        {
+            return ! compareSegs( m_poly->CSegment(m_index), aOther.m_poly->CSegment(aOther.m_index) );
+        }
+
+        struct HASH
+        {
+            std::size_t operator()(  const EDGE& aEdge ) const
+            {
+                const auto& a = aEdge.m_poly->CSegment(aEdge.m_index);
+                return (std::size_t) ( a.A.x + a.B.x + a.A.y + a.B.y );
+            }
+        };
+
+    };
+
+    struct EDGE_LIST_ENTRY
+    {
+        int index;
+        EDGE_LIST_ENTRY *next;
+    };
+
+    std::unordered_set<EDGE, EDGE::HASH> uniqueEdges;
+
+    auto lc = aPoly[0];
+    lc.Simplify();
+
+    EDGE_LIST_ENTRY edgeList[ lc.SegmentCount() ];
+
+    for(int i = 0; i < lc.SegmentCount(); i++)
+    {
+        edgeList[i].index = i;
+        edgeList[i].next = &edgeList[ (i != lc.SegmentCount() - 1) ? i + 1 : 0 ];
+    }
+
+    std::unordered_set<EDGE_LIST_ENTRY*> queue;
+
+    for(int i = 0; i < lc.SegmentCount(); i++)
+    {
+        EDGE e ( &lc, i );
+        uniqueEdges.insert( e );
+    }
+
+    for(int i = 0; i < lc.SegmentCount(); i++)
+    {
+        EDGE e ( &lc, i );
+        auto it = uniqueEdges.find(e);
+        if (it != uniqueEdges.end() && it->m_index != i )
+        {
+            int e1 = it->m_index;
+            int e2 = i;
+            if( e1 > e2 )
+                std::swap(e1, e2);
+
+            int e1_prev = e1 - 1;
+            if (e1_prev < 0)
+                e1_prev = lc.SegmentCount() - 1;
+
+            int e2_prev = e2 - 1;
+            if (e2_prev < 0)
+                e2_prev = lc.SegmentCount() - 1;
+
+            int e1_next = e1 + 1;
+            if (e1_next == lc.SegmentCount() )
+                e1_next = 0;
+
+            int e2_next = e2 + 1;
+                if (e2_next == lc.SegmentCount() )
+                    e2_next = 0;
+
+            edgeList[e1_prev].next = &edgeList[ e2_next ];
+            edgeList[e2_prev].next = &edgeList[ e1_next ];
+            edgeList[i].next = nullptr;
+            edgeList[it->m_index].next = nullptr;
+        }
+    }
+
+    for(int i = 0; i < lc.SegmentCount(); i++)
+    {
+        if ( edgeList[i].next )
+            queue.insert ( &edgeList[i] );
+        //else
+        //printf("Skip %d\n", i);
+    }
+
+    EDGE_LIST_ENTRY* edgeBuf[ lc.SegmentCount() ];
+
+    int n = 0;
+    int outline = -1;
+
+    POLYGON result;
+
+    while (queue.size())
+    {
+        auto e_first = (*queue.begin());
+        auto e = e_first;
+        int cnt=0;
+        do {
+            edgeBuf[cnt++] = e;
+            e = e->next;
+        } while( e != e_first );
+
+        SHAPE_LINE_CHAIN outl;
+
+        for(int i = 0; i < cnt ;i++)
+        {
+            auto p = lc.CPoint(edgeBuf[i]->index);
+            outl.Append( p );
+            queue.erase( edgeBuf[i] );
+        }
+
+        outl.SetClosed(true);
+
+        bool cw = outl.Area() > 0.0;
+
+        if(cw)
+            outline = n;
+
+        result.push_back(outl);
+        n++;
+    }
+
+    assert(outline >= 0);
+
+    if(outline !=0 )
+        std::swap( result[0], result[outline] );
+
+    aPoly = result;
+}
+
+
 bool SHAPE_POLY_SET::HasHoles() const
 {
     // Iterate through all the polygons on the set
@@ -877,6 +1035,16 @@ bool SHAPE_POLY_SET::HasHoles() const
 
     // Return false if and only if every polygon has just one outline, without holes.
     return false;
+}
+
+void SHAPE_POLY_SET::Unfracture( POLYGON_MODE aFastMode )
+{
+    for( POLYGON& path : m_polys )
+    {
+        unfractureSingle( path );
+    }
+
+    Simplify( aFastMode ); // remove overlapping holes/degeneracy
 }
 
 
@@ -1666,4 +1834,112 @@ SHAPE_POLY_SET::POLYGON SHAPE_POLY_SET::chamferFilletPolygon( CORNER_MODE aMode,
     }
 
     return newPoly;
+}
+
+#include "poly2tri/poly2tri.h"
+#include <map>
+#include <profile.h>
+
+void convert( std::vector< p2t::Point*> &buffer, std::map< p2t::Point*,  VECTOR2I*>& pointMap, SHAPE_LINE_CHAIN& outl )
+{
+    buffer.clear();
+
+    outl.Simplify();
+
+    for( int i = 0; i < outl.PointCount(); i++)
+    {
+        auto& p  = outl.Point(i);
+        auto p2 = new p2t::Point( p.x, p.y );
+        pointMap[p2] = &p;
+        buffer.push_back(p2);
+    }
+
+    //printf("vtx : %d\n", buffer.size() );
+}
+
+const SHAPE_POLY_SET::TRIANGULATED_POLYGON SHAPE_POLY_SET::triangulatePoly( POLYGON* aPoly )
+{
+    assert( aPoly->size() >= 1 );
+
+    std::map< p2t::Point*,  VECTOR2I*> pointMap;
+    std::vector< p2t::Point*> outline;
+
+    convert( outline, pointMap, (*aPoly)[0] );
+
+    std::unique_ptr<p2t::CDT> cdt( new p2t::CDT( outline ) );
+
+    for (int i = 1; i < aPoly->size(); i++)
+    {
+        std::vector<p2t::Point*> hole;
+
+        convert( hole, pointMap, (*aPoly)[i] );
+
+        cdt->AddHole( hole );
+    }
+
+    cdt->Triangulate();
+
+    TRIANGULATED_POLYGON result;
+
+    result.m_triangles.reserve( cdt->GetTriangles().size() );
+
+    for ( auto tri : cdt->GetTriangles() )
+    {
+        TRIANGULATED_POLYGON::TRI t;
+
+        t.a = pointMap[ tri->GetPoint(0) ];
+        t.b = pointMap[ tri->GetPoint(1) ];
+        t.c = pointMap[ tri->GetPoint(2) ];
+
+        result.m_triangles.push_back(t);
+    }
+
+    for(auto iter = pointMap.begin(); iter!=pointMap.end(); ++iter)
+        delete iter->first;
+
+    return result;
+}
+
+SHAPE_POLY_SET::TRIANGULATED_POLYGON::~TRIANGULATED_POLYGON()
+{
+
+}
+
+void SHAPE_POLY_SET::CacheTriangulation()
+{
+    PROF_COUNTER cnt("cache-tri");
+    m_triangulatedPolys.clear();
+    for ( auto p : m_polys )
+    {
+        m_triangulatedPolys.push_back( triangulatePoly(&p));
+    }
+    cnt.Show();
+}
+
+bool SHAPE_POLY_SET::isTriangulationUpToDate() const
+{
+
+}
+
+MD5_HASH SHAPE_POLY_SET::checksum() const
+{
+    MD5_HASH hash;
+    hash.Hash( m_polys.size() );
+    for ( const auto& outline : m_polys )
+    {
+        hash.Hash( outline.size() );
+
+        for( const auto& lc : outline )
+        {
+            hash.Hash( lc.PointCount() );
+
+            for (int i = 0; i < lc.PointCount(); i++)
+            {
+                hash.Hash( lc.CPoint(i).x );
+                hash.Hash( lc.CPoint(i).y );
+            }
+        }
+    }
+
+    return hash;
 }

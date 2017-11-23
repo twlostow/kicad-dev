@@ -53,6 +53,12 @@ struct CN_DISJOINT_NET_ENTRY
     VECTOR2I anchorA, anchorB;
 };
 
+struct CN_ZONE_ISOLATED_ISLAND_LIST
+{
+    ZONE_CONTAINER *m_zone;
+    std::vector<int> m_islands;
+};
+
 struct RN_DYNAMIC_LINE
 {
     int netCode;
@@ -63,6 +69,8 @@ struct RN_DYNAMIC_LINE
 class CONNECTIVITY_DATA
 {
 public:
+    typedef std::function<void(wxString, int, int)> PROGRESS_REPORTER;
+
     CONNECTIVITY_DATA();
     ~CONNECTIVITY_DATA();
 
@@ -136,6 +144,7 @@ public:
      * @param aIslands list of islands that have no connections (outline indices in the polygon set)
      */
     void FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
+    void FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones );
 
     /**
      * Function RecalculateRatsnest()
@@ -216,6 +225,8 @@ public:
 
     void MarkItemNetAsDirty( BOARD_ITEM* aItem );
 
+    void SetProgressReporter( PROGRESS_REPORTER aReporter );
+
 private:
 
     void    updateRatsnest();
@@ -226,6 +237,8 @@ private:
 
     std::vector<RN_DYNAMIC_LINE> m_dynamicRatsnest;
     std::vector<RN_NET*> m_nets;
+
+    PROGRESS_REPORTER m_progressReporter;
 };
 
 #endif

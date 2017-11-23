@@ -33,6 +33,7 @@
 
 #include "clipper.hpp"
 
+class MD5_HASH;
 
 /**
  * Class SHAPE_POLY_SET
@@ -761,6 +762,8 @@ class SHAPE_POLY_SET : public SHAPE
         ///> For aFastMode meaning, see function booleanOp
         void Fracture( POLYGON_MODE aFastMode );
 
+        void Unfracture( POLYGON_MODE aFastMode );
+
         ///> Returns true if the polygon set has any holes.
         bool HasHoles() const;
 
@@ -990,6 +993,7 @@ class SHAPE_POLY_SET : public SHAPE
 
 
         void fractureSingle( POLYGON& paths );
+        void unfractureSingle ( POLYGON& path );
         void importTree( ClipperLib::PolyTree* tree );
 
         /** Function booleanOp
@@ -1039,6 +1043,8 @@ class SHAPE_POLY_SET : public SHAPE
             FILLETED
         };
 
+
+
         /**
          * Function chamferFilletPolygon
          * Returns the camfered or filleted version of the aIndex-th polygon in the set, depending
@@ -1059,6 +1065,35 @@ class SHAPE_POLY_SET : public SHAPE
         typedef std::vector<POLYGON> POLYSET;
 
         POLYSET m_polys;
+
+    public:
+
+        struct TRIANGULATED_POLYGON
+        {
+            ~TRIANGULATED_POLYGON();
+
+            struct TRI
+            {
+                VECTOR2I* a, *b, *c;
+            };
+
+            void Clear();
+
+            std::vector<TRI> m_triangles;
+            POLYGON *m_poly;
+        };
+
+
+
+        void CacheTriangulation();
+
+        bool isTriangulationUpToDate() const;
+        const TRIANGULATED_POLYGON triangulatePoly( POLYGON* aPoly );
+
+        MD5_HASH checksum() const;
+
+        std::vector<TRIANGULATED_POLYGON> m_triangulatedPolys;
+
 };
 
 #endif

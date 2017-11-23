@@ -272,6 +272,7 @@ set( COMMON_SRCS
     kiway_player.cpp
     lib_table_base.cpp
     lockfile.cpp
+    md5_hash.cpp
     msgpanel.cpp
     netlist_keywords.cpp
     observable.cpp

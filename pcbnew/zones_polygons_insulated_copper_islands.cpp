@@ -28,21 +28,3 @@
 #include <class_board.h>
 #include <class_zone.h>
 #include <connectivity_data.h>
-
-void ZONE_CONTAINER::TestForCopperIslandAndRemoveInsulatedIslands( BOARD* aPcb )
-{
-    std::vector<int> islands;
-
-    auto connectivity = aPcb->GetConnectivity();
-
-    connectivity->FindIsolatedCopperIslands( this, islands );
-
-    std::sort( islands.begin(), islands.end(), std::greater<int>() );
-
-    for( auto idx : islands )
-    {
-        m_FilledPolysList.DeletePolygon( idx );
-    }
-
-    connectivity->Update( this );
-}

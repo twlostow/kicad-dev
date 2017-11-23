@@ -1470,9 +1470,10 @@ void OPENGL_GAL::drawStrokedSemiCircle( const VECTOR2D& aCenterPoint, double aRa
     Restore();
 }
 
-
+#include <profile.h>
 void OPENGL_GAL::drawPolygon( GLdouble* aPoints, int aPointCount )
 {
+    PROF_COUNTER cnt("poly");
     currentManager->Shader( SHADER_NONE );
     currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
 
@@ -1495,7 +1496,7 @@ void OPENGL_GAL::drawPolygon( GLdouble* aPoints, int aPointCount )
 
     // Free allocated intersecting points
     tessIntersects.clear();
-
+    cnt.Show();
     if( isStrokeEnabled )
         drawPolyline( [&](int idx) { return VECTOR2D( aPoints[idx * 3], aPoints[idx * 3 + 1] ); },
                 aPointCount );

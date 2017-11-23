@@ -24,6 +24,9 @@
 
 #include <connectivity_algo.h>
 
+#include <thread>
+#include <mutex>
+
 #ifdef PROFILE
 #include <profile.h>
 #endif
@@ -289,9 +292,11 @@ bool CN_CONNECTIVITY_ALGO::Add( BOARD_ITEM* aItem )
     return true;
 }
 
-
 void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 {
+    std::mutex cnListLock;
+
+    //PROF_COUNTER cnt("search");
     int totalDirtyCount = 0;
 
     if( m_lastSearchWithZones != aIncludeZones )
@@ -304,7 +309,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 
     m_lastSearchWithZones = aIncludeZones;
 
-    auto checkForConnection = [] ( const CN_ANCHOR_PTR point, CN_ITEM* aRefItem, int aMaxDist = 0 )
+    auto checkForConnection = [ &cnListLock ] ( const CN_ANCHOR_PTR point, CN_ITEM* aRefItem, int aMaxDist = 0 )
     {
         const auto parent = aRefItem->Parent();
 
@@ -331,7 +336,10 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
             case PCB_VIA_T:
 
                 if( parent->HitTest( wxPoint( point->Pos().x, point->Pos().y ) ) )
+                {
+                    std::lock_guard<std::mutex> lock( cnListLock );
                     CN_ITEM::Connect( aRefItem, point->Item() );
+                }
 
                 break;
 
@@ -344,7 +352,10 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 
                 if( d_start.EuclideanNorm() < aMaxDist
                     || d_end.EuclideanNorm() < aMaxDist )
+                {
+                    std::lock_guard<std::mutex> lock( cnListLock );
                     CN_ITEM::Connect( aRefItem, point->Item() );
+                }
                 break;
             }
 
@@ -363,6 +374,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 
                 if( zoneItem->ContainsAnchor( point ) )
                 {
+                    std::lock_guard<std::mutex> lock( cnListLock );
                     CN_ITEM::Connect( zoneItem, point->Item() );
                 }
 
@@ -374,7 +386,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
         }
     };
 
-    auto checkInterZoneConnection = [] ( CN_ZONE* testedZone, CN_ZONE* aRefZone )
+    auto checkInterZoneConnection = [ &cnListLock ] ( CN_ZONE* testedZone, CN_ZONE* aRefZone )
     {
         const auto parentZone = static_cast<const ZONE_CONTAINER*>( aRefZone->Parent() );
 
@@ -399,6 +411,8 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
         {
             if( testedZone->ContainsPoint( outline.CPoint( i ) ) )
             {
+                std::lock_guard<std::mutex> lock( cnListLock );
+
                 CN_ITEM::Connect( aRefZone, testedZone );
                 return;
             }
@@ -412,6 +426,8 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
         {
             if( aRefZone->ContainsPoint( outline2.CPoint( i ) ) )
             {
+                std::lock_guard<std::mutex> lock( cnListLock );
+
                 CN_ITEM::Connect( aRefZone, testedZone );
                 return;
             }
@@ -496,8 +512,14 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 
     if( aIncludeZones )
     {
-        for( auto& item : m_zoneList )
+        int cnt = 0;
+
+        #ifdef USE_OPENMP
+            #pragma omp parallel for schedule(dynamic)
+        #endif
+        for(int i = 0; i < m_zoneList.Size(); i++ )
         {
+            auto item = m_zoneList[i];
             auto zoneItem = static_cast<CN_ZONE *> (item);
             auto searchZones = std::bind( checkForConnection, _1, zoneItem );
 
@@ -508,6 +530,18 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
                 m_trackList.FindNearby( zoneItem->BBox(), searchZones );
                 m_padList.FindNearby( zoneItem->BBox(), searchZones );
                 m_zoneList.FindNearbyZones( zoneItem->BBox(), std::bind( checkInterZoneConnection, _1, zoneItem ) );
+            }
+
+            {
+                std::lock_guard<std::mutex> lock( cnListLock );
+                cnt++;
+                if (m_progressReporter)
+                {
+                    wxString msg;
+                    cnt++;
+                    msg.Printf("Analyzing connections for zone %d/%d", cnt, m_zoneList.Size() );
+                    m_progressReporter( msg, cnt, m_zoneList.Size() );
+                }
             }
         }
 
@@ -588,6 +622,7 @@ const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::SearchClusters( CLUST
     std::deque<CN_ITEM*> Q;
     CN_ITEM* head = nullptr;
     CLUSTERS clusters;
+
 
     if( isDirty() )
         searchConnections( includeZones );
@@ -798,7 +833,6 @@ void CN_CONNECTIVITY_ALGO::PropagateNets()
     propagateConnections();
 }
 
-
 void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands )
 {
     if( aZone->GetFilledPolysList().IsEmpty() )
@@ -826,6 +860,40 @@ void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std
     }
 
     wxLogTrace( "CN", "Found %u isolated islands\n", (unsigned)aIslands.size() );
+}
+
+void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones )
+{
+    for ( auto& z : aZones )
+    {
+        if( z.m_zone->GetFilledPolysList().IsEmpty() )
+            continue;
+
+        Remove( z.m_zone );
+        Add( z.m_zone );
+    }
+
+    m_connClusters = SearchClusters( CSM_CONNECTIVITY_CHECK );
+
+    for ( auto& zone : aZones )
+    {
+        if( zone.m_zone->GetFilledPolysList().IsEmpty() )
+            continue;
+
+        for( auto cluster : m_connClusters )
+        {
+            if( cluster->Contains( zone.m_zone ) && cluster->IsOrphaned() )
+            {
+                for( auto z : *cluster )
+                {
+                    if( z->Parent() == zone.m_zone )
+                    {
+                        zone.m_islands.push_back( static_cast<CN_ZONE*>(z)->SubpolyIndex() );
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -994,4 +1062,9 @@ bool CN_ANCHOR::IsDangling() const
     }
 
     return validCount <= 1;
+}
+
+void CN_CONNECTIVITY_ALGO::SetProgressReporter( PROGRESS_REPORTER aReporter )
+{
+    m_progressReporter = aReporter;
 }

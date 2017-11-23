@@ -23,6 +23,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include <cstdint>
+#include <thread>
+#include <mutex>
 
 #include "pcb_editor_control.h"
 #include "pcb_actions.h"
@@ -174,6 +176,7 @@ public:
         Add( PCB_ACTIONS::drawZoneCutout );
         Add( PCB_ACTIONS::drawSimilarZone );
     }
+
 
 protected:
     CONTEXT_MENU* create() const override
@@ -683,10 +686,104 @@ int PCB_EDITOR_CONTROL::ZoneFill( const TOOL_EVENT& aEvent )
 
     return 0;
 }
-
+#if 0
+#undef HEIKKI
 
 int PCB_EDITOR_CONTROL::ZoneFillAll( const TOOL_EVENT& aEvent )
 {
+    #ifdef HEIKKI
+    wxProgressDialog * progressDialog = NULL;
+    if( frame() )
+    progressDialog = new wxProgressDialog( _( "Fill All Zones" ),
+                                           _("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+                                           10,
+                                           frame(),
+                                           wxPD_AUTO_HIDE |
+                                           wxPD_APP_MODAL |
+                                           wxPD_ELAPSED_TIME );
+
+    int progress_counter = 1;
+    if( progressDialog )
+        progressDialog->Update( ++progress_counter, _( "Delete zones..." ) );
+
+    board()->m_Zone.DeleteAll();
+
+    if( progressDialog )
+        progressDialog->Update( ++progress_counter, _( "Compile ratsnest..." ) );
+
+    auto connectivity = board()->GetConnectivity();
+    connectivity->RecalculateRatsnest();
+
+    if( progressDialog )
+        progressDialog->Update( ++progress_counter, _( "Set netcodes..." ) );
+
+    //m_Board->ViaStitching()->SetNetcodes();
+
+    if( progressDialog )
+        progressDialog->Update( ++progress_counter, _( "Collect zones..." ) );
+
+    std::vector<ZONE_CONTAINER*> zones;
+    for( int n = 0; n < board()->GetAreaCount(); ++n )
+    {
+        ZONE_CONTAINER* zoneContainer = board()->GetArea( n );
+        if( !zoneContainer->GetIsKeepout() )
+            zones.push_back(zoneContainer);
+    }
+
+    if( progressDialog )
+        progressDialog->Update( ++progress_counter, _( "Fill zones..." ) );
+
+    #ifdef _OPENMP
+        #pragma omp parallel for schedule(dynamic)
+    #endif
+        for( int m = 0; m < zones.size(); ++m )
+        {
+            ZONE_CONTAINER* zone = zones[m];
+            zone->ClearFilledPolysList();
+            zone->UnFill();
+            zone->ComputeRawFilledAreas( board() );
+        }
+
+        for( auto zone : zones )
+            board()->GetConnectivity()->Update( zone );
+
+        if( progressDialog )
+            progressDialog->Update( ++progress_counter, _( "Calculate copper pour connections..." ) );
+
+        //ConnectToZones();
+        //SetNetcodes();
+
+        if( progressDialog )
+            progressDialog->Update( ++progress_counter, _( "Cleaning insulated areas..." ) );
+
+        for( int m = 0; m < zones.size(); ++m )
+        {
+            ZONE_CONTAINER* zone = zones[m];
+            zone->RemoveInsulatedCopperIslands( board() );
+            if( frame()->IsGalCanvasActive() )
+                frame()->GetGalCanvas()->GetView()->Update( zone, KIGFX::ALL );
+        }
+
+        if( progressDialog )
+            progressDialog->Update( ++progress_counter, _( "Updating ratsnest..." ) );
+
+        connectivity->RecalculateRatsnest();
+
+        if( progressDialog )
+            progressDialog->Update( ++progress_counter, _( "Finish..." ) );
+
+        if( progressDialog )
+        {
+    #ifdef __WXMAC__
+            // Work around a dialog z-order issue on OS X
+            aActiveWindow->Raise();
+    #endif
+            progressDialog->Destroy();
+        }
+
+        frame()->OnModify();
+
+#else
     BOARD* board = getModel<BOARD>();
     auto connectivity = getModel<BOARD>()->GetConnectivity();
     int areaCount = board->GetAreaCount();
@@ -730,6 +827,143 @@ int PCB_EDITOR_CONTROL::ZoneFillAll( const TOOL_EVENT& aEvent )
 
     connectivity->RecalculateRatsnest();
     progressDialog->Destroy();
+
+    return 0;
+    #endif
+}
+#endif
+
+#include <functional>
+
+#ifdef USE_OPENMP
+#include <omp.h>
+#endif /* USE_OPENMP */
+
+class ZONE_FILLER
+{
+public:
+    typedef std::function<void(wxString, int, int)> PROGRESS_REPORTER;
+
+    ZONE_FILLER( PCB_EDIT_FRAME* aFrame, BOARD *aBoard );
+    ~ZONE_FILLER ();
+
+    void SetProgressReporter( PROGRESS_REPORTER aReporter );
+    void FillAll();
+private:
+    PROGRESS_REPORTER m_progressReporter;
+    BOARD* m_board;
+    PCB_EDIT_FRAME *m_frame;
+
+    void report( wxString msg, int current, int total )
+    {
+        if(!m_progressReporter)
+            return;
+
+        m_progressReporter( msg, current, total );
+    }
+};
+
+ZONE_FILLER::ZONE_FILLER( PCB_EDIT_FRAME* aFrame, BOARD *aBoard ) :
+    m_frame( aFrame ),
+    m_board( aBoard )
+{
+
+}
+
+ZONE_FILLER::~ZONE_FILLER()
+{
+
+}
+
+void ZONE_FILLER::SetProgressReporter( ZONE_FILLER::PROGRESS_REPORTER aFunc )
+{
+    m_progressReporter = aFunc;
+}
+
+void ZONE_FILLER::FillAll()
+{
+    PROF_COUNTER parallel( "fillAllZones");
+
+    int errorLevel = 0;
+    std::mutex reporterLock;
+    std::vector<CN_ZONE_ISOLATED_ISLAND_LIST> toFill;
+
+    report( _( "Starting zone fill..." ), 0, 0 );
+
+    // Remove segment zones
+    m_board->m_Zone.DeleteAll();
+
+    int ii;
+
+    for( auto zone : m_board->Zones() )
+    {
+        // Keepout zones are not filled
+        if( zone->GetIsKeepout() )
+            continue;
+
+        CN_ZONE_ISOLATED_ISLAND_LIST l;
+
+        l.m_zone = zone;
+
+        toFill.push_back( l );
+    }
+
+    int zoneCount = m_board->GetAreaCount();
+
+    BOARD_COMMIT commit( m_frame );
+
+    for( int i = 0; i < toFill.size(); i++ )
+    {
+        commit.Modify( toFill[i].m_zone );
+    }
+
+    int cnt = 0;
+
+    #ifdef USE_OPENMP
+        #pragma omp parallel for schedule(dynamic)
+    #endif
+    for( int i = 0; i < toFill.size(); i++ )
+    {
+        {
+            std::lock_guard<std::mutex> lock( reporterLock );
+            wxString msg;
+            cnt++;
+            msg.Printf( wxT("Calculating filled polygons: %d/%d"), cnt, toFill.size() );
+            report( msg, cnt, toFill.size() );
+        }
+
+        toFill[i].m_zone->BuildFilledSolidAreasPolygons( m_board );
+    }
+
+    m_board->GetConnectivity()->FindIsolatedCopperIslands( toFill );
+
+    for( auto& zone : toFill )
+    {
+        std::sort( zone.m_islands.begin(), zone.m_islands.end(), std::greater<int>() );
+        SHAPE_POLY_SET poly = zone.m_zone->GetFilledPolysList();
+
+        for( auto idx : zone.m_islands )
+        {
+            poly.DeletePolygon( idx );
+        }
+
+        zone.m_zone->AddFilledPolysList( poly );
+        printf("Simplify %p\n", zone.m_zone);
+        poly.Simplify(SHAPE_POLY_SET::PM_STRICTLY_SIMPLE);
+        //poly.CacheTriangulation();
+
+    }
+
+    commit.Push( _( "Fill All Zones" ), false );
+
+    parallel.Show();
+}
+
+int PCB_EDITOR_CONTROL::ZoneFillAll( const TOOL_EVENT& aEvent )
+{
+    ZONE_FILLER filler( frame(), board() );
+
+    filler.FillAll();
 
     return 0;
 }

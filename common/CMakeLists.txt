@@ -178,6 +178,7 @@ set( COMMON_WIDGET_SRCS
     widgets/footprint_select_widget.cpp
     widgets/footprint_choice.cpp
     widgets/indicator_icon.cpp
+    widgets/progress_reporter.cpp
     )
 
 set( COMMON_PAGE_LAYOUT_SRCS

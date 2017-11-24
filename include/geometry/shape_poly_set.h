@@ -33,7 +33,8 @@
 
 #include "clipper.hpp"
 
-class MD5_HASH;
+#include <md5_hash.h>
+
 
 /**
  * Class SHAPE_POLY_SET
@@ -57,6 +58,42 @@ class SHAPE_POLY_SET : public SHAPE
         ///> represents a single polygon outline with holes. The first entry is the outline,
         ///> the remaining (if any), are the holes
         typedef std::vector<SHAPE_LINE_CHAIN> POLYGON;
+
+        struct TRIANGULATED_POLYGON
+        {
+            ~TRIANGULATED_POLYGON();
+
+            struct TRI
+            {
+                TRI(){};
+
+                int a, b, c;
+            };
+
+            void Clear();
+
+            void AllocateVertices( int aSize );
+            void AllocateTriangles ( int aSize );
+
+            void GetTriangle( int index, VECTOR2I& a, VECTOR2I& b, VECTOR2I& c ) const
+            {
+                auto tri = &m_triangles[ index ];
+                a = m_vertices[ tri->a ];
+                b = m_vertices[ tri->b ];
+                c = m_vertices[ tri->c ];
+            }
+
+            int AddVertex( const VECTOR2I& aP )
+            {
+                m_vertices[ m_vertexCount ] = aP;
+                return (m_vertexCount++);
+            }
+
+            TRI* m_triangles = nullptr;
+            VECTOR2I* m_vertices = nullptr;
+            int m_vertexCount = 0;
+            int m_triangleCount = 0;
+        };
 
         /**
          * Struct VERTEX_INDEX
@@ -538,6 +575,17 @@ class SHAPE_POLY_SET : public SHAPE
         {
             return m_polys[aIndex];
         }
+
+        const POLYGON& Polygon( int aIndex ) const
+        {
+            return m_polys[aIndex];
+        }
+
+        const TRIANGULATED_POLYGON* TriangulatedPolygon( int aIndex ) const
+        {
+            return m_triangulatedPolys[aIndex];
+        }
+
 
         const SHAPE_LINE_CHAIN& COutline( int aIndex ) const
         {
@@ -1068,31 +1116,17 @@ class SHAPE_POLY_SET : public SHAPE
 
     public:
 
-        struct TRIANGULATED_POLYGON
-        {
-            ~TRIANGULATED_POLYGON();
-
-            struct TRI
-            {
-                VECTOR2I* a, *b, *c;
-            };
-
-            void Clear();
-
-            std::vector<TRI> m_triangles;
-            POLYGON *m_poly;
-        };
-
-
-
         void CacheTriangulation();
+        bool IsTriangulationUpToDate() const;
 
-        bool isTriangulationUpToDate() const;
-        const TRIANGULATED_POLYGON triangulatePoly( POLYGON* aPoly );
+    private:
+        void triangulateSingle( const POLYGON& aPoly, SHAPE_POLY_SET::TRIANGULATED_POLYGON& aResult );
 
         MD5_HASH checksum() const;
 
-        std::vector<TRIANGULATED_POLYGON> m_triangulatedPolys;
+        std::vector<TRIANGULATED_POLYGON*> m_triangulatedPolys;
+        bool m_triangulationValid = false;
+        MD5_HASH m_hash;
 
 };
 

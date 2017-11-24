@@ -53,6 +53,7 @@ class BOARD;
 class BOARD_CONNECTED_ITEM;
 class BOARD_ITEM;
 class ZONE_CONTAINER;
+class PROGRESS_REPORTER;
 
 class CN_ANCHOR
 {
@@ -752,8 +753,6 @@ void CN_LIST::FindNearby( VECTOR2I aPosition, int aDistMax, T aFunc, bool aDirty
 class CN_CONNECTIVITY_ALGO
 {
 public:
-    typedef std::function<void(wxString, int, int)> PROGRESS_REPORTER;
-
     enum CLUSTER_SEARCH_MODE
     {
         CSM_PROPAGATE,
@@ -810,7 +809,7 @@ public:
     CLUSTERS m_connClusters;
     CLUSTERS m_ratsnestClusters;
     std::vector<bool> m_dirtyNets;
-    PROGRESS_REPORTER m_progressReporter;
+    PROGRESS_REPORTER* m_progressReporter = nullptr;
 
     void    searchConnections( bool aIncludeZones = false );
 
@@ -901,7 +900,7 @@ public:
     void ForEachItem(  std::function<void(CN_ITEM*)> aFunc );
 
     void MarkNetAsDirty( int aNet );
-    void SetProgressReporter( PROGRESS_REPORTER aReporter );
+    void SetProgressReporter( PROGRESS_REPORTER* aReporter );
 
 };
 

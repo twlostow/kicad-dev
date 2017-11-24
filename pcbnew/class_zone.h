@@ -601,6 +601,8 @@ public:
         return m_FilledPolysList;
     }
 
+    void CacheTriangulation();
+
    /**
      * Function AddFilledPolysList
      * sets the list of filled polygons.

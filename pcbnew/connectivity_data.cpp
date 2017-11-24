@@ -622,7 +622,8 @@ void CONNECTIVITY_DATA::MarkItemNetAsDirty( BOARD_ITEM *aItem )
     }
 }
 
-void CONNECTIVITY_DATA::SetProgressReporter( PROGRESS_REPORTER aReporter )
+void CONNECTIVITY_DATA::SetProgressReporter( PROGRESS_REPORTER* aReporter )
 {
     m_progressReporter = aReporter;
+    m_connAlgo->SetProgressReporter( m_progressReporter );
 }

@@ -45,6 +45,7 @@ class RN_DATA;
 class RN_NET;
 class TRACK;
 class D_PAD;
+class PROGRESS_REPORTER;
 
 struct CN_DISJOINT_NET_ENTRY
 {
@@ -69,8 +70,6 @@ struct RN_DYNAMIC_LINE
 class CONNECTIVITY_DATA
 {
 public:
-    typedef std::function<void(wxString, int, int)> PROGRESS_REPORTER;
-
     CONNECTIVITY_DATA();
     ~CONNECTIVITY_DATA();
 
@@ -225,7 +224,7 @@ public:
 
     void MarkItemNetAsDirty( BOARD_ITEM* aItem );
 
-    void SetProgressReporter( PROGRESS_REPORTER aReporter );
+    void SetProgressReporter( PROGRESS_REPORTER* aReporter );
 
 private:
 
@@ -238,7 +237,7 @@ private:
     std::vector<RN_DYNAMIC_LINE> m_dynamicRatsnest;
     std::vector<RN_NET*> m_nets;
 
-    PROGRESS_REPORTER m_progressReporter;
+    PROGRESS_REPORTER* m_progressReporter;
 };
 
 #endif

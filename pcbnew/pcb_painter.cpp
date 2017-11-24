@@ -1144,6 +1144,9 @@ void PCB_PAINTER::draw( const ZONE_CONTAINER* aZone, int aLayer )
             m_gal->SetIsStroke( true );
         }
 
+        m_gal->DrawPolygon( polySet );
+
+#if 0
         for( int i = 0; i < polySet.OutlineCount(); i++ )
         {
             const SHAPE_LINE_CHAIN& outline = polySet.COutline( i );
@@ -1165,9 +1168,12 @@ void PCB_PAINTER::draw( const ZONE_CONTAINER* aZone, int aLayer )
                 m_gal->DrawPolyline( corners );
             }
 
+
             corners.clear();
         }
+#endif
     }
+
 }
 
 

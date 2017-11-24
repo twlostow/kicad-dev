@@ -23,6 +23,7 @@
  */
 
 #include <connectivity_algo.h>
+#include <widgets/progress_reporter.h>
 
 #include <thread>
 #include <mutex>
@@ -514,6 +515,11 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
     {
         int cnt = 0;
 
+        if( m_progressReporter )
+        {
+            m_progressReporter->SetMaxProgress( m_zoneList.Size() );
+        }
+
         #ifdef USE_OPENMP
             #pragma omp parallel for schedule(dynamic)
         #endif
@@ -535,12 +541,10 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
             {
                 std::lock_guard<std::mutex> lock( cnListLock );
                 cnt++;
+
                 if (m_progressReporter)
                 {
-                    wxString msg;
-                    cnt++;
-                    msg.Printf("Analyzing connections for zone %d/%d", cnt, m_zoneList.Size() );
-                    m_progressReporter( msg, cnt, m_zoneList.Size() );
+                    m_progressReporter->AdvanceProgress();
                 }
             }
         }
@@ -1064,7 +1068,7 @@ bool CN_ANCHOR::IsDangling() const
     return validCount <= 1;
 }
 
-void CN_CONNECTIVITY_ALGO::SetProgressReporter( PROGRESS_REPORTER aReporter )
+void CN_CONNECTIVITY_ALGO::SetProgressReporter( PROGRESS_REPORTER* aReporter )
 {
     m_progressReporter = aReporter;
 }

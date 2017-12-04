@@ -2943,7 +2943,7 @@ ZONE_CONTAINER* PCB_PARSER::parseZONE_CONTAINER()
                         Expecting( "segment or polygon" );
 
                     // @todo Create an enum for fill modes.
-                    zone->SetFillMode( token == T_polygon ? 0 : 1 );
+                    zone->SetFillMode( token == T_polygon ? ZFM_POLYGONS : ZFM_SEGMENTS );
                     NeedRIGHT();
                     break;
 
@@ -3087,7 +3087,7 @@ ZONE_CONTAINER* PCB_PARSER::parseZONE_CONTAINER()
 
         case T_fill_segments:
             {
-                std::vector< SEGMENT > segs;
+                ZONE_SEGMENT_FILL segs;
 
                 for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
                 {
@@ -3099,12 +3099,12 @@ ZONE_CONTAINER* PCB_PARSER::parseZONE_CONTAINER()
                     if( token != T_pts )
                         Expecting( T_pts );
 
-                    SEGMENT segment( parseXY(), parseXY() );
+                    SEG segment( parseXY(), parseXY() );
                     NeedRIGHT();
                     segs.push_back( segment );
                 }
 
-                zone->AddFillSegments( segs );
+                zone->SetFillSegments( segs );
             }
             break;
 
@@ -3118,7 +3118,7 @@ ZONE_CONTAINER* PCB_PARSER::parseZONE_CONTAINER()
     {
         if( !zone->IsOnCopperLayer() )
         {
-            zone->SetFillMode( 0 );
+            zone->SetFillMode( ZFM_POLYGONS );
             zone->SetNetCode( NETINFO_LIST::UNCONNECTED );
         }
 
@@ -3127,7 +3127,7 @@ ZONE_CONTAINER* PCB_PARSER::parseZONE_CONTAINER()
     }
 
     if( !pts.IsEmpty() )
-        zone->AddFilledPolysList( pts );
+        zone->SetFilledPolysList( pts );
 
     // Ensure keepout and non copper zones do not have a net
     // (which have no sense for these zones)

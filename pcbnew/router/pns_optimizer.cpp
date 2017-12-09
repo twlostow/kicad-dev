@@ -230,6 +230,124 @@ void OPTIMIZER::ClearCache( bool aStaticOnly  )
 }
 
 
+
+class OPT_CONSTRAINT
+{
+public:
+    OPT_CONSTRAINT( NODE* aWorld ) :
+        m_world( aWorld )
+        {
+            m_priority = 0;
+        };
+
+    virtual ~OPT_CONSTRAINT() {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) = 0;
+
+    int GetPriority() const
+    {
+        return m_priority;
+    }
+
+    void SetPriority( int aPriority )
+    {
+        m_priority = aPriority;
+    }
+
+protected:
+    NODE* m_world;
+    int m_priority;
+};
+
+
+class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
+{
+public:
+    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_entryDirectionMask( aEntryDirectionMask ),
+        m_cornerAngleMask( aCornerAngleMask )
+        {
+
+        }
+
+    virtual ~ANGLE_CONSTRAINT_45() {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
+    {
+        auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
+        auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
+
+        if( aVertex1 == 0 )
+        {
+            if( ( dir_orig0.Mask() & m_entryDirectionMask ) == 0 )
+                return false; // disallowed entry angle
+        }
+
+        auto dir_rep0 = DIRECTION_45( aReplacement.CSegment(0) );
+        auto dir_rep1 = DIRECTION_45( aReplacement.CSegment(-1) );
+
+
+        return true;
+    }
+
+private:
+    int m_entryDirectionMask;
+    int m_cornerAngleMask;
+};
+
+class AREA_CONSTRAINT : public OPT_CONSTRAINT
+{
+public:
+    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_allowedArea ( aAllowedArea ) {};
+
+
+        virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
+        {
+            auto p1 = aOriginLine->CPoint( aVertex1 );
+            auto p2 = aOriginLine->CPoint( aVertex2 );
+
+            auto p1_in = m_allowedArea.Contains( p1 );
+            auto p2_in = m_allowedArea.Contains( p2 );
+
+            return p1_in || p2_in;
+        }
+
+private:
+    BOX2I m_allowedArea;
+
+};
+
+class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
+{
+
+};
+
+#if 0
+class PSET_RESTRICTIONS
+{
+public:
+    PSET_RESTRICTIONS(){};
+    ~PSET_RESTRICTIONS(){};
+
+    void Build( NODE* aWorld, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aLine, const BOX2I& aRestrictedArea, bool aRestrictedAreaEnable )
+    {
+
+    }
+
+    bool Check ( int aVertex1, int aVertex2, const SHAPE_LINE_CHAIN& aReplacement )
+    {
+
+    }
+
+private:
+    std::vector<VECTOR2I> m_restrictedPoints;
+
+};
+#endif
+
 class LINE_RESTRICTIONS
 {
     public:
@@ -414,6 +532,27 @@ bool OPTIMIZER::checkColliding( ITEM* aItem, bool aUpdateCache )
 #endif
 }
 
+void OPTIMIZER::ClearConstraints()
+{
+    for (auto c : m_constraints)
+        delete c;
+    m_constraints.clear();
+}
+
+void OPTIMIZER::AddConstraint ( OPT_CONSTRAINT *aConstraint )
+{
+    m_constraints.push_back(aConstraint);
+}
+
+bool OPTIMIZER::checkConstraints(  int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
+{
+    for( auto c: m_constraints)
+        if ( !c->Check( aVertex1, aVertex2, aOriginLine, aReplacement ))
+            return false;
+
+    return true;
+}
+
 
 bool OPTIMIZER::checkColliding( LINE* aLine, const SHAPE_LINE_CHAIN& aOptPath )
 {
@@ -531,7 +670,9 @@ bool OPTIMIZER::mergeFull( LINE* aLine )
     while( 1 )
     {
         int n_segs = current_path.SegmentCount();
-        int max_step = n_segs - 2;
+        int max_step = n_segs - 1;
+
+//        printf("-> opt segs %d max_step %d step %d\n", n_segs, max_step, step );
 
         if( step > max_step )
             step = max_step;
@@ -539,10 +680,14 @@ bool OPTIMIZER::mergeFull( LINE* aLine )
         if( step < 1 )
             break;
 
+//        printf("CALL MERGE STEP\n");
         bool found_anything = mergeStep( aLine, current_path, step );
 
         if( !found_anything )
             step--;
+
+        if( !step )
+            break;
     }
 
     aLine->SetShape( current_path );
@@ -585,20 +730,20 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
 
     int cost_orig = COST_ESTIMATOR::CornerCost( aCurrentPath );
 
-    LINE_RESTRICTIONS restr;
-
-    if( aLine->SegmentCount() < 4 )
+    if( aLine->SegmentCount() < 3 )
         return false;
 
     DIRECTION_45 orig_start( aLine->CSegment( 0 ) );
     DIRECTION_45 orig_end( aLine->CSegment( -1 ) );
 
-    restr.Build( m_world, aLine, aCurrentPath, m_restrictArea, m_restrictAreaActive );
+    printf("=----- step %d n_segs %d\n", step, n_segs );
 
     while( n < n_segs - step )
     {
         const SEG s1    = aCurrentPath.CSegment( n );
         const SEG s2    = aCurrentPath.CSegment( n + step );
+
+        printf("**** s1 %d s2 %d total %d\n", n, n+step, n_segs );
 
         SHAPE_LINE_CHAIN path[2];
         SHAPE_LINE_CHAIN* picked = NULL;
@@ -610,18 +755,15 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
             SHAPE_LINE_CHAIN bypass = DIRECTION_45().BuildInitialTrace( s1.A, s2.B, i );
             cost[i] = INT_MAX;
 
-            bool restrictionsOK = restr.Check ( n, n + step + 1, bypass );
 
-            if( n == 0 && orig_start != DIRECTION_45( bypass.CSegment( 0 ) ) )
-                postureMatch = false;
-            else if( n == n_segs - step && orig_end != DIRECTION_45( bypass.CSegment( -1 ) ) )
-                postureMatch = false;
+            bool constraintsOK = checkConstraints ( n, n + step + 1, aLine, bypass );
 
-            if( restrictionsOK && (postureMatch || !m_keepPostures) && !checkColliding( aLine, bypass ) )
+            if( constraintsOK && !checkColliding( aLine, bypass ) )
             {
                 path[i] = aCurrentPath;
                 path[i].Replace( s1.Index(), s2.Index(), bypass );
                 path[i].Simplify();
+                printf("****MATCH [%d]\n", path[i].SegmentCount() );
                 cost[i] = COST_ESTIMATOR::CornerCost( path[i] );
             }
         }

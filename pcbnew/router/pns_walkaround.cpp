@@ -27,6 +27,7 @@
 #include "pns_optimizer.h"
 #include "pns_utils.h"
 #include "pns_router.h"
+#include "pns_debug_decorator.h"
 
 namespace PNS {
 
@@ -86,6 +87,8 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::singleStep( LINE& aPath,
     if( ! aPath.Walkaround( current_obs->m_hull, path_pre[1], path_walk[1],
                       path_post[1], !aWindingDirection ) )
         return STUCK;
+
+    Dbg()->AddLine(path_walk[0],1,50000);
 
 #ifdef DEBUG
     m_logger.NewGroup( aWindingDirection ? "walk-cw" : "walk-ccw", m_iteration );

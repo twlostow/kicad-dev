@@ -33,6 +33,8 @@ class BOARD;
 class BOARD_COMMIT;
 class PCB_DISPLAY_OPTIONS;
 class PCB_TOOL;
+class ZONE_CONTAINER;
+class DRAWSEGMENT;
 
 namespace KIGFX
 {

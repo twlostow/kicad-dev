@@ -243,9 +243,6 @@ bool LINE_PLACER::reduceTail( const VECTOR2I& aEnd )
         // the direction of the segment to be replaced
         SHAPE_LINE_CHAIN replacement = dir.BuildInitialTrace( s.A, aEnd );
 
-        if( replacement.SegmentCount() < 1 )
-            continue;
-
         LINE tmp( m_tail, replacement );
 
         if( m_currentNode->CheckColliding( &tmp, ITEM::ANY_T ) )
@@ -286,75 +283,6 @@ bool LINE_PLACER::checkObtusity( const SEG& aA, const SEG& aB ) const
     return dir_a.IsObtuse( dir_b ) || dir_a == dir_b;
 }
 
-
-bool LINE_PLACER::mergeHead()
-{
-    SHAPE_LINE_CHAIN& head = m_head.Line();
-    SHAPE_LINE_CHAIN& tail = m_tail.Line();
-
-    const int ForbiddenAngles = DIRECTION_45::ANG_ACUTE |
-                                DIRECTION_45::ANG_HALF_FULL |
-                                DIRECTION_45::ANG_UNDEFINED;
-
-    head.Simplify();
-    tail.Simplify();
-
-    int n_head  = head.SegmentCount();
-    int n_tail  = tail.SegmentCount();
-
-    if( n_head < 3 )
-    {
-        wxLogTrace( "PNS", "Merge failed: not enough head segs." );
-        return false;
-    }
-
-    if( n_tail && head.CPoint( 0 ) != tail.CPoint( -1 ) )
-    {
-        wxLogTrace( "PNS", "Merge failed: head and tail discontinuous." );
-        return false;
-    }
-
-    if( m_head.CountCorners( ForbiddenAngles ) != 0 )
-        return false;
-
-    DIRECTION_45 dir_tail, dir_head;
-
-    dir_head = DIRECTION_45( head.CSegment( 0 ) );
-
-    if( n_tail )
-    {
-        dir_tail = DIRECTION_45( tail.CSegment( -1 ) );
-
-        if( dir_head.Angle( dir_tail ) & ForbiddenAngles )
-            return false;
-    }
-
-    if( !n_tail )
-        tail.Append( head.CSegment( 0 ).A );
-
-    for( int i = 0; i < n_head - 2; i++ )
-    {
-        tail.Append( head.CSegment( i ).B );
-    }
-
-    tail.Simplify();
-
-    SEG last = tail.CSegment( -1 );
-
-    m_p_start = last.B;
-    m_direction = DIRECTION_45( last ).Right();
-
-    head.Remove( 0, n_head - 2 );
-
-    wxLogTrace( "PNS", "Placer: merge %d, new direction: %s", n_head, m_direction.Format().c_str() );
-
-    head.Simplify();
-    tail.Simplify();
-
-    return true;
-}
-
-
 bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 {
     LINE initTrack( m_head );
@@ -368,8 +296,15 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 
     walkaround.SetSolidsOnly( false );
     walkaround.SetIterationLimit( Settings().WalkaroundIterationLimit() );
+    walkaround.SetDebugDecorator( Dbg() );
 
     WALKAROUND::WALKAROUND_STATUS wf = walkaround.Route( initTrack, walkFull, false );
+
+    Dbg()->AddLine( initTrack.CLine(), 2, 20000 );
+    Dbg()->AddLine( walkFull.CLine(), 3, 10000 );
+
+    printf("stat %d\n", wf);
+
 
     switch( Settings().OptimizerEffort() )
     {
@@ -396,7 +331,7 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
         walkFull.AppendVia( makeVia( walkFull.CPoint( -1 ) ) );
     }
 
-    OPTIMIZER::Optimize( &walkFull, effort, m_currentNode );
+    //OPTIMIZER::Optimize( &walkFull, effort, m_currentNode );
 
     if( m_currentNode->CheckColliding( &walkFull ) )
     {
@@ -437,8 +372,8 @@ bool LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP, LINE& aNewHead )
             {
                 bestHead = newHead;
                 hasBest = true;
-            }
         }
+    }
     }
 
     if( hasBest )
@@ -643,6 +578,8 @@ bool LINE_PLACER::rhShoveOnly( const VECTOR2I& aP, LINE& aNewHead )
 
 bool LINE_PLACER::routeHead( const VECTOR2I& aP, LINE& aNewHead )
 {
+    return rhWalkOnly( aP, aNewHead );
+
     switch( m_currentMode )
     {
     case RM_MarkObstacles:
@@ -659,67 +596,6 @@ bool LINE_PLACER::routeHead( const VECTOR2I& aP, LINE& aNewHead )
 }
 
 
-bool LINE_PLACER::optimizeTailHeadTransition()
-{
-    LINE linetmp = Trace();
-
-    if( OPTIMIZER::Optimize( &linetmp, OPTIMIZER::FANOUT_CLEANUP, m_currentNode ) )
-    {
-        if( linetmp.SegmentCount() < 1 )
-            return false;
-
-        m_head = linetmp;
-        m_p_start = linetmp.CLine().CPoint( 0 );
-        m_direction = DIRECTION_45( linetmp.CSegment( 0 ) );
-        m_tail.Line().Clear();
-
-        return true;
-    }
-
-    SHAPE_LINE_CHAIN& head = m_head.Line();
-    SHAPE_LINE_CHAIN& tail = m_tail.Line();
-
-    int tailLookbackSegments = 3;
-
-    //if(m_currentMode() == RM_Walkaround)
-    //    tailLookbackSegments = 10000;
-
-    int threshold = std::min( tail.PointCount(), tailLookbackSegments + 1 );
-
-    if( tail.SegmentCount() < 3 )
-        return false;
-
-    // assemble TailLookbackSegments tail segments with the current head
-    SHAPE_LINE_CHAIN opt_line = tail.Slice( -threshold, -1 );
-
-    int end = std::min(2, head.PointCount() - 1 );
-
-    opt_line.Append( head.Slice( 0, end ) );
-
-    LINE new_head( m_tail, opt_line );
-
-    // and see if it could be made simpler by merging obtuse/collnear segments.
-    // If so, replace the (threshold) last tail points and the head with
-    // the optimized line
-
-    if( OPTIMIZER::Optimize( &new_head, OPTIMIZER::MERGE_OBTUSE, m_currentNode ) )
-    {
-        LINE tmp( m_tail, opt_line );
-
-        wxLogTrace( "PNS", "Placer: optimize tail-head [%d]", threshold );
-
-        head.Clear();
-        tail.Replace( -threshold, -1, new_head.CLine() );
-        tail.Simplify();
-
-        m_p_start = new_head.CLine().CPoint( -1 );
-        m_direction = DIRECTION_45( new_head.CSegment( -1 ) );
-
-        return true;
-    }
-
-    return false;
-}
 
 
 void LINE_PLACER::routeStep( const VECTOR2I& aP )
@@ -729,49 +605,24 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
 
     int i, n_iter = 1;
 
-    LINE new_head;
+    LINE new_head(m_head);
 
     wxLogTrace( "PNS", "INIT-DIR: %s head: %d, tail: %d segs",
             m_initial_direction.Format().c_str(), m_head.SegmentCount(), m_tail.SegmentCount() );
 
-    for( i = 0; i < n_iter; i++ )
-    {
-        if( !go_back && Settings().FollowMouse() )
-            reduceTail( aP );
+    m_p_start = m_tail.PointCount() == 0 ? m_currentStart : m_tail.CPoint( -1 );
 
-        go_back = false;
 
-        if( !routeHead( aP, new_head ) )
-            fail = true;
+    if( !routeHead( aP, new_head ) )
+        fail = true;
 
-        if( !new_head.Is45Degree() )
-            fail = true;
+    m_tail.Line().Append( new_head.CLine() );
+    m_head.Line().Clear();
+    printf("tail segs: %d\n", m_tail.CLine().SegmentCount() );
 
-        if( !Settings().FollowMouse() )
-            return;
+    Dbg()->AddLine( m_tail.CLine(), 4, 10000 );
 
-        m_head = new_head;
-
-        if( handleSelfIntersections() )
-        {
-            n_iter++;
-            go_back = true;
-        }
-
-        if( !go_back && handlePullback() )
-        {
-            n_iter++;
-            go_back = true;
-        }
-    }
-
-    if( !fail )
-    {
-       if( optimizeTailHeadTransition() )
-          return;
-
-        mergeHead();
-    }
+    OPTIMIZER::Optimize( &m_tail, OPTIMIZER::MERGE_SEGMENTS, m_currentNode );
 }
 
 
@@ -997,7 +848,6 @@ bool LINE_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinis
         // Collisions still prevent fixing unless "Allow DRC violations" is checked
         if( !Settings().CanViolateDRC() && m_world->CheckColliding( &pl ) )
             return false;
-    }
 
     const SHAPE_LINE_CHAIN& l = pl.CLine();
 

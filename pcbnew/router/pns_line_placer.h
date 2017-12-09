@@ -268,53 +268,6 @@ private:
      */
     bool checkObtusity( const SEG& aA, const SEG& aB ) const;
 
-    /**
-     * Function handleSelfIntersections()
-     *
-     * Checks if the head of the track intersects its tail. If so, cuts the
-     * tail up to the intersecting segment and fixes the head direction to match
-     * the last segment before the cut.
-     * @return true if the line has been changed.
-     */
-    bool handleSelfIntersections();
-
-    /**
-     * Function handlePullback()
-     *
-     * Deals with pull-back: reduces the tail if head trace is moved backwards
-     * wrs to the current tail direction.
-     * @return true if the line has been changed.
-     */
-    bool handlePullback();
-
-    /**
-     * Function mergeHead()
-     *
-     * Moves "estabished" segments from the head to the tail if certain
-     * conditions are met.
-     * @return true, if the line has been changed.
-     */
-    bool mergeHead();
-
-    /**
-     * Function reduceTail()
-     *
-     * Attempts to reduce the numer of segments in the tail by trying to replace a
-     * certain number of latest tail segments with a direct trace leading to aEnd
-     * that does not collide with anything.
-     * @param aEnd: current routing destination point.
-     * @return true if the line has been changed.
-     */
-    bool reduceTail( const VECTOR2I& aEnd );
-
-    /**
-     * Function optimizeTailHeadTransition()
-     *
-     * Tries to reduce the corner count of the most recent part of tail/head by
-     * merging obtuse/collinear segments.
-     * @return true, if the line has been changed.
-     */
-    bool optimizeTailHeadTransition();
 
     /**
      * Function routeHead()

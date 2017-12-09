@@ -76,6 +76,8 @@ private:
     int m_cornerCost;
 };
 
+class OPT_CONSTRAINT;
+
 /**
  * Class OPTIMIZER
  *
@@ -130,6 +132,9 @@ public:
         m_restrictAreaActive = true;
     }
 
+    void ClearConstraints();
+    void AddConstraint ( OPT_CONSTRAINT *aConstraint );
+
 private:
     static const int MaxCachedItems = 256;
 
@@ -158,6 +163,10 @@ private:
     void cacheAdd( ITEM* aItem, bool aIsStatic );
     void removeCachedSegments( LINE* aLine, int aStartVertex = 0, int aEndVertex = -1 );
 
+    bool checkConstraints(  int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement );
+
+
+
     BREAKOUT_LIST circleBreakouts( int aWidth, const SHAPE* aShape, bool aPermitDiagonal ) const;
     BREAKOUT_LIST rectBreakouts( int aWidth, const SHAPE* aShape, bool aPermitDiagonal ) const;
     BREAKOUT_LIST ovalBreakouts( int aWidth, const SHAPE* aShape, bool aPermitDiagonal ) const;
@@ -170,6 +179,7 @@ private:
 
     SHAPE_INDEX_LIST<ITEM*> m_cache;
 
+    std::vector<OPT_CONSTRAINT*> m_constraints;
     typedef std::unordered_map<ITEM*, CACHED_ITEM> CachedItemTags;
     CachedItemTags m_cacheTags;
     NODE* m_world;

@@ -1337,4 +1337,43 @@ ITEM *NODE::FindItemByParent( const BOARD_CONNECTED_ITEM* aParent )
     return NULL;
 }
 
+int NODE::QueryJoints( const BOX2I& aBox,
+                     std::vector<JOINT*>& aJoints,
+                     int aLayerMask,
+                     int aKindMask
+                 )
+{
+    int n = 0;
+
+    for( auto j : m_joints )
+    {
+        if ( j.second.LinkCount ( aKindMask ) )
+        {
+            aJoints.push_back( &j.second );
+            n++;
+
+        }
+    }
+
+    if ( isRoot() )
+        return n;
+
+    for( auto j : m_root->m_joints )
+    {
+        if( ! Overrides( &j.second) )
+        {   if ( j.second.LinkCount ( aKindMask ) )
+            {
+                aJoints.push_back( &j.second );
+                n++;
+            }
+        }
+    }
+
+    return n;
+
+
+}
+
+
+
 }

@@ -93,8 +93,6 @@ void LINE_PLACER::setInitialDirection( const DIRECTION_45& aDirection )
             m_direction = aDirection;
 }
 
-
-
 bool LINE_PLACER::checkObtusity( const SEG& aA, const SEG& aB ) const
 {
     const DIRECTION_45 dir_a( aA );
@@ -106,20 +104,29 @@ bool LINE_PLACER::checkObtusity( const SEG& aA, const SEG& aB ) const
 
 bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 {
-    LINE initTrack( m_head );
+    LINE initTrack( m_head ), t0 ( m_head );
     LINE walkFull;
     int effort = 0;
     bool rv = true, viaOk;
 
-    viaOk = buildInitialLine( aP, initTrack );
+    viaOk = buildInitialLine( aP, t0 );
+
+    initTrack = m_tail;
+    initTrack.Line().Append( t0.CLine() );
 
     WALKAROUND walkaround( m_currentNode, Router() );
 
     walkaround.SetSolidsOnly( false );
-    walkaround.SetDebugDecorator( Dbg() );
     walkaround.SetIterationLimit( Settings().WalkaroundIterationLimit() );
+    walkaround.SetDebugDecorator( Dbg() );
 
     WALKAROUND::WALKAROUND_STATUS wf = walkaround.Route( initTrack, walkFull, false );
+
+    Dbg()->AddLine( initTrack.CLine(), 2, 20000 );
+    Dbg()->AddLine( walkFull.CLine(), 3, 10000 );
+
+    printf("stat %d\n", wf);
+
 
     switch( Settings().OptimizerEffort() )
     {
@@ -146,7 +153,7 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
         walkFull.AppendVia( makeVia( walkFull.CPoint( -1 ) ) );
     }
 
-    OPTIMIZER::Optimize( &walkFull, effort, m_currentNode );
+    //OPTIMIZER::Optimize( &walkFull, effort, m_currentNode );
 
     if( m_currentNode->CheckColliding( &walkFull ) )
     {
@@ -163,48 +170,37 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 
 bool LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP, LINE& aNewHead )
 {
-    LINE newHead( m_head ), bestHead( m_head );
-    bool hasBest = false;
+    aNewHead = m_head;
 
-    buildInitialLine( aP, newHead );
+    buildInitialLine( aP, aNewHead );
 
-    NODE::OBSTACLES obstacles;
+    auto obs = m_currentNode->NearestObstacle( &aNewHead );
 
-    m_currentNode->QueryColliding( &newHead, obstacles );
-
-    for( auto& obs : obstacles )
+    if( obs )
     {
-        int cl = m_currentNode->GetClearance( obs.m_item, &newHead );
-        auto hull = obs.m_item->Hull( cl, newHead.Width() );
+        int cl = m_currentNode->GetClearance( obs->m_item, &aNewHead );
+        auto hull = obs->m_item->Hull( cl, aNewHead.Width() );
 
         auto nearest = hull.NearestPoint( aP );
         Dbg()->AddLine( hull, 2, 10000 );
 
-        if( ( nearest - aP ).EuclideanNorm() < newHead.Width() + cl )
+        if( ( nearest - aP ).EuclideanNorm() < aNewHead.Width() )
         {
-            buildInitialLine( nearest, newHead );
-            if ( newHead.CLine().Length() > bestHead.CLine().Length() )
-            {
-                bestHead = newHead;
-                hasBest = true;
+            buildInitialLine( nearest, aNewHead );
         }
     }
-    }
 
-    if( hasBest )
-        m_head = bestHead;
-    else
-        m_head = newHead;
+    //aNewHead = m_head;
 
-    aNewHead = m_head;
+    printf("cp %d\n", aNewHead.PointCount() );
 
-    return static_cast<bool>( m_currentNode->CheckColliding( &m_head ) );
+    return static_cast<bool>( m_currentNode->CheckColliding( &aNewHead ) );
 }
 
 
 const LINE LINE_PLACER::reduceToNearestObstacle( const LINE& aOriginalLine )
 {
-    const auto& l0 = aOriginalLine.CLine();
+    auto l0  = aOriginalLine.CLine();
 
     if ( !l0.PointCount() )
         return aOriginalLine;
@@ -414,6 +410,8 @@ bool LINE_PLACER::routeHead( const VECTOR2I& aP, LINE& aNewHead )
 
 void LINE_PLACER::routeStep( const VECTOR2I& aP )
 {
+    bool fail = false;
+    bool go_back = false;
 
     int i, n_iter = 1;
 
@@ -431,6 +429,7 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
 
 //        new_head.Line().Append( m_p_start );
 
+        printf("p_start %d %d\n", m_p_start.x, m_p_start.y );
 
         if( !routeHead( aP, new_head ) )
             fail = true;
@@ -445,7 +444,7 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
         //if(fail)
         //    return;
 
-        m_tail.Line().Append( new_head.CLine() );
+    //    m_tail.Line().Append( new_head.CLine() );
 
         /*for(int i = 0 ;i < new_head.PointCount(); i++)
         {
@@ -453,6 +452,12 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
         }
         printf("CPt %d\n", new_head.PointCount() );
         m_head = new_head;*/
+    //    m_head.Line().Clear();
+
+        if( fail )
+            return;
+
+        m_tail = new_head;
         m_head.Line().Clear();
 
         printf("tail segs: %d\n", m_tail.CLine().SegmentCount() );

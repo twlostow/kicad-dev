@@ -32,6 +32,8 @@
 #include "../../include/geometry/shape_simple.h"
 #include "pns_utils.h"
 #include "pns_router.h"
+#include "pns_debug_decorator.h"
+
 
 namespace PNS {
 
@@ -278,6 +280,8 @@ public:
         auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
         auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
 
+        printf("Check45\n");
+
         if( aVertex1 == 0 )
         {
             if( ( dir_orig0.Mask() & m_entryDirectionMask ) == 0 )
@@ -322,6 +326,21 @@ private:
 
 class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
 {
+public:
+    FOLLOW_CONSTRAINT( NODE* aWorld ) :
+        OPT_CONSTRAINT( aWorld )
+        {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
+    {
+        SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
+        encPoly.Append( aReplacement.Reverse() );
+
+        ROUTER::GetInstance()->GetInterface()->GetDebugDecorator()->AddLine( encPoly, 1, 200000 );
+        printf("CheckF\n");
+
+        return true;
+    }
 
 };
 
@@ -743,7 +762,7 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
         const SEG s1    = aCurrentPath.CSegment( n );
         const SEG s2    = aCurrentPath.CSegment( n + step );
 
-        printf("**** s1 %d s2 %d total %d\n", n, n+step, n_segs );
+        //printf("**** s1 %d s2 %d total %d\n", n, n+step, n_segs );
 
         SHAPE_LINE_CHAIN path[2];
         SHAPE_LINE_CHAIN* picked = NULL;
@@ -763,7 +782,7 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
                 path[i] = aCurrentPath;
                 path[i].Replace( s1.Index(), s2.Index(), bypass );
                 path[i].Simplify();
-                printf("****MATCH [%d]\n", path[i].SegmentCount() );
+                //printf("****MATCH [%d]\n", path[i].SegmentCount() );
                 cost[i] = COST_ESTIMATOR::CornerCost( path[i] );
             }
         }

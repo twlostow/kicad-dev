@@ -93,188 +93,6 @@ void LINE_PLACER::setInitialDirection( const DIRECTION_45& aDirection )
             m_direction = aDirection;
 }
 
-
-bool LINE_PLACER::handleSelfIntersections()
-{
-    SHAPE_LINE_CHAIN::INTERSECTIONS ips;
-    SHAPE_LINE_CHAIN& head = m_head.Line();
-    SHAPE_LINE_CHAIN& tail = m_tail.Line();
-
-    // if there is no tail, there is nothing to intersect with
-    if( tail.PointCount() < 2 )
-        return false;
-
-    tail.Intersect( head, ips );
-
-    // no intesection points - nothing to reduce
-    if( ips.empty() )
-        return false;
-
-    int n = INT_MAX;
-    VECTOR2I ipoint;
-
-    // if there is more than one intersection, find the one that is
-    // closest to the beginning of the tail.
-    for( SHAPE_LINE_CHAIN::INTERSECTION i : ips )
-    {
-        if( i.our.Index() < n )
-        {
-            n = i.our.Index();
-            ipoint = i.p;
-        }
-    }
-
-    // ignore the point where head and tail meet
-    if( ipoint == head.CPoint( 0 ) || ipoint == tail.CPoint( -1 ) )
-        return false;
-
-    // Intersection point is on the first or the second segment: just start routing
-    // from the beginning
-    if( n < 2 )
-    {
-        m_p_start = tail.Point( 0 );
-        m_direction = m_initial_direction;
-        tail.Clear();
-        head.Clear();
-
-        return true;
-    }
-    else
-    {
-        // Clip till the last tail segment before intersection.
-        // Set the direction to the one of this segment.
-        const SEG last = tail.CSegment( n - 1 );
-        m_p_start = last.A;
-        m_direction = DIRECTION_45( last );
-        tail.Remove( n, -1 );
-        return true;
-    }
-
-    return false;
-}
-
-
-bool LINE_PLACER::handlePullback()
-{
-    SHAPE_LINE_CHAIN& head = m_head.Line();
-    SHAPE_LINE_CHAIN& tail = m_tail.Line();
-
-    if( head.PointCount() < 2 )
-        return false;
-
-    int n = tail.PointCount();
-
-    if( n == 0 )
-        return false;
-    else if( n == 1 )
-    {
-        m_p_start = tail.CPoint( 0 );
-        tail.Clear();
-        return true;
-    }
-
-    DIRECTION_45 first_head( head.CSegment( 0 ) );
-    DIRECTION_45 last_tail( tail.CSegment( -1 ) );
-    DIRECTION_45::AngleType angle = first_head.Angle( last_tail );
-
-    // case 1: we have a defined routing direction, and the currently computed
-    // head goes in different one.
-    bool pullback_1 = false;    // (m_direction != DIRECTION_45::UNDEFINED && m_direction != first_head);
-
-    // case 2: regardless of the current routing direction, if the tail/head
-    // extremities form an acute or right angle, reduce the tail by one segment
-    // (and hope that further iterations) will result with a cleaner trace
-    bool pullback_2 = ( angle == DIRECTION_45::ANG_RIGHT || angle == DIRECTION_45::ANG_ACUTE );
-
-    if( pullback_1 || pullback_2 )
-    {
-        const SEG last = tail.CSegment( -1 );
-        m_direction = DIRECTION_45( last );
-        m_p_start = last.A;
-
-        wxLogTrace( "PNS", "Placer: pullback triggered [%d] [%s %s]",
-                n, last_tail.Format().c_str(), first_head.Format().c_str() );
-
-        // erase the last point in the tail, hoping that the next iteration will
-        // result with a head trace that starts with a segment following our
-        // current direction.
-        if( n < 2 )
-            tail.Clear(); // don't leave a single-point tail
-        else
-            tail.Remove( -1, -1 );
-
-        if( !tail.SegmentCount() )
-            m_direction = m_initial_direction;
-
-        return true;
-    }
-
-    return false;
-}
-
-
-bool LINE_PLACER::reduceTail( const VECTOR2I& aEnd )
-{
-    SHAPE_LINE_CHAIN& head = m_head.Line();
-    SHAPE_LINE_CHAIN& tail = m_tail.Line();
-
-    int n = tail.SegmentCount();
-
-    if( head.SegmentCount() < 1 )
-        return false;
-
-    // Don't attempt this for too short tails
-    if( n < 2 )
-        return false;
-
-    // Start from the segment farthest from the end of the tail
-    // int start_index = std::max(n - 1 - ReductionDepth, 0);
-
-    DIRECTION_45 new_direction;
-    VECTOR2I new_start;
-    int reduce_index = -1;
-
-    for( int i = tail.SegmentCount() - 1; i >= 0; i-- )
-    {
-        const SEG s = tail.CSegment( i );
-        DIRECTION_45 dir( s );
-
-        // calculate a replacement route and check if it matches
-        // the direction of the segment to be replaced
-        SHAPE_LINE_CHAIN replacement = dir.BuildInitialTrace( s.A, aEnd );
-
-        LINE tmp( m_tail, replacement );
-
-        if( m_currentNode->CheckColliding( &tmp, ITEM::ANY_T ) )
-            break;
-
-        if( DIRECTION_45( replacement.CSegment( 0 ) ) == dir )
-        {
-            new_start = s.A;
-            new_direction = dir;
-            reduce_index = i;
-        }
-    }
-
-    if( reduce_index >= 0 )
-    {
-        wxLogTrace( "PNS", "Placer: reducing tail: %d", reduce_index );
-        SHAPE_LINE_CHAIN reducedLine = new_direction.BuildInitialTrace( new_start, aEnd );
-
-        m_p_start = new_start;
-        m_direction = new_direction;
-        tail.Remove( reduce_index + 1, -1 );
-        head.Clear();
-        return true;
-    }
-
-    if( !tail.SegmentCount() )
-        m_direction = m_initial_direction;
-
-    return false;
-}
-
-
 bool LINE_PLACER::checkObtusity( const SEG& aA, const SEG& aB ) const
 {
     const DIRECTION_45 dir_a( aA );
@@ -285,12 +103,15 @@ bool LINE_PLACER::checkObtusity( const SEG& aA, const SEG& aB ) const
 
 bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 {
-    LINE initTrack( m_head );
+    LINE initTrack( m_head ), t0 ( m_head );
     LINE walkFull;
     int effort = 0;
     bool rv = true, viaOk;
 
-    viaOk = buildInitialLine( aP, initTrack );
+    viaOk = buildInitialLine( aP, t0 );
+
+    initTrack = m_tail;
+    initTrack.Line().Append( t0.CLine() );
 
     WALKAROUND walkaround( m_currentNode, Router() );
 
@@ -373,7 +194,7 @@ bool LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP, LINE& aNewHead )
                 bestHead = newHead;
                 hasBest = true;
         }
-    }
+        }
     }
 
     if( hasBest )
@@ -596,8 +417,6 @@ bool LINE_PLACER::routeHead( const VECTOR2I& aP, LINE& aNewHead )
 }
 
 
-
-
 void LINE_PLACER::routeStep( const VECTOR2I& aP )
 {
     bool fail = false;
@@ -610,13 +429,15 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
     wxLogTrace( "PNS", "INIT-DIR: %s head: %d, tail: %d segs",
             m_initial_direction.Format().c_str(), m_head.SegmentCount(), m_tail.SegmentCount() );
 
+    new_head.Line().Clear();
+
     m_p_start = m_tail.PointCount() == 0 ? m_currentStart : m_tail.CPoint( -1 );
 
 
     if( !routeHead( aP, new_head ) )
         fail = true;
 
-    m_tail.Line().Append( new_head.CLine() );
+    m_tail = new_head;
     m_head.Line().Clear();
     printf("tail segs: %d\n", m_tail.CLine().SegmentCount() );
 

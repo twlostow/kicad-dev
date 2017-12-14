@@ -336,8 +336,39 @@ public:
         SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
         encPoly.Append( aReplacement.Reverse() );
 
-        ROUTER::GetInstance()->GetInterface()->GetDebugDecorator()->AddLine( encPoly, 1, 200000 );
-        printf("CheckF\n");
+        encPoly.SetClosed( true );
+        encPoly.Simplify();
+
+        auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+        //dbg->AddLine( encPoly, 1, 200000 );
+
+        auto bb = encPoly.BBox();
+        std::vector<JOINT*> joints;
+
+
+//        dbg->AddBox( bb, 2 );
+
+        printf("encPolyS %d\n", encPoly.SegmentCount());
+
+        int cnt = m_world->QueryJoints( bb, joints, aOriginLine->Layers().Start(), ITEM::SOLID_T );
+
+        if( !cnt )
+            return true;
+
+        for( auto j : joints )
+        {
+            VECTOR2I pos = j->Pos();
+            printf("check %p %d %d\n", j, pos.x, pos.y );
+            if ( encPoly.PointInside( pos ) )
+            {
+                printf("***** NM\n");
+                return false;
+            }
+        }
+
+
+
 
         return true;
     }
@@ -775,9 +806,13 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
             cost[i] = INT_MAX;
 
 
-            bool constraintsOK = checkConstraints ( n, n + step + 1, aLine, bypass );
+            bool ok = false;
+            if ( !checkColliding( aLine, bypass ) )
+            {
+                ok = checkConstraints ( n, n + step + 1, aLine, bypass );
+            }
 
-            if( constraintsOK && !checkColliding( aLine, bypass ) )
+            if( ok )
             {
                 path[i] = aCurrentPath;
                 path[i].Replace( s1.Index(), s2.Index(), bypass );
@@ -1125,9 +1160,14 @@ bool OPTIMIZER::Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld )
 {
     OPTIMIZER opt( aWorld );
 
+    opt.AddConstraint( new FOLLOW_CONSTRAINT( aWorld ) );
+
     opt.SetEffortLevel( aEffortLevel );
     opt.SetCollisionMask( -1 );
-    return opt.Optimize( aLine );
+    bool rv = opt.Optimize( aLine );
+    opt.ClearConstraints();
+
+    return rv;
 }
 
 

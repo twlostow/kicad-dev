@@ -1345,11 +1345,13 @@ int NODE::QueryJoints( const BOX2I& aBox,
 {
     int n = 0;
 
-    for( auto j : m_joints )
+    aJoints.clear();
+
+    for( auto j = m_joints.begin(); j != m_joints.end(); ++j )
     {
-        if ( j.second.LinkCount ( aKindMask ) )
+        if ( aBox.Contains(j->second.Pos()) && j->second.LinkCount ( aKindMask ) )
         {
-            aJoints.push_back( &j.second );
+            aJoints.push_back( &j->second );
             n++;
 
         }
@@ -1358,12 +1360,13 @@ int NODE::QueryJoints( const BOX2I& aBox,
     if ( isRoot() )
         return n;
 
-    for( auto j : m_root->m_joints )
+    for( auto j = m_root->m_joints.begin(); j != m_root->m_joints.end(); ++j )
     {
-        if( ! Overrides( &j.second) )
-        {   if ( j.second.LinkCount ( aKindMask ) )
+        if( ! Overrides( &j->second) )
+        {   if ( aBox.Contains(j->second.Pos()) && j->second.LinkCount ( aKindMask ) )
             {
-                aJoints.push_back( &j.second );
+                printf("cand %d %d\n", (int)j->second.Pos().x, (int)j->second.Pos().y );
+                aJoints.push_back( &j->second );
                 n++;
             }
         }

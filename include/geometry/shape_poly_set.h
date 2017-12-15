@@ -430,8 +430,6 @@ class SHAPE_POLY_SET : public SHAPE
          */
         SHAPE_POLY_SET( const SHAPE_POLY_SET& aOther, bool aDeepCopy = false );
 
-        ~SHAPE_POLY_SET();
-
         /**
          * Function GetRelativeIndices
          *

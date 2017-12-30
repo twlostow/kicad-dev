@@ -82,6 +82,8 @@ protected:
 
     void buildView();
 
+    KIGFX::VIEW* view() const;
+
     unique_ptr < PCB_DRAW_PANEL_GAL > m_galPanel;
     unique_ptr < BOARD > m_board;
 #ifdef USE_TOOL_MANAGER

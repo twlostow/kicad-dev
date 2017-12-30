@@ -1365,7 +1365,7 @@ int NODE::QueryJoints( const BOX2I& aBox,
         if( ! Overrides( &j->second) )
         {   if ( aBox.Contains(j->second.Pos()) && j->second.LinkCount ( aKindMask ) )
             {
-                printf("cand %d %d\n", (int)j->second.Pos().x, (int)j->second.Pos().y );
+                //printf("cand %d %d\n", (int)j->second.Pos().x, (int)j->second.Pos().y );
                 aJoints.push_back( &j->second );
                 n++;
             }

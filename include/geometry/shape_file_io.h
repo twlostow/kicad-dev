@@ -27,6 +27,9 @@
 #define __SHAPE_FILE_IO_H
 
 #include <cstdio>
+#include <string>
+#include <vector>
+#include <functional>
 
 class SHAPE;
 
@@ -38,12 +41,45 @@ class SHAPE;
 class SHAPE_FILE_IO
 {
     public:
+        class VARIANT
+        {
+        public:
+            VARIANT( const std::string& aStr = "", bool aNull = false ) :
+                m_str ( aStr ) {
+                    if( aNull )
+                    {
+                        m_type = VT_NULL;
+                    } else {
+                        m_type = VT_STRING;
+                    }
+                };
+
+            enum VariantType {
+                VT_STRING = 0,
+                VT_INT = 1,
+                VT_NULL = 2
+            };
+
+            static VARIANT Null() { return VARIANT( "", true); }
+
+            std::string AsString() const { return m_str; }
+            int AsInt() const { return atoi(m_str.c_str()); }
+
+            bool IsNull() const { return m_type == VT_NULL; }
+
+        private:
+            std::string m_str;
+            VariantType m_type;
+        };
+
         enum IO_MODE
         {
             IOM_READ = 0,
             IOM_APPEND,
             IOM_WRITE
         };
+
+        typedef std::function< VARIANT() > TOKEN_FUNC;
 
         SHAPE_FILE_IO();
         SHAPE_FILE_IO( const std::string& aFilename, IO_MODE aMode = IOM_READ );
@@ -52,7 +88,7 @@ class SHAPE_FILE_IO
         void BeginGroup( const std::string& aName = "<noname>");
         void EndGroup();
 
-        SHAPE* Read();
+        std::vector<SHAPE*> ReadGroup();
 
         void Write( const SHAPE* aShape, const std::string& aName = "<noname>" );
 
@@ -61,10 +97,23 @@ class SHAPE_FILE_IO
             Write( &aShape, aName );
         }
 
+        void Flush();
+
     private:
+
+        typedef std::vector<std::string> TOKENS;
+
+        void readNextLine();
+        const VARIANT getNextToken();
+
+        bool eof();
+
         FILE* m_file;
         bool m_groupActive;
         IO_MODE m_mode;
+
+        std::vector<std::string> m_tokens;
+        int m_tokenPos;
 };
 
 #endif

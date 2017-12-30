@@ -21,6 +21,9 @@
 
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_rect.h>
+#include <geometry/shape_convex.h>
+#include <geometry/shape_file_io.h>
+
 #include <cmath>
 
 #include "pns_line.h"
@@ -232,354 +235,80 @@ void OPTIMIZER::ClearCache( bool aStaticOnly  )
 }
 
 
-
-class OPT_CONSTRAINT
+bool ANGLE_CONSTRAINT_45::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
 {
-public:
-    OPT_CONSTRAINT( NODE* aWorld ) :
-        m_world( aWorld )
-        {
-            m_priority = 0;
-        };
+    auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
+    auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
 
-    virtual ~OPT_CONSTRAINT() {};
-
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) = 0;
-
-    int GetPriority() const
+    if( aVertex1 == 0 )
     {
-        return m_priority;
+        if( ( dir_orig0.Mask() & m_entryDirectionMask ) == 0 )
+            return false; // disallowed entry angle
     }
 
-    void SetPriority( int aPriority )
-    {
-        m_priority = aPriority;
-    }
+    auto dir_rep0 = DIRECTION_45( aReplacement.CSegment(0) );
+    auto dir_rep1 = DIRECTION_45( aReplacement.CSegment(-1) );
 
-protected:
-    NODE* m_world;
-    int m_priority;
-};
+    return true;
+}
 
-
-class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
+bool AREA_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
 {
-public:
-    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
-        OPT_CONSTRAINT( aWorld ),
-        m_entryDirectionMask( aEntryDirectionMask ),
-        m_cornerAngleMask( aCornerAngleMask )
-        {
+    auto p1 = aOriginLine->CPoint( aVertex1 );
+    auto p2 = aOriginLine->CPoint( aVertex2 );
 
-        }
+    auto p1_in = m_allowedArea.Contains( p1 );
+    auto p2_in = m_allowedArea.Contains( p2 );
 
-    virtual ~ANGLE_CONSTRAINT_45() {};
+    return p1_in || p2_in;
+}
 
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
-    {
-        auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
-        auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
-
-        printf("Check45\n");
-
-        if( aVertex1 == 0 )
-        {
-            if( ( dir_orig0.Mask() & m_entryDirectionMask ) == 0 )
-                return false; // disallowed entry angle
-        }
-
-        auto dir_rep0 = DIRECTION_45( aReplacement.CSegment(0) );
-        auto dir_rep1 = DIRECTION_45( aReplacement.CSegment(-1) );
-
-
-        return true;
-    }
-
-private:
-    int m_entryDirectionMask;
-    int m_cornerAngleMask;
-};
-
-class AREA_CONSTRAINT : public OPT_CONSTRAINT
-{
-public:
-    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
-        OPT_CONSTRAINT( aWorld ),
-        m_allowedArea ( aAllowedArea ) {};
-
-
-        virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
-        {
-            auto p1 = aOriginLine->CPoint( aVertex1 );
-            auto p2 = aOriginLine->CPoint( aVertex2 );
-
-            auto p1_in = m_allowedArea.Contains( p1 );
-            auto p2_in = m_allowedArea.Contains( p2 );
-
-            return p1_in || p2_in;
-        }
-
-private:
-    BOX2I m_allowedArea;
-
-};
-
-class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
-{
-public:
-    FOLLOW_CONSTRAINT( NODE* aWorld ) :
-        OPT_CONSTRAINT( aWorld )
-        {};
-
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
-    {
-        SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
-        encPoly.Append( aReplacement.Reverse() );
-
-        encPoly.SetClosed( true );
-        encPoly.Simplify();
-
-        auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
-
-        //dbg->AddLine( encPoly, 1, 200000 );
-
-        auto bb = encPoly.BBox();
-        std::vector<JOINT*> joints;
-
-
-//        dbg->AddBox( bb, 2 );
-
-        printf("encPolyS %d\n", encPoly.SegmentCount());
-
-        int cnt = m_world->QueryJoints( bb, joints, aOriginLine->Layers().Start(), ITEM::SOLID_T );
-
-        if( !cnt )
-            return true;
-
-        for( auto j : joints )
-        {
-            VECTOR2I pos = j->Pos();
-            printf("check %p %d %d\n", j, pos.x, pos.y );
-            if ( encPoly.PointInside( pos ) )
-            {
-                printf("***** NM\n");
-                return false;
-            }
-        }
-
-
-
-
-        return true;
-    }
-
-};
-
-#if 0
-class PSET_RESTRICTIONS
-{
-public:
-    PSET_RESTRICTIONS(){};
-    ~PSET_RESTRICTIONS(){};
-
-    void Build( NODE* aWorld, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aLine, const BOX2I& aRestrictedArea, bool aRestrictedAreaEnable )
-    {
-
-    }
-
-    bool Check ( int aVertex1, int aVertex2, const SHAPE_LINE_CHAIN& aReplacement )
-    {
-
-    }
-
-private:
-    std::vector<VECTOR2I> m_restrictedPoints;
-
-};
-#endif
-
-class LINE_RESTRICTIONS
+class JOINT_CACHE
 {
     public:
-        LINE_RESTRICTIONS() {};
-        ~LINE_RESTRICTIONS() {};
+        JOINT_CACHE( NODE *aWorld, int aLayer, int aMaxJoints );
 
-        void Build( NODE* aWorld, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aLine, const BOX2I& aRestrictedArea, bool aRestrictedAreaEnable );
-        bool Check ( int aVertex1, int aVertex2, const SHAPE_LINE_CHAIN& aReplacement );
-        void Dump();
+        bool CheckInside( const VECTOR2I& aPos ) const;
 
     private:
-        int allowedAngles( NODE* aWorld, const LINE* aLine, const VECTOR2I& aP, bool aFirst );
 
-        struct RVERTEX
-        {
-            RVERTEX ( bool aRestricted, int aAllowedAngles ) :
-                restricted( aRestricted ),
-                allowedAngles( aAllowedAngles )
-            {
-            }
-
-            bool restricted;
-            int allowedAngles;
+        struct ENTRY {
+            JOINT* joint;
+            int score;
         };
-
-        std::vector<RVERTEX> m_rs;
 };
 
-
-// fixme: use later
-int LINE_RESTRICTIONS::allowedAngles( NODE* aWorld, const LINE* aLine, const VECTOR2I& aP, bool aFirst )
+bool FOLLOW_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
 {
-    JOINT* jt = aWorld->FindJoint( aP , aLine );
+    SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
 
-    if( !jt )
-        return 0xff;
+    encPoly.Append( aReplacement.Reverse() );
+    encPoly.SetClosed( true );
 
-    DIRECTION_45 dirs [8];
+    auto bb = encPoly.BBox();
+    std::vector<JOINT*> joints;
 
-    int n_dirs = 0;
+    int cnt = m_world->QueryJoints( bb, joints, aOriginLine->Layers().Start(), ITEM::SOLID_T );
 
-    for( const ITEM* item : jt->Links().CItems() )
-    {
-        if( item->OfKind( ITEM::VIA_T ) || item->OfKind( ITEM::SOLID_T ) )
-            return 0xff;
-        else if( const SEGMENT* seg = dyn_cast<const SEGMENT*>( item ) )
-        {
-            SEG s = seg->Seg();
-            if( s.A != aP )
-                s.Reverse();
-
-            if( n_dirs < 8 )
-                dirs[n_dirs++] = aFirst ? DIRECTION_45( s ) : DIRECTION_45( s ).Opposite();
-        }
-    }
-
-    const int angleMask = DIRECTION_45::ANG_OBTUSE | DIRECTION_45::ANG_HALF_FULL | DIRECTION_45::ANG_STRAIGHT;
-    int outputMask = 0xff;
-
-    for( int d = 0; d < 8; d++ )
-    {
-        DIRECTION_45 refDir( ( DIRECTION_45::Directions ) d );
-
-        for( int i = 0; i < n_dirs; i++ )
-        {
-            if( !( refDir.Angle( dirs[i] ) & angleMask ) )
-                outputMask &= ~refDir.Mask();
-        }
-    }
-
-    //DrawDebugDirs( aP, outputMask, 3 );
-    return 0xff;
-}
-
-
-void LINE_RESTRICTIONS::Build( NODE* aWorld, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aLine, const BOX2I& aRestrictedArea, bool aRestrictedAreaEnable )
-{
-    const SHAPE_LINE_CHAIN& l = aLine;
-    VECTOR2I v_prev;
-    int n = l.PointCount( );
-
-    m_rs.reserve( n );
-
-    for( int i = 0; i < n; i++ )
-    {
-        const VECTOR2I &v = l.CPoint( i );
-        RVERTEX r( false, 0xff );
-
-        if( aRestrictedAreaEnable )
-        {
-            bool exiting = ( i > 0 && aRestrictedArea.Contains( v_prev ) && !aRestrictedArea.Contains( v ) );
-            bool entering = false;
-
-            if( i != l.PointCount() - 1 )
-            {
-                const VECTOR2I& v_next = l.CPoint( i + 1 );
-                entering = ( !aRestrictedArea.Contains( v ) && aRestrictedArea.Contains( v_next ) );
-            }
-
-            if( entering )
-            {
-                const SEG& sp = l.CSegment( i );
-                r.allowedAngles = DIRECTION_45( sp ).Mask();
-            }
-            else if( exiting )
-            {
-                const SEG& sp = l.CSegment( i - 1 );
-                r.allowedAngles = DIRECTION_45( sp ).Mask();
-            }
-            else
-            {
-                r.allowedAngles = ( !aRestrictedArea.Contains( v ) ) ? 0 : 0xff;
-                r.restricted = r.allowedAngles ? false : true;
-            }
-        }
-
-        v_prev = v;
-        m_rs.push_back( r );
-    }
-}
-
-
-void LINE_RESTRICTIONS::Dump()
-{
-}
-
-
-bool LINE_RESTRICTIONS::Check( int aVertex1, int aVertex2, const SHAPE_LINE_CHAIN& aReplacement )
-{
-    if( m_rs.empty( ) )
+    if( !cnt )
         return true;
 
-    for( int i = aVertex1; i <= aVertex2; i++ )
-        if ( m_rs[i].restricted )
+    for( auto j : joints )
+    {
+        if ( encPoly.PointInside2( j->Pos() ) )
+        {
             return false;
+        }
+    }
 
-    const RVERTEX& v1 = m_rs[ aVertex1 ];
-    const RVERTEX& v2 = m_rs[ aVertex2 ];
-
-    int m1 = DIRECTION_45( aReplacement.CSegment( 0 ) ).Mask();
-    int m2;
-
-    if( aReplacement.SegmentCount() == 1 )
-        m2 = m1;
-    else
-        m2 = DIRECTION_45( aReplacement.CSegment( 1 ) ).Mask();
-
-    return ( ( v1.allowedAngles & m1 ) != 0 ) &&
-           ( ( v2.allowedAngles & m2 ) != 0 );
+    return true;
 }
-
 
 bool OPTIMIZER::checkColliding( ITEM* aItem, bool aUpdateCache )
 {
     CACHE_VISITOR v( aItem, m_world, m_collisionKindMask );
 
     return static_cast<bool>( m_world->CheckColliding( aItem ) );
-
-#if 0
-    // something is wrong with the cache, need to investigate.
-    m_cache.Query( aItem->Shape(), m_world->GetMaxClearance(), v, false );
-
-    if( !v.m_collidingItem )
-    {
-        NODE::OPT_OBSTACLE obs = m_world->CheckColliding( aItem );
-
-        if( obs )
-        {
-            if( aUpdateCache )
-                cacheAdd( obs->m_item );
-
-            return true;
-        }
-    }
-    else
-    {
-        m_cacheTags[v.m_collidingItem].m_hits++;
-        return true;
-    }
-
-    return false;
-#endif
 }
 
 void OPTIMIZER::ClearConstraints()
@@ -786,7 +515,7 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
     DIRECTION_45 orig_start( aLine->CSegment( 0 ) );
     DIRECTION_45 orig_end( aLine->CSegment( -1 ) );
 
-    printf("=----- step %d n_segs %d\n", step, n_segs );
+    //printf("=----- step %d n_segs %d\n", step, n_segs );
 
     while( n < n_segs - step )
     {
@@ -1036,7 +765,7 @@ int OPTIMIZER::smartPadsSingle( LINE* aLine, ITEM* aPad, bool aEnd, int aEndVert
 
     SOLID* solid = dyn_cast<SOLID*>( aPad );
 
-    // don't do optimized connections for offset pads
+    // don't do auto-neckdown for offset pads
     if( solid && solid->Offset() != VECTOR2I( 0, 0 ) )
         return -1;
 
@@ -1424,10 +1153,71 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
     return true;
 }
 
+bool isCornerUgly( const SHAPE_LINE_CHAIN& aPath, int aCenterIndex )
+{
+    int n = aPath.SegmentCount();
+    // stupid heuristics
+
+    if ( aCenterIndex == 0 || aCenterIndex == 1 || aCenterIndex == (n-1) || aCenterIndex == (n-2) )
+        return false;
+
+    const auto& s_c = aPath.CSegment( aCenterIndex ) ;
+    const auto& s_l = aPath.CSegment( aCenterIndex - 1 );
+    const auto& s_r = aPath.CSegment( aCenterIndex + 1 );
+
+    auto dir_c = DIRECTION_45( s_c );
+    auto dir_l = DIRECTION_45( s_l );
+    auto dir_r = DIRECTION_45( s_r );
+
+    //if ( dir_c.Angle() )
+}
+
 
 bool OPTIMIZER::Optimize( DIFF_PAIR* aPair )
 {
     return mergeDpSegments( aPair );
 }
+
+void OPTIMIZER::BuildPadGrids()
+{
+    BOX2I bb;
+    bb.SetMaximum();
+    std::vector<JOINT*> joints;
+    m_world->QueryJoints(bb , joints, F_Cu, ITEM::SOLID_T );
+    extractPadGrids( joints );
+}
+
+bool OPTIMIZER::extractPadGrids( std::vector<JOINT*>& aPadJoints )
+{
+
+    struct GridDir
+    {
+        GridDir( JOINT* j1, JOINT * j2 )
+        {
+            auto delta = (j1->Pos() - j2->Pos());
+            angle = delta.Angle();
+            dist = delta.EuclideanNorm();
+        }
+
+        bool Matches( GridDir *g )  const
+        {
+            //if (angle == g->angle || angle == (g->angle + M_PI) )
+        }
+
+
+        double angle;
+        double dist;
+    };
+
+    for ( int i = 0; i < aPadJoints.size(); i++ )
+        for ( int j = i + 1; j < aPadJoints.size(); j++)
+        {
+
+
+
+        }
+
+}
+
 
 }

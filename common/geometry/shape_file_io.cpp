@@ -27,12 +27,16 @@
 
 #include <geometry/shape.h>
 #include <geometry/shape_file_io.h>
+#include <geometry/shape_line_chain.h>
+#include <geometry/shape_poly_set.h>
 
 SHAPE_FILE_IO::SHAPE_FILE_IO()
 {
     m_groupActive = false;
     m_mode = IOM_WRITE;
     m_file = stdout;
+    m_tokens.clear();
+    m_tokenPos = 0;
 }
 
 SHAPE_FILE_IO::SHAPE_FILE_IO( const std::string& aFilename, SHAPE_FILE_IO::IO_MODE aMode )
@@ -56,6 +60,8 @@ SHAPE_FILE_IO::SHAPE_FILE_IO( const std::string& aFilename, SHAPE_FILE_IO::IO_MO
     }
 
     m_mode = aMode;
+    m_tokens.clear();
+    m_tokenPos = 0;
     // fixme: exceptions
 }
 
@@ -75,45 +81,203 @@ SHAPE_FILE_IO::~SHAPE_FILE_IO()
 }
 
 
-SHAPE* SHAPE_FILE_IO::Read()
+
+
+bool parseLineChain( SHAPE_FILE_IO::TOKEN_FUNC getToken, SHAPE_LINE_CHAIN& aShape )
 {
- /*   char tmp[1024];
+    int n_pts = getToken().AsInt();
+    aShape.SetClosed ( getToken().AsInt() );
 
-    do {
+    // Rough sanity check, just make sure the loop bounds aren't absolutely outlandish
+    if( n_pts < 0 )
+        return false;
 
-        if (fscanf(m_file, "%s", tmp) != 1)
-            return NULL;
-
-        if( !strcmp( tmp, "shape" )
-            break;
-    }
-
-    int type;
-
-    SHAPE *rv = NULL;
-
-    fscanf(m_file,"%d %s", &type, tmp);
-
-    printf("create shape %d\n", type);
-
-    switch(type)
+    for( int i = 0; i < n_pts; i++ )
     {
-        case SHAPE::LINE_CHAIN:
-            rv = new SHAPE_LINE_CHAIN;
-            break;
+        int x = getToken().AsInt();
+        int y = getToken().AsInt();
+        printf("x %d y %d\n", x, y);
+        aShape.Append( x, y );
     }
 
-    if(!rv)
-        return NULL;
-
-    rv.Parse ( )
-
-    fprintf(m_file,"shape %d %s %s\n", aShape->Type(), aName.c_str(), sh.c_str() );
-*/
-    assert( false );
-    return NULL;
+    return true;
 }
 
+
+bool parsePolySet( SHAPE_FILE_IO::TOKEN_FUNC getToken, SHAPE_POLY_SET& aShape )
+{
+    std::string tmp;
+
+    tmp = getToken().AsString();
+
+    if( tmp != "polyset" )
+        return false;
+
+    int n_polys = getToken().AsInt();
+
+    if( n_polys < 0 )
+        return false;
+
+
+    for( int i = 0; i < n_polys; i++ )
+    {
+        tmp = getToken().AsString();
+
+        if( tmp != "poly" )
+            return false;
+
+        int n_outlines = getToken().AsInt();
+
+        if( n_outlines < 0 )
+            return false;
+
+        aShape.NewOutline();
+
+        for( int j = 0; j < n_outlines; j++ )
+        {
+            SHAPE_LINE_CHAIN outline;
+
+            outline.SetClosed( true );
+
+            int n_pts = getToken().AsInt();
+
+            // Rough sanity check, just make sure the loop bounds aren't absolutely outlandish
+            if( n_pts < 0 )
+                return false;
+
+            for( int i = 0; i < n_pts; i++ )
+            {
+                int x = getToken().AsInt();
+                int y = getToken().AsInt();
+                outline.Append( x, y );
+            }
+
+            if (j == 0)
+                aShape.Outline(i) = outline;
+            else
+                aShape.AddHole( outline );
+        }
+    }
+
+    return true;
+}
+
+void SHAPE_FILE_IO::readNextLine()
+{
+    char tmp[1024];
+
+    if( fgets(tmp, 1024, m_file ) == nullptr )
+        return;
+
+    std::string str(tmp);
+    const std::string delim = " ";
+
+    for ( int i = 0; i < str.length(); i++)
+    if(str[i] == '\n' || str[i] == '\r' || str[i] == '\t')
+        str[i] = ' ';
+
+    size_t prev = 0, pos = 0;
+    do
+    {
+        pos = str.find(delim, prev);
+        if (pos == std::string::npos)
+            pos = str.length();
+
+        std::string token = str.substr(prev, pos-prev);
+        if (!token.empty())
+            m_tokens.push_back(token);
+
+        prev = pos + delim.length();
+    } while (pos < str.length() && prev < str.length());
+
+}
+
+const SHAPE_FILE_IO::VARIANT SHAPE_FILE_IO::getNextToken()
+{
+    if ( m_tokens.size() == 0 )
+        readNextLine();
+
+    if ( m_tokenPos == m_tokens.size() )
+    {
+        m_tokens.clear();
+        while( m_tokens.size() == 0)
+        {
+            readNextLine();
+            if( eof() )
+                return VARIANT::Null();
+
+        }
+        m_tokenPos = 0;
+    }
+
+    if ( m_tokens.size() == 0 )
+        return VARIANT::Null();
+
+    return VARIANT( m_tokens[m_tokenPos++] );
+}
+
+bool SHAPE_FILE_IO::eof()
+{
+    return feof(m_file);
+}
+
+std::vector<SHAPE*> SHAPE_FILE_IO::ReadGroup()
+{
+    std::vector<SHAPE*> rv;
+
+    bool groupFound = false;
+
+    auto tokenFunc= [this] () -> VARIANT { return getNextToken(); };
+
+    while ( !eof() )
+    {
+        auto t = getNextToken().AsString();
+
+        if( t.size() > 0 )
+        {
+            if( t == "group" )
+            {
+                groupFound = true;
+            }
+            else if( t == "endgroup" )
+            {
+                return rv;
+            }
+            else if (t == "shape")
+            {
+
+                int type = getNextToken().AsInt();
+                std::string name = getNextToken().AsString();
+
+                switch ( type )
+                {
+                    case SH_LINE_CHAIN:
+                    {
+                        SHAPE_LINE_CHAIN *s = new SHAPE_LINE_CHAIN;
+                        parseLineChain( tokenFunc, *s );
+                        rv.push_back(s);
+                        break;
+                    }
+
+                    case SH_POLY_SET:
+                    {
+                        SHAPE_POLY_SET *s = new SHAPE_POLY_SET;
+                        parsePolySet( tokenFunc, *s );
+                        s->CacheTriangulation();
+
+                        //if( !s->HasHoles() )
+                            //s->Unfracture( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+
+                        rv.push_back(s);
+                        break;
+                    }
+
+                    default:
+                     break;
+                }
+            }
+        }
+    }
 
 void SHAPE_FILE_IO::BeginGroup( const std::string& aName )
 {
@@ -152,5 +316,10 @@ void SHAPE_FILE_IO::Write( const SHAPE* aShape, const std::string& aName )
     std::string sh = aShape->Format();
 
     fprintf( m_file, "shape %d %s %s\n", aShape->Type(), aName.c_str(), sh.c_str() );
+    fflush( m_file );
+}
+
+void SHAPE_FILE_IO::Flush()
+{
     fflush( m_file );
 }

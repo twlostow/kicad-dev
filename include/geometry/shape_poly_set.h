@@ -863,9 +863,6 @@ class SHAPE_POLY_SET : public SHAPE
         /// @copydoc SHAPE::Format()
         const std::string Format() const override;
 
-        /// @copydoc SHAPE::Parse()
-        bool Parse( std::stringstream& aStream ) override;
-
         /// @copydoc SHAPE::Move()
         void Move( const VECTOR2I& aVector ) override;
 

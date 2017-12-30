@@ -346,7 +346,7 @@ int SHAPE_LINE_CHAIN::PathLength( const VECTOR2I& aP ) const
 
     return -1;
 }
-
+#if 1
 
 bool SHAPE_LINE_CHAIN::PointInside( const VECTOR2I& aP ) const
 {
@@ -407,7 +407,69 @@ int SHAPE_LINE_CHAIN::EdgeContainingPoint( const VECTOR2I& aP ) const
 
     return -1;
 }
+#endif
 
+bool SHAPE_LINE_CHAIN::PointInside2( const VECTOR2I& aP ) const
+{
+    if( !m_closed || SegmentCount() < 3 )
+        return false;
+
+    // returns 0 if false, +1 if true, -1 if pt ON polygon boundary
+    int result  = 0;
+    size_t cnt  = PointCount();
+
+    auto ip = CPoint( 0 );
+
+    for( size_t i = 1; i <= cnt; ++i )
+    {
+        auto ipNext = (i == cnt ? CPoint( 0 ) : CPoint( i ));
+
+        if( ipNext.y == aP.y )
+        {
+            if( (ipNext.x ==aP.x) || ( ip.y ==aP.y
+                                        && ( (ipNext.x >aP.x) == (ip.x <aP.x) ) ) )
+                return -1;
+        }
+
+        if( (ip.y <aP.y) != (ipNext.y <aP.y) )
+        {
+            if( ip.x >=aP.x )
+            {
+                if( ipNext.x >aP.x )
+                    result = 1 - result;
+                else
+                {
+                    double d = (double) (ip.x -aP.x) * (ipNext.y -aP.y) -
+                               (double) (ipNext.x -aP.x) * (ip.y -aP.y);
+
+                    if( !d )
+                        return -1;
+
+                    if( (d > 0) == (ipNext.y > ip.y) )
+                        result = 1 - result;
+                }
+            }
+            else
+            {
+                if( ipNext.x >aP.x )
+                {
+                    double d = (double) (ip.x -aP.x) * (ipNext.y -aP.y) -
+                               (double) (ipNext.x -aP.x) * (ip.y -aP.y);
+
+                    if( !d )
+                        return -1;
+
+                    if( (d > 0) == (ipNext.y > ip.y) )
+                        result = 1 - result;
+                }
+            }
+        }
+
+        ip = ipNext;
+    }
+
+    return result > 0;
+}
 
 bool SHAPE_LINE_CHAIN::CheckClearance( const VECTOR2I& aP, const int aDist) const
 {
@@ -444,7 +506,9 @@ const OPT<SHAPE_LINE_CHAIN::INTERSECTION> SHAPE_LINE_CHAIN::SelfIntersecting() c
             {
                 INTERSECTION is;
                 is.our = CSegment( s1 );
+                is.ourIndex = s1;
                 is.their = CSegment( s2 );
+                is.theirIndex = s2;
                 is.p = s2a;
                 return is;
             }
@@ -456,7 +520,9 @@ const OPT<SHAPE_LINE_CHAIN::INTERSECTION> SHAPE_LINE_CHAIN::SelfIntersecting() c
             {
                 INTERSECTION is;
                 is.our = CSegment( s1 );
+                is.ourIndex = s1;
                 is.their = CSegment( s2 );
+                is.theirIndex = s2;
                 is.p = s2b;
                 return is;
             }
@@ -468,7 +534,9 @@ const OPT<SHAPE_LINE_CHAIN::INTERSECTION> SHAPE_LINE_CHAIN::SelfIntersecting() c
                 {
                     INTERSECTION is;
                     is.our = CSegment( s1 );
+                    is.ourIndex = s1;
                     is.their = CSegment( s2 );
+                    is.theirIndex = s2;
                     is.p = *p;
                     return is;
                 }
@@ -628,30 +696,6 @@ bool SHAPE_LINE_CHAIN::Intersects( const SHAPE_LINE_CHAIN& aChain ) const
 SHAPE* SHAPE_LINE_CHAIN::Clone() const
 {
     return new SHAPE_LINE_CHAIN( *this );
-}
-
-bool SHAPE_LINE_CHAIN::Parse( std::stringstream& aStream )
-{
-    int n_pts;
-
-    m_points.clear();
-    aStream >> n_pts;
-
-    // Rough sanity check, just make sure the loop bounds aren't absolutely outlandish
-    if( n_pts < 0 || n_pts > int( aStream.str().size() ) )
-        return false;
-
-    aStream >> m_closed;
-
-    for( int i = 0; i < n_pts; i++ )
-    {
-        int x, y;
-        aStream >> x;
-        aStream >> y;
-        m_points.push_back( VECTOR2I( x, y ) );
-    }
-
-    return true;
 }
 
 

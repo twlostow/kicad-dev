@@ -234,3 +234,8 @@ void PCB_TEST_FRAME::OnExit( wxCommandEvent& WXUNUSED( event ) )
     // true is to force the frame to close
     Close( true );
 }
+
+KIGFX::VIEW* PCB_TEST_FRAME::view() const
+{
+    return m_galPanel->GetView();
+}

@@ -62,8 +62,10 @@ public:
     {
         /// segment belonging from the (this) argument of Intersect()
         SEG our;
+        int ourIndex;
         /// segment belonging from the aOther argument of Intersect()
         SEG their;
+        int theirIndex;
         /// point of intersection between our and their.
         VECTOR2I p;
     };
@@ -555,6 +557,7 @@ public:
      * @return true if the point is inside the shape (edge is not treated as being inside).
      */
      bool PointInside( const VECTOR2I& aP ) const;
+     bool PointInside2( const VECTOR2I& aP ) const;
 
     /**
      * Function PointOnEdge()
@@ -634,9 +637,6 @@ public:
 
     /// @copydoc SHAPE::Format()
     const std::string Format() const override;
-
-    /// @copydoc SHAPE::Parse()
-    bool Parse( std::stringstream& aStream ) override;
 
     bool operator!=( const SHAPE_LINE_CHAIN& aRhs ) const
     {

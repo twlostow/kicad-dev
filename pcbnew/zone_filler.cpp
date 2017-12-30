@@ -62,7 +62,7 @@ extern void CreateThermalReliefPadPolygon( SHAPE_POLY_SET& aCornerBuffer,
         double aThermalRot );
 
 static double s_thermalRot = 450;    // angle of stubs in thermal reliefs for round pads
-static const bool s_DumpZonesWhenFilling = false;
+static const bool s_DumpZonesWhenFilling = true;
 
 ZONE_FILLER::ZONE_FILLER(  BOARD* aBoard, COMMIT* aCommit ) :
     m_board( aBoard ), m_commit( aCommit ), m_progressReporter( nullptr )

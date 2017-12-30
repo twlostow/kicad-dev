@@ -21,6 +21,9 @@
 
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_rect.h>
+#include <geometry/shape_convex.h>
+#include <geometry/shape_file_io.h>
+
 #include <cmath>
 
 #include "pns_line.h"
@@ -232,50 +235,7 @@ void OPTIMIZER::ClearCache( bool aStaticOnly  )
 }
 
 
-
-class OPT_CONSTRAINT
-{
-public:
-    OPT_CONSTRAINT( NODE* aWorld ) :
-        m_world( aWorld )
-        {
-            m_priority = 0;
-        };
-
-    virtual ~OPT_CONSTRAINT() {};
-
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) = 0;
-
-    int GetPriority() const
-    {
-        return m_priority;
-    }
-
-    void SetPriority( int aPriority )
-    {
-        m_priority = aPriority;
-    }
-
-protected:
-    NODE* m_world;
-    int m_priority;
-};
-
-
-class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
-{
-public:
-    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
-        OPT_CONSTRAINT( aWorld ),
-        m_entryDirectionMask( aEntryDirectionMask ),
-        m_cornerAngleMask( aCornerAngleMask )
-        {
-
-        }
-
-    virtual ~ANGLE_CONSTRAINT_45() {};
-
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
+bool ANGLE_CONSTRAINT_45::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
     {
         auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
         auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
@@ -295,20 +255,7 @@ public:
         return true;
     }
 
-private:
-    int m_entryDirectionMask;
-    int m_cornerAngleMask;
-};
-
-class AREA_CONSTRAINT : public OPT_CONSTRAINT
-{
-public:
-    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
-        OPT_CONSTRAINT( aWorld ),
-        m_allowedArea ( aAllowedArea ) {};
-
-
-        virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
+bool AREA_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
         {
             auto p1 = aOriginLine->CPoint( aVertex1 );
             auto p2 = aOriginLine->CPoint( aVertex2 );
@@ -319,61 +266,47 @@ public:
             return p1_in || p2_in;
         }
 
+class JOINT_CACHE
+{
+    public:
+        JOINT_CACHE( NODE *aWorld, int aLayer, int aMaxJoints );
+
+        bool CheckInside( const VECTOR2I& aPos ) const;
+
 private:
     BOX2I m_allowedArea;
 
+        struct ENTRY {
+            JOINT* joint;
+            int score;
+        };
 };
 
-class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
+bool FOLLOW_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
 {
-public:
-    FOLLOW_CONSTRAINT( NODE* aWorld ) :
-        OPT_CONSTRAINT( aWorld )
-        {};
+    SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
 
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
-    {
-        SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
-        encPoly.Append( aReplacement.Reverse() );
+    encPoly.Append( aReplacement.Reverse() );
+    encPoly.SetClosed( true );
 
-        encPoly.SetClosed( true );
-        encPoly.Simplify();
+    auto bb = encPoly.BBox();
+    std::vector<JOINT*> joints;
 
-        auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+    int cnt = m_world->QueryJoints( bb, joints, aOriginLine->Layers().Start(), ITEM::SOLID_T );
 
-        //dbg->AddLine( encPoly, 1, 200000 );
-
-        auto bb = encPoly.BBox();
-        std::vector<JOINT*> joints;
-
-
-//        dbg->AddBox( bb, 2 );
-
-        printf("encPolyS %d\n", encPoly.SegmentCount());
-
-        int cnt = m_world->QueryJoints( bb, joints, aOriginLine->Layers().Start(), ITEM::SOLID_T );
-
-        if( !cnt )
-            return true;
-
-        for( auto j : joints )
-        {
-            VECTOR2I pos = j->Pos();
-            printf("check %p %d %d\n", j, pos.x, pos.y );
-            if ( encPoly.PointInside( pos ) )
-            {
-                printf("***** NM\n");
-                return false;
-            }
-        }
-
-
-
-
+    if( !cnt )
         return true;
+
+    for( auto j : joints )
+    {
+        if ( encPoly.PointInside2( j->Pos() ) )
+        {
+            return false;
+        }
     }
 
-};
+    return true;
+}
 
 #if 0
 class PSET_RESTRICTIONS
@@ -786,7 +719,7 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
     DIRECTION_45 orig_start( aLine->CSegment( 0 ) );
     DIRECTION_45 orig_end( aLine->CSegment( -1 ) );
 
-    printf("=----- step %d n_segs %d\n", step, n_segs );
+    //printf("=----- step %d n_segs %d\n", step, n_segs );
 
     while( n < n_segs - step )
     {
@@ -1424,10 +1357,71 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
     return true;
 }
 
+bool isCornerUgly( const SHAPE_LINE_CHAIN& aPath, int aCenterIndex )
+{
+    int n = aPath.SegmentCount();
+    // stupid heuristics
+
+    if ( aCenterIndex == 0 || aCenterIndex == 1 || aCenterIndex == (n-1) || aCenterIndex == (n-2) )
+        return false;
+
+    const auto& s_c = aPath.CSegment( aCenterIndex ) ;
+    const auto& s_l = aPath.CSegment( aCenterIndex - 1 );
+    const auto& s_r = aPath.CSegment( aCenterIndex + 1 );
+
+    auto dir_c = DIRECTION_45( s_c );
+    auto dir_l = DIRECTION_45( s_l );
+    auto dir_r = DIRECTION_45( s_r );
+
+    //if ( dir_c.Angle() )
+}
+
 
 bool OPTIMIZER::Optimize( DIFF_PAIR* aPair )
 {
     return mergeDpSegments( aPair );
 }
+
+void OPTIMIZER::BuildPadGrids()
+{
+    BOX2I bb;
+    bb.SetMaximum();
+    std::vector<JOINT*> joints;
+    m_world->QueryJoints(bb , joints, F_Cu, ITEM::SOLID_T );
+    extractPadGrids( joints );
+}
+
+bool OPTIMIZER::extractPadGrids( std::vector<JOINT*>& aPadJoints )
+{
+
+    struct GridDir
+    {
+        GridDir( JOINT* j1, JOINT * j2 )
+        {
+            auto delta = (j1->Pos() - j2->Pos());
+            angle = delta.Angle();
+            dist = delta.EuclideanNorm();
+        }
+
+        bool Matches( GridDir *g )  const
+        {
+            //if (angle == g->angle || angle == (g->angle + M_PI) )
+        }
+
+
+        double angle;
+        double dist;
+    };
+
+    for ( int i = 0; i < aPadJoints.size(); i++ )
+        for ( int j = i + 1; j < aPadJoints.size(); j++)
+        {
+
+
+
+        }
+
+}
+
 
 }

@@ -36,6 +36,8 @@ class NODE;
 class ROUTER;
 class LINE;
 class DIFF_PAIR;
+class ITEM;
+class JOINT;
 
 /**
  * Class COST_ESTIMATOR
@@ -135,6 +137,9 @@ public:
     void ClearConstraints();
     void AddConstraint ( OPT_CONSTRAINT *aConstraint );
 
+    bool extractPadGrids( std::vector<JOINT*>& aPadJoints );
+    void BuildPadGrids();
+
 private:
     static const int MaxCachedItems = 256;
 
@@ -191,6 +196,78 @@ private:
     bool m_restrictAreaActive;
 };
 
-}
+class OPT_CONSTRAINT
+{
+public:
+    OPT_CONSTRAINT( NODE* aWorld ) :
+        m_world( aWorld )
+        {
+            m_priority = 0;
+        };
+
+    virtual ~OPT_CONSTRAINT() {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) = 0;
+
+    int GetPriority() const
+    {
+        return m_priority;
+    }
+
+    void SetPriority( int aPriority )
+    {
+        m_priority = aPriority;
+    }
+
+protected:
+    NODE* m_world;
+    int m_priority;
+};
+
+class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
+{
+public:
+    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_entryDirectionMask( aEntryDirectionMask ),
+        m_cornerAngleMask( aCornerAngleMask )
+        {
+
+        }
+
+    virtual ~ANGLE_CONSTRAINT_45() {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
+
+private:
+    int m_entryDirectionMask;
+    int m_cornerAngleMask;
+};
+
+class AREA_CONSTRAINT : public OPT_CONSTRAINT
+{
+public:
+    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_allowedArea ( aAllowedArea ) {};
+
+        virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
+
+private:
+    BOX2I m_allowedArea;
+
+};
+
+class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
+{
+public:
+    FOLLOW_CONSTRAINT( NODE* aWorld ) :
+        OPT_CONSTRAINT( aWorld )
+        {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
+};
+
+};
 
 #endif

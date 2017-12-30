@@ -268,6 +268,15 @@ private:
      */
     bool checkObtusity( const SEG& aA, const SEG& aB ) const;
 
+  /**
+     * Function handleSelfIntersections()
+     *
+     * Checks if the head of the track intersects its tail. If so, cuts the
+     * tail up to the intersecting segment and fixes the head direction to match
+     * the last segment before the cut.
+     * @return true if the line has been changed.
+     */
+    bool handleSelfIntersections();
 
     /**
      * Function routeHead()
@@ -277,7 +286,7 @@ private:
      * around all colliding solid or non-movable items. Movable segments are
      * ignored, as they'll be handled later by the shove algorithm.
      */
-    bool routeHead( const VECTOR2I& aP, LINE& aNewHead);
+    bool routeHead( const VECTOR2I& aP );
 
     /**
      * Function routeStep()
@@ -290,17 +299,17 @@ private:
 
     const LINE reduceToNearestObstacle( const LINE& aOriginalLine );
 
-    bool rhStopAtNearestObstacle( const VECTOR2I& aP, LINE& aNewHead );
+    bool rhStopAtNearestObstacle( const VECTOR2I& aP );
 
 
     ///> route step, walkaround mode
-    bool rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead);
+    bool rhWalkOnly( const VECTOR2I& aP );
 
     ///> route step, shove mode
-    bool rhShoveOnly( const VECTOR2I& aP, LINE& aNewHead);
+    bool rhShoveOnly( const VECTOR2I& aP );
 
     ///> route step, mark obstacles mode
-    bool rhMarkObstacles( const VECTOR2I& aP, LINE& aNewHead );
+    bool rhMarkObstacles( const VECTOR2I& aP );
 
     const VIA makeVia( const VECTOR2I& aP );
 

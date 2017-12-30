@@ -101,7 +101,7 @@ bool LINE_PLACER::checkObtusity( const SEG& aA, const SEG& aB ) const
     return dir_a.IsObtuse( dir_b ) || dir_a == dir_b;
 }
 
-bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
+bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP )
 {
     LINE initTrack( m_head ), t0 ( m_head );
     LINE walkFull;
@@ -110,7 +110,7 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 
     viaOk = buildInitialLine( aP, t0 );
 
-    initTrack = m_tail;
+    initTrack = m_head;
     initTrack.Line().Append( t0.CLine() );
 
     WALKAROUND walkaround( m_currentNode, Router() );
@@ -124,7 +124,7 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
     Dbg()->AddLine( initTrack.CLine(), 2, 20000 );
     Dbg()->AddLine( walkFull.CLine(), 3, 10000 );
 
-    printf("stat %d\n", wf);
+  /*  printf("stat %d\n", wf);
 
 
     switch( Settings().OptimizerEffort() )
@@ -141,6 +141,7 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 
     if( Settings().SmartPads() )
         effort |= OPTIMIZER::SMART_PADS;
+*/
 
     if( wf == WALKAROUND::STUCK )
     {
@@ -156,12 +157,10 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 
     if( m_currentNode->CheckColliding( &walkFull ) )
     {
-        aNewHead = m_head;
         return false;
     }
 
     m_head = walkFull;
-    aNewHead = walkFull;
 
     return rv;
 }
@@ -255,7 +254,7 @@ const LINE LINE_PLACER::reduceToNearestObstacle( const LINE& aOriginalLine )
 }
 
 
-bool LINE_PLACER::rhStopAtNearestObstacle( const VECTOR2I& aP, LINE& aNewHead )
+bool LINE_PLACER::rhStopAtNearestObstacle( const VECTOR2I& aP )
 {
     LINE l0;
     l0 = m_head;
@@ -302,13 +301,14 @@ bool LINE_PLACER::rhStopAtNearestObstacle( const VECTOR2I& aP, LINE& aNewHead )
     }
 
     m_head = l_cur;
-    aNewHead = m_head;
     return true;
 }
 
 
-bool LINE_PLACER::rhShoveOnly( const VECTOR2I& aP, LINE& aNewHead )
+bool LINE_PLACER::rhShoveOnly( const VECTOR2I& aP )
 {
+    return false;
+    #if 0
     LINE initTrack( m_head );
     LINE walkSolids, l2;
 
@@ -394,21 +394,20 @@ bool LINE_PLACER::rhShoveOnly( const VECTOR2I& aP, LINE& aNewHead )
     }
 
     return false;
+    #endif
 }
 
 
-bool LINE_PLACER::routeHead( const VECTOR2I& aP, LINE& aNewHead )
+bool LINE_PLACER::routeHead( const VECTOR2I& aP )
 {
-    return rhWalkOnly( aP, aNewHead );
-
     switch( m_currentMode )
     {
     case RM_MarkObstacles:
-        return rhMarkObstacles( aP, aNewHead );
+        return rhMarkObstacles( aP );
     case RM_Walkaround:
-        return rhWalkOnly( aP, aNewHead );
+        return rhWalkOnly( aP );
     case RM_Shove:
-        return rhShoveOnly( aP, aNewHead );
+        return rhShoveOnly( aP );
     default:
         break;
     }
@@ -416,40 +415,65 @@ bool LINE_PLACER::routeHead( const VECTOR2I& aP, LINE& aNewHead )
     return false;
 }
 
-
-void LINE_PLACER::routeStep( const VECTOR2I& aP )
+bool LINE_PLACER::handleSelfIntersections()
 {
-    bool fail = false;
-    bool go_back = false;
-
-    int i, n_iter = 1;
-
-    LINE new_head(m_head);
-
-    wxLogTrace( "PNS", "INIT-DIR: %s head: %d, tail: %d segs",
-            m_initial_direction.Format().c_str(), m_head.SegmentCount(), m_tail.SegmentCount() );
-
-    new_head.Line().Clear();
-
-    m_p_start = m_tail.PointCount() == 0 ? m_currentStart : m_tail.CPoint( -1 );
+    SHAPE_LINE_CHAIN::INTERSECTIONS ips;
+    SHAPE_LINE_CHAIN& head = m_head.Line();
 
 
-    if( !routeHead( aP, new_head ) )
-        fail = true;
+    auto ip = head.SelfIntersecting();
 
-    m_tail = new_head;
-    m_head.Line().Clear();
-    printf("tail segs: %d\n", m_tail.CLine().SegmentCount() );
+    if( !ip )
+        return false;
 
-    Dbg()->AddLine( m_tail.CLine(), 4, 10000 );
+    int n = std::min(ip->ourIndex, ip->theirIndex);
 
-    OPTIMIZER::Optimize( &m_tail, OPTIMIZER::MERGE_SEGMENTS, m_currentNode );
+    // Intersection point is on the first or the second segment: just start routing
+    // from the beginning
+    if( n < 2 )
+    {
+        m_p_start = head.CPoint( 0 );
+        m_direction = m_initial_direction;
+        head.Clear();
+
+        return true;
+    }
+    else
+    {
+        // Clip till the last tail segment before intersection.
+        // Set the direction to the one of this segment.
+        const SEG last = head.CSegment( n - 1 );
+        m_p_start = last.A;
+        m_direction = DIRECTION_45( last );
+        head.Remove( n, -1 );
+        return true;
+    }
+
+    return false;
 }
-
 
 bool LINE_PLACER::route( const VECTOR2I& aP )
 {
-    routeStep( aP );
+    bool go_again = false;
+
+    m_p_start = m_head.PointCount() == 0 ? m_currentStart : m_head.CPoint( -1 );
+
+    //printf("p_start %d %d\n", m_p_start.x, m_p_start.y );
+
+    do {
+        go_again = false;
+
+        if( !routeHead( aP ) )
+            return false;
+
+        if ( handleSelfIntersections() )
+            go_again = true;
+
+    } while ( go_again );
+
+
+    OPTIMIZER::Optimize( &m_head, OPTIMIZER::MERGE_SEGMENTS, m_currentNode );
+
     return CurrentEnd() == aP;
 }
 

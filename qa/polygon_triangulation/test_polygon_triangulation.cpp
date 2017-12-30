@@ -219,6 +219,7 @@ BOARD* loadBoard( const std::string& filename )
     return brd;
 }
 
+#if 0
 int main( int argc, char *argv[] )
 {
     auto brd = loadBoard( argc > 1 ? argv[1] : "../../../../tests/dp.kicad_pcb" );
@@ -277,6 +278,31 @@ int main( int argc, char *argv[] )
     cnt.Show();
 
     delete brd;
+
+    return 0;
+
+}
+
+#endif
+
+int main( int argc, char *argv[] )
+{
+    SHAPE_POLY_SET t;
+    FILE *f = fopen("zones_dump.txt", "rb");
+
+    int n, x, y;
+    d
+    fscanf(f,"%d\n", &n);
+
+    t.NewOutline();
+
+    for (int i = 0; i < n; i++)
+    {
+        fscanf(f, "%d %d\n", &x, &y);
+        t.Append(x, y);
+    }
+
+    t.Unfracture();
 
     return 0;
 

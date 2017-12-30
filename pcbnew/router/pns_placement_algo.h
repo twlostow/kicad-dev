@@ -78,6 +78,9 @@ public:
      */
     virtual bool FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinish = false ) = 0;
 
+    virtual bool StepBack( ) { return false; };
+
+
     /**
      * Function ToggleVia()
      *

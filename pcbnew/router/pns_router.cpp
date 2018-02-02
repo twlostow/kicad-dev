@@ -44,7 +44,7 @@
 #include "pns_router.h"
 #include "pns_shove.h"
 #include "pns_dragger.h"
-#include "pns_topology.h"
+#include "pns_component_dragger.h"
 #include "pns_diff_pair_placer.h"
 #include "pns_meander_placer.h"
 #include "pns_meander_skew_placer.h"
@@ -138,13 +138,19 @@ bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM* aStartItem, int aDragMode 
     m_placer.reset( new LINE_PLACER( this ) );
     m_placer->Start( aP, aStartItem );
 
-    m_dragger.reset( new DRAGGER( this ) );
+    if( aItems[0]->OfKind( ITEM::SOLID_T ) )
+        m_dragger.reset ( new COMPONENT_DRAGGER( this ) );
+    else
+        m_dragger.reset( new DRAGGER( this ) );
+
     m_dragger->SetMode( aDragMode );
     m_dragger->SetWorld( m_world.get() );
     m_dragger->SetDebugDecorator ( m_iface->GetDebugDecorator () );
 
-    if( m_dragger->Start ( aP, aStartItem ) )
+    if( m_dragger->Start ( aP, primitives ) )
+    {
         m_state = DRAG_SEGMENT;
+    }
     else
     {
         m_dragger.reset();
@@ -164,7 +170,7 @@ bool ROUTER::isStartingPointRoutable( const VECTOR2I& aWhere, int aLayer )
 
     for( ITEM* item : candidates.Items() )
     {
-        if( ! item->IsRoutable() && item->Layers().Overlaps( aLayer ) )
+        if ( ! item->IsRoutable() && item->Layers().Overlaps( aLayer ) )
         {
             return false;
         }

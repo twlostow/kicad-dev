@@ -25,8 +25,19 @@
 
 namespace PNS {
 
-DRAGGER::DRAGGER( ROUTER* aRouter ) :
+DRAG_ALGO::DRAG_ALGO( ROUTER* aRouter ) :
     ALGO_BASE( aRouter )
+{
+
+}
+
+DRAG_ALGO::~DRAG_ALGO()
+{
+
+}
+
+DRAGGER::DRAGGER( ROUTER* aRouter ) :
+    DRAG_ALGO( aRouter )
 {
     m_world = NULL;
     m_lastNode = NULL;
@@ -46,13 +57,6 @@ DRAGGER::~DRAGGER()
     if( m_shove )
         delete m_shove;
 }
-
-
-void DRAGGER::SetWorld( NODE* aWorld )
-{
-    m_world = aWorld;
-}
-
 
 bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
 {
@@ -124,25 +128,28 @@ bool DRAGGER::startDragVia( const VECTOR2D& aP, VIA* aVia )
 }
 
 
-bool DRAGGER::Start( const VECTOR2I& aP, ITEM* aStartItem )
+bool DRAGGER::Start( const VECTOR2I& aP, ITEM_SET& aPrimitives )
 {
+    auto startItem = aPrimitives[0];
+
+    m_world = Router()->GetWorld();
     m_shove = new SHOVE( m_world, Router() );
     m_lastNode = NULL;
     m_draggedItems.Clear();
     m_currentMode = Settings().Mode();
     m_freeAngleMode = (m_mode & DM_FREE_ANGLE);
 
-    aStartItem->Unmark( MK_LOCKED );
+    startItem->Unmark( MK_LOCKED );
 
-    wxLogTrace( "PNS", "StartDragging: item %p [kind %d]", aStartItem, (int) aStartItem->Kind() );
+    wxLogTrace( "PNS", "StartDragging: item %p [kind %d]", startItem, (int) startItem->Kind() );
 
-    switch( aStartItem->Kind() )
+    switch( startItem->Kind() )
     {
     case ITEM::SEGMENT_T:
-        return startDragSegment( aP, static_cast<SEGMENT*>( aStartItem ) );
+        return startDragSegment( aP, static_cast<SEGMENT*>( startItem ) );
 
     case ITEM::VIA_T:
-        return startDragVia( aP, static_cast<VIA*>( aStartItem ) );
+        return startDragVia( aP, static_cast<VIA*>( startItem ) );
 
     default:
         return false;

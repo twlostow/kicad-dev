@@ -121,7 +121,6 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP )
 
     WALKAROUND::WALKAROUND_STATUS wf = walkaround.Route( initTrack, walkFull, false );
 
-
     if( wf == WALKAROUND::STUCK )
     {
         walkFull = walkFull.ClipToNearestObstacle( m_currentNode );
@@ -360,6 +359,8 @@ bool LINE_PLACER::rhShoveOnly( const VECTOR2I& aP )
 
 bool LINE_PLACER::routeHead( const VECTOR2I& aP )
 {
+    return rhWalkOnly( aP );
+
     switch( m_currentMode )
     {
     case RM_MarkObstacles:
@@ -420,8 +421,6 @@ bool LINE_PLACER::route( const VECTOR2I& aP )
 
     m_p_start = m_head.PointCount() == 0 ? m_currentStart : m_head.CPoint( -1 );
 
-    //printf("p_start %d %d\n", m_p_start.x, m_p_start.y );
-
     do {
         go_again = false;
 
@@ -432,7 +431,6 @@ bool LINE_PLACER::route( const VECTOR2I& aP )
             go_again = true;
 
     } while ( go_again );
-
 
     OPTIMIZER::Optimize( &m_head, OPTIMIZER::MERGE_SEGMENTS, m_currentNode );
 

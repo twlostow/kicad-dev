@@ -106,7 +106,7 @@ void GAL_TEST_FRAME::OnMenuFileOpen( wxCommandEvent& WXUNUSED( event ) )
 void GAL_TEST_FRAME::OnMotion( wxMouseEvent& aEvent ){
     VECTOR2I p = m_galPanel->GetViewControls()->GetCursorPosition();
 
-    //printf("Move [%d, %d]\n ", p.x, p.y);
+    printf("Move [%d, %d]\n ", p.x, p.y);
     m_router->Move( p , NULL );
     m_galPanel->Refresh();
     aEvent.Skip();
@@ -178,7 +178,8 @@ GAL_TEST_FRAME::GAL_TEST_FRAME( wxFrame* frame, const wxString& title, const wxP
     m_router->SetInterface(m_iface.get());
     m_router->ClearWorld();
     m_router->SyncWorld();
-    m_router->Settings().SetMode( PNS::RM_Shove );
+    m_router->Settings().SetMode( PNS::
+        Shove );
     m_router->StartRouting( VECTOR2I(150*1000000, 86 * 1000000), NULL, F_Cu );
 //    for(int i = 0; i < 15000000; i+=1000000 )
 //        m_router->Move( VECTOR2I(150*1000000, 86 * 1000000 + i), NULL );

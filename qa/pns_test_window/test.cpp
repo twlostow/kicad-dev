@@ -50,7 +50,7 @@ public:
         PROF_COUNTER cnt("route");
         m_router->Move( p , NULL );
         cnt.Show();
-//        m_galPanel->Refresh();
+        m_galPanel->Refresh();
         aEvent.Skip();
 
     }

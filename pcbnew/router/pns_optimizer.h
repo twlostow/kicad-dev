@@ -227,10 +227,10 @@ protected:
 class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
 {
 public:
-    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
+    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aExitDirectionMask = -1 ) :
         OPT_CONSTRAINT( aWorld ),
         m_entryDirectionMask( aEntryDirectionMask ),
-        m_cornerAngleMask( aCornerAngleMask )
+        m_exitDirectionMask( aExitDirectionMask )
         {
 
         }
@@ -241,7 +241,7 @@ public:
 
 private:
     int m_entryDirectionMask;
-    int m_cornerAngleMask;
+    int m_exitDirectionMask;
 };
 
 class AREA_CONSTRAINT : public OPT_CONSTRAINT

@@ -407,12 +407,12 @@ void OPENGL_GAL::beginDrawing()
     glShadeModel( GL_FLAT );
 
     // Enable the depth buffer
-    glEnable( GL_DEPTH_TEST );
+    glDisable( GL_DEPTH_TEST );
     glDepthFunc( GL_LESS );
 
     // Setup blending, required for transparent objects
     glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    glBlendFunc( GL_SRC_COLOR, GL_ONE ); //_MINUS_SRC_ALPHA );
 
     glMatrixMode( GL_MODELVIEW );
 
@@ -1377,7 +1377,7 @@ void OPENGL_GAL::DrawGrid()
             glDisable( GL_STENCIL_TEST );
     }
 
-    glEnable( GL_DEPTH_TEST );
+    glDisable( GL_DEPTH_TEST );
     glEnable( GL_TEXTURE_2D );
 }
 

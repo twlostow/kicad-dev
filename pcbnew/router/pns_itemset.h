@@ -224,6 +224,16 @@ public:
         return NULL;
     }
 
+    bool AnyLocked() const
+    {
+        for( const ITEM* item : m_items )
+        {
+            if( item->IsLocked() )
+                return true;
+        }
+        return false;
+    }
+
 private:
 
     ENTRIES m_items;

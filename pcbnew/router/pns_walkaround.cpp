@@ -86,6 +86,7 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::singleStep( LINE& aPath,
         }
     }
 
+    if( Dbg() )
     Dbg()->AddLine(current_obs->m_hull,2,10000);
 
     aPath.Walkaround( current_obs->m_hull, path_pre[0], path_walk[0],

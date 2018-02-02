@@ -233,6 +233,8 @@ std::vector<SHAPE*> SHAPE_FILE_IO::ReadGroup()
     {
         auto t = getNextToken().AsString();
 
+        printf("Tok %s\n", t.c_str());
+
         if( t.size() > 0 )
         {
             if( t == "group" )
@@ -263,7 +265,7 @@ std::vector<SHAPE*> SHAPE_FILE_IO::ReadGroup()
                     {
                         SHAPE_POLY_SET *s = new SHAPE_POLY_SET;
                         parsePolySet( tokenFunc, *s );
-                        s->CacheTriangulation();
+//                        s->CacheTriangulation();
 
                         //if( !s->HasHoles() )
                             //s->Unfracture( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );

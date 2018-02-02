@@ -407,7 +407,7 @@ public:
     int FindByMarker( int aMarker, ITEM_SET& aItems );
     int RemoveByMarker( int aMarker );
 
-    ITEM* FindItemByParent( const BOARD_CONNECTED_ITEM* aParent );
+    const ITEM_SET FindItemsByParent( const BOARD_CONNECTED_ITEM* aParent );
 
     bool HasChildren() const
     {
@@ -455,6 +455,7 @@ private:
     void unlinkParent();
     void releaseChildren();
     void releaseGarbage();
+    void rebuildJoint( JOINT* aJoint, ITEM* aItem );
 
     bool isRoot() const
     {

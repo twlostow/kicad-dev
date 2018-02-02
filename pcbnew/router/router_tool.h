@@ -24,6 +24,7 @@
 #define __ROUTER_TOOL_H
 
 #include "pns_tool_base.h"
+#include "pns_itemset.h"
 
 class APIEXPORT ROUTER_TOOL : public PNS::TOOL_BASE
 {
@@ -68,6 +69,8 @@ private:
 
     bool prepareInteractive();
     bool finishInteractive();
+
+    PNS::ITEM_SET m_dragItems;
 };
 
 #endif

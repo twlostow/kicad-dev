@@ -305,7 +305,11 @@ bool EDIT_TOOL::invokeInlineRouter( int aDragMode )
     if( theRouter->IsToolActive() )
         return false;
 
-    if( theRouter->CanInlineDrag() )
+    TRACK* track = uniqueSelected<TRACK>();
+    VIA* via = uniqueSelected<VIA>();
+    MODULE* mod = uniqueSelected<MODULE>();
+
+    if( (track || via || mod) && theRouter->CanInlineDrag() )
     {
         m_toolMgr->RunAction( PCB_ACTIONS::routerInlineDrag, true, aDragMode );
         return true;

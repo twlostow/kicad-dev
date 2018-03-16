@@ -42,11 +42,16 @@ NGSPICE::NGSPICE()
 
 NGSPICE::~NGSPICE()
 {
+    //Command( "exit" );
 }
 
 
 void NGSPICE::Init()
 {
+    printf("called ngspice init\n");
+    Command( "reset" );
+    Command( "reset" );
+    Command( "reset" );
     Command( "reset" );
 }
 
@@ -202,10 +207,13 @@ bool NGSPICE::LoadNetlist( const string& aNetlist )
         ss.getline( line, sizeof( line ) );
         lines.push_back( strdup( line ) );
         m_netlist += std::string( line ) + std::string( "\n" );
+//        printf("l: '%s'\n", line);
     }
 
     lines.push_back( nullptr );
 
+    printf("RUNNING: %d\n", ngSpice_running()? 1: 0);
+    ngSpice_Command("reset");
     ngSpice_Circ( lines.data() );
 
     for( auto line : lines )
@@ -304,19 +312,19 @@ void NGSPICE::init()
 
     bool foundSpiceinit = false;
 
-    for( const auto& path : spiceinitPaths )
+/*    for( const auto& path : spiceinitPaths )
     {
         if( loadSpinit( path + "/spiceinit" ) )
         {
             foundSpiceinit = true;
             break;
         }
-    }
+    }*/
 
     // Last chance to load codemodel files, we have not found
     // spiceinit file, but we know the path to *.cm files
-    if( !foundSpiceinit && !cmPath.empty() )
-        loadCodemodels( cmPath );
+//    if( !foundSpiceinit && !cmPath.empty() )
+    loadCodemodels( cmPath );
 
     // Restore the working directory
     wxSetWorkingDirectory( cwd );
@@ -358,13 +366,17 @@ string NGSPICE::findCmPath() const
         "../lib/ngspice",
         "../../lib/ngspice"
         "lib/ngspice",
+        "/usr/lib/ngspice",
         "ngspice"
     };
 
     for( const auto& path : cmPaths )
     {
+            printf("Check %s\n", path.c_str() );
         if( wxFileName::DirExists( path ) )
+        {
             return path;
+        }
     }
 
     return string();

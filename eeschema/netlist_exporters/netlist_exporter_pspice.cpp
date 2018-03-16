@@ -74,8 +74,11 @@ bool NETLIST_EXPORTER_PSPICE::Format( OUTPUTFORMATTER* aFormatter, unsigned aCtl
     for( const auto& lib : m_libraries )
     {
         wxString full_path;
+        wxFileName tmp ( lib );
 
-        if( ( aCtl & NET_ADJUST_INCLUDE_PATHS ) )
+        if ( tmp.FileExists() ) 
+            full_path = lib;
+        else if( ( aCtl & NET_ADJUST_INCLUDE_PATHS ) )
         {
             // Look for the library in known search locations
             full_path = ResolveFile( lib, &Pgm().GetLocalEnvVariables(), m_project );

@@ -1467,6 +1467,7 @@ void mpScaleXBase::Plot( wxDC& dc, mpWindow& w )
 
         case mpALIGN_BOTTOM:
         {
+            printf("draw %d %d '%s'\n", (endPx + startPx) / 2 - tx / 2, orgy + 6 + labelH, (const char *) m_name.c_str() );
             dc.DrawText( m_name, (endPx + startPx) / 2 - tx / 2, orgy + 6 + labelH );
         }
         break;

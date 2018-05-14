@@ -366,6 +366,8 @@ SHAPE_LINE_CHAIN dragCornerInternal( const SHAPE_LINE_CHAIN& aOrigin, const VECT
         for( int j = 0; j < 2; j++ )
         {
             paths[j] = d_start.BuildInitialTrace( p_start, aP, j );
+            assert(paths[j].SegmentCount() != 0);
+//            printf("SC %d\n", paths[j].SegmentCount() );
             dirs[j] = DIRECTION_45( paths[j].CSegment( 0 ) );
         }
 

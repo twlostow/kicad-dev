@@ -138,6 +138,11 @@ void LOGGER::Log( const VECTOR2I& aStart, const VECTOR2I& aEnd,
 {
 }
 
+void LOGGER::LogEvent( const std::string& aName, const VECTOR2I& aPos )
+{
+    m_theLog << "event " << aName << " " << aPos.x << " " << aPos.y << std::endl;
+}
+
 
 void LOGGER::dumpShape( const SHAPE* aSh )
 {

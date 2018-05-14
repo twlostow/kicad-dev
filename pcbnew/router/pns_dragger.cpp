@@ -59,6 +59,14 @@ bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
     int w2 = aSeg->Width() / 2;
 
     m_draggedLine = m_world->AssembleLine( aSeg, &m_draggedSegmentIndex );
+
+    for(int i =0 ;i<m_draggedLine.SegmentCount(); i++)
+    {
+        SEG s = m_draggedLine.CSegment(i);
+        printf("s %d %d %d %d %p\n",s.A.x, s.A.y, s.B.x, s.B.y, m_draggedLine.LinkedSegments()[i]);
+    }
+
+
     m_shove->SetInitialLine( m_draggedLine );
     m_lastValidDraggedLine = m_draggedLine;
     m_lastValidDraggedLine.ClearSegmentLinks();
@@ -175,7 +183,10 @@ bool DRAGGER::dragMarkObstacles( const VECTOR2I& aP )
         if( m_mode == DM_SEGMENT )
             dragged.DragSegment( aP, m_draggedSegmentIndex, thresh );
         else
+        {
+            printf("drag-corner %d %d idx %d sc %d\n", aP.x, aP.y, m_draggedSegmentIndex, dragged.SegmentCount() );
             dragged.DragCorner( aP, m_draggedSegmentIndex, thresh, m_freeAngleMode );
+        }
 
         m_lastNode = m_shove->CurrentNode()->Branch();
 
@@ -260,10 +271,18 @@ bool DRAGGER::dragShove( const VECTOR2I& aP )
         int thresh = Settings().SmoothDraggedSegments() ? m_draggedLine.Width() / 4 : 0;
         LINE dragged( m_draggedLine );
 
+
         if( m_mode == DM_SEGMENT )
+        {
+            printf("drag-segment %d %d idx %d sc %d\n", aP.x, aP.y, m_draggedSegmentIndex, dragged.SegmentCount() );
             dragged.DragSegment( aP, m_draggedSegmentIndex, thresh );
+
+        }
         else
+        {
+            printf("drag-corner %d %d idx %d sc %d\n", aP.x, aP.y, m_draggedSegmentIndex, dragged.SegmentCount() );
             dragged.DragCorner( aP, m_draggedSegmentIndex, thresh );
+        }
 
         SHOVE::SHOVE_STATUS st = m_shove->ShoveLines( dragged );
 

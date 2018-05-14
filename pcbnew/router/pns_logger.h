@@ -53,6 +53,8 @@ public:
     void Log( const VECTOR2I& aStart, const VECTOR2I& aEnd, int aKind = 0,
               const std::string& aName = std::string() );
 
+    void LogEvent( const std::string& aName, const VECTOR2I& aPos );
+
 private:
     void dumpShape( const SHAPE* aSh );
 

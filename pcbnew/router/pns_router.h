@@ -35,6 +35,7 @@
 #include "pns_item.h"
 #include "pns_itemset.h"
 #include "pns_node.h"
+#include "pns_logger.h"
 
 namespace KIGFX
 {
@@ -268,6 +269,7 @@ private:
     ROUTING_SETTINGS m_settings;
     SIZES_SETTINGS m_sizes;
     ROUTER_MODE m_mode;
+    PNS::LOGGER m_logger;
 
     wxString m_toolStatusbarName;
     wxString m_failureReason;

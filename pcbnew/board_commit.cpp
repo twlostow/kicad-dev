@@ -55,6 +55,14 @@ BOARD_COMMIT::~BOARD_COMMIT()
 {
 }
 
+COMMIT& BOARD_COMMIT::Stage( EDA_ITEM* aItem, CHANGE_TYPE aChangeType )
+{
+    auto board = (BOARD*) m_toolMgr->GetModel();
+
+    board->GetConnectivity()->KillCalculations();
+
+    return COMMIT::Stage( aItem, aChangeType );
+}
 
 void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry, bool aSetDirtyBit )
 {
@@ -278,9 +286,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry, bool a
 
     if ( !m_editModules )
     {
-        auto panel = static_cast<PCB_DRAW_PANEL_GAL*>( frame->GetGalCanvas() );
-        connectivity->RecalculateRatsnest();
-        panel->RedrawRatsnest();
+        connectivity->Recalculate( true );
     }
 
     if( aSetDirtyBit )
@@ -378,7 +384,9 @@ void BOARD_COMMIT::Revert()
     }
 
     if ( !m_editModules )
-        connectivity->RecalculateRatsnest();
+    {
+        connectivity->Recalculate( true );
+    }
 
     clear();
 }

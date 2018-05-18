@@ -71,6 +71,8 @@ private:
 
     bool prepareInteractive();
     bool finishInteractive();
+
+    bool m_ignoreModelChangeEvent;
 };
 
 #endif

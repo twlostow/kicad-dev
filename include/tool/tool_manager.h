@@ -30,6 +30,7 @@
 #include <map>
 #include <list>
 #include <stack>
+#include <mutex>
 
 #include <tool/tool_base.h>
 #include <view/view_controls.h>
@@ -53,7 +54,6 @@ private:
 
 public:
     TOOL_MANAGER();
-
     ~TOOL_MANAGER();
 
     // Helper typedefs
@@ -61,6 +61,8 @@ public:
     typedef std::map<std::string, TOOL_STATE*> NAME_STATE_MAP;
     typedef std::map<TOOL_ID, TOOL_STATE*> ID_STATE_MAP;
     typedef std::list<TOOL_ID> ID_LIST;
+
+    static const wxEventType EVT_WAKEUP;
 
     /**
      * Generates a unique ID from for a tool with given name.
@@ -235,10 +237,7 @@ public:
      * Puts an event to the event queue to be processed at the end of event processing cycle.
      * @param aEvent is the event to be put into the queue.
      */
-    inline void PostEvent( const TOOL_EVENT& aEvent )
-    {
-        m_eventQueue.push_back( aEvent );
-    }
+    void PostEvent( const TOOL_EVENT& aEvent );
 
     /**
      * Sets the work environment (model, view, view controls and the parent window).
@@ -539,6 +538,9 @@ private:
 
     /// Pointer to the state object corresponding to the currently executed tool.
     TOOL_STATE* m_activeState;
+
+    /// Lock for the event queue
+    std::mutex m_queueLock;
 };
 
 #endif

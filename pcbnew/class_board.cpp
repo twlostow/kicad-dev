@@ -2393,6 +2393,8 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
     wxString       msg;
     std::vector<MODULE*> newFootprints;
     std::map< ZONE_CONTAINER*, std::vector<D_PAD*> > zoneConnectionsCache;
+ 
+    GetConnectivity()->KillCalculations();
 
     for( int ii = 0; ii < GetAreaCount(); ii++ )
     {
@@ -2849,7 +2851,7 @@ void BOARD::ReplaceNetlist( NETLIST& aNetlist, bool aDeleteSinglePadNets,
         }
     }
 
-    m_connectivity->RecalculateRatsnest();
+    m_connectivity->Recalculate( false );
 
     std::swap( newFootprints, *aNewFootprints );
 }

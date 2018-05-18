@@ -1146,7 +1146,7 @@ void VIEW::clearGroupCache()
 }
 
 
-void VIEW::invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags )
+void VIEW::invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags, bool aRebuildTree )
 {
     if( aUpdateFlags & INITIAL_ADD )
     {
@@ -1159,11 +1159,11 @@ void VIEW::invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags )
         // updateLayers updates geometry too, so we do not have to update both of them at the same time
         if( aUpdateFlags & LAYERS )
         {
-            updateLayers( aItem );
+            updateLayers( aItem, aRebuildTree );
         }
         else if( aUpdateFlags & GEOMETRY )
         {
-            updateBbox( aItem );
+            updateBbox( aItem, aRebuildTree );
         }
     }
 
@@ -1178,7 +1178,7 @@ void VIEW::invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags )
         if( IsCached( layerId ) )
         {
             if( aUpdateFlags & ( GEOMETRY | LAYERS | REPAINT ) )
-                updateItemGeometry( aItem, layerId );
+                updateItemGeometry( aItem, layerId, aRebuildTree );
             else if( aUpdateFlags & COLOR )
                 updateItemColor( aItem, layerId );
         }
@@ -1225,7 +1225,7 @@ void VIEW::updateItemColor( VIEW_ITEM* aItem, int aLayer )
 }
 
 
-void VIEW::updateItemGeometry( VIEW_ITEM* aItem, int aLayer )
+void VIEW::updateItemGeometry( VIEW_ITEM* aItem, int aLayer, bool aRebuildTree )
 {
     auto viewData = aItem->viewPrivData();
     wxASSERT( (unsigned) aLayer < m_layers.size() );
@@ -1255,7 +1255,7 @@ void VIEW::updateItemGeometry( VIEW_ITEM* aItem, int aLayer )
 }
 
 
-void VIEW::updateBbox( VIEW_ITEM* aItem )
+void VIEW::updateBbox( VIEW_ITEM* aItem, bool aRebuildTree )
 {
     int layers[VIEW_MAX_LAYERS], layers_count;
 
@@ -1264,14 +1264,17 @@ void VIEW::updateBbox( VIEW_ITEM* aItem )
     for( int i = 0; i < layers_count; ++i )
     {
         VIEW_LAYER& l = m_layers[layers[i]];
-        l.items->Remove( aItem );
-        l.items->Insert( aItem );
+        if( !aRebuildTree )
+        {
+            l.items->Remove( aItem );
+            l.items->Insert( aItem );
+        }
         MarkTargetDirty( l.target );
     }
 }
 
 
-void VIEW::updateLayers( VIEW_ITEM* aItem )
+void VIEW::updateLayers( VIEW_ITEM* aItem, bool aRebuildTree )
 {
     auto viewData = aItem->viewPrivData();
     int layers[VIEW_MAX_LAYERS], layers_count;
@@ -1285,7 +1288,10 @@ void VIEW::updateLayers( VIEW_ITEM* aItem )
     for( int i = 0; i < layers_count; ++i )
     {
         VIEW_LAYER& l = m_layers[layers[i]];
-        l.items->Remove( aItem );
+
+        if( ! aRebuildTree )
+            l.items->Remove( aItem );
+
         MarkTargetDirty( l.target );
 
         if( IsCached( l.id ) )
@@ -1308,7 +1314,10 @@ void VIEW::updateLayers( VIEW_ITEM* aItem )
     for( int i = 0; i < layers_count; i++ )
     {
         VIEW_LAYER& l = m_layers[layers[i]];
-        l.items->Insert( aItem );
+
+        if( ! aRebuildTree )
+            l.items->Insert( aItem );
+
         MarkTargetDirty( l.target );
     }
 }
@@ -1350,10 +1359,51 @@ void VIEW::RecacheAllItems()
     }
 }
 
+void VIEW::clearTrees()
+{
+    for( LAYER_MAP_ITER i = m_layers.begin(); i != m_layers.end(); ++i )
+    {
+        VIEW_LAYER* l = &( ( *i ).second );
+
+        delete l->items;
+        l->items = new VIEW_RTREE;
+    }
+}
+
+void VIEW::rebuildTrees()
+{
+    for( VIEW_ITEM* item : m_allItems )
+    {
+        int layers[VIEW_MAX_LAYERS], layers_count;
+
+        item->ViewGetLayers( layers, layers_count );
+
+        for( int i = 0; i < layers_count; ++i )
+        {
+            VIEW_LAYER& l = m_layers[layers[i]];
+            l.items->Insert( item );
+            MarkTargetDirty( l.target );
+        }
+    }
+}
 
 void VIEW::UpdateItems()
 {
     m_gal->BeginUpdate();
+
+    int toUpdate = 0;
+
+    for( VIEW_ITEM* item : m_allItems )
+    {
+        auto viewData = item->viewPrivData();
+
+        if( viewData && ( viewData->m_requiredUpdate & ( LAYERS | GEOMETRY ) ) )
+            toUpdate++;
+    }
+
+    double ratio = (double) toUpdate / (double) m_allItems.size();
+
+    bool rebuildTree = (ratio > 0.2);
 
     for( VIEW_ITEM* item : m_allItems )
     {
@@ -1364,9 +1414,15 @@ void VIEW::UpdateItems()
 
         if( viewData->m_requiredUpdate != NONE )
         {
-            invalidateItem( item, viewData->m_requiredUpdate );
+            invalidateItem( item, viewData->m_requiredUpdate, rebuildTree );
             viewData->m_requiredUpdate = NONE;
         }
+    }
+
+    if( rebuildTree )
+    {
+        clearTrees();
+        rebuildTrees();
     }
 
     m_gal->EndUpdate();

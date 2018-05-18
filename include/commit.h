@@ -123,7 +123,7 @@ public:
 
 
     ///> Adds a change of the item aItem of type aChangeType to the change list.
-    COMMIT& Stage( EDA_ITEM* aItem, CHANGE_TYPE aChangeType );
+    virtual COMMIT& Stage( EDA_ITEM* aItem, CHANGE_TYPE aChangeType );
 
     COMMIT& Stage( std::vector<EDA_ITEM*>& container, CHANGE_TYPE aChangeType );
 

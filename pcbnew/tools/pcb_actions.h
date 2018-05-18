@@ -403,6 +403,7 @@ public:
     static TOOL_ACTION copySettingsToPads;
     static TOOL_ACTION globalEditPads;
 
+    static TOOL_EVENT connectivityUpdatedEvent;
 
     ///> @copydoc COMMON_ACTIONS::TranslateLegacyId()
     virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) override;

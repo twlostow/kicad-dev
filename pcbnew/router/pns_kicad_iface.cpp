@@ -155,7 +155,7 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER* 
     {
         m_defaultClearance = defaultRule->GetClearance();
     }
-    else 
+    else
     {
         m_defaultClearance = Millimeter2iu(0.254);
     }

@@ -235,9 +235,6 @@ void DIALOG_GLOBAL_DELETION::AcceptPcbDelete()
     if( m_DelMarkers->GetValue() )
         pcb->DeleteMARKERs();
 
-    if( gen_rastnest )
-        m_Parent->Compile_Ratsnest( NULL, true );
-
     // There is a chance that some of tracks have changed their nets, so rebuild ratsnest from scratch
     m_Parent->GetCanvas()->Refresh();
 }

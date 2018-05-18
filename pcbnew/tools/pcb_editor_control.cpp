@@ -149,6 +149,8 @@ TOOL_ACTION PCB_ACTIONS::showLocalRatsnest( "pcbnew.Control.showLocalRatsnest",
         AS_GLOBAL, 0,
         "", "" );
 
+TOOL_EVENT PCB_ACTIONS::connectivityUpdatedEvent( TC_MESSAGE, TA_ACTION, "pcbnew.Control.connectivityUpdated" );
+
 class ZONE_CONTEXT_MENU : public CONTEXT_MENU
 {
 public:
@@ -247,13 +249,19 @@ PCB_EDITOR_CONTROL::~PCB_EDITOR_CONTROL()
 
 void PCB_EDITOR_CONTROL::Reset( RESET_REASON aReason )
 {
-    m_frame = getEditFrame<PCB_EDIT_FRAME>();
+    auto onConnectivityComplete = [&] () -> void
+    {
+        m_toolMgr->PostEvent( PCB_ACTIONS::connectivityUpdatedEvent );
+    };
+
+    m_frame = frame();
 
     if( aReason == MODEL_RELOAD || aReason == GAL_SWITCH )
     {
-        m_placeOrigin->SetPosition( getModel<BOARD>()->GetAuxOrigin() );
-        getView()->Remove( m_placeOrigin.get() );
-        getView()->Add( m_placeOrigin.get() );
+        m_placeOrigin->SetPosition( board()->GetAuxOrigin() );
+        view()->Remove( m_placeOrigin.get() );
+        view()->Add( m_placeOrigin.get() );
+        board()->GetConnectivity()->SetCompletionNotifier( onConnectivityComplete );
     }
 }
 
@@ -335,10 +343,6 @@ bool PCB_EDITOR_CONTROL::Init()
 
         menu.AddMenu( zoneMenu.get(), false, toolActiveFunctor( DRAWING_TOOL::MODE::ZONE ) );
     }
-
-    m_ratsnestTimer.SetOwner( this );
-    Connect( m_ratsnestTimer.GetId(), wxEVT_TIMER,
-            wxTimerEventHandler( PCB_EDITOR_CONTROL::ratsnestTimer ), NULL, this );
 
     return true;
 }
@@ -1106,26 +1110,9 @@ int PCB_EDITOR_CONTROL::UpdateSelectionRatsnest( const TOOL_EVENT& aEvent )
     {
         connectivity->ClearDynamicRatsnest();
     }
-    else if( m_slowRatsnest )
-    {
-        // Compute ratsnest only when user stops dragging for a moment
-        connectivity->HideDynamicRatsnest();
-        m_ratsnestTimer.Start( 20 );
-    }
     else
     {
-        // Check how much time doest it take to calculate ratsnest
-        PROF_COUNTER counter;
         calculateSelectionRatsnest();
-        counter.Stop();
-
-        // If it is too slow, then switch to 'slow ratsnest' mode when
-        // ratsnest is calculated when user stops dragging items for a moment
-        if( counter.msecs() > 25 )
-        {
-            m_slowRatsnest = true;
-            connectivity->HideDynamicRatsnest();
-        }
     }
 
     return 0;
@@ -1134,20 +1121,19 @@ int PCB_EDITOR_CONTROL::UpdateSelectionRatsnest( const TOOL_EVENT& aEvent )
 
 int PCB_EDITOR_CONTROL::HideSelectionRatsnest( const TOOL_EVENT& aEvent )
 {
-    getModel<BOARD>()->GetConnectivity()->ClearDynamicRatsnest();
-    m_slowRatsnest = false;
+    board()->GetConnectivity()->ClearDynamicRatsnest();
     return 0;
 }
 
-
-void PCB_EDITOR_CONTROL::ratsnestTimer( wxTimerEvent& aEvent )
+int PCB_EDITOR_CONTROL::RefreshRatsnest( const TOOL_EVENT& aEvent )
 {
-    m_ratsnestTimer.Stop();
-    calculateSelectionRatsnest();
-    static_cast<PCB_DRAW_PANEL_GAL*>( m_frame->GetGalCanvas() )->RedrawRatsnest();
-    m_frame->GetGalCanvas()->Refresh();
-}
+    auto canvas = static_cast<PCB_DRAW_PANEL_GAL*>( frame()->GetGalCanvas() );
+    auto connectivity = board()->GetConnectivity();
 
+    canvas->RedrawRatsnest();
+    canvas->Refresh();
+    return 0;
+}
 
 void PCB_EDITOR_CONTROL::calculateSelectionRatsnest()
 {
@@ -1194,6 +1180,7 @@ void PCB_EDITOR_CONTROL::setTransitions()
     Go( &PCB_EDITOR_CONTROL::ShowLocalRatsnest,   PCB_ACTIONS::showLocalRatsnest.MakeEvent() );
     Go( &PCB_EDITOR_CONTROL::UpdateSelectionRatsnest, PCB_ACTIONS::selectionModified.MakeEvent() );
     Go( &PCB_EDITOR_CONTROL::HideSelectionRatsnest, SELECTION_TOOL::ClearedEvent );
+    Go( &PCB_EDITOR_CONTROL::RefreshRatsnest,     PCB_ACTIONS::connectivityUpdatedEvent );
 }
 
 

@@ -43,7 +43,7 @@
 #include <dialog_exchange_footprints.h>
 #include <wildcards_and_files_ext.h>
 #include <kiway.h>
-
+#include <connectivity_data.h>
 
 static bool RecreateCmpFile( BOARD * aBrd, const wxString& aFullCmpFileName );
 
@@ -320,7 +320,9 @@ void DIALOG_EXCHANGE_FOOTPRINTS::OnApplyClick( wxCommandEvent& event )
     if( result )
     {
         if( m_parent->GetBoard()->IsElementVisible( LAYER_RATSNEST ) )
-            m_parent->Compile_Ratsnest( NULL, true );
+        {
+            m_parent->GetBoard()->GetConnectivity()->Recalculate( false );
+        }
 
         m_parent->GetCanvas()->Refresh();
     }

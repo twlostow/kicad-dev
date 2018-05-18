@@ -25,9 +25,12 @@
 #include <profile.h>
 #endif
 
+#include <functional>
+
 #include <connectivity_data.h>
 #include <connectivity_algo.h>
 #include <ratsnest_data.h>
+#include <core/interruptible_worker.h>
 
 #ifdef USE_OPENMP
 #include <omp.h>
@@ -37,6 +40,9 @@ CONNECTIVITY_DATA::CONNECTIVITY_DATA()
 {
     m_connAlgo.reset( new CN_CONNECTIVITY_ALGO );
     m_progressReporter = nullptr;
+    m_valid = false;
+    m_dynamicRatsnestValid = false;
+    m_completionNotifier = nullptr;
 }
 
 
@@ -52,13 +58,11 @@ bool CONNECTIVITY_DATA::Add( BOARD_ITEM* aItem )
     return true;
 }
 
-
 bool CONNECTIVITY_DATA::Remove( BOARD_ITEM* aItem )
 {
     m_connAlgo->Remove( aItem );
     return true;
 }
-
 
 bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 {
@@ -70,9 +74,26 @@ bool CONNECTIVITY_DATA::Update( BOARD_ITEM* aItem )
 
 void CONNECTIVITY_DATA::Build( BOARD* aBoard )
 {
+    m_board = aBoard;
+
     m_connAlgo.reset( new CN_CONNECTIVITY_ALGO );
-    m_connAlgo->Build( aBoard );
-    RecalculateRatsnest();
+
+    for( int i = 0; i<m_board->GetAreaCount(); i++ )
+    {
+        auto zone = m_board->GetArea( i );
+        Add( zone );
+    }
+
+    for( auto tv : m_board->Tracks() )
+        Add( tv );
+
+    for( auto mod : m_board->Modules() )
+    {
+        for( auto pad : mod->Pads() )
+            Add( pad );
+    }
+
+    Recalculate( false );
 }
 
 
@@ -81,11 +102,11 @@ void CONNECTIVITY_DATA::Build( const std::vector<BOARD_ITEM*>& aItems )
     m_connAlgo.reset( new CN_CONNECTIVITY_ALGO );
     m_connAlgo->Build( aItems );
 
-    RecalculateRatsnest();
+    Recalculate( false );
 }
 
 
-void CONNECTIVITY_DATA::updateRatsnest()
+bool CONNECTIVITY_DATA::updateRatsnest( INTERRUPTIBLE_WORKER* aWorker )
 {
     int lastNet = m_connAlgo->NetCount();
 
@@ -108,7 +129,9 @@ void CONNECTIVITY_DATA::updateRatsnest()
         // Start with net number 1, as 0 stands for not connected
         for( i = 1; i < lastNet; ++i )
         {
-            if( m_nets[i]->IsDirty() )
+            bool terminate = ( aWorker && aWorker->CheckInterrupt() );
+
+            if( !terminate && m_nets[i]->IsDirty() )
             {
                 m_nets[i]->Update();
                 nDirty++;
@@ -119,6 +142,8 @@ void CONNECTIVITY_DATA::updateRatsnest()
     #ifdef PROFILE
     rnUpdate.Show();
     #endif /* PROFILE */
+
+    return true;
 }
 
 
@@ -129,48 +154,84 @@ void CONNECTIVITY_DATA::addRatsnestCluster( const std::shared_ptr<CN_CLUSTER>& a
     rnNet->AddCluster( aCluster );
 }
 
-
-void CONNECTIVITY_DATA::RecalculateRatsnest()
+void shit()
 {
-    m_connAlgo->PropagateNets();
+        printf("Recalc a\n");
+}
 
-    int lastNet = m_connAlgo->NetCount();
-
-    if( lastNet >= (int) m_nets.size() )
+void CONNECTIVITY_DATA::Recalculate( bool aLazy )
+{
+    auto recalculateInternal = [&] ( INTERRUPTIBLE_WORKER* aWorker ) -> void
     {
-        unsigned int prevSize = m_nets.size();
-        m_nets.resize( lastNet + 1 );
+        if ( m_connAlgo->PropagateNets( aWorker ) == CN_CONNECTIVITY_ALGO::AR_ABORTED )
+            return;
 
-        for( unsigned int i = prevSize; i < m_nets.size(); i++ )
-            m_nets[i] = new RN_NET;
-    }
+        int lastNet = m_connAlgo->NetCount();
 
-    auto clusters = m_connAlgo->GetClusters();
-
-    int dirtyNets = 0;
-
-    for( int net = 0; net < lastNet; net++ )
-    {
-        if( m_connAlgo->IsNetDirty( net ) )
+        if( lastNet >= (int) m_nets.size() )
         {
-            m_nets[net]->Clear();
-            dirtyNets++;
+            unsigned int prevSize = m_nets.size();
+            m_nets.resize( lastNet + 1 );
+
+            for( unsigned int i = prevSize; i < m_nets.size(); i++ )
+                m_nets[i] = new RN_NET;
         }
-    }
 
-    for( auto c : clusters )
-    {
-        int net = c->OriginNet();
+        CN_CONNECTIVITY_ALGO::CLUSTERS clusters;
 
-        if( m_connAlgo->IsNetDirty( net ) )
+        auto rv = m_connAlgo->SearchClusters( CN_CONNECTIVITY_ALGO::CSM_RATSNEST, clusters, aWorker );
+
+        if( rv == CN_CONNECTIVITY_ALGO::AR_ABORTED )
+            return;
+
+        int dirtyNets = 0;
+
+        for( int net = 0; net < lastNet; net++ )
         {
-            addRatsnestCluster( c );
+            if( m_connAlgo->IsNetDirty( net ) )
+            {
+                m_nets[net]->Clear();
+                dirtyNets++;
+            }
         }
+
+        for( auto c : clusters )
+        {
+            int net = c->OriginNet();
+
+            if( m_connAlgo->IsNetDirty( net ) )
+            {
+                addRatsnestCluster( c );
+            }
+        }
+
+        m_connAlgo->ClearDirtyFlags();
+
+        if( updateRatsnest( aWorker ) )
+        {
+            m_valid = true;
+        }
+
+        if ( m_completionNotifier )
+        {
+            m_completionNotifier();
+        }
+    };
+
+
+    if( m_recalcWorker && m_recalcWorker->Running() )
+    {
+        m_recalcWorker->Interrupt();
     }
 
-    m_connAlgo->ClearDirtyFlags();
+    m_valid = false;
 
-    updateRatsnest();
+    m_recalcWorker.reset( new INTERRUPTIBLE_WORKER( recalculateInternal ) );
+
+    m_recalcWorker->Run();
+
+    if( !aLazy )
+        m_recalcWorker->Join();
 }
 
 
@@ -216,88 +277,99 @@ int CONNECTIVITY_DATA::GetNetCount() const
 void CONNECTIVITY_DATA::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone,
         std::vector<int>& aIslands )
 {
+    Sync();
     m_connAlgo->FindIsolatedCopperIslands( aZone, aIslands );
 }
 
 void CONNECTIVITY_DATA::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones )
 {
+    Sync();
     m_connAlgo->FindIsolatedCopperIslands( aZones );
 }
 
 void CONNECTIVITY_DATA::ComputeDynamicRatsnest( const std::vector<BOARD_ITEM*>& aItems )
 {
-    m_dynamicConnectivity.reset( new CONNECTIVITY_DATA );
-    m_dynamicConnectivity->Build( aItems );
-
+    m_dynRatsnestItems = aItems;
     m_dynamicRatsnest.clear();
 
-    BlockRatsnestItems( aItems );
+    BlockRatsnestItems( m_dynRatsnestItems );
 
-    for( unsigned int nc = 1; nc < m_dynamicConnectivity->m_nets.size(); nc++ )
+    m_dynamicRatsnestValid = false;
+
+    auto workerThread = [&] ( INTERRUPTIBLE_WORKER* aWorker ) -> void
     {
-        auto dynNet = m_dynamicConnectivity->m_nets[nc];
+        m_dynamicConnectivity.reset( new CONNECTIVITY_DATA );
+        m_dynamicConnectivity->Build( m_dynRatsnestItems );
 
-        if( dynNet->GetNodeCount() != 0 )
+        for( unsigned int nc = 1; nc < m_dynamicConnectivity->m_nets.size(); nc++ )
         {
-            auto ourNet = m_nets[nc];
-            CN_ANCHOR_PTR nodeA, nodeB;
+            auto dynNet = m_dynamicConnectivity->m_nets[nc];
 
-            if( ourNet->NearestBicoloredPair( *dynNet, nodeA, nodeB ) )
+            if( aWorker && aWorker->CheckInterrupt() )
+                return;
+
+            if( dynNet->GetNodeCount() != 0 )
             {
+                auto ourNet = m_nets[nc];
+                CN_ANCHOR_PTR nodeA, nodeB;
+
+                if( ourNet->NearestBicoloredPair( *dynNet, nodeA, nodeB ) )
+                {
+                    RN_DYNAMIC_LINE l;
+                    l.a = nodeA->Pos();
+                    l.b = nodeB->Pos();
+                    l.netCode = nc;
+
+                    m_dynamicRatsnest.push_back( l );
+                }
+            }
+        }
+
+        for( auto net : m_dynamicConnectivity->m_nets )
+        {
+            if( !net )
+                continue;
+
+            if( aWorker && aWorker->CheckInterrupt() )
+                return;
+
+            const auto& edges = net->GetUnconnected();
+
+            if( edges.empty() )
+                continue;
+
+            for( const auto& edge : edges )
+            {
+                const auto& nodeA   = edge.GetSourceNode();
+                const auto& nodeB   = edge.GetTargetNode();
                 RN_DYNAMIC_LINE l;
+
                 l.a = nodeA->Pos();
                 l.b = nodeB->Pos();
-                l.netCode = nc;
-
+                l.netCode = 0;
                 m_dynamicRatsnest.push_back( l );
             }
         }
-    }
 
-    for( auto net : m_dynamicConnectivity->m_nets )
-    {
-        if( !net )
-            continue;
+        m_dynamicRatsnestValid = true;
 
-        const auto& edges = net->GetUnconnected();
-
-        if( edges.empty() )
-            continue;
-
-        for( const auto& edge : edges )
+        if( m_completionNotifier )
         {
-            const auto& nodeA   = edge.GetSourceNode();
-            const auto& nodeB   = edge.GetTargetNode();
-            RN_DYNAMIC_LINE l;
-
-            l.a = nodeA->Pos();
-            l.b = nodeB->Pos();
-            l.netCode = 0;
-            m_dynamicRatsnest.push_back( l );
+            m_completionNotifier();
         }
-    }
+    };
+
+    if( m_dynRatsnestWorker )
+        m_dynRatsnestWorker->Interrupt();
+
+    m_dynRatsnestWorker.reset( new INTERRUPTIBLE_WORKER( workerThread ) );
+    m_dynRatsnestWorker->Run();
 }
 
-
-void CONNECTIVITY_DATA::ClearDynamicRatsnest()
+void CONNECTIVITY_DATA::PropagateNets( INTERRUPTIBLE_WORKER* aWorker )
 {
-    m_connAlgo->ForEachAnchor( [] ( CN_ANCHOR& anchor ) { anchor.SetNoLine( false ); } );
-    HideDynamicRatsnest();
+    m_connAlgo->PropagateNets( aWorker );
 }
-
-
-void CONNECTIVITY_DATA::HideDynamicRatsnest()
-{
-    m_dynamicConnectivity.reset();
-    m_dynamicRatsnest.clear();
-}
-
-
-void CONNECTIVITY_DATA::PropagateNets()
-{
-    m_connAlgo->PropagateNets();
-}
-
 
 unsigned int CONNECTIVITY_DATA::GetUnconnectedCount() const
 {
@@ -334,8 +406,9 @@ const std::vector<BOARD_CONNECTED_ITEM*> CONNECTIVITY_DATA::GetConnectedItems(
         const KICAD_T aTypes[] ) const
 {
     std::vector<BOARD_CONNECTED_ITEM*> rv;
-    const auto clusters = m_connAlgo->SearchClusters( CN_CONNECTIVITY_ALGO::CSM_CONNECTIVITY_CHECK,
-            aTypes, aItem->GetNetCode() );
+    CN_CONNECTIVITY_ALGO::CLUSTERS clusters;
+
+    m_connAlgo->SearchClusters( CN_CONNECTIVITY_ALGO::CSM_CONNECTIVITY_CHECK, aTypes, aItem->GetNetCode(), clusters );
 
     for( auto cl : clusters )
     {
@@ -386,7 +459,8 @@ const std::vector<BOARD_CONNECTED_ITEM*> CONNECTIVITY_DATA::GetNetItems( int aNe
 
 bool CONNECTIVITY_DATA::CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport )
 {
-    RecalculateRatsnest();
+
+    Recalculate( false );
 
     for( auto net : m_nets )
     {
@@ -491,69 +565,6 @@ unsigned int CONNECTIVITY_DATA::GetPadCount( int aNet ) const
     return n;
 }
 
-
-const std::vector<VECTOR2I> CONNECTIVITY_DATA::NearestUnconnectedTargets(
-        const BOARD_CONNECTED_ITEM* aRef,
-        const VECTOR2I& aPos,
-        int aNet )
-{
-    CN_CLUSTER_PTR refCluster;
-    int refNet = -1;
-
-    if( aRef )
-        refNet = aRef->GetNetCode();
-
-    if( aNet >= 0 )
-        refNet = aNet;
-
-    if( aRef )
-    {
-        for( auto cl : m_connAlgo->GetClusters() )
-        {
-            if( cl->Contains( aRef ) )
-            {
-                refCluster = cl;
-                break;
-            }
-        }
-    }
-
-    std::set <VECTOR2I> anchors;
-
-    for( auto cl : m_connAlgo->GetClusters() )
-    {
-        if( cl != refCluster )
-        {
-            for( auto item : *cl )
-            {
-                if( item->Valid() && item->Parent()->GetNetCode() == refNet
-                    && item->Parent()->Type() != PCB_ZONE_AREA_T )
-                {
-                    for( auto anchor : item->Anchors() )
-                    {
-                        anchors.insert( anchor->Pos() );
-                    }
-                }
-            }
-        }
-    }
-
-
-    std::vector<VECTOR2I> rv;
-
-    std::copy( anchors.begin(), anchors.end(), std::back_inserter( rv ) );
-    std::sort( rv.begin(), rv.end(), [aPos] ( const VECTOR2I& a, const VECTOR2I& b )
-    {
-        auto da = (a - aPos).EuclideanNorm();
-        auto db = (b - aPos).EuclideanNorm();
-
-        return da < db;
-    } );
-
-    return rv;
-}
-
-
 void CONNECTIVITY_DATA::GetUnconnectedEdges( std::vector<CN_EDGE>& aEdges) const
 {
     for( auto rnNet : m_nets )
@@ -627,4 +638,33 @@ void CONNECTIVITY_DATA::SetProgressReporter( PROGRESS_REPORTER* aReporter )
 {
     m_progressReporter = aReporter;
     m_connAlgo->SetProgressReporter( m_progressReporter );
+}
+
+void CONNECTIVITY_DATA::KillCalculations()
+{
+    if( m_recalcWorker && m_recalcWorker->Running() )
+    {
+        m_recalcWorker->Interrupt();
+        m_valid = false;
+    }
+}
+
+void CONNECTIVITY_DATA::Sync()
+{
+    if( m_recalcWorker )
+        m_recalcWorker->Join();
+}
+
+void CONNECTIVITY_DATA::SetCompletionNotifier( std::function<void()> notifier )
+{
+    m_completionNotifier = notifier;
+}
+
+void CONNECTIVITY_DATA::ClearDynamicRatsnest()
+{
+    if ( m_dynRatsnestWorker )
+        m_dynRatsnestWorker->Interrupt();
+
+    m_dynamicRatsnestValid = false;
+    m_dynamicRatsnest.clear();
 }

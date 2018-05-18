@@ -416,6 +416,7 @@ void PCB_BASE_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool
 
     auto view = GetGalCanvas()->GetView();
     auto connectivity = GetBoard()->GetConnectivity();
+    connectivity->KillCalculations();
 
     // Undo in the reverse order of list creation: (this can allow stacked changes
     // like the same item can be changes and deleted in the same complex command
@@ -586,7 +587,7 @@ void PCB_BASE_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool
     // connectivity can be rebuilt only in the board editor frame
     if( IsType( FRAME_PCB ) && ( reBuild_ratsnest || deep_reBuild_ratsnest ) )
     {
-        Compile_Ratsnest( NULL, false );
+        connectivity->Recalculate();
     }
 }
 

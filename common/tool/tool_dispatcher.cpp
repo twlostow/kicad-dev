@@ -404,6 +404,10 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
         else
             evt = TOOL_EVENT( TC_KEYBOARD, TA_KEY_PRESSED, key | mods );
     }
+    else if ( type == TOOL_MANAGER::EVT_WAKEUP )
+    {
+        evt = TOOL_EVENT( TC_NONE, TA_NONE );
+    }
 
     if( evt )
         m_toolMgr->ProcessEvent( *evt );

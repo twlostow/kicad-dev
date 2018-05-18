@@ -48,6 +48,7 @@
 #include <class_edge_mod.h>
 
 #include <hash_eda.h>
+#include <connectivity_data.h>
 
 static bool CreateHeaderInfoData( FILE* aFile, PCB_EDIT_FRAME* frame );
 static void CreateArtworksSection( FILE* aFile );
@@ -305,8 +306,7 @@ void PCB_EDIT_FRAME::ExportToGenCAD( wxCommandEvent& aEvent )
     GencadOffsetX = optionsDialog.GetOption( USE_AUX_ORIGIN ) ? GetAuxOrigin().x : 0;
     GencadOffsetY = optionsDialog.GetOption( USE_AUX_ORIGIN ) ? GetAuxOrigin().y : 0;
 
-    // No idea on *why* this should be needed... maybe to fix net names?
-    Compile_Ratsnest( NULL, true );
+    GetBoard()->GetConnectivity()->Sync();
 
     /* Temporary modification of footprints that are flipped (i.e. on bottom
      * layer) to convert them to non flipped footprints.

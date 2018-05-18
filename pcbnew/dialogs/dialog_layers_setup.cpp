@@ -732,7 +732,6 @@ bool DIALOG_LAYERS_SETUP::TransferDataFromWindow()
     {
         PCB_EDIT_FRAME* editFrame = static_cast<PCB_EDIT_FRAME*>( GetParent() );
         // Rebuild list of nets (full ratsnest rebuild)
-        editFrame->Compile_Ratsnest( NULL, true );
         m_pcb->BuildConnectivity();
     }
 

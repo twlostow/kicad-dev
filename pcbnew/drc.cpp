@@ -733,8 +733,7 @@ void DRC::testUnconnected()
 
     connectivity->Clear();
     connectivity->Build( m_pcb ); // just in case. This really needs to be reliable.
-    connectivity->RecalculateRatsnest();
-
+    
     std::vector<CN_EDGE> edges;
     connectivity->GetUnconnectedEdges( edges );
 

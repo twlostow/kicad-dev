@@ -91,7 +91,8 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
 #if wxCHECK_VERSION( 3, 1, 0 ) || defined( USE_OSX_MAGNIFY_EVENT )
         wxEVT_MAGNIFY,
 #endif
-        KIGFX::WX_VIEW_CONTROLS::EVT_REFRESH_MOUSE
+        KIGFX::WX_VIEW_CONTROLS::EVT_REFRESH_MOUSE,
+        TOOL_MANAGER::EVT_WAKEUP
     };
 
     for( wxEventType eventType : events )

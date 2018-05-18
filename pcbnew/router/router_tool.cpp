@@ -729,13 +729,16 @@ void ROUTER_TOOL::performRouting()
             updateEndItem( *evt );
             m_router->Move( m_endSnapPoint, m_endItem );
         }
-        else if( evt->IsClick( BUT_LEFT ) )
+        else if( evt->IsClick( BUT_LEFT ) || evt->IsDrag( BUT_LEFT ) )
         {
             updateEndItem( *evt );
             bool needLayerSwitch = m_router->IsPlacingVia();
 
             if( m_router->FixRoute( m_endSnapPoint, m_endItem ) )
+            {
+                m_ignoreModelChangeEvent = true;
                 break;
+            }
 
             if( needLayerSwitch )
                 switchLayerOnViaPlacement();
@@ -763,6 +766,9 @@ void ROUTER_TOOL::performRouting()
             bool still_routing = true;
             while( still_routing )
                 still_routing = m_router->FixRoute( m_endSnapPoint, m_endItem );
+
+            m_ignoreModelChangeEvent = true;
+
             break;
         }
         else if( TOOL_EVT_UTILS::IsCancelInteractive( *evt )
@@ -873,6 +879,8 @@ int ROUTER_TOOL::mainLoop( PNS::ROUTER_MODE aMode )
     std::unique_ptr<ROUTER_TOOL_MENU> ctxMenu( new ROUTER_TOOL_MENU( board, *frame, aMode ) );
     SetContextMenu( ctxMenu.get() );
 
+    m_ignoreModelChangeEvent = false;
+
     // Main loop: keep receiving events
     while( OPT_TOOL_EVENT evt = Wait() )
     {
@@ -884,9 +892,17 @@ int ROUTER_TOOL::mainLoop( PNS::ROUTER_MODE aMode )
         {
             m_router->ClearWorld();
         }
-        else if( evt->Action() == TA_UNDO_REDO_POST || evt->Action() == TA_MODEL_CHANGE )
+        else if( evt->Action() == TA_UNDO_REDO_POST )
         {
             m_router->SyncWorld();
+        }
+        else if( evt->Action() == TA_MODEL_CHANGE )
+        {
+            if( !m_ignoreModelChangeEvent )
+            {
+                m_router->SyncWorld();
+            }
+            m_ignoreModelChangeEvent = false;
         }
         else if( evt->IsMotion() )
         {
@@ -949,7 +965,9 @@ void ROUTER_TOOL::performDragging( int aMode )
         return;
 
     if( m_startItem && m_startItem->Net() >= 0 )
+    {
         highlightNet( true, m_startItem->Net() );
+    }
 
     ctls->SetAutoPan( true );
 
@@ -967,7 +985,11 @@ void ROUTER_TOOL::performDragging( int aMode )
         else if( evt->IsClick( BUT_LEFT ) )
         {
             if( m_router->FixRoute( m_endSnapPoint, m_endItem ) )
+            {
+                m_ignoreModelChangeEvent = true;
                 break;
+            }
+
         }
         else if( TOOL_EVT_UTILS::IsCancelInteractive( *evt )
                  || evt->IsUndoRedo() )

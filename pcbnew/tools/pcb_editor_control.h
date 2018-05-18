@@ -116,6 +116,10 @@ public:
     ///> Shows local ratsnest of a component
     int ShowLocalRatsnest( const TOOL_EVENT& aEvent );
 
+    ///> Refreshes the visible ratsnest
+    int RefreshRatsnest( const TOOL_EVENT& aEvent );
+
+
 private:
     ///> Event handler to recalculate dynamic ratsnest
     void ratsnestTimer( wxTimerEvent& aEvent );

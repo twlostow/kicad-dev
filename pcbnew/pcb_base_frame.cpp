@@ -1056,7 +1056,6 @@ void PCB_BASE_FRAME::UseGalCanvas( bool aEnable )
         auto displ_opts = (PCB_DISPLAY_OPTIONS*)GetDisplayOptions();
         settings->LoadDisplayOptions( displ_opts );
 
-        galCanvas->GetView()->RecacheAllItems();
         galCanvas->SetEventDispatcher( m_toolDispatcher );
         galCanvas->StartDrawing();
     }

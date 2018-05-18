@@ -150,7 +150,7 @@ void PCB_EDIT_FRAME::Clean_Pcb()
         return;
 
     // Old model has to be refreshed, GAL normally does not keep updating it
-    Compile_Ratsnest( NULL, false );
+    //Compile_Ratsnest( NULL, false );
 
     wxBusyCursor( dummy );
     BOARD_COMMIT commit( this );
@@ -728,7 +728,7 @@ TRACK* TRACKS_CLEANER::mergeCollinearSegmentIfPossible( TRACK* aTrackRef, TRACK*
 bool PCB_EDIT_FRAME::RemoveMisConnectedTracks()
 {
     // Old model has to be refreshed, GAL normally does not keep updating it
-    Compile_Ratsnest( NULL, false );
+    //Compile_Ratsnest( NULL, false );
     BOARD_COMMIT commit( this );
 
     TRACKS_CLEANER cleaner( GetBoard(), commit );
@@ -739,7 +739,7 @@ bool PCB_EDIT_FRAME::RemoveMisConnectedTracks()
         // Clear undo and redo lists to avoid inconsistencies between lists
         SetCurItem( NULL );
         commit.Push( _( "Board cleanup" ) );
-        Compile_Ratsnest( NULL, true );
+        //Compile_Ratsnest( NULL, true );
     }
 
     m_canvas->Refresh( true );

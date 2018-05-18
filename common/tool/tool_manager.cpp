@@ -44,6 +44,8 @@
 #include <pcb_edit_frame.h>
 #include <class_draw_panel_gal.h>
 
+const wxEventType TOOL_MANAGER::EVT_WAKEUP = wxNewEventType();
+
 /// Struct describing the current execution state of a TOOL
 struct TOOL_MANAGER::TOOL_STATE
 {
@@ -929,11 +931,18 @@ bool TOOL_MANAGER::processEvent( const TOOL_EVENT& aEvent )
     dispatchActivation( aEvent );
     dispatchContextMenu( aEvent );
 
+    std::list<TOOL_EVENT> events;
+
+    m_queueLock.lock();
+    events = m_eventQueue;
+    m_eventQueue.clear();
+    m_queueLock.unlock();
+
     // Dispatch queue
-    while( !m_eventQueue.empty() )
+    while( !events.empty() )
     {
-        TOOL_EVENT event = m_eventQueue.front();
-        m_eventQueue.pop_front();
+        TOOL_EVENT event = events.front();
+        events.pop_front();
         processEvent( event );
     }
 
@@ -957,4 +966,22 @@ bool TOOL_MANAGER::IsToolActive( TOOL_ID aId ) const
 {
     auto it = m_toolIdIndex.find( aId );
     return !it->second->idle;
+}
+
+
+void TOOL_MANAGER::PostEvent( const TOOL_EVENT& aEvent )
+{
+    m_queueLock.lock();
+    m_eventQueue.push_back( aEvent );
+    m_queueLock.unlock();
+
+    auto f = dynamic_cast<EDA_DRAW_FRAME*>( GetEditFrame() );
+
+    // wake up main event loop
+    if(f)
+    {
+        wxEvent *evt = new wxCommandEvent( EVT_WAKEUP );
+        wxQueueEvent( f->GetGalCanvas(), evt );
+        wxWakeUpIdle();
+    }
 }

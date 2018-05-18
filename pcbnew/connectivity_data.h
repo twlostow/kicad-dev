@@ -32,6 +32,9 @@
 #include <wx/string.h>
 #include <vector>
 #include <memory>
+#include <thread>
+#include <atomic>
+#include <functional>
 
 #include <math/vector2d.h>
 #include <geometry/shape_poly_set.h>
@@ -44,11 +47,12 @@ class BOARD;
 class BOARD_CONNECTED_ITEM;
 class BOARD_ITEM;
 class ZONE_CONTAINER;
-class RN_DATA;
 class RN_NET;
 class TRACK;
 class D_PAD;
 class PROGRESS_REPORTER;
+class INTERRUPTIBLE_WORKER;
+
 
 struct CN_DISJOINT_NET_ENTRY
 {
@@ -76,7 +80,7 @@ struct RN_DYNAMIC_LINE
 };
 
 // a wrapper class encompassing the connectivity computation algorithm and the
-class CONNECTIVITY_DATA : public LOCKABLE
+class CONNECTIVITY_DATA
 {
 public:
     CONNECTIVITY_DATA();
@@ -141,7 +145,7 @@ public:
      * Function PropagateNets()
      * Propagates the net codes from the source pads to the tracks/vias.
      */
-    void PropagateNets();
+    void PropagateNets( INTERRUPTIBLE_WORKER* aWorker = nullptr );
 
     bool CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport );
 
@@ -155,10 +159,13 @@ public:
     void FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones );
 
     /**
-     * Function RecalculateRatsnest()
-     * Updates the ratsnest for the board.
+     * Function Recalculate()
+     * Updates the connectivity database for the board.
+     * @param aLazy offloads calculations into a background thread if true
      */
-    void RecalculateRatsnest();
+    void Recalculate( bool aLazy = true );
+
+    void KillCalculations();
 
     /**
      * Function GetUnconnectedCount()
@@ -186,11 +193,6 @@ public:
     void ClearDynamicRatsnest();
 
     /**
-     * Hides the temporary dynamic ratsnest lines.
-     */
-    void HideDynamicRatsnest();
-
-    /**
      * Function ComputeDynamicRatsnest()
      * Calculates the temporary dynamic ratsnest (i.e. the ratsnest lines that)
      * for the set of items aItems.
@@ -200,6 +202,11 @@ public:
     const std::vector<RN_DYNAMIC_LINE>& GetDynamicRatsnest() const
     {
         return m_dynamicRatsnest;
+    }
+
+    bool IsDynamicRatsnestValid() const
+    {
+        return m_dynamicRatsnestValid;
     }
 
     /**
@@ -235,9 +242,18 @@ public:
 
     void SetProgressReporter( PROGRESS_REPORTER* aReporter );
 
+    bool IsValid() const
+    {
+        return m_valid;
+    }
+
+    void Sync();
+
+    void SetCompletionNotifier( std::function<void()> notifier );
+
 private:
 
-    void    updateRatsnest();
+    bool    updateRatsnest( INTERRUPTIBLE_WORKER* aWorker );
     void    addRatsnestCluster( const std::shared_ptr<CN_CLUSTER>& aCluster );
 
     std::unique_ptr<CONNECTIVITY_DATA> m_dynamicConnectivity;
@@ -245,8 +261,17 @@ private:
 
     std::vector<RN_DYNAMIC_LINE> m_dynamicRatsnest;
     std::vector<RN_NET*> m_nets;
+    std::vector<BOARD_ITEM*> m_dynRatsnestItems;
+
+    std::atomic<bool> m_dynamicRatsnestValid;
+    std::atomic<bool> m_valid;
+    std::function<void()> m_completionNotifier;
+
+    std::shared_ptr<INTERRUPTIBLE_WORKER> m_recalcWorker;
+    std::shared_ptr<INTERRUPTIBLE_WORKER> m_dynRatsnestWorker;
 
     PROGRESS_REPORTER* m_progressReporter;
+    BOARD* m_board;
 };
 
 #endif

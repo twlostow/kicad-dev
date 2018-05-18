@@ -42,6 +42,7 @@
 #include <vector>
 #include <deque>
 #include <intrusive_list.h>
+#include <atomic>
 
 #include <connectivity_data.h>
 
@@ -49,11 +50,11 @@ class CN_ITEM;
 class CN_CONNECTIVITY_ALGO_IMPL;
 class CN_RATSNEST_NODES;
 class CN_CLUSTER;
-class BOARD;
 class BOARD_CONNECTED_ITEM;
 class BOARD_ITEM;
 class ZONE_CONTAINER;
 class PROGRESS_REPORTER;
+class INTERRUPTIBLE_WORKER;
 
 class CN_ANCHOR
 {
@@ -768,6 +769,12 @@ public:
         CSM_RATSNEST
     };
 
+    enum ALGO_RESULT
+    {
+        AR_DONE,
+        AR_ABORTED
+    };
+
     using CLUSTERS = std::vector<CN_CLUSTER_PTR>;
 
 private:
@@ -804,7 +811,6 @@ public:
         std::list<CN_ITEM*> m_items;
     };
 
-
     CN_PAD_LIST m_padList;
     CN_TRACK_LIST m_trackList;
     CN_VIA_LIST m_viaList;
@@ -815,14 +821,11 @@ public:
     std::unordered_map<const BOARD_CONNECTED_ITEM*, ITEM_MAP_ENTRY> m_itemMap;
 
     CLUSTERS m_connClusters;
-    CLUSTERS m_ratsnestClusters;
     std::vector<bool> m_dirtyNets;
     PROGRESS_REPORTER* m_progressReporter = nullptr;
 
-    void    searchConnections( bool aIncludeZones = false );
-
-    void    update();
-    void    propagateConnections();
+    ALGO_RESULT searchConnections( bool aIncludeZones, INTERRUPTIBLE_WORKER* aWorker );
+    ALGO_RESULT propagateConnections( INTERRUPTIBLE_WORKER* aWorker );
 
     template <class Container, class BItem>
     void add( Container& c, BItem brditem )
@@ -866,41 +869,26 @@ public:
             *i = false;
     }
 
-    void GetDirtyClusters( CLUSTERS& aClusters )
-    {
-        for( auto cl : m_ratsnestClusters )
-        {
-            int net = cl->OriginNet();
-
-            if( net >= 0 && m_dirtyNets[net] )
-                aClusters.push_back( cl );
-        }
-    }
-
     int NetCount() const
     {
         return m_dirtyNets.size();
     }
 
-    void    Build( BOARD* aBoard );
-    void    Build( const std::vector<BOARD_ITEM*>& aItems );
+    void Build( const std::vector<BOARD_ITEM*>& aItems );
 
     void Clear();
 
-    bool    Remove( BOARD_ITEM* aItem );
-    bool    Add( BOARD_ITEM* aItem );
+    bool Remove( BOARD_ITEM* aItem );
+    bool Add( BOARD_ITEM* aItem );
 
-    const CLUSTERS  SearchClusters( CLUSTER_SEARCH_MODE aMode, const KICAD_T aTypes[], int aSingleNet );
-    const CLUSTERS  SearchClusters( CLUSTER_SEARCH_MODE aMode );
+    ALGO_RESULT SearchClusters( CLUSTER_SEARCH_MODE aMode, const KICAD_T aTypes[], int aSingleNet, CLUSTERS& aClusters, INTERRUPTIBLE_WORKER* aWorker = nullptr );
+    ALGO_RESULT SearchClusters( CLUSTER_SEARCH_MODE aMode, CLUSTERS& aClusters, INTERRUPTIBLE_WORKER* aWorker = nullptr );
+    ALGO_RESULT PropagateNets( INTERRUPTIBLE_WORKER* aWorker = nullptr );
 
-    void    PropagateNets();
     void    FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std::vector<int>& aIslands );
     void    FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones );
 
     bool    CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& aReport );
-
-    const CLUSTERS& GetClusters();
-    int             GetUnconnectedCount();
 
     CN_PAD_LIST& PadList() { return m_padList; }
 

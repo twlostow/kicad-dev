@@ -24,6 +24,7 @@
 
 #include <connectivity_algo.h>
 #include <widgets/progress_reporter.h>
+#include <core/interruptible_worker.h>
 
 #include <thread>
 #include <mutex>
@@ -146,6 +147,7 @@ void CN_CLUSTER::Add( CN_ITEM* item )
 
 CN_CONNECTIVITY_ALGO::CN_CONNECTIVITY_ALGO()
 {
+
 }
 
 
@@ -298,7 +300,7 @@ bool CN_CONNECTIVITY_ALGO::Add( BOARD_ITEM* aItem )
 }
 
 
-void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
+CN_CONNECTIVITY_ALGO::ALGO_RESULT CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones, INTERRUPTIBLE_WORKER* aWorker )
 {
     std::mutex cnListLock;
 
@@ -487,6 +489,9 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
             m_padList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
             m_trackList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
             m_viaList.FindNearby( pad->ShapePos(), pad->GetBoundingRadius(), searchPads );
+
+            if( aWorker && aWorker->CheckInterrupt() )
+                return AR_ABORTED;
         }
 
         for( auto& trackItem : m_trackList )
@@ -497,6 +502,9 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 
             m_trackList.FindNearby( track->GetStart(), dist_max, searchTracks );
             m_trackList.FindNearby( track->GetEnd(), dist_max, searchTracks );
+
+            if( aWorker && aWorker->CheckInterrupt() )
+                return AR_ABORTED;
         }
 
         for( auto& viaItem : m_viaList )
@@ -508,6 +516,9 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
             totalDirtyCount++;
             m_viaList.FindNearby( via->GetStart(), dist_max, searchVias );
             m_trackList.FindNearby( via->GetStart(), dist_max, searchVias );
+
+            if( aWorker && aWorker->CheckInterrupt() )
+                return AR_ABORTED;
         }
     }
 
@@ -546,7 +557,9 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
                 auto zoneItem = static_cast<CN_ZONE *> (item);
                 auto searchZones = std::bind( checkForConnection, _1, zoneItem );
 
-                if( zoneItem->Dirty() || m_padList.IsDirty() || m_trackList.IsDirty() || m_viaList.IsDirty() )
+                bool terminate = aWorker && aWorker->CheckInterrupt();
+
+                if( !terminate && ( zoneItem->Dirty() || m_padList.IsDirty() || m_trackList.IsDirty() || m_viaList.IsDirty() ) )
                 {
                     totalDirtyCount++;
                     m_viaList.FindNearby( zoneItem->BBox(), searchZones );
@@ -559,7 +572,7 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
                     std::lock_guard<std::mutex> lock( cnListLock );
                     cnt++;
 
-                    if (m_progressReporter)
+                    if( m_progressReporter )
                     {
                         m_progressReporter->AdvanceProgress();
                     }
@@ -567,8 +580,14 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
             }
         }
 
+        if( aWorker && aWorker->CheckInterrupt() )
+            return AR_ABORTED;
+
         m_zoneList.ClearDirtyFlags();
     }
+
+    if( aWorker && aWorker->CheckInterrupt() )
+        return AR_ABORTED;
 
     m_padList.ClearDirtyFlags();
     m_viaList.ClearDirtyFlags();
@@ -581,8 +600,9 @@ void CN_CONNECTIVITY_ALGO::searchConnections( bool aIncludeZones )
 #ifdef PROFILE
     search_cnt.Show();
 #endif
-}
 
+    return AR_DONE;
+}
 
 void CN_ITEM::RemoveInvalidRefs()
 {
@@ -628,25 +648,26 @@ bool CN_CONNECTIVITY_ALGO::isDirty() const
 }
 
 
-const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::SearchClusters( CLUSTER_SEARCH_MODE aMode )
+CN_CONNECTIVITY_ALGO::ALGO_RESULT CN_CONNECTIVITY_ALGO::SearchClusters( CLUSTER_SEARCH_MODE aMode, CN_CONNECTIVITY_ALGO::CLUSTERS& aClusters, INTERRUPTIBLE_WORKER* aWorker )
 {
     constexpr KICAD_T types[] = { PCB_TRACE_T, PCB_PAD_T, PCB_VIA_T, PCB_ZONE_AREA_T, PCB_MODULE_T, EOT };
-    return SearchClusters( aMode, types, -1 );
+    return SearchClusters( aMode, types, -1, aClusters, aWorker );
 }
 
 
-const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::SearchClusters( CLUSTER_SEARCH_MODE aMode,
-        const KICAD_T aTypes[], int aSingleNet )
+CN_CONNECTIVITY_ALGO::ALGO_RESULT CN_CONNECTIVITY_ALGO::SearchClusters( CLUSTER_SEARCH_MODE aMode,
+        const KICAD_T aTypes[], int aSingleNet, CN_CONNECTIVITY_ALGO::CLUSTERS& aClusters, INTERRUPTIBLE_WORKER* aWorker )
 {
-    bool includeZones = ( aMode != CSM_PROPAGATE );
     bool withinAnyNet = ( aMode != CSM_PROPAGATE );
 
     std::deque<CN_ITEM*> Q;
     CN_ITEM* head = nullptr;
-    CLUSTERS clusters;
 
     if( isDirty() )
-        searchConnections( includeZones );
+    {
+        if( searchConnections( true, aWorker ) == AR_ABORTED )
+            return AR_ABORTED;
+    }
 
     auto addToSearchList = [&head, withinAnyNet, aSingleNet, aTypes] ( CN_ITEM *aItem )
     {
@@ -685,16 +706,14 @@ const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::SearchClusters( CLUST
     std::for_each( m_padList.begin(), m_padList.end(), addToSearchList );
     std::for_each( m_trackList.begin(), m_trackList.end(), addToSearchList );
     std::for_each( m_viaList.begin(), m_viaList.end(), addToSearchList );
-
-    if( includeZones )
-    {
-        std::for_each( m_zoneList.begin(), m_zoneList.end(), addToSearchList );
-    }
-
+    std::for_each( m_zoneList.begin(), m_zoneList.end(), addToSearchList );
 
     while( head )
     {
         CN_CLUSTER_PTR cluster ( new CN_CLUSTER() );
+
+        if( aWorker && aWorker->CheckInterrupt() )
+            return AR_ABORTED;
 
         Q.clear();
         CN_ITEM* root = head;
@@ -725,11 +744,11 @@ const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::SearchClusters( CLUST
             }
         }
 
-        clusters.push_back( cluster );
+        aClusters.push_back( cluster );
     }
 
 
-    std::sort( clusters.begin(), clusters.end(), []( CN_CLUSTER_PTR a, CN_CLUSTER_PTR b ) {
+    std::sort( aClusters.begin(), aClusters.end(), []( CN_CLUSTER_PTR a, CN_CLUSTER_PTR b ) {
         return a->OriginNet() < b->OriginNet();
     } );
 
@@ -743,32 +762,8 @@ const CN_CONNECTIVITY_ALGO::CLUSTERS CN_CONNECTIVITY_ALGO::SearchClusters( CLUST
     }
 #endif
 
-    return clusters;
+    return AR_DONE;
 }
-
-
-void CN_CONNECTIVITY_ALGO::Build( BOARD* aBoard )
-{
-    for( int i = 0; i<aBoard->GetAreaCount(); i++ )
-    {
-        auto zone = aBoard->GetArea( i );
-        Add( zone );
-    }
-
-    for( auto tv : aBoard->Tracks() )
-        Add( tv );
-
-    for( auto mod : aBoard->Modules() )
-    {
-        for( auto pad : mod->Pads() )
-            Add( pad );
-    }
-
-    /*wxLogTrace( "CN", "zones : %lu, pads : %lu vias : %lu tracks : %lu\n",
-            m_zoneList.Size(), m_padList.Size(),
-            m_viaList.Size(), m_trackList.Size() );*/
-}
-
 
 void CN_CONNECTIVITY_ALGO::Build( const std::vector<BOARD_ITEM*>& aItems )
 {
@@ -800,7 +795,7 @@ void CN_CONNECTIVITY_ALGO::Build( const std::vector<BOARD_ITEM*>& aItems )
 }
 
 
-void CN_CONNECTIVITY_ALGO::propagateConnections()
+CN_CONNECTIVITY_ALGO::ALGO_RESULT CN_CONNECTIVITY_ALGO::propagateConnections( INTERRUPTIBLE_WORKER* aWorker )
 {
     for( const auto& cluster : m_connClusters )
     {
@@ -844,14 +839,19 @@ void CN_CONNECTIVITY_ALGO::propagateConnections()
             wxLogTrace( "CN", "Cluster %p : connected to unused net\n", cluster.get() );
         }
     }
+
+    return AR_DONE;
 }
 
 
-void CN_CONNECTIVITY_ALGO::PropagateNets()
+CN_CONNECTIVITY_ALGO::ALGO_RESULT CN_CONNECTIVITY_ALGO::PropagateNets( INTERRUPTIBLE_WORKER* aWorker )
 {
-    //searchConnections( false );
-    m_connClusters = SearchClusters( CSM_PROPAGATE );
-    propagateConnections();
+    m_connClusters.clear();
+
+    if( SearchClusters( CSM_PROPAGATE, m_connClusters, aWorker ) == AR_ABORTED )
+        return AR_ABORTED;
+
+    return propagateConnections( aWorker );
 }
 
 
@@ -865,7 +865,7 @@ void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone, std
     Remove( aZone );
     Add( aZone );
 
-    m_connClusters = SearchClusters( CSM_CONNECTIVITY_CHECK );
+    SearchClusters( CSM_CONNECTIVITY_CHECK, m_connClusters, nullptr );
 
     for( const auto& cluster : m_connClusters )
     {
@@ -895,7 +895,7 @@ void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLAT
         Add( z.m_zone );
     }
 
-    m_connClusters = SearchClusters( CSM_CONNECTIVITY_CHECK );
+    SearchClusters( CSM_CONNECTIVITY_CHECK, m_connClusters );
 
     for ( auto& zone : aZones )
     {
@@ -919,11 +919,12 @@ void CN_CONNECTIVITY_ALGO::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLAT
 }
 
 
-const CN_CONNECTIVITY_ALGO::CLUSTERS& CN_CONNECTIVITY_ALGO::GetClusters()
+/*const CN_CONNECTIVITY_ALGO::CLUSTERS& CN_CONNECTIVITY_ALGO::GetClusters()
 {
-    m_ratsnestClusters = SearchClusters( CSM_RATSNEST );
+    m_ratsnestClusters.clear();
+    SearchClusters( CSM_RATSNEST, m_ratsnestClusters );
     return m_ratsnestClusters;
-}
+}*/
 
 
 void CN_CONNECTIVITY_ALGO::MarkNetAsDirty( int aNet )
@@ -1037,7 +1038,6 @@ bool CN_ANCHOR::Valid() const
 
 void CN_CONNECTIVITY_ALGO::Clear()
 {
-    m_ratsnestClusters.clear();
     m_connClusters.clear();
     m_itemMap.clear();
     m_padList.Clear();

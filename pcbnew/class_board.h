@@ -46,6 +46,7 @@
 #include <board_item_container.h>
 
 #include <memory>
+#include <mutex>
 
 using std::unique_ptr;
 

@@ -58,7 +58,7 @@ const BOX2I RATSNEST_VIEWITEM::ViewBBox() const
 
 void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
 {
-    if( !m_data->TryLock() )
+    if( ! m_data->IsValid() )
         return;
 
     constexpr int CROSS_SIZE = 200000;
@@ -74,15 +74,18 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
 
     gal->SetStrokeColor( color.Brightened(0.5) );
 
-    // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
-    for( const auto& l : m_data->GetDynamicRatsnest() )
+    if( m_data->IsDynamicRatsnestValid() )
     {
-        if ( l.a == l.b )
+        // Draw the "dynamic" ratsnest (i.e. for objects that may be currently being moved)
+        for( const auto& l : m_data->GetDynamicRatsnest() )
         {
-            gal->DrawLine( VECTOR2I( l.a.x - CROSS_SIZE, l.a.y - CROSS_SIZE ), VECTOR2I( l.b.x + CROSS_SIZE, l.b.y + CROSS_SIZE ) );
-            gal->DrawLine( VECTOR2I( l.a.x - CROSS_SIZE, l.a.y + CROSS_SIZE ), VECTOR2I( l.b.x + CROSS_SIZE, l.b.y - CROSS_SIZE ) );
-        } else {
-            gal->DrawLine( l.a, l.b );
+            if ( l.a == l.b )
+            {
+                gal->DrawLine( VECTOR2I( l.a.x - CROSS_SIZE, l.a.y - CROSS_SIZE ), VECTOR2I( l.b.x + CROSS_SIZE, l.b.y + CROSS_SIZE ) );
+                gal->DrawLine( VECTOR2I( l.a.x - CROSS_SIZE, l.a.y + CROSS_SIZE ), VECTOR2I( l.b.x + CROSS_SIZE, l.b.y - CROSS_SIZE ) );
+            } else {
+                gal->DrawLine( l.a, l.b );
+            }
         }
     }
 
@@ -126,8 +129,6 @@ void RATSNEST_VIEWITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
             }
         }
     }
-
-    m_data->Unlock();
 }
 
 

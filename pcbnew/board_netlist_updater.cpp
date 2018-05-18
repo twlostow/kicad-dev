@@ -712,9 +712,13 @@ bool BOARD_NETLIST_UPDATER::testConnectivity( NETLIST& aNetlist )
 
 bool BOARD_NETLIST_UPDATER::UpdateNetlist( NETLIST& aNetlist )
 {
+    auto connectivity = m_board->GetConnectivity();
+
     wxString msg;
     m_errorCount = 0;
     m_warningCount = 0;
+
+    connectivity->KillCalculations();
 
     cacheCopperZoneConnections();
 
@@ -769,7 +773,7 @@ bool BOARD_NETLIST_UPDATER::UpdateNetlist( NETLIST& aNetlist )
     if( !m_isDryRun )
     {
         m_commit.Push( _( "Update netlist" ) );
-        m_board->GetConnectivity()->Build( m_board );
+        connectivity->Build( m_board );
         testConnectivity( aNetlist );
     }
 

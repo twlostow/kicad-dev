@@ -39,6 +39,4 @@
 
 void PCB_BASE_FRAME::TestNetConnection( wxDC* aDC, int aNetCode )
 {
-    // Build and display new ratsnest
-    Compile_Ratsnest( aDC, false );
 }

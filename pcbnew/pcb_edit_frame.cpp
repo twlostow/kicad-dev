@@ -547,8 +547,6 @@ void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard )
 
     if( IsGalCanvasActive() )
     {
-        aBoard->GetConnectivity()->Build( aBoard );
-
         // reload the worksheet
         SetPageSettings( aBoard->GetPageSettings() );
     }
@@ -750,9 +748,6 @@ void PCB_EDIT_FRAME::Show3D_Frame( wxCommandEvent& event )
 
 void PCB_EDIT_FRAME::UseGalCanvas( bool aEnable )
 {
-    if( !aEnable )
-        Compile_Ratsnest( NULL, true );
-
     PCB_BASE_EDIT_FRAME::UseGalCanvas( aEnable );
     COLORS_DESIGN_SETTINGS& cds = Settings().Colors();
 
@@ -924,6 +919,9 @@ bool PCB_EDIT_FRAME::IsMicroViaAcceptable()
 
 void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
 {
+    if( GetActiveLayer() == aLayer )
+        return;
+
     PCB_BASE_FRAME::SetActiveLayer( aLayer );
 
     syncLayerWidgetLayer();
@@ -1146,7 +1144,6 @@ void PCB_EDIT_FRAME::UpdateUserInterface()
     // (layer and items visibility, colors ...)
 
     // Rebuild list of nets (full ratsnest rebuild)
-    Compile_Ratsnest( NULL, true );
     GetBoard()->BuildConnectivity();
 
     // Update info shown by the horizontal toolbars

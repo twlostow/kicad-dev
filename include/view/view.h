@@ -758,19 +758,19 @@ private:
      * @param aItem is the item to be updated.
      * @param aUpdateFlags determines the way an item is refreshed.
      */
-    void invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags );
+    void invalidateItem( VIEW_ITEM* aItem, int aUpdateFlags, bool aRebuildTree );
 
     /// Updates colors that are used for an item to be drawn
     void updateItemColor( VIEW_ITEM* aItem, int aLayer );
 
     /// Updates all informations needed to draw an item
-    void updateItemGeometry( VIEW_ITEM* aItem, int aLayer );
+    void updateItemGeometry( VIEW_ITEM* aItem, int aLayer, bool aRebuildTree );
 
     /// Updates bounding box of an item
-    void updateBbox( VIEW_ITEM* aItem );
+    void updateBbox( VIEW_ITEM* aItem, bool aRebuildTree );
 
     /// Updates set of layers that an item occupies
-    void updateLayers( VIEW_ITEM* aItem );
+    void updateLayers( VIEW_ITEM* aItem, bool aRebuildTree );
 
     /// Determines rendering order of layers. Used in display order sorting function.
     static bool compareRenderingOrder( VIEW_LAYER* aI, VIEW_LAYER* aJ )
@@ -780,6 +780,12 @@ private:
 
     /// Checks if every layer required by the aLayerId layer is enabled.
     bool areRequiredLayersEnabled( int aLayerId ) const;
+
+    /// erases all data in the R-Trees
+    void clearTrees();
+    
+    /// rebuilds all R-Trees from scratch
+    void rebuildTrees();
 
     ///* Whether to use rendering order modifier or not
     bool m_enableOrderModifier;

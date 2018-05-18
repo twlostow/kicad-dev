@@ -89,9 +89,6 @@ bool ZONE_FILLER::Fill( std::vector<ZONE_CONTAINER*> aZones, bool aCheck )
     std::vector<CN_ZONE_ISOLATED_ISLAND_LIST> toFill;
     auto connectivity = m_board->GetConnectivity();
 
-    if( !connectivity->TryLock() )
-        return false;
-
     for( auto zone : aZones )
     {
         // Keepout zones are not filled
@@ -201,7 +198,6 @@ bool ZONE_FILLER::Fill( std::vector<ZONE_CONTAINER*> aZones, bool aCheck )
                 m_commit->Revert();
 
             connectivity->SetProgressReporter( nullptr );
-            connectivity->Unlock();
             return false;
         }
     }
@@ -307,10 +303,9 @@ bool ZONE_FILLER::Fill( std::vector<ZONE_CONTAINER*> aZones, bool aCheck )
             connectivity->Update( toFill[i].m_zone );
         }
 
-        connectivity->RecalculateRatsnest();
+        connectivity->Recalculate( false );
     }
 
-    connectivity->Unlock();
     return true;
 }
 

@@ -59,7 +59,7 @@ COMMIT& BOARD_COMMIT::Stage( EDA_ITEM* aItem, CHANGE_TYPE aChangeType )
 {
     auto board = (BOARD*) m_toolMgr->GetModel();
 
-    board->GetConnectivity()->KillCalculations();
+//    board->GetConnectivity()->KillCalculations();
 
     return COMMIT::Stage( aItem, aChangeType );
 }

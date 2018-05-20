@@ -40,7 +40,7 @@
 #include <sch_edit_frame.h>
 #include <netlist_object.h>
 
-#include <dialogs/dialog_edit_line_style.h>
+//#include <dialogs/dialog_edit_line_style.h>
 
 
 static wxPenStyle getwxPenStyle( PlotDashType aType )
@@ -783,6 +783,7 @@ wxPoint SCH_LINE::MidPoint()
 
 int SCH_EDIT_FRAME::EditLine( SCH_LINE* aLine, bool aRedraw )
 {
+    #if 0
     if( aLine == NULL )
         return wxID_CANCEL;
 
@@ -826,6 +827,6 @@ int SCH_EDIT_FRAME::EditLine( SCH_LINE* aLine, bool aRedraw )
         if( aRedraw )
             m_canvas->Refresh();
     }
-
+#endif
     return wxID_OK;
 }

@@ -39,6 +39,7 @@
 
 #include <tool/tool_dispatcher.h>
 #include <tool/tool_manager.h>
+#include <gal/gal_display_options.h>
 
 #ifdef __WXDEBUG__
 #include <profile.h>
@@ -341,6 +342,8 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
     StopDrawing();
 
     KIGFX::GAL* new_gal = NULL;
+
+    m_options.gl_antialiasing_mode = KIGFX::OPENGL_ANTIALIASING_MODE::SUBSAMPLE_ULTRA;
 
     try
     {

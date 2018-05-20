@@ -63,7 +63,6 @@ bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
     for(int i =0 ;i<m_draggedLine.SegmentCount(); i++)
     {
         SEG s = m_draggedLine.CSegment(i);
-        printf("s %d %d %d %d %p\n",s.A.x, s.A.y, s.B.x, s.B.y, m_draggedLine.LinkedSegments()[i]);
     }
 
 
@@ -73,7 +72,7 @@ bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
 
     auto distA = ( aP - aSeg->Seg().A ).EuclideanNorm();
     auto distB = ( aP - aSeg->Seg().B ).EuclideanNorm();
-
+    //printf("dista %d distb %d w2 %d\n", distA, distB, w2 );
 
     if( distA <= w2 )
     {
@@ -184,7 +183,6 @@ bool DRAGGER::dragMarkObstacles( const VECTOR2I& aP )
             dragged.DragSegment( aP, m_draggedSegmentIndex, thresh );
         else
         {
-            printf("drag-corner %d %d idx %d sc %d\n", aP.x, aP.y, m_draggedSegmentIndex, dragged.SegmentCount() );
             dragged.DragCorner( aP, m_draggedSegmentIndex, thresh, m_freeAngleMode );
         }
 
@@ -274,13 +272,11 @@ bool DRAGGER::dragShove( const VECTOR2I& aP )
 
         if( m_mode == DM_SEGMENT )
         {
-            printf("drag-segment %d %d idx %d sc %d\n", aP.x, aP.y, m_draggedSegmentIndex, dragged.SegmentCount() );
             dragged.DragSegment( aP, m_draggedSegmentIndex, thresh );
 
         }
         else
         {
-            printf("drag-corner %d %d idx %d sc %d\n", aP.x, aP.y, m_draggedSegmentIndex, dragged.SegmentCount() );
             dragged.DragCorner( aP, m_draggedSegmentIndex, thresh );
         }
 

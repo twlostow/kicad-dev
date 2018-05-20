@@ -540,7 +540,7 @@ void TOOL_MANAGER::dispatchInternal( const TOOL_EVENT& aEvent )
         // the tool state handler is waiting for events (i.e. called Wait() method)
         if( st->pendingWait )
         {
-            if( st->waitEvents.Matches( aEvent ) )
+            if( st->waitEvents.Matches( aEvent ) || st->waitEvents.Matches( TOOL_EVENT( TC_NONE, TA_NONE ) ) )
             {
                 // By default only messages are passed further
                 m_passEvent = ( aEvent.Category() == TC_MESSAGE );

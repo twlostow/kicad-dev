@@ -956,7 +956,7 @@ void ROUTER_TOOL::performDragging( int aMode )
     frame()->UndoRedoBlock( true );
 
     while( OPT_TOOL_EVENT evt = Wait() )
-    {
+        {
         ctls->ForceCursorPosition( false );
 
         if( evt->IsMotion() )

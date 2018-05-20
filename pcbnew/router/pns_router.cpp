@@ -247,8 +247,6 @@ void ROUTER::Move( const VECTOR2I& aP, ITEM* endItem )
 
 void ROUTER::moveDragging( const VECTOR2I& aP, ITEM* aEndItem )
 {
-/*    m_logger.LogEvent("drag", aP );
-    m_logger.Save("drag.log");*/
 
     m_iface->EraseView();
 
@@ -378,8 +376,6 @@ bool ROUTER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem )
         break;
 
     case DRAG_SEGMENT:
-/*        m_logger.LogEvent("end-drag", aP );
-        m_logger.Save("drag.log");*/
         rv = m_dragger->FixRoute();
         break;
 

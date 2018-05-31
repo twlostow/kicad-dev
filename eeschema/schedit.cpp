@@ -31,7 +31,7 @@
 #include <kiway.h>
 #include <gr_basic.h>
 #include <pgm_base.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <eda_doc.h>
 #include <sch_edit_frame.h>
@@ -49,6 +49,7 @@
 #include <sch_line.h>
 #include <sch_sheet.h>
 #include <sch_sheet_path.h>
+#include <sch_view.h>
 
 
 void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
@@ -113,7 +114,8 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         break;
     }
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+
+    //INSTALL_UNBUFFERED_DC( dc, m_canvas );
     item = screen->GetCurItem();    // Can be modified by previous calls.
 
     switch( id )
@@ -130,7 +132,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             break;
         screen->m_BlockLocate.SetCommand( BLOCK_CUT );
         screen->m_BlockLocate.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         SetRepeatItem( NULL );
         SetSheetNumberAndCount();
         break;
@@ -139,21 +141,21 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
     case ID_POPUP_COPY_BLOCK:
         screen->m_BlockLocate.SetCommand( BLOCK_COPY );
         screen->m_BlockLocate.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case wxID_PASTE:
-        HandleBlockBegin( &dc, BLOCK_PASTE, GetCrossHairPosition() );
+        HandleBlockBegin( nullptr, BLOCK_PASTE, GetCrossHairPosition() );
         break;
 
     case ID_POPUP_SCH_ENTRY_SELECT_SLASH:
         m_canvas->MoveCursorToCrossHair();
-        SetBusEntryShape( &dc, dynamic_cast<SCH_BUS_ENTRY_BASE*>( item ), '/' );
+        SetBusEntryShape( nullptr, dynamic_cast<SCH_BUS_ENTRY_BASE*>( item ), '/' );
         break;
 
     case ID_POPUP_SCH_ENTRY_SELECT_ANTISLASH:
         m_canvas->MoveCursorToCrossHair();
-        SetBusEntryShape( &dc, dynamic_cast<SCH_BUS_ENTRY_BASE*>( item ), '\\' );
+        SetBusEntryShape( nullptr, dynamic_cast<SCH_BUS_ENTRY_BASE*>( item ), '\\' );
         break;
 
     case ID_POPUP_CANCEL_CURRENT_COMMAND:
@@ -176,12 +178,12 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_POPUP_SCH_BEGIN_WIRE:
         m_canvas->MoveCursorToCrossHair();
-        OnLeftClick( &dc, GetCrossHairPosition() );
+        OnLeftClick( nullptr, GetCrossHairPosition() );
         break;
 
     case ID_POPUP_SCH_BEGIN_BUS:
         m_canvas->MoveCursorToCrossHair();
-        OnLeftClick( &dc, GetCrossHairPosition() );
+        OnLeftClick( nullptr, GetCrossHairPosition() );
         break;
 
     case ID_POPUP_SCH_SET_SHAPE_TEXT:
@@ -232,7 +234,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         break;
 
     case ID_POPUP_SCH_RESIZE_SHEET:
-        ReSizeSheet( (SCH_SHEET*) item, &dc );
+        ReSizeSheet( (SCH_SHEET*) item, nullptr );
 
         if( screen->TestDanglingEnds() )
             m_canvas->Refresh();
@@ -241,7 +243,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_POPUP_IMPORT_HLABEL_TO_SHEETPIN:
         if( item != NULL && item->Type() == SCH_SHEET_T )
-            screen->SetCurItem( ImportSheetPin( (SCH_SHEET*) item, &dc ) );
+            screen->SetCurItem( ImportSheetPin( (SCH_SHEET*) item, nullptr ) );
         break;
 
     case ID_POPUP_SCH_CLEANUP_SHEET:
@@ -276,7 +278,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         if( item && item->Type() == SCH_COMPONENT_T )
         {
             m_canvas->MoveCursorToCrossHair();
-            ConvertPart( (SCH_COMPONENT*) item, &dc );
+            ConvertPart( (SCH_COMPONENT*) item, nullptr );
         }
 
         break;
@@ -315,13 +317,13 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
     case ID_POPUP_PLACE_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockPlace( &dc );
+        HandleBlockPlace( nullptr );
         break;
 
     case ID_POPUP_ZOOM_BLOCK:
         screen->m_BlockLocate.SetCommand( BLOCK_ZOOM );
         screen->m_BlockLocate.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_DELETE_BLOCK:
@@ -331,7 +333,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         m_canvas->MoveCursorToCrossHair();
         screen->m_BlockLocate.SetCommand( BLOCK_DELETE );
         screen->m_BlockLocate.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         SetSheetNumberAndCount();
         break;
 
@@ -342,7 +344,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         m_canvas->MoveCursorToCrossHair();
         screen->m_BlockLocate.SetCommand( BLOCK_DUPLICATE );
         screen->m_BlockLocate.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_DRAG_BLOCK:
@@ -352,7 +354,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         m_canvas->MoveCursorToCrossHair();
         screen->m_BlockLocate.SetCommand( BLOCK_DRAG );
         screen->m_BlockLocate.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_SCH_ADD_JUNCTION:
@@ -367,7 +369,7 @@ void SCH_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_POPUP_SCH_ADD_LABEL:
     case ID_POPUP_SCH_ADD_GLABEL:
-        screen->SetCurItem( CreateNewText( &dc, id == ID_POPUP_SCH_ADD_LABEL ?
+        screen->SetCurItem( CreateNewText( nullptr, id == ID_POPUP_SCH_ADD_LABEL ?
                                            LAYER_LOCLABEL : LAYER_GLOBLABEL ) );
         item = screen->GetCurItem();
 
@@ -424,8 +426,6 @@ void SCH_EDIT_FRAME::OnMoveItem( wxCommandEvent& aEvent )
             return;
     }
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
-
     switch( item->Type() )
     {
     case SCH_LINE_T:
@@ -443,7 +443,7 @@ void SCH_EDIT_FRAME::OnMoveItem( wxCommandEvent& aEvent )
     case SCH_SHEET_PIN_T:
     case SCH_FIELD_T:
     case SCH_SHEET_T:
-        PrepareMoveItem( item, &dc );
+        PrepareMoveItem( item, nullptr );
         break;
 
     case SCH_BITMAP_T:
@@ -451,7 +451,7 @@ void SCH_EDIT_FRAME::OnMoveItem( wxCommandEvent& aEvent )
         // we cannot undraw/redraw a bitmap just using our xor mode
         // the MoveImage function handle this undraw/redraw difficulty
         // By redrawing the full bounding box
-        MoveImage( (SCH_BITMAP*) item, &dc );
+//        MoveImage( (SCH_BITMAP*) item, &dc );
         break;
 
     case SCH_MARKER_T:
@@ -476,7 +476,7 @@ void SCH_EDIT_FRAME::OnCancelCurrentCommand( wxCommandEvent& aEvent )
 
     if( screen->IsBlockActive() )
     {
-        m_canvas->SetCursor( (wxStockCursor) m_canvas->GetDefaultCursor() );
+//        m_canvas->SetCursor( (wxStockCursor) m_canvas->GetDefaultCursor() );
         screen->ClearBlockCommand();
 
         // Stop the current command (if any) but keep the current tool
@@ -489,6 +489,10 @@ void SCH_EDIT_FRAME::OnCancelCurrentCommand( wxCommandEvent& aEvent )
         else                    // Deselect current tool
             m_canvas->EndMouseCapture( ID_NO_TOOL_SELECTED, m_canvas->GetDefaultCursor() );
      }
+
+     GetCanvas()->GetView()->ClearHiddenFlags();
+     GetCanvas()->GetView()->ClearPreview();
+     GetCanvas()->GetView()->ShowPreview( false );
 }
 
 
@@ -612,12 +616,12 @@ void SCH_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
 #ifdef KICAD_SPICE
     case ID_SIM_PROBE:
         SetToolID( id, -1, _( "Add a simulator probe" ) );
-        m_canvas->SetCursor( CURSOR_PROBE );
+        //m_canvas->SetCurrentCursor( CURSOR_PROBE );
         break;
 
     case ID_SIM_TUNE:
         SetToolID( id, -1, _( "Select a value to be tuned" ) );
-        m_canvas->SetCursor( CURSOR_TUNE );
+        //m_canvas->SetCurrentCursor( CURSOR_TUNE );
         break;
 #endif /* KICAD_SPICE */
 
@@ -632,8 +636,8 @@ void SCH_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
 
         wxPoint pos = data->GetPosition();
 
-        INSTALL_UNBUFFERED_DC( dc, m_canvas );
-        OnLeftClick( &dc, pos );
+//        INSTALL_UNBUFFERED_DC( dc, m_canvas );
+        OnLeftClick( nullptr, pos );
     }
 }
 
@@ -687,29 +691,15 @@ bool SCH_EDIT_FRAME::DeleteItemAtCrossHair( wxDC* DC )
 
 // This function is a callback function, called by the mouse cursor movin event
 // when an item is currently moved
-static void moveItemWithMouseCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void moveItemWithMouseCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                      const wxPoint& aPosition, bool aErase )
 {
     SCH_SCREEN* screen = (SCH_SCREEN*) aPanel->GetScreen();
     SCH_ITEM*   item   = screen->GetCurItem();
+    auto panel = static_cast<SCH_DRAW_PANEL*>( aPanel );
+    auto view = panel->GetView();
 
     wxCHECK_RET( (item != NULL), wxT( "Cannot move invalid schematic item." ) );
-
-    SCH_COMPONENT* cmp = NULL;
-
-    if( item->Type() == SCH_COMPONENT_T )
-        cmp = static_cast< SCH_COMPONENT* >( item );
-
-#ifndef USE_WX_OVERLAY
-    // Erase the current item at its current position.
-    if( aErase )
-    {
-        if( cmp )   // Use fast mode (do not draw pin texts)
-            cmp->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode, COLOR4D::UNSPECIFIED, false );
-        else
-            item->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode );
-    }
-#endif
 
     wxPoint cpos = aPanel->GetParent()->GetCrossHairPosition();
     cpos -= item->GetStoredPos();
@@ -719,21 +709,24 @@ static void moveItemWithMouseCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
     // Draw the item item at it's new position.
     item->SetWireImage();  // While moving, the item may choose to render differently
 
-    if( cmp )   // Use fast mode (do not draw pin texts)
-        cmp->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode, COLOR4D::UNSPECIFIED, false );
-    else
-        item->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode );
+    view->Hide( item );
+    view->ClearPreview();
+    view->AddToPreview( item, false );
 }
 
 
-static void abortMoveItem( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+static void abortMoveItem( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     SCH_SCREEN*     screen = (SCH_SCREEN*) aPanel->GetScreen();
     SCH_ITEM*       item = screen->GetCurItem();
     SCH_EDIT_FRAME* parent = (SCH_EDIT_FRAME*) aPanel->GetParent();
+    auto panel = static_cast<SCH_DRAW_PANEL*>( aPanel );
+    auto view = panel->GetView();
 
     parent->SetRepeatItem( NULL );
     screen->SetCurItem( NULL );
+    view->ClearPreview();
+    view->ClearHiddenFlags();
 
     if( item == NULL )  /* no current item */
         return;
@@ -768,8 +761,7 @@ static void abortMoveItem( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
         currentItem->SwapData( oldItem );
 
         // Erase the wire representation before the 'normal' view is drawn.
-        if ( item->IsWireImage() )
-            item->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode );
+        view->Hide( item, false );
 
         item->ClearFlags();
     }
@@ -863,13 +855,13 @@ void SCH_EDIT_FRAME::OnRotate( wxCommandEvent& aEvent )
     SCH_SCREEN* screen = GetScreen();
     SCH_ITEM*   item = screen->GetCurItem();
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
-
+//    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+    printf("OnRotate\n");
     // Allows block rotate operation on hot key.
     if( screen->m_BlockLocate.GetState() != STATE_NO_BLOCK )
     {
         screen->m_BlockLocate.SetCommand( BLOCK_ROTATE );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         return;
     }
 
@@ -886,6 +878,8 @@ void SCH_EDIT_FRAME::OnRotate( wxCommandEvent& aEvent )
         item = LocateAndShowItem( data->GetPosition(), SCH_COLLECTOR::RotatableItems,
                                   aEvent.GetInt() );
 
+        printf("Rotate Item %p", item);
+
         // Exit if no item found at the current location or the item is already being edited.
         if( (item == NULL) || (item->GetFlags() != 0) )
             return;
@@ -896,6 +890,7 @@ void SCH_EDIT_FRAME::OnRotate( wxCommandEvent& aEvent )
     case SCH_COMPONENT_T:
         {
             SCH_COMPONENT* component = static_cast<SCH_COMPONENT*>( item );
+
             if( aEvent.GetId() == ID_SCH_ROTATE_CLOCKWISE )
                 OrientComponent( CMP_ROTATE_CLOCKWISE );
             else if( aEvent.GetId() == ID_SCH_ROTATE_COUNTERCLOCKWISE )
@@ -958,6 +953,8 @@ void SCH_EDIT_FRAME::OnRotate( wxCommandEvent& aEvent )
         wxFAIL_MSG( wxString::Format( wxT( "Cannot rotate schematic item type %s." ),
                                       GetChars( item->GetClass() ) ) );
     }
+
+    GetCanvas()->GetView()->Update( item );
 
     if( item->GetFlags() == 0 )
         screen->SetCurItem( NULL );
@@ -1082,6 +1079,8 @@ void SCH_EDIT_FRAME::OnEditItem( wxCommandEvent& aEvent )
                                       GetChars( item->GetClass() ) ) );
     }
 
+    GetCanvas()->GetView()->Update( item );
+
     if( item->GetFlags() == 0 )
         screen->SetCurItem( NULL );
 }
@@ -1139,14 +1138,14 @@ void SCH_EDIT_FRAME::OnDragItem( wxCommandEvent& aEvent )
 
         if( screen->m_BlockLocate.GetState() == STATE_NO_BLOCK )
         {
-            INSTALL_UNBUFFERED_DC( dc, m_canvas );
-
-            if( !HandleBlockBegin( &dc, dragType, GetCrossHairPosition() ) )
+//            INSTALL_UNBUFFERED_DC( dc, m_canvas );
+//
+            if( !HandleBlockBegin( nullptr, dragType, GetCrossHairPosition() ) )
                 break;
 
             // Give a non null size to the search block:
             screen->m_BlockLocate.Inflate( 1 );
-            HandleBlockEnd( &dc );
+            HandleBlockEnd( nullptr );
         }
 
         break;
@@ -1163,7 +1162,7 @@ void SCH_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
     SCH_SCREEN* screen = GetScreen();
     SCH_ITEM*   item   = screen->GetCurItem();
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+//    INSTALL_UNBUFFERED_DC( dc, m_canvas );
 
     // Allows block rotate operation on hot key.
     if( screen->m_BlockLocate.GetState() != STATE_NO_BLOCK )
@@ -1173,14 +1172,14 @@ void SCH_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
             m_canvas->MoveCursorToCrossHair();
             screen->m_BlockLocate.SetMessageBlock( this );
             screen->m_BlockLocate.SetCommand( BLOCK_MIRROR_X );
-            HandleBlockEnd( &dc );
+            HandleBlockEnd( nullptr );
         }
         else if( aEvent.GetId() == ID_SCH_MIRROR_Y )
         {
             m_canvas->MoveCursorToCrossHair();
             screen->m_BlockLocate.SetMessageBlock( this );
             screen->m_BlockLocate.SetCommand( BLOCK_MIRROR_Y );
-            HandleBlockEnd( &dc );
+            HandleBlockEnd( nullptr );
         }
         else
         {
@@ -1251,6 +1250,8 @@ void SCH_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
         // This object cannot be oriented.
         ;
     }
+
+    GetCanvas()->GetView()->Update( item );
 
     if( item->GetFlags() == 0 )
         screen->SetCurItem( NULL );

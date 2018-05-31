@@ -73,7 +73,7 @@
 
 class EDA_ITEM;
 class EDA_RECT;
-class EDA_DRAW_PANEL;
+class DRAW_PANEL_BASE;
 class EDA_DRAW_PANEL_GAL;
 class EDA_MSG_PANEL;
 class BASE_SCREEN;

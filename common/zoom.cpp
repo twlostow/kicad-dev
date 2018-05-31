@@ -54,18 +54,21 @@ void EDA_DRAW_FRAME::RedrawScreen( const wxPoint& aCenterPoint, bool aWarpPointe
     if( aWarpPointer )
         m_canvas->MoveCursorToCrossHair();
 
-    m_canvas->Refresh();
-    m_canvas->Update();
-}
+    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
 
+    canvas->Refresh();
+    canvas->Update();
+}
 
 void EDA_DRAW_FRAME::RedrawScreen2( const wxPoint& posBefore )
 {
     if( IsGalCanvasActive() )
         return;
 
+    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+
     // relative screen position to center before zoom
-    wxPoint dPos = posBefore - m_canvas->GetClientSize() / 2;
+    wxPoint dPos = posBefore - canvas->GetClientSize() / 2;
 
     // screen position of crosshair after zoom
     wxPoint newScreenPos = m_canvas->ToDeviceXY( GetCrossHairPosition() );
@@ -73,8 +76,8 @@ void EDA_DRAW_FRAME::RedrawScreen2( const wxPoint& posBefore )
 
     AdjustScrollBars( newCenter );
 
-    m_canvas->Refresh();
-    m_canvas->Update();
+    canvas->Refresh();
+    canvas->Update();
 }
 
 
@@ -85,11 +88,16 @@ void EDA_DRAW_FRAME::RedrawScreen2( const wxPoint& posBefore )
 // not worth fixing as its days are numbered (GAL canvases use a different method).
 double EDA_DRAW_FRAME::bestZoom( double sizeX, double sizeY, double scaleFactor, wxPoint centre )
 {
-    double bestzoom = std::max( sizeX * scaleFactor / (double) m_canvas->GetClientSize().x,
-                                sizeY * scaleFactor / (double) m_canvas->GetClientSize().y );
+    if( IsGalCanvasActive() )
+        return 1.0;
+
+    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+
+    double bestzoom = std::max( sizeX * scaleFactor / (double) canvas->GetClientSize().x,
+                                sizeY * scaleFactor / (double) canvas->GetClientSize().y );
 
     // Take scrollbars into account
-    DSIZE scrollbarSize = m_canvas->GetSize() - m_canvas->GetClientSize();
+    DSIZE scrollbarSize = canvas->GetSize() - canvas->GetClientSize();
     centre.x -= int( bestzoom * scrollbarSize.x / 2.0 );
     centre.y -= int( bestzoom * scrollbarSize.y / 2.0 );
 
@@ -103,6 +111,12 @@ void EDA_DRAW_FRAME::Zoom_Automatique( bool aWarpPointer )
 {
     BASE_SCREEN* screen = GetScreen();
 
+    if ( IsGalCanvasActive() )
+    {
+        m_toolManager->RunAction( "common.Control.zoomFitScreen", true );
+        return;
+    }
+
     // Set the best zoom and get center point.
 
     // BestZoom() can compute an illegal zoom if the client window size
@@ -114,19 +128,21 @@ void EDA_DRAW_FRAME::Zoom_Automatique( bool aWarpPointer )
     if( screen->m_FirstRedraw )
         SetCrossHairPosition( GetScrollCenterPosition() );
 
-    if( !IsGalCanvasActive() )
-        RedrawScreen( GetScrollCenterPosition(), aWarpPointer );
-    else
-        m_toolManager->RunAction( "common.Control.zoomFitScreen", true );
+    RedrawScreen( GetScrollCenterPosition(), aWarpPointer );
 }
 
 
 void EDA_DRAW_FRAME::Window_Zoom( EDA_RECT& Rect )
 {
+    if ( IsGalCanvasActive() )
+        return;
+
     // Compute the best zoom
     Rect.Normalize();
 
-    wxSize size = m_canvas->GetClientSize();
+    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+
+    wxSize size = canvas->GetClientSize();
 
     // Use ceil to at least show the full rect
     double scalex    = (double) Rect.GetSize().x / size.x;

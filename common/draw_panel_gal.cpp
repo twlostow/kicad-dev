@@ -343,7 +343,7 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
 
     KIGFX::GAL* new_gal = NULL;
 
-    m_options.gl_antialiasing_mode = KIGFX::OPENGL_ANTIALIASING_MODE::SUBSAMPLE_ULTRA;
+    m_options.gl_antialiasing_mode = KIGFX::OPENGL_ANTIALIASING_MODE::SUPERSAMPLING_X2;
 
     try
     {

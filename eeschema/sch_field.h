@@ -140,7 +140,7 @@ public:
 
     int GetPenSize() const override;
 
-    void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                GR_DRAWMODE aDrawMode, COLOR4D aColor = COLOR4D::UNSPECIFIED ) override;
 
     // Geometric transforms (used in block operations):

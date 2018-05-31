@@ -29,7 +29,7 @@
 
 #include <fctsys.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <msgpanel.h>
 
 #include <general.h>
@@ -112,7 +112,7 @@ bool LIB_ITEM::operator<( const LIB_ITEM& aOther ) const
 }
 
 
-void LIB_ITEM::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+void LIB_ITEM::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                      const wxPoint& aOffset, COLOR4D aColor,
                      GR_DRAWMODE aDrawMode, void* aData,
                      const TRANSFORM& aTransform )

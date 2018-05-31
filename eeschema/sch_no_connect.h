@@ -51,11 +51,16 @@ public:
         return wxT( "SCH_NO_CONNECT" );
     }
 
+    wxSize GetSize() const
+    {
+        return m_size;
+    }
+
     int GetPenSize() const override;
 
     void SwapData( SCH_ITEM* aItem ) override;
 
-    void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                GR_DRAWMODE aDrawMode, COLOR4D aColor = COLOR4D::UNSPECIFIED ) override;
 
     void GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemList ) override;

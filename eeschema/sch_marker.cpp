@@ -28,7 +28,7 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <trigo.h>
 #include <msgpanel.h>
 #include <bitmaps.h>
@@ -67,7 +67,7 @@ void SCH_MARKER::Show( int nestLevel, std::ostream& os ) const
 #endif
 
 
-void SCH_MARKER::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+void SCH_MARKER::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                        const wxPoint& aOffset, GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     COLOR4D color = m_Color;

@@ -52,7 +52,7 @@ public:
         return wxT( "SCH_MARKER" );
     }
 
-    void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                GR_DRAWMODE aDraw_mode, COLOR4D aColor = COLOR4D::UNSPECIFIED ) override;
 
     void Plot( PLOTTER* aPlotter ) override

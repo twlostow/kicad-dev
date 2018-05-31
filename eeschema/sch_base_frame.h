@@ -29,6 +29,7 @@
 #include <draw_frame.h>
 
 #include <sch_screen.h>
+#include <sch_draw_panel.h>
 
 class PAGE_INFO;
 class TITLE_BLOCK;
@@ -40,7 +41,7 @@ class PART_LIB;
 class SCHLIB_FILTER;
 class LIB_ID;
 class SYMBOL_LIB_TABLE;
-
+class SCH_DRAW_PANEL;
 
 /**
  * Load symbol from symbol library table.
@@ -92,6 +93,7 @@ public:
 
     virtual ~SCH_BASE_FRAME();
 
+    SCH_DRAW_PANEL *GetCanvas() const override;
     SCH_SCREEN* GetScreen() const override;
 
     /**
@@ -242,6 +244,17 @@ public:
             const LIB_ID& aPreselectedLibid,
             int aUnit, int aConvert );
 
+
+    virtual void Zoom_Automatique( bool aWarpPointer ) override;
+
+                                       /* Set the zoom level to show the area Rect */
+    virtual void Window_Zoom( EDA_RECT& Rect ) override;
+
+    virtual void RedrawScreen( const wxPoint& aCenterPoint, bool aWarpPointer ) override;
+
+    virtual void RedrawScreen2( const wxPoint& posBefore ) override;
+
+
 protected:
 
     /**
@@ -297,6 +310,10 @@ protected:
      * @return True when all requested actions succeeded.
      */
     bool saveSymbolLibTables( bool aGlobal, bool aProject );
+
+    virtual bool HandleBlockBegin( wxDC* aDC, EDA_KEY aKey, const wxPoint& aPosition,
+                                   int aExplicitCommand = 0 ) override;
+
 };
 
 #endif // SCH_BASE_FRAME_H_

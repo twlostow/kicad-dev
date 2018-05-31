@@ -35,88 +35,17 @@
 #include <gr_basic.h>
 #include <eda_rect.h>
 
+#include <draw_panel_base.h>
 
 class BASE_SCREEN;
 class PCB_SCREEN;
 
 
-/**
- * Mouse capture callback function prototype.
- */
-typedef void ( *MOUSE_CAPTURE_CALLBACK )( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
-                                          const wxPoint& aPosition, bool aErase );
-
-/**
- * End mouse capture callback function prototype.
- */
-typedef void ( *END_MOUSE_CAPTURE_CALLBACK )( EDA_DRAW_PANEL* aPanel, wxDC* aDC );
-
-
-class EDA_DRAW_PANEL : public wxScrolledWindow
+class EDA_DRAW_PANEL : public DRAW_PANEL_BASE, public wxScrolledWindow
 {
 private:
-    int     m_currentCursor;                ///< Current mouse cursor shape id.
-    int     m_defaultCursor;                ///< The default mouse cursor shape id.
-    bool    m_showCrossHair;                ///< Indicate if cross hair is to be shown.
-    int     m_cursorLevel;                  ///< Index for cursor redraw in XOR mode.
-    int     m_scrollIncrementX;             ///< X axis scroll increment in pixels per unit.
-    int     m_scrollIncrementY;             ///< Y axis scroll increment in pixels per unit.
-
-    wxPoint m_CursorStartPos;               ///< Used for testing the cursor movement.
-    wxPoint m_PanStartCenter;               ///< Initial scroll center position when pan started
-    wxPoint m_PanStartEventPosition;        ///< Initial position of mouse event when pan started
-
-    wxPoint m_CursorClickPos;               ///< Used for maintaining click position
-    wxTimer *m_ClickTimer;
-
-    /// The drawing area used to redraw the screen which is usually the visible area
-    /// of the drawing in internal units.
-    EDA_RECT    m_ClipBox;
-
-    bool    m_abortRequest;                 ///< Flag used to abort long commands.
-
-    bool    m_enableZoomNoCenter;           ///< True to enable zooming around the crosshair instead of the center
-    bool    m_enableMousewheelPan;          ///< True to enable mousewheel panning by default.
-
-    bool    m_enableAutoPan;                ///< True to enable automatic panning.
-
-    bool    m_requestAutoPan;               ///< true to request an auto pan.  Valid only when m_enableAutoPan = true.
-
-    bool    m_ignoreMouseEvents;            ///< Ignore mouse events when true.
-
-    /* Used to inhibit a response to a mouse left button release, after a double click
-     * (when releasing the left button at the end of the second click.  Used in Eeschema
-     * to inhibit a mouse left release command when switching between hierarchical sheets
-     * on a double click.
-     */
-    bool    m_ignoreNextLeftButtonRelease;  ///< Ignore the next mouse left button release when true.
-
-    bool    m_enableBlockCommands;          ///< True enables block commands.
-
-    /**
-     * Count the drag events. Used to filter mouse moves before starting a
-     * block command.  A block command can be started only if
-     * MinDragEventCount > MIN_DRAG_COUNT_FOR_START_BLOCK_COMMAND in order to avoid
-     * spurious block commands.
-     */
-    int     m_minDragEventCount;
-
-    /// True when drawing in mirror mode. Used by the draw arc function, because arcs
-    /// are oriented, and in mirror mode, orientations are reversed.
-    bool    m_PrintIsMirrored;
-
-    /// Mouse capture move callback function.
-    MOUSE_CAPTURE_CALLBACK m_mouseCaptureCallback;
-
-    /// Abort mouse capture callback function.
-    END_MOUSE_CAPTURE_CALLBACK m_endMouseCaptureCallback;
-
-    /// useful to avoid false start block in certain cases
-    /// (like switch from a sheet to another sheet
-    /// >= 0 (or >= n) if a block can start
-    int     m_canStartBlock;
-
-    int     m_doubleClickInterval;
+    int m_defaultCursor;
+    int m_currentCursor;
 
 public:
 
@@ -128,15 +57,15 @@ public:
      * A way to pass info to draw functions.
      * this is just an accessor to the GetDisplayOptions() parent frame function.
      */
-    void* GetDisplayOptions();
+    void* GetDisplayOptions() override;
 
-    BASE_SCREEN* GetScreen();
+    BASE_SCREEN* GetScreen() override;
 
-    EDA_DRAW_FRAME* GetParent() const;
+    EDA_DRAW_FRAME* GetParent() const override;
 
     void OnPaint( wxPaintEvent& event );
 
-    EDA_RECT* GetClipBox() { return &m_ClipBox; }
+    EDA_RECT* GetClipBox() override { return &m_ClipBox; }
 
     void SetClipBox( const EDA_RECT& aRect ) { m_ClipBox = aRect; }
 
@@ -146,15 +75,15 @@ public:
 
     bool GetEnableMousewheelPan() const { return m_enableMousewheelPan; }
 
-    void SetEnableMousewheelPan( bool aEnable );
+    void SetEnableMousewheelPan( bool aEnable ) override;
 
     bool GetEnableZoomNoCenter() const { return m_enableZoomNoCenter; }
 
-    void SetEnableZoomNoCenter( bool aEnable );
+    void SetEnableZoomNoCenter( bool aEnable ) override;
 
     bool GetEnableAutoPan() const { return m_enableAutoPan; }
 
-    void SetEnableAutoPan( bool aEnable );
+    void SetEnableAutoPan( bool aEnable ) override;
 
     void SetAutoPanRequest( bool aEnable ) { m_requestAutoPan = aEnable; }
 
@@ -177,7 +106,7 @@ public:
      * X and Y axis
      * X and Y auxiliary axis
      */
-    void DrawBackGround( wxDC* DC );
+    void DrawBackGround( wxDC* DC ) override;
 
     /**
      * Function DrawGrid
@@ -187,7 +116,7 @@ public:
      * @see EDA_DRAW_FRAME::GetGridColor() for the color of the grid.
      * @param aDC The device context to draw the grid.
      */
-    void DrawGrid( wxDC* aDC );
+    void DrawGrid( wxDC* aDC ) override;
 
     /**
      * Function DrawAuxiliaryAxis
@@ -196,7 +125,7 @@ public:
      * @param aDC = current Device Context
      * @param aDrawMode = draw mode (GR_COPY, GR_OR ..)
      */
-    void DrawAuxiliaryAxis( wxDC* aDC, GR_DRAWMODE aDrawMode );
+    void DrawAuxiliaryAxis( wxDC* aDC, GR_DRAWMODE aDrawMode ) override;
 
     /**
      * Function DrawGridAxis
@@ -206,7 +135,7 @@ public:
      * @param aDrawMode = draw mode (GR_COPY, GR_OR ..)
      * @param aGridOrigin = the absolute coordinate of grid origin for snap.
      */
-    void DrawGridAxis( wxDC* aDC, GR_DRAWMODE aDrawMode, const wxPoint& aGridOrigin );
+    void DrawGridAxis( wxDC* aDC, GR_DRAWMODE aDrawMode, const wxPoint& aGridOrigin ) override;
 
     void OnEraseBackground( wxEraseEvent& event ) { }
 
@@ -258,7 +187,7 @@ public:
      * @param aDC The device context used for the conversion.
      * @return A rectangle converted to drawing units.
      */
-    wxRect DeviceToLogical( const wxRect& aRect, wxDC& aDC );
+    wxRect DeviceToLogical( const wxRect& aRect, wxDC& aDC ) override;
 
     /* Mouse and keys events */
 
@@ -283,15 +212,15 @@ public:
 
     void OnPan( wxCommandEvent& event );
 
-    void EraseScreen( wxDC* DC );
+    void EraseScreen( wxDC* DC ) override;
     void OnScrollWin( wxCommandEvent& event );
     void OnScroll( wxScrollWinEvent& event );
 
-    void SetZoom( double mode );
-    double GetZoom();
+    void SetZoom( double mode ) override;
+    double GetZoom() override;
 
-    void SetGrid( const wxRealPoint& size );
-    wxRealPoint GetGrid();
+    //void SetGrid( const wxRealPoint& size ) override;
+    //wxRealPoint GetGrid() override;
 
     /**
      * Function OnRightClick
@@ -306,7 +235,7 @@ public:
      * @return true if \a aPosition is visible on the screen.
      *         false if \a aPosition is not visible on the screen.
      */
-    bool IsPointOnDisplay( const wxPoint& aPosition );
+    bool IsPointOnDisplay( const wxPoint& aPosition ) override;
 
     /**
      * Function SetClipBox
@@ -324,9 +253,9 @@ public:
      * @param aRect The clip rectangle in device units or NULL for the entire visible area
      *              of the screen.
      */
-    void SetClipBox( wxDC& aDC, const wxRect* aRect = NULL );
+    void SetClipBox( wxDC& aDC, const wxRect* aRect = NULL ) override;
 
-    void ReDraw( wxDC* aDC, bool aEraseBackground = true );
+    void ReDraw( wxDC* aDC, bool aEraseBackground = true ) override;
 
     /**
      * Function RefreshDrawingRect
@@ -335,7 +264,7 @@ public:
      * @param aRect The rectangle to repaint.
      * @param aEraseBackground Erases the background if true.
      */
-    void RefreshDrawingRect( const EDA_RECT& aRect, bool aEraseBackground = true );
+    void RefreshDrawingRect( const EDA_RECT& aRect, bool aEraseBackground = true ) override;
 
     /// @copydoc wxWindow::Refresh()
     virtual void Refresh( bool eraseBackground = true, const wxRect* rect = NULL ) override;
@@ -344,32 +273,32 @@ public:
      * Function GetScreenCenterLogicalPosition
      * @return The current screen center position in logical (drawing) units.
      */
-    wxPoint GetScreenCenterLogicalPosition();
+    wxPoint GetScreenCenterLogicalPosition() override;
 
     /**
      * Function MoveCursorToCrossHair
      * warps the cursor to the current cross hair position.
      */
-    void MoveCursorToCrossHair();
+    void MoveCursorToCrossHair() override;
 
     /**
      * Function ToDeviceXY
      * transforms logical to device coordinates
      */
-    wxPoint ToDeviceXY( const wxPoint& pos );
+    wxPoint ToDeviceXY( const wxPoint& pos ) override;
 
     /**
      * Function ToLogicalXY
      * transforms device to logical coordinates
      */
-    wxPoint ToLogicalXY( const wxPoint& pos );
+    wxPoint ToLogicalXY( const wxPoint& pos ) override;
 
     /**
      * Function MoveCursor
      * moves the mouse pointer to \a aPosition in logical (drawing) units.
      * @param aPosition The position in logical units to move the cursor.
      */
-    void MoveCursor( const wxPoint& aPosition );
+    void MoveCursor( const wxPoint& aPosition ) override;
 
     /* Cursor functions */
     /**
@@ -384,32 +313,13 @@ public:
      * @param aDC - the device context to draw the cursor
      * @param aColor - the color to draw the cursor
      */
-    void DrawCrossHair( wxDC* aDC, COLOR4D aColor = COLOR4D::WHITE );
+    void DrawCrossHair( wxDC* aDC, COLOR4D aColor = COLOR4D::WHITE ) override;
 
     // Hide the cross hair.
-    void CrossHairOff( wxDC* DC );
+    void CrossHairOff( wxDC* DC ) override;
 
     // Show the cross hair.
-    void CrossHairOn( wxDC* DC );
-
-    /**
-     * Function SetMouseCapture
-     * sets the mouse capture and end mouse capture callbacks to \a aMouseCaptureCallback
-     * and \a aEndMouseCaptureCallback respectively.
-     */
-    void SetMouseCapture( MOUSE_CAPTURE_CALLBACK aMouseCaptureCallback,
-                          END_MOUSE_CAPTURE_CALLBACK aEndMouseCaptureCallback )
-    {
-        m_mouseCaptureCallback = aMouseCaptureCallback;
-        m_endMouseCaptureCallback = aEndMouseCaptureCallback;
-    }
-
-
-    void SetMouseCaptureCallback( MOUSE_CAPTURE_CALLBACK aMouseCaptureCallback )
-    {
-        m_mouseCaptureCallback = aMouseCaptureCallback;
-    }
-
+    void CrossHairOn( wxDC* DC ) override;
 
     /**
      * Function EndMouseCapture
@@ -425,7 +335,7 @@ public:
      */
     void EndMouseCapture( int aId = -1, int aCursorId = -1,
                           const wxString& aTitle = wxEmptyString,
-                          bool aCallEndFunc = true );
+                          bool aCallEndFunc = true ) override;
 
     inline bool IsMouseCaptured() const { return m_mouseCaptureCallback != NULL; }
 
@@ -439,7 +349,7 @@ public:
      * @param aErase True indicates the item being drawn should be erase before drawing
      *               it a \a aPosition.
      */
-    void CallMouseCapture( wxDC* aDC, const wxPoint& aPosition, bool aErase );
+    void CallMouseCapture( wxDC* aDC, const wxPoint& aPosition, bool aErase )override;
 
     /**
      * Function CallEndMouseCapture
@@ -447,30 +357,23 @@ public:
      *
      * @param aDC A point to a wxDC object to perform any drawing upon.
      */
-    void CallEndMouseCapture( wxDC* aDC );
+    void CallEndMouseCapture( wxDC* aDC )override;
 
     /**
      * Function SetCurrentCursor
      * Set the current cursor shape for drawpanel
      */
-    void SetCurrentCursor( int aCursor )
+    void SetCurrentCursor( int aCursor )override
     {
         m_currentCursor = aCursor;
         SetCursor( (wxStockCursor) m_currentCursor );
     }
 
-    /**
-     * Function GetDefaultCursor
-     * @return the default cursor shape
-     */
-    int GetDefaultCursor() const { return m_defaultCursor; }
+    virtual wxWindow* GetWindow() override { return this; };
 
-    /**
-     * Function GetCurrentCursor
-     * @return the current cursor shape, depending on the current selected tool
-     */
-    int GetCurrentCursor() const { return m_currentCursor; }
+    virtual int GetDefaultCursor() const override { return m_defaultCursor; }
 
+    virtual int GetCurrentCursor() const override { return m_currentCursor; }
 
     DECLARE_EVENT_TABLE()
 };

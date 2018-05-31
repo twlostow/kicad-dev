@@ -30,7 +30,7 @@
 #include <fctsys.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <plotter.h>
 #include <base_units.h>
 #include <eeschema_config.h>
@@ -303,7 +303,7 @@ int SCH_LINE::GetPenSize() const
 }
 
 
-void SCH_LINE::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, const wxPoint& offset,
+void SCH_LINE::Draw( DRAW_PANEL_BASE* panel, wxDC* DC, const wxPoint& offset,
                      GR_DRAWMODE DrawMode, COLOR4D Color )
 {
     COLOR4D color;

@@ -32,7 +32,7 @@
 #include <gr_basic.h>
 #include <macros.h>
 #include <trigo.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <draw_graphic_text.h>
 #include <sch_edit_frame.h>
 #include <plotter.h>
@@ -342,7 +342,7 @@ int SCH_TEXT::GetPenSize() const
 }
 
 
-void SCH_TEXT::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, const wxPoint& aOffset,
+void SCH_TEXT::Draw( DRAW_PANEL_BASE* panel, wxDC* DC, const wxPoint& aOffset,
                      GR_DRAWMODE DrawMode, COLOR4D Color )
 {
     COLOR4D     color;
@@ -776,7 +776,7 @@ void SCH_LABEL::Rotate( wxPoint aPosition )
 }
 
 
-void SCH_LABEL::Draw( EDA_DRAW_PANEL* panel, wxDC* DC, const wxPoint& offset,
+void SCH_LABEL::Draw( DRAW_PANEL_BASE* panel, wxDC* DC, const wxPoint& offset,
                       GR_DRAWMODE DrawMode, COLOR4D Color )
 {
     SCH_TEXT::Draw( panel, DC, offset, DrawMode, Color );
@@ -969,7 +969,7 @@ void SCH_GLOBALLABEL::SetLabelSpinStyle( int aSpinStyle )
 }
 
 
-void SCH_GLOBALLABEL::Draw( EDA_DRAW_PANEL* panel,
+void SCH_GLOBALLABEL::Draw( DRAW_PANEL_BASE* panel,
                             wxDC*           DC,
                             const wxPoint&  aOffset,
                             GR_DRAWMODE     DrawMode,
@@ -1241,7 +1241,7 @@ void SCH_HIERLABEL::SetLabelSpinStyle( int aSpinStyle )
 }
 
 
-void SCH_HIERLABEL::Draw( EDA_DRAW_PANEL* panel,
+void SCH_HIERLABEL::Draw( DRAW_PANEL_BASE* panel,
                           wxDC*           DC,
                           const wxPoint&  offset,
                           GR_DRAWMODE     DrawMode,

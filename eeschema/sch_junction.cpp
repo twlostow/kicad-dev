@@ -29,7 +29,7 @@
 #include <fctsys.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <trigo.h>
 #include <common.h>
 #include <richio.h>
@@ -77,7 +77,7 @@ const EDA_RECT SCH_JUNCTION::GetBoundingBox() const
 }
 
 
-void SCH_JUNCTION::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void SCH_JUNCTION::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                          GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     COLOR4D color;

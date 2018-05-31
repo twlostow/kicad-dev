@@ -42,7 +42,7 @@ class LIB_BEZIER : public LIB_ITEM
     std::vector<wxPoint> m_BezierPoints;   // list of parameter (3|4)
     std::vector<wxPoint> m_PolyPoints;     // list of points (>= 2)
 
-    void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                       const TRANSFORM& aTransform ) override;
 
@@ -87,7 +87,7 @@ public:
 
     void Move( const wxPoint& aPosition ) override;
 
-    wxPoint GetPosition() const override { return m_PolyPoints[0]; }
+    wxPoint GetPosition() const override; 
 
     void MirrorHorizontal( const wxPoint& aCenter ) override;
 

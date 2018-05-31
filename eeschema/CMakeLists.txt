@@ -94,6 +94,8 @@ set( EESCHEMA_WIDGETS
 set( EESCHEMA_SRCS
     ${EESCHEMA_DLGS}
     ${EESCHEMA_WIDGETS}
+    sch_view.cpp
+    sch_painter.cpp
     annotate.cpp
     autoplace_fields.cpp
     backanno.cpp
@@ -165,6 +167,7 @@ set( EESCHEMA_SRCS
     plot_schematic_PDF.cpp
     plot_schematic_PS.cpp
     plot_schematic_SVG.cpp
+    sch_draw_panel.cpp
     project_rescue.cpp
     sch_base_frame.cpp
     sch_bitmap.cpp

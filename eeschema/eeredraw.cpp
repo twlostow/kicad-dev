@@ -29,12 +29,12 @@
 
 #include <fctsys.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <sch_edit_frame.h>
 #include <general.h>
 
 
-void DrawDanglingSymbol( EDA_DRAW_PANEL* panel, wxDC* DC, const wxPoint& pos, const COLOR4D& Color )
+void DrawDanglingSymbol( DRAW_PANEL_BASE* panel, wxDC* DC, const wxPoint& pos, const COLOR4D& Color )
 {
     BASE_SCREEN* screen = panel->GetScreen();
 

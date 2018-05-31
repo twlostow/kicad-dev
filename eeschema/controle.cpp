@@ -29,7 +29,7 @@
 
 #include <fctsys.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <eda_dde.h>
 #include <sch_edit_frame.h>
 #include <menus_helpers.h>
@@ -234,6 +234,7 @@ bool SCH_EDIT_FRAME::GeneralControl( wxDC* aDC, const wxPoint& aPosition, EDA_KE
         m_movingCursorWithKeyboard = false;
         return false;
     }
+
 
     // when moving mouse, use the "magnetic" grid, unless the shift+ctrl keys is pressed
     // for next cursor position

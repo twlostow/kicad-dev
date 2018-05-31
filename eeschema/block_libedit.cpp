@@ -29,7 +29,7 @@
 
 #include <fctsys.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 
 #include <general.h>
@@ -37,7 +37,7 @@
 #include <lib_edit_frame.h>
 
 
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                      bool aErase );
 
 
@@ -427,7 +427,7 @@ void LIB_EDIT_FRAME::pasteClipboard( const wxPoint& aOffset )
  * Traces the outline of the search block structures
  * The entire block follows the cursor
  */
-void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                               bool aErase )
 {
     BASE_SCREEN* screen = aPanel->GetScreen();

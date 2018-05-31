@@ -440,7 +440,7 @@ public:
      */
     void GetPins( std::vector<LIB_PIN*>& aPinsList );
 
-    void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                GR_DRAWMODE aDrawMode, COLOR4D aColor = COLOR4D::UNSPECIFIED ) override
     {
         Draw( aPanel, aDC, aOffset, aDrawMode, aColor, true );
@@ -459,7 +459,7 @@ public:
      * @param aDrawPinText use true to draw pin texts, false to draw only the pin shape
      *  usually false to draw a component when moving it and true otherwise.
      */
-    void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                GR_DRAWMODE aDrawMode, COLOR4D aColor,
                bool aDrawPinText );
 

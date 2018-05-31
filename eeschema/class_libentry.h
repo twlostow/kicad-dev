@@ -426,7 +426,7 @@ public:
      * @param aConvert - Component conversion (DeMorgan) if available.
      * @param aOpts - Drawing options
      */
-    void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
+    void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDc, const wxPoint& aOffset,
                int aMulti, int aConvert,
                const PART_DRAW_OPTIONS& aOpts );
 
@@ -471,7 +471,7 @@ public:
      * @param aPanel - Panel to remove part from.
      * @param aDc - Device context to remove part from.
      */
-    void RemoveDrawItem( LIB_ITEM* aItem, EDA_DRAW_PANEL* aPanel = NULL, wxDC* aDc = NULL );
+    void RemoveDrawItem( LIB_ITEM* aItem, DRAW_PANEL_BASE* aPanel = NULL, wxDC* aDc = NULL );
 
     /**
      * Return the next draw object pointer.

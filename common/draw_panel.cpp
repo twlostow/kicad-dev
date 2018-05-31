@@ -291,10 +291,10 @@ void EDA_DRAW_PANEL::SetZoom( double zoom )
 }
 
 
-wxRealPoint EDA_DRAW_PANEL::GetGrid()
-{
-    return GetScreen()->GetGridSize();
-}
+//wxRealPoint EDA_DRAW_PANEL::GetGrid()
+//{
+//    return GetScreen()->GetGridSize();
+//}
 
 
 bool EDA_DRAW_PANEL::IsPointOnDisplay( const wxPoint& aPosition )
@@ -699,7 +699,7 @@ void EDA_DRAW_PANEL::DrawBackGround( wxDC* DC )
         DrawGrid( DC );
 
     // Draw axis
-    if( GetParent()->m_showAxis )
+    if( GetParent()->GetShowAxis() )
     {
         COLOR4D axis_color = COLOR4D( BLUE );
         wxSize  pageSize = GetParent()->GetPageSizeIU();
@@ -711,10 +711,10 @@ void EDA_DRAW_PANEL::DrawBackGround( wxDC* DC )
         GRLine( &m_ClipBox, DC, -pageSize.x, 0, pageSize.x, 0, 0, axis_color );
     }
 
-    if( GetParent()->m_showOriginAxis )
+    if( GetParent()->GetShowOriginAxis() )
         DrawAuxiliaryAxis( DC, GR_COPY );
 
-    if( GetParent()->m_showGridAxis )
+    if( GetParent()->GetShowGridAxis() )
         DrawGridAxis( DC, GR_COPY, GetParent()->GetGridOrigin() );
 }
 
@@ -862,7 +862,7 @@ void EDA_DRAW_PANEL::DrawAuxiliaryAxis( wxDC* aDC, GR_DRAWMODE aDrawMode )
 
 void EDA_DRAW_PANEL::DrawGridAxis( wxDC* aDC, GR_DRAWMODE aDrawMode, const wxPoint& aGridOrigin )
 {
-    if( !GetParent()->m_showGridAxis || ( !aGridOrigin.x && !aGridOrigin.y ) )
+    if( !GetParent()->GetShowGridAxis() || ( !aGridOrigin.x && !aGridOrigin.y ) )
         return;
 
     COLOR4D color = GetParent()->GetGridColor();
@@ -1576,4 +1576,9 @@ void EDA_DRAW_PANEL::CallEndMouseCapture( wxDC* aDC )
     // for instance after an ABORT in block paste.
     if( m_endMouseCaptureCallback )
         m_endMouseCaptureCallback( this, aDC );
+}
+
+wxRect EDA_DRAW_PANEL::DeviceToLogical( const wxRect& aRect, wxDC& aDC )
+{
+    return aRect;
 }

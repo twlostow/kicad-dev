@@ -31,7 +31,7 @@
 #include <fctsys.h>
 #include <dialog_edit_components_libid_base.h>
 #include <sch_edit_frame.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <sch_component.h>
 #include <sch_reference_list.h>
 #include <pgm_base.h>

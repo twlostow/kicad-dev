@@ -28,7 +28,7 @@
 #include <fctsys.h>
 #include <pgm_base.h>
 #include <kiface_i.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <gestfich.h>
 #include <sch_edit_frame.h>
@@ -322,7 +322,7 @@ void SCH_EDIT_FRAME::OnPreferencesOptions( wxCommandEvent& event )
     if( saveProjectConfig )
         SaveProjectSettings( true );
 
-    m_canvas->Refresh( true );
+    SyncView();
 }
 
 
@@ -749,8 +749,7 @@ void LIB_EDIT_FRAME::OnPreferencesOptions( wxCommandEvent& event )
     SetShowElectricalType( dlg.GetShowElectricalType() );
 
     SaveSettings( config() );  // save values shared by eeschema applications.
-
-    m_canvas->Refresh( true );
+    //SyncView(); gal-fixme
 }
 
 

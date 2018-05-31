@@ -351,7 +351,7 @@ public:
     // define pure virtuals:
     wxPoint GetPosition() const override { return wxPoint(); }
     void SetPosition( const wxPoint& ) override {}
-    void Draw( EDA_DRAW_PANEL* , wxDC* , const wxPoint& , GR_DRAWMODE , COLOR4D ) override {}
+    void Draw( DRAW_PANEL_BASE* , wxDC* , const wxPoint& , GR_DRAWMODE , COLOR4D ) override {}
 
 #if defined(DEBUG)
     void Show( int , std::ostream&  ) const override {}

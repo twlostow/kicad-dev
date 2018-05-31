@@ -44,6 +44,7 @@ class PLOTTER;
 class LIB_ITEM;
 class LIB_PIN;
 class MSG_PANEL_ITEM;
+class DRAW_PANEL_BASE;
 
 
 extern const int fill_tab[];
@@ -78,7 +79,7 @@ class LIB_ITEM : public EDA_ITEM
      * @param aData A pointer to any object specific data required to perform the draw.
      * @param aTransform A reference to a #TRANSFORM object containing drawing transform.
      */
-    virtual void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+    virtual void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                               const wxPoint& aOffset, COLOR4D aColor,
                               GR_DRAWMODE aDrawMode, void* aData,
                               const TRANSFORM& aTransform ) = 0;
@@ -205,7 +206,7 @@ public:
      *              pass reference to the lib component for pins.
      * @param aTransform Transform Matrix (rotation, mirror ..)
      */
-    virtual void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint &aOffset,
+    virtual void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint &aOffset,
                        COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                        const TRANSFORM& aTransform );
 

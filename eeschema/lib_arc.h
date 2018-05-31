@@ -60,7 +60,7 @@ class LIB_ARC : public LIB_ITEM
     /**
      * Draws the arc.
      */
-    void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                       const TRANSFORM& aTransform ) override;
 

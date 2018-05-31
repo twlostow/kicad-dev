@@ -117,7 +117,7 @@ public:
     }
 
     /// @copydoc wxWindow::Refresh()
-    void Refresh( bool aEraseBackground = true, const wxRect* aRect = NULL ) override;
+    virtual void Refresh( bool aEraseBackground = true, const wxRect* aRect = NULL ) override;
 
     /**
      * Function ForceRefresh()
@@ -217,7 +217,7 @@ public:
      * Function GetDefaultCursor
      * @return the default cursor shape
      */
-    int GetDefaultCursor() const { return m_defaultCursor; }
+    virtual int GetDefaultCursor() const  { return m_defaultCursor; }
 
     /**
      * Function GetCurrentCursor

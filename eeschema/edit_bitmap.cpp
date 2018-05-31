@@ -27,14 +27,14 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 
 #include <sch_edit_frame.h>
 #include <sch_bitmap.h>
 #include <dialog_image_editor.h>
 
 
-static void abortMoveBitmap( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+static void abortMoveBitmap( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     SCH_SCREEN*     screen = (SCH_SCREEN*) aPanel->GetScreen();
     SCH_BITMAP*     item   = (SCH_BITMAP*) screen->GetCurItem();
@@ -70,7 +70,7 @@ static void abortMoveBitmap( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
     aPanel->Refresh();
 }
 
-static void moveBitmap( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase )
+static void moveBitmap( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase )
 {
     SCH_SCREEN* screen = (SCH_SCREEN*) aPanel->GetScreen();
     SCH_BITMAP* image  = (SCH_BITMAP*) screen->GetCurItem();

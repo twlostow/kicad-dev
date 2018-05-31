@@ -30,7 +30,7 @@
 #include <fctsys.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <plotter.h>
 #include <trigo.h>
 #include <base_units.h>
@@ -168,7 +168,7 @@ int LIB_CIRCLE::GetPenSize() const
 }
 
 
-void LIB_CIRCLE::drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void LIB_CIRCLE::drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                               COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                               const TRANSFORM& aTransform )
 {

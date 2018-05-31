@@ -30,7 +30,7 @@
 #include <kiface_i.h>
 #include <pgm_base.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <gestfich.h>
 #include <confirm.h>
 #include <base_units.h>
@@ -60,6 +60,8 @@
 #include <invoke_sch_dialog.h>
 #include <dialogs/dialog_schematic_find.h>
 #include <dialog_symbol_remap.h>
+#include <view/view.h>
+#include <tool/tool_manager.h>
 
 #include <wx/display.h>
 #include <build_version.h>
@@ -67,7 +69,9 @@
 
 #include <netlist_exporter_kicad.h>
 #include <kiway.h>
+#include <sch_view.h>
 
+#include <gal/graphics_abstraction_layer.h>
 
 // non-member so it can be moved easily, and kept REALLY private.
 // Do NOT Clear() in here.
@@ -373,6 +377,9 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ):
     m_undoItem = NULL;
     m_hasAutoSave = true;
 
+    m_toolManager = new TOOL_MANAGER;
+
+
     SetForceHVLines( true );
     SetSpiceAjustPassiveValues( false );
 
@@ -432,7 +439,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ):
                           wxAuiPaneInfo( vert ).Name( wxT( "m_optionsToolBar" ) ).Left() );
 
     if( m_canvas )
-        m_auimgr.AddPane( m_canvas, wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane() );
+        m_auimgr.AddPane( m_canvas->GetWindow(), wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane() );
 
     if( m_messagePanel )
         m_auimgr.AddPane( m_messagePanel, wxAuiPaneInfo( mesg ).Name( wxT( "MsgPanel" ) ).Bottom().
@@ -589,7 +596,9 @@ SCH_SHEET_PATH& SCH_EDIT_FRAME::GetCurrentSheet()
 
 void SCH_EDIT_FRAME::SetCurrentSheet( const SCH_SHEET_PATH& aSheet )
 {
+    auto c = static_cast<SCH_DRAW_PANEL*>(m_canvas);
     *m_CurrentSheet = aSheet;
+    c->DisplaySheet( m_CurrentSheet->LastScreen() );
 }
 
 
@@ -1406,9 +1415,6 @@ void SCH_EDIT_FRAME::addCurrentItemToList( bool aRedraw )
                 screen->SetCurItem( NULL );
                 delete item;
 
-                if( aRedraw )
-                    GetCanvas()->Refresh();
-
                 return;
             }
 
@@ -1418,7 +1424,7 @@ void SCH_EDIT_FRAME::addCurrentItemToList( bool aRedraw )
         if( undoItem == item )
         {
             if( !screen->CheckIfOnDrawList( item ) )  // don't want a loop!
-                screen->Append( item );
+                AddToScreen( item );
 
             SetRepeatItem( item );
 
@@ -1519,4 +1525,67 @@ void SCH_EDIT_FRAME::SetIconScale( int aScale )
     ReCreateOptToolbar();
     Layout();
     SendSizeEvent();
+}
+
+void SCH_EDIT_FRAME::SetScreen( BASE_SCREEN* aScreen )
+{
+    printf("SCH set screen %p\n", aScreen );
+    EDA_DRAW_FRAME::SetScreen( aScreen );
+    auto c = static_cast<SCH_DRAW_PANEL*>(m_canvas);
+    c->DisplaySheet( static_cast<SCH_SCREEN*>( aScreen ) );
+    auto bb = c->GetView()->CalculateExtents() ;
+
+    printf("Extents: %d %d %d %d\n", bb.GetOrigin().x, bb.GetOrigin().y, bb.GetSize().x, bb.GetSize().y );
+
+    BOX2D bb2 ( bb.GetOrigin(), bb.GetSize() );
+
+    c->GetView()->SetViewport( bb2 );
+}
+
+void SCH_EDIT_FRAME::AddToScreen( SCH_ITEM* aItem )
+{
+        GetScreen()->Append( aItem );
+        GetCanvas()->GetView()->Add( aItem );
+}
+
+void SCH_EDIT_FRAME::AddToScreen( DLIST<SCH_ITEM>& aItems )
+{
+    std::vector<SCH_ITEM*> tmp;
+        SCH_ITEM* itemList = aItems.begin();
+
+        while( itemList )
+        {
+            itemList->SetList( nullptr );
+            GetCanvas()->GetView()->Add( itemList );
+            itemList = itemList->Next();
+        }
+
+        GetScreen()->Append( aItems );
+
+}
+
+void SCH_EDIT_FRAME::RemoveFromScreen( SCH_ITEM* aItem )
+{
+    GetCanvas()->GetView()->Remove( aItem );
+    GetScreen()->Remove( aItem );
+}
+
+const BOX2I SCH_EDIT_FRAME::GetDocumentExtents() const
+{
+    int sizeX = GetScreen()->GetPageSettings().GetWidthIU();
+    int sizeY = GetScreen()->GetPageSettings().GetHeightIU();
+
+    return BOX2I( VECTOR2I(0, 0), VECTOR2I( sizeX, sizeY ) );
+}
+
+void SCH_EDIT_FRAME::SyncView()
+{
+    auto screen = GetScreen();
+    auto gal = GetGalCanvas()->GetGAL();
+
+    auto gs = screen->GetGridSize();
+
+    gal->SetGridSize( VECTOR2D( gs.x, gs.y ));
+
+    GetGalCanvas()->GetView()->UpdateAllItems( KIGFX::ALL );
 }

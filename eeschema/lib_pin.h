@@ -99,7 +99,7 @@ class LIB_PIN : public LIB_ITEM
      *      PIN_DRAW_ELECTRICAL_TYPE_NAME -- Draw the pin electrical type name
      * @param aTransform Transform Matrix (rotation, mirror ..)
      */
-    void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                       const TRANSFORM& aTransform ) override;
 
@@ -378,7 +378,7 @@ public:
      * Draw the pin symbol without text.
      * If \a aColor != 0, draw with \a aColor, else with the normal pin color.
      */
-    void DrawPinSymbol( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+    void DrawPinSymbol( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                         int aOrientation, GR_DRAWMODE aDrawMode,
                         COLOR4D aColor = COLOR4D::UNSPECIFIED,
                         bool aDrawDangling = true,
@@ -393,7 +393,7 @@ public:
      * Pin Name:    substring between '~' is negated
      * DrawMode = GR_OR, XOR ...
      */
-    void DrawPinTexts( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint& aPosition,
+    void DrawPinTexts( DRAW_PANEL_BASE* aPanel, wxDC* aDC, wxPoint& aPosition,
                        int aOrientation, int TextInside, bool DrawPinNum, bool DrawPinName,
                        COLOR4D aColor, GR_DRAWMODE aDrawMode );
 
@@ -401,7 +401,7 @@ public:
      * Draw the electrical type text of the pin (only for the footprint editor)
      * aDrawMode = GR_OR, XOR ...
      */
-    void DrawPinElectricalTypeName( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint& aPosition,
+    void DrawPinElectricalTypeName( DRAW_PANEL_BASE* aPanel, wxDC* aDC, wxPoint& aPosition,
                        int aOrientation, COLOR4D aColor, GR_DRAWMODE aDrawMode );
 
     /**

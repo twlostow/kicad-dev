@@ -36,6 +36,7 @@
 #include <template_fieldnames.h>
 #include <block_commande.h>
 #include <sch_collectors.h>
+#include <sch_draw_panel.h>
 
 // enum PINSHEETLABEL_SHAPE
 #include <sch_text.h>
@@ -65,6 +66,7 @@ class wxFindDialogEvent;
 class wxFindReplaceData;
 class SCHLIB_FILTER;
 class RESCUER;
+
 
 
 /// enum used in RotationMiroir()
@@ -1506,8 +1508,25 @@ public:
      */
     void doUpdatePcb( const wxString& aUpdateOptions = "" );
 
+    void SetCurrentSheet( SCH_SHEET_PATH *aSheet );
+
     int GetIconScale() override;
     void SetIconScale( int aScale ) override;
+
+    virtual void SetScreen( BASE_SCREEN* aScreen ) override;
+
+    void AddToScreen( SCH_ITEM* aItem );
+    void AddToScreen( DLIST<SCH_ITEM>& aItems );
+    void RemoveFromScreen( SCH_ITEM* aItem );
+
+    void DuplicateItemsInList( SCH_SCREEN* screen, PICKED_ITEMS_LIST& aItemsList,
+                               const wxPoint& aMoveVector );
+
+
+    void SyncView();
+
+    virtual const BOX2I GetDocumentExtents() const override;
+
 
     ///> Probe cursor, used by circuit simulator
     const static wxCursor CURSOR_PROBE;

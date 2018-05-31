@@ -110,6 +110,8 @@ public:
         m_sheetCount = aSheetCount;
     }
 
+    void SetMilsToIUfactor( int aFactor );
+    
     /// @copydoc VIEW_ITEM::ViewBBox()
     const BOX2I ViewBBox() const override;
 
@@ -152,6 +154,9 @@ protected:
 
     /// Sheets count number displayed in the title block.
     int m_sheetCount;
+
+    /// Scaling factor, different for eeschema/pcbnew
+    int m_milsToIUFactor;
 
     // Functions for drawing items that makes a worksheet
     void draw( const WS_DRAW_ITEM_LINE* aItem, GAL* aGal ) const;

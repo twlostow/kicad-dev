@@ -29,7 +29,7 @@
 #include <fctsys.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <plotter.h>
 #include <trigo.h>
 #include <base_units.h>
@@ -158,7 +158,7 @@ int LIB_RECTANGLE::GetPenSize() const
 }
 
 
-void LIB_RECTANGLE::drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+void LIB_RECTANGLE::drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                  const wxPoint& aOffset, COLOR4D aColor, GR_DRAWMODE aDrawMode,
                                  void* aData, const TRANSFORM& aTransform )
 {

@@ -30,7 +30,7 @@
 #include <fctsys.h>
 #include <kiway.h>
 #include <eeschema_id.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <sch_edit_frame.h>
 #include <sim/sim_plot_frame.h>
@@ -61,6 +61,8 @@ void SCH_EDIT_FRAME::OnLeftClick( wxDC* aDC, const wxPoint& aPosition )
 {
     SCH_ITEM*   item = GetScreen()->GetCurItem();
     wxPoint     gridPosition = GetGridPosition( aPosition );
+    printf("mousep %d %d gridp %d %d\n", aPosition.x, aPosition.y, gridPosition.x, gridPosition.y );
+
 
     if( ( GetToolId() == ID_NO_TOOL_SELECTED ) || ( item && item->GetFlags() ) )
     {

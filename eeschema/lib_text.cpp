@@ -28,7 +28,7 @@
 #include <fctsys.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <plotter.h>
 #include <draw_graphic_text.h>
 #include <trigo.h>
@@ -221,7 +221,7 @@ int LIB_TEXT::GetPenSize() const
 }
 
 
-void LIB_TEXT::drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void LIB_TEXT::drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                             COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                             const TRANSFORM& aTransform )
 {

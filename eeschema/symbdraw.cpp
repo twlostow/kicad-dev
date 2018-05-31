@@ -29,7 +29,7 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <base_units.h>
 #include <msgpanel.h>
@@ -46,9 +46,9 @@
 #include <dialogs/dialog_lib_edit_draw_item.h>
 
 
-static void SymbolDisplayDraw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void SymbolDisplayDraw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                bool aErase );
-static void RedrawWhileMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void RedrawWhileMovingCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                      bool aErase );
 
 
@@ -127,7 +127,7 @@ void LIB_EDIT_FRAME::EditGraphicSymbol( wxDC* DC, LIB_ITEM* DrawItem )
 }
 
 
-static void AbortSymbolTraceOn( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void AbortSymbolTraceOn( DRAW_PANEL_BASE* Panel, wxDC* DC )
 {
     LIB_EDIT_FRAME* parent = (LIB_EDIT_FRAME*) Panel->GetParent();
     LIB_ITEM* item = parent->GetDrawItem();
@@ -263,7 +263,7 @@ void LIB_EDIT_FRAME::GraphicItemBeginDraw( wxDC* DC )
 /*
  * Redraw the graphic shape while moving
  */
-static void RedrawWhileMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void RedrawWhileMovingCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                      bool aErase )
 {
     LIB_ITEM* item;
@@ -326,7 +326,7 @@ void LIB_EDIT_FRAME::StartModifyDrawSymbol( wxDC* DC, LIB_ITEM* aItem )
 
 
 //! @brief Manage mouse events when creating new graphic object or modifying an graphic object.
-static void SymbolDisplayDraw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void SymbolDisplayDraw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                bool aErase )
 {
     LIB_ITEM* item = ( (LIB_EDIT_FRAME*) aPanel->GetParent() )->GetDrawItem();

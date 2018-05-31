@@ -27,7 +27,7 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <trigo.h>
 #include <macros.h>
 #include <bitmaps.h>
@@ -111,7 +111,7 @@ const EDA_RECT SCH_BITMAP::GetBoundingBox() const
 }
 
 
-void SCH_BITMAP::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void SCH_BITMAP::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                        GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     wxPoint pos = m_pos + aOffset;
@@ -128,7 +128,8 @@ void SCH_BITMAP::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset
         GRSetDrawMode( aDC, aDrawMode );
 #endif
 
-        m_image->DrawBitmap( aPanel, aDC, pos );
+    //fixme-gal
+        //m_image->DrawBitmap( aPanel, aDC, pos );
     }
     else    // draws bounding box only (used to move items)
     {

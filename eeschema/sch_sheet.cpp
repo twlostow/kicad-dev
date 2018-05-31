@@ -28,7 +28,7 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <draw_graphic_text.h>
 #include <trigo.h>
 #include <richio.h>
@@ -423,7 +423,7 @@ wxPoint SCH_SHEET::GetFileNamePosition()
 }
 
 
-void SCH_SHEET::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+void SCH_SHEET::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                       const wxPoint& aOffset, GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     COLOR4D txtcolor;

@@ -46,7 +46,7 @@
 #include <math/box2.h>
 #include <lockfile.h>
 #include <trace_helpers.h>
-
+//#include "../eeschema/sch_draw_panel.h"
 #include <wx/fontdlg.h>
 #include <wx/snglinst.h>
 #include <view/view.h>
@@ -208,13 +208,13 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent,
     m_FramePos.x   = m_FramePos.y = 0;
     m_FrameSize.y -= m_MsgFrameHeight;
 
-    m_canvas = new EDA_DRAW_PANEL( this, -1, wxPoint( 0, 0 ), m_FrameSize );
+    createCanvas();
+
     m_messagePanel  = new EDA_MSG_PANEL( this, -1, wxPoint( 0, m_FrameSize.y ),
                                          wxSize( m_FrameSize.x, m_MsgFrameHeight ) );
 
     m_messagePanel->SetBackgroundColour( COLOR4D( LIGHTGRAY ).ToColour() );
 }
-
 
 EDA_DRAW_FRAME::~EDA_DRAW_FRAME()
 {
@@ -365,13 +365,15 @@ void EDA_DRAW_FRAME::OnSelectUnits( wxCommandEvent& aEvent )
 
 void EDA_DRAW_FRAME::OnToggleCrossHairStyle( wxCommandEvent& aEvent )
 {
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
-    m_canvas->CrossHairOff( &dc );
-
     auto& galOpts = GetGalDisplayOptions();
     galOpts.m_fullscreenCursor = !galOpts.m_fullscreenCursor;
     galOpts.NotifyChanged();
 
+    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+
+    INSTALL_UNBUFFERED_DC( dc, canvas );
+
+    m_canvas->CrossHairOff( &dc );
     m_canvas->CrossHairOn( &dc );
 }
 
@@ -862,7 +864,7 @@ void EDA_DRAW_FRAME::UpdateMsgPanel()
 // FIXME: There needs to be a better way for child windows to load preferences.
 //        This function pushes four preferences from a parent window to a child window
 //        i.e. from eeschema to the schematic symbol editor
-void EDA_DRAW_FRAME::PushPreferences( const EDA_DRAW_PANEL* aParentCanvas )
+void EDA_DRAW_FRAME::PushPreferences( const DRAW_PANEL_BASE* aParentCanvas )
 {
     m_canvas->SetEnableZoomNoCenter( aParentCanvas->GetEnableZoomNoCenter() );
     m_canvas->SetEnableAutoPan( aParentCanvas->GetEnableAutoPan() );
@@ -969,6 +971,11 @@ static const double MAX_AXIS = INT_MAX - 100;
 
 void EDA_DRAW_FRAME::AdjustScrollBars( const wxPoint& aCenterPositionIU )
 {
+    if( IsGalCanvasActive() )
+        return;
+
+    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+
     BASE_SCREEN* screen = GetScreen();
 
     if( !screen || !m_canvas )
@@ -983,7 +990,7 @@ void EDA_DRAW_FRAME::AdjustScrollBars( const wxPoint& aCenterPositionIU )
     // client area at the current zoom level.
 
     // visible viewport in device units ~ pixels
-    wxSize  clientSizeDU = m_canvas->GetClientSize();
+    wxSize  clientSizeDU = canvas->GetClientSize();
 
     // Size of the client window in IU
     DSIZE   clientSizeIU( clientSizeDU.x / scale, clientSizeDU.y / scale );
@@ -992,7 +999,7 @@ void EDA_DRAW_FRAME::AdjustScrollBars( const wxPoint& aCenterPositionIU )
     DBOX    pageRectIU( wxPoint( 0, 0 ), wxSize( GetPageSizeIU().x, GetPageSizeIU().y ) );
 
     // Account for scrollbars
-    wxSize  scrollbarSizeDU = m_canvas->GetSize() - m_canvas->GetClientSize();
+    wxSize  scrollbarSizeDU = canvas->GetSize() - canvas->GetClientSize();
     wxSize  scrollbarSizeIU = scrollbarSizeDU * (1 / scale);
     wxPoint centerAdjustedIU = aCenterPositionIU + scrollbarSizeIU / 2;
 
@@ -1168,7 +1175,7 @@ void EDA_DRAW_FRAME::AdjustScrollBars( const wxPoint& aCenterPositionIU )
 
     bool            noRefresh = true;
 
-    m_canvas->SetScrollbars( screen->m_ScrollPixelsPerUnitX,
+    canvas->SetScrollbars( screen->m_ScrollPixelsPerUnitX,
                              screen->m_ScrollPixelsPerUnitY,
                              screen->m_ScrollbarNumber.x,
                              screen->m_ScrollbarNumber.y,
@@ -1195,10 +1202,10 @@ void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
             view->SetCenter( VECTOR2D( m_canvas->GetScreenCenterLogicalPosition() ) );
         }
 
-        // Set up grid settings
-        gal->SetGridVisibility( IsGridVisible() );
-        gal->SetGridSize( VECTOR2D( GetScreen()->GetGridSize() ) );
-        gal->SetGridOrigin( VECTOR2D( GetGridOrigin() ) );
+        // fixme-gal
+        gal->SetGridVisibility( true );
+        gal->SetGridColor( COLOR4D(0.0,0.0,0.0,1.0));
+
 
         // Transfer EDA_DRAW_PANEL settings
         GetGalCanvas()->GetViewControls()->EnableCursorWarping( !m_canvas->GetEnableZoomNoCenter() );
@@ -1215,13 +1222,14 @@ void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
         AdjustScrollBars( wxPoint( center.x, center.y ) );
     }
 
-    m_canvas->SetEvtHandlerEnabled( !aEnable );
-    GetGalCanvas()->SetEvtHandlerEnabled( aEnable );
+//fixme-gal
+    //m_canvas->SetEvtHandlerEnabled( !aEnable );
+//    Canvas()->SetEvtHandlerEnabled( aEnable );
 
     // Switch panes
-    m_auimgr.GetPane( wxT( "DrawFrame" ) ).Show( !aEnable );
+/*    m_auimgr.GetPane( wxT( "DrawFrame" ) ).Show( !aEnable );
     m_auimgr.GetPane( wxT( "DrawFrameGal" ) ).Show( aEnable );
-    m_auimgr.Update();
+    m_auimgr.Update();*/
 
     // Reset current tool on switch();
     SetNoToolSelected();
@@ -1363,8 +1371,9 @@ void EDA_DRAW_FRAME::RefreshCrossHair( const wxPoint &aOldPos,
 {
     wxPoint newpos = GetCrossHairPosition();
 
+
     // Redraw the crosshair if it moved
-    if( aOldPos != newpos )
+    //if( aOldPos != newpos )
     {
         SetCrossHairPosition( aOldPos, false );
         m_canvas->CrossHairOff( aDC );
@@ -1373,20 +1382,8 @@ void EDA_DRAW_FRAME::RefreshCrossHair( const wxPoint &aOldPos,
 
         if( m_canvas->IsMouseCaptured() )
         {
-#ifdef USE_WX_OVERLAY
-            wxDCOverlay oDC( m_overlay, (wxWindowDC*)aDC );
-            oDC.Clear();
-            m_canvas->CallMouseCapture( aDC, aEvtPos, false );
-#else
             m_canvas->CallMouseCapture( aDC, aEvtPos, true );
-#endif
         }
-#ifdef USE_WX_OVERLAY
-        else
-        {
-            m_overlay.Reset();
-        }
-#endif
     }
 }
 
@@ -1497,4 +1494,14 @@ bool EDA_DRAW_FRAME::isBusy() const
 
     return ( screen->GetCurItem() && screen->GetCurItem()->GetFlags() )
            || ( screen->m_BlockLocate.GetState() != STATE_NO_BLOCK );
+}
+
+const BOX2I EDA_DRAW_FRAME::GetDocumentExtents() const
+{
+    return BOX2I();
+}
+
+EDA_DRAW_PANEL* EDA_DRAW_FRAME::GetLegacyCanvas() const
+{
+    return static_cast<EDA_DRAW_PANEL*>( m_canvas );
 }

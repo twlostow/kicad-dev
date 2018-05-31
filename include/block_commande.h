@@ -118,7 +118,7 @@ public:
      * sets the initial values of a BLOCK_SELECTOR, before starting a block
      * command
      */
-    void InitData( EDA_DRAW_PANEL* Panel, const wxPoint& startpos );
+    virtual void InitData( DRAW_PANEL_BASE* Panel, const wxPoint& startpos );
 
     /**
      * Function SetMessageBlock
@@ -126,7 +126,7 @@ public:
      */
     void SetMessageBlock( EDA_DRAW_FRAME* frame );
 
-    void Draw( EDA_DRAW_PANEL* aPanel,
+    void Draw( DRAW_PANEL_BASE* aPanel,
                wxDC*           aDC,
                const wxPoint&  aOffset,
                GR_DRAWMODE     aDrawMode,
@@ -206,7 +206,7 @@ public:
  * Function AbortBlockCurrentCommand
  * cancels the current block operation.
  */
-void AbortBlockCurrentCommand( EDA_DRAW_PANEL* aPanel, wxDC* aDC );
+void AbortBlockCurrentCommand( DRAW_PANEL_BASE* aPanel, wxDC* aDC );
 
 
 /**
@@ -216,7 +216,7 @@ void AbortBlockCurrentCommand( EDA_DRAW_PANEL* aPanel, wxDC* aDC );
  * The first point of the rectangle showing the area is initialized by InitBlockLocateDatas().
  * The other point of the rectangle is the mouse cursor position.
  */
-void DrawAndSizingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+void DrawAndSizingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                  bool aErase );
 
 

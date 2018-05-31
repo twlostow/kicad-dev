@@ -106,7 +106,7 @@ public:
      * Function DrawMarker
      * draws the shape is the polygon defined in m_Corners (array of wxPoints).
      */
-    void DrawMarker( EDA_DRAW_PANEL* aPanel, wxDC* aDC, GR_DRAWMODE aDrawMode,
+    void DrawMarker( DRAW_PANEL_BASE* aPanel, wxDC* aDC, GR_DRAWMODE aDrawMode,
                      const wxPoint& aOffset );
 
     /**

@@ -39,7 +39,8 @@ using namespace KIGFX;
 
 WORKSHEET_VIEWITEM::WORKSHEET_VIEWITEM( const PAGE_INFO* aPageInfo, const TITLE_BLOCK* aTitleBlock ) :
     EDA_ITEM( NOT_USED ), // this item is never added to a BOARD so it needs no type
-    m_titleBlock( aTitleBlock ), m_pageInfo( aPageInfo ), m_sheetNumber( 1 ), m_sheetCount( 1 ) {}
+    m_titleBlock( aTitleBlock ), m_pageInfo( aPageInfo ), m_sheetNumber( 1 ), m_sheetCount( 1 ),
+    m_milsToIUFactor( 25400 ) {}
 
 
 void WORKSHEET_VIEWITEM::SetPageInfo( const PAGE_INFO* aPageInfo )
@@ -61,8 +62,8 @@ const BOX2I WORKSHEET_VIEWITEM::ViewBBox() const
     if( m_pageInfo != NULL )
     {
         bbox.SetOrigin( VECTOR2I( 0, 0 ) );
-        bbox.SetEnd( VECTOR2I( m_pageInfo->GetWidthMils() * 25400,
-                               m_pageInfo->GetHeightMils() * 25400 ) );
+        bbox.SetEnd( VECTOR2I( m_pageInfo->GetWidthMils() * m_milsToIUFactor,
+                               m_pageInfo->GetHeightMils() * m_milsToIUFactor ) );
     }
     else
     {
@@ -72,6 +73,10 @@ const BOX2I WORKSHEET_VIEWITEM::ViewBBox() const
     return bbox;
 }
 
+void WORKSHEET_VIEWITEM::SetMilsToIUfactor( int aFactor )
+{
+    m_milsToIUFactor = aFactor;
+}
 
 void WORKSHEET_VIEWITEM::ViewDraw( int aLayer, VIEW* aView ) const
 {
@@ -85,7 +90,7 @@ void WORKSHEET_VIEWITEM::ViewDraw( int aLayer, VIEW* aView ) const
     // Sorry, but I don't get this multi #ifdef from include/convert_to_biu.h, so here goes a magic
     // number. IU_PER_MILS should be 25400 (as in a different compilation unit), but somehow
     // it equals 1 in this case..
-    drawList.SetMilsToIUfactor( 25400 /* IU_PER_MILS */ );
+    drawList.SetMilsToIUfactor( m_milsToIUFactor );
     drawList.SetSheetNumber( m_sheetNumber );
     drawList.SetSheetCount( m_sheetCount );
     drawList.SetFileName( fileName );
@@ -199,8 +204,8 @@ void WORKSHEET_VIEWITEM::draw( const WS_DRAW_ITEM_TEXT* aItem, GAL* aGal ) const
 void WORKSHEET_VIEWITEM::drawBorder( GAL* aGal ) const
 {
     VECTOR2D origin = VECTOR2D( 0.0, 0.0 );
-    VECTOR2D end = VECTOR2D( m_pageInfo->GetWidthMils() * 25400,
-                             m_pageInfo->GetHeightMils() * 25400 );
+    VECTOR2D end = VECTOR2D( m_pageInfo->GetWidthMils() * m_milsToIUFactor,
+                             m_pageInfo->GetHeightMils() * m_milsToIUFactor );
 
     aGal->SetIsStroke( true );
     // Use a gray color for the border color

@@ -35,9 +35,7 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <painter.h>
 
-#ifdef __WXDEBUG__
 #include <profile.h>
-#endif /* __WXDEBUG__  */
 
 namespace KIGFX {
 
@@ -1422,6 +1420,8 @@ struct VIEW::extentsVisitor
         else
             extents.Merge( aItem->ViewBBox() );
 
+            auto bb = aItem->ViewBBox();
+
         return false;
     }
 };
@@ -1435,6 +1435,7 @@ const BOX2I VIEW::CalculateExtents()
 
     for( VIEW_LAYER* l : m_orderedLayers )
     {
+        //("l %p count %d\n", l, l->items->Count() );
         l->items->Query( fullScene, v );
     }
 
@@ -1500,13 +1501,14 @@ void VIEW::Update( VIEW_ITEM* aItem, int aUpdateFlags )
 {
     auto viewData = aItem->viewPrivData();
 
+
+
     if( !viewData )
         return;
 
     assert( aUpdateFlags != NONE );
 
     viewData->m_requiredUpdate |= aUpdateFlags;
-
 }
 
 const int VIEW::TOP_LAYER_MODIFIER = -VIEW_MAX_LAYERS;

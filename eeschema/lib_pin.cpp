@@ -34,7 +34,7 @@
 #include <gr_basic.h>
 #include <macros.h>
 #include <trigo.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <draw_graphic_text.h>
 #include <plotter.h>
 #include <sch_edit_frame.h>
@@ -567,7 +567,7 @@ int LIB_PIN::GetPenSize() const
 }
 
 
-void LIB_PIN::drawGraphic( EDA_DRAW_PANEL*  aPanel,
+void LIB_PIN::drawGraphic( DRAW_PANEL_BASE*  aPanel,
                            wxDC*            aDC,
                            const wxPoint&   aOffset,
                            COLOR4D          aColor,
@@ -646,7 +646,7 @@ void LIB_PIN::drawGraphic( EDA_DRAW_PANEL*  aPanel,
 }
 
 
-void LIB_PIN::DrawPinSymbol( EDA_DRAW_PANEL* aPanel,
+void LIB_PIN::DrawPinSymbol( DRAW_PANEL_BASE* aPanel,
                              wxDC*           aDC,
                              const wxPoint&  aPinPos,
                              int             aOrient,
@@ -845,7 +845,7 @@ void LIB_PIN::DrawPinSymbol( EDA_DRAW_PANEL* aPanel,
 }
 
 
-void LIB_PIN::DrawPinTexts( EDA_DRAW_PANEL* panel,
+void LIB_PIN::DrawPinTexts( DRAW_PANEL_BASE* panel,
                             wxDC*           DC,
                             wxPoint&        pin_pos,
                             int             orient,
@@ -1059,7 +1059,7 @@ void LIB_PIN::DrawPinTexts( EDA_DRAW_PANEL* panel,
 
 
 
-void LIB_PIN::DrawPinElectricalTypeName( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+void LIB_PIN::DrawPinElectricalTypeName( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                          wxPoint& aPosition, int aOrientation,
                                          COLOR4D aColor, GR_DRAWMODE aDrawMode )
 {

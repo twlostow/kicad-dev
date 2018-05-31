@@ -30,7 +30,7 @@
 #include <fctsys.h>
 #include <gr_basic.h>
 #include <macros.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <common.h>
 #include <plotter.h>
 #include <bitmaps.h>
@@ -94,7 +94,7 @@ int SCH_NO_CONNECT::GetPenSize() const
 }
 
 
-void SCH_NO_CONNECT::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void SCH_NO_CONNECT::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                            GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     int pX, pY;
@@ -224,4 +224,3 @@ BITMAP_DEF SCH_NO_CONNECT::GetMenuImage() const
 {
     return noconn_xpm;
 }
-

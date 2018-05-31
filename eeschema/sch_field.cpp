@@ -36,7 +36,7 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <base_struct.h>
 #include <gr_basic.h>
 #include <draw_graphic_text.h>
@@ -116,7 +116,7 @@ int SCH_FIELD::GetPenSize() const
 }
 
 
-void SCH_FIELD::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void SCH_FIELD::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     int            orient;

@@ -30,7 +30,7 @@
 #include <pgm_base.h>
 #include <kiway.h>
 #include <confirm.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <sch_edit_frame.h>
 #include <id.h>
 #include <base_units.h>

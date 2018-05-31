@@ -33,7 +33,7 @@
 #include <base_struct.h>
 #include <draw_graphic_text.h>
 #include <kicad_string.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <plotter.h>
 #include <trigo.h>
 #include <base_units.h>
@@ -113,7 +113,7 @@ int LIB_FIELD::GetPenSize() const
 }
 
 
-void LIB_FIELD::drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void LIB_FIELD::drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                              COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                              const TRANSFORM& aTransform )
 {

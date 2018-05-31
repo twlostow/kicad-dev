@@ -72,7 +72,7 @@ class LIB_FIELD : public LIB_ITEM, public EDA_TEXT
      * the m_Text
      * </p>
      */
-    void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                       const TRANSFORM& aTransform ) override;
 

@@ -38,7 +38,7 @@ class LIB_CIRCLE : public LIB_ITEM
     wxPoint m_Pos;            // Position or centre (Arc and Circle) or start point (segments).
     int     m_Width;          // Line width.
 
-    void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                       const TRANSFORM& aTransform ) override;
 

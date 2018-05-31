@@ -27,7 +27,7 @@
  */
 
 #include <fctsys.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <base_units.h>
 #include <kiface_i.h>
@@ -38,6 +38,7 @@
 #include <sch_legacy_plugin.h>
 #include <sch_sheet.h>
 #include <sch_sheet_path.h>
+#include <sch_view.h>
 
 #include <dialogs/dialog_sch_sheet_props.h>
 
@@ -324,6 +325,9 @@ bool SCH_EDIT_FRAME::EditSheet( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHierarchy )
 
     m_canvas->MoveCursorToCrossHair();
     m_canvas->SetIgnoreMouseEvents( false );
+
+    GetCanvas()->GetView()->Update( aSheet );
+
     OnModify();
 
     return true;
@@ -335,7 +339,7 @@ bool SCH_EDIT_FRAME::EditSheet( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHierarchy )
  * Note also now this function is called only when resizing the sheet
  * But the (very small code) relative to sheet move is still present here
  */
-static void resizeSheetWithMouseCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void resizeSheetWithMouseCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                         bool aErase )
 {
     BASE_SCREEN*   screen = aPanel->GetScreen();
@@ -343,9 +347,6 @@ static void resizeSheetWithMouseCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const
 
     if( sheet == nullptr )  // Be sure we are using the right object
         return;
-
-    if( aErase )
-        sheet->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode );
 
     wxPoint pos = sheet->GetPosition();
 
@@ -372,12 +373,15 @@ static void resizeSheetWithMouseCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const
                     wxPoint( pos.x + width, pos.y + height ) );
     sheet->Resize( wxSize( grid.x - pos.x, grid.y - pos.y ) );
 
-    sheet->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode );
+    auto panel = static_cast<SCH_DRAW_PANEL*>( aPanel );
+    auto view = panel->GetView();
+    view->ClearPreview();
+    view->AddToPreview( sheet, false );
 }
 
 
 //  Complete sheet move.
-static void ExitSheet( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+static void ExitSheet( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     SCH_SCREEN* screen = (SCH_SCREEN*) aPanel->GetScreen();
     SCH_ITEM*   item = screen->GetCurItem();
@@ -389,32 +393,34 @@ static void ExitSheet( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
 
     parent->SetRepeatItem( NULL );
 
-    item->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode );
-
     if( item->IsNew() )
     {
         delete item;
     }
     else if( item->IsMoving() || item->IsResized() )
     {
-        screen->Remove( item );
+        parent->RemoveFromScreen( item );
         delete item;
 
         item = parent->GetUndoItem();
 
         wxCHECK_RET( item != NULL, wxT( "Cannot restore undefined last sheet item." ) );
 
-        screen->Append( item );
+        parent->AddToScreen( item );
+
         // the owner of item is no more parent, this is the draw list of screen:
         parent->SetUndoItem( NULL );
 
-        item->Draw( aPanel, aDC, wxPoint( 0, 0 ), GR_DEFAULT_DRAWMODE );
         item->ClearFlags();
     }
     else
     {
         item->ClearFlags();
     }
+
+    auto panel = static_cast<SCH_DRAW_PANEL*>( aPanel );
+    auto view = panel->GetView();
+    view->ClearPreview();
 
     screen->SetCurItem( NULL );
 }
@@ -500,7 +506,7 @@ void SCH_EDIT_FRAME::RotateHierarchicalSheet( SCH_SHEET* aSheet, bool aRotCCW )
         aSheet->Rotate( rotPoint );
     }
 
-    GetCanvas()->Refresh();
+    GetCanvas()->GetView()->Update( aSheet );
     OnModify();
 }
 
@@ -523,6 +529,6 @@ void SCH_EDIT_FRAME::MirrorSheet( SCH_SHEET* aSheet, bool aFromXaxis )
     else                // Mirror relative to vertical axis
         aSheet->MirrorY( mirrorPoint.x );
 
-    GetCanvas()->Refresh();
+    GetCanvas()->GetView()->Update( aSheet );
     OnModify();
 }

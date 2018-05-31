@@ -33,7 +33,7 @@
 #include <gr_basic.h>
 #include <macros.h>
 #include <pgm_base.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <gestfich.h>
 

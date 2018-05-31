@@ -41,7 +41,7 @@ class LIB_RECTANGLE  : public LIB_ITEM
     bool    m_isHeightLocked;       // Flag: Keep height locked
     bool    m_isStartPointSelected; // Flag: is the upper left edge selected?
 
-    void drawGraphic( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+    void drawGraphic( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                       COLOR4D aColor, GR_DRAWMODE aDrawMode, void* aData,
                       const TRANSFORM& aTransform ) override;
 

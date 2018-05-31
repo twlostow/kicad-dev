@@ -143,6 +143,7 @@ public:
         --m_modification_sync;
     }
 
+    virtual bool SetZoom( double iu_per_du ) override;
     /**
      * Copy the contents of \a aScreen into this #SCH_SCREEN object.
      *
@@ -232,7 +233,7 @@ public:
      * @param aDrawMode The drawing mode.
      * @param aColor The drawing color.
      */
-    void Draw( EDA_DRAW_PANEL* aCanvas, wxDC* aDC, GR_DRAWMODE aDrawMode,
+    void Draw( DRAW_PANEL_BASE* aCanvas, wxDC* aDC, GR_DRAWMODE aDrawMode,
                COLOR4D aColor = COLOR4D::UNSPECIFIED );
 
     /**

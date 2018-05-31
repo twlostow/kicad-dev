@@ -122,7 +122,7 @@ void BLOCK_SELECTOR::SetMessageBlock( EDA_DRAW_FRAME* frame )
 }
 
 
-void BLOCK_SELECTOR::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOffset,
+void BLOCK_SELECTOR::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aOffset,
                            GR_DRAWMODE aDrawMode, COLOR4D aColor )
 {
     if( !aDC )
@@ -141,8 +141,7 @@ void BLOCK_SELECTOR::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aOf
                 GetRight() + aOffset.x, GetBottom() + aOffset.y, 0, aColor );
 }
 
-
-void BLOCK_SELECTOR::InitData( EDA_DRAW_PANEL* aPanel, const wxPoint& startpos )
+void BLOCK_SELECTOR::InitData( DRAW_PANEL_BASE* aPanel, const wxPoint& startpos )
 {
     m_state = STATE_BLOCK_INIT;
     SetOrigin( startpos );
@@ -150,7 +149,6 @@ void BLOCK_SELECTOR::InitData( EDA_DRAW_PANEL* aPanel, const wxPoint& startpos )
     m_items.ClearItemsList();
     aPanel->SetMouseCapture( DrawAndSizingBlockOutlines, AbortBlockCurrentCommand );
 }
-
 
 void BLOCK_SELECTOR::ClearItemsList()
 {
@@ -180,35 +178,7 @@ void BLOCK_SELECTOR::Clear()
     }
 }
 
-
-void DrawAndSizingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
-                                 bool aErase )
-{
-    BLOCK_SELECTOR* block;
-
-    block = &aPanel->GetScreen()->m_BlockLocate;
-
-    block->SetMoveVector( wxPoint( 0, 0 ) );
-
-    if( aErase && aDC )
-        block->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
-
-    block->SetLastCursorPosition( aPanel->GetParent()->GetCrossHairPosition() );
-    block->SetEnd( aPanel->GetParent()->GetCrossHairPosition() );
-
-    if( aDC )
-        block->Draw( aPanel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
-
-    if( block->GetState() == STATE_BLOCK_INIT )
-    {
-        if( block->GetWidth() || block->GetHeight() )
-            // 2nd point exists: the rectangle is not surface anywhere
-            block->SetState( STATE_BLOCK_END );
-    }
-}
-
-
-void AbortBlockCurrentCommand( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+void AbortBlockCurrentCommand( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     BASE_SCREEN* screen = aPanel->GetScreen();
 
@@ -229,5 +199,5 @@ void AbortBlockCurrentCommand( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
 
     screen->m_BlockLocate.SetCommand( BLOCK_IDLE );
     aPanel->GetParent()->DisplayToolMsg( wxEmptyString );
-    aPanel->SetCursor( (wxStockCursor) aPanel->GetCurrentCursor() );
+    aPanel->SetDefaultCursor();
 }

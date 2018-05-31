@@ -30,7 +30,7 @@
 #include <fctsys.h>
 #include <macros.h>
 #include <kicad_string.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <plotter.h>
 #include <gr_basic.h>
 #include <sch_screen.h>
@@ -314,7 +314,7 @@ void LIB_PART::SetName( const wxString& aName )
 }
 
 
-void LIB_PART::Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDc, const wxPoint& aOffset,
+void LIB_PART::Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDc, const wxPoint& aOffset,
             int aMulti, int aConvert, const PART_DRAW_OPTIONS& aOpts )
 {
     BASE_SCREEN*   screen = aPanel ? aPanel->GetScreen() : NULL;
@@ -534,7 +534,7 @@ void LIB_PART::PlotLibFields( PLOTTER* aPlotter, int aUnit, int aConvert,
 }
 
 
-void LIB_PART::RemoveDrawItem( LIB_ITEM* aItem, EDA_DRAW_PANEL* aPanel, wxDC* aDc )
+void LIB_PART::RemoveDrawItem( LIB_ITEM* aItem, DRAW_PANEL_BASE* aPanel, wxDC* aDc )
 {
     wxASSERT( aItem != NULL );
 

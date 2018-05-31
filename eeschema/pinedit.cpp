@@ -30,7 +30,7 @@
 
 #include <fctsys.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <base_units.h>
 #include <msgpanel.h>
@@ -49,8 +49,8 @@
 extern void IncrementLabelMember( wxString& name, int aIncrement );
 
 
-static void AbortPinMove( EDA_DRAW_PANEL* Panel, wxDC* DC );
-static void DrawMovePin( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPositon, bool aErase );
+static void AbortPinMove( DRAW_PANEL_BASE* Panel, wxDC* DC );
+static void DrawMovePin( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPositon, bool aErase );
 
 
 static wxPoint OldPos;
@@ -208,7 +208,7 @@ void LIB_EDIT_FRAME::OnEditPin( wxCommandEvent& event )
 /**
  * Clean up after aborting a move pin command.
  */
-static void AbortPinMove( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void AbortPinMove( DRAW_PANEL_BASE* Panel, wxDC* DC )
 {
     LIB_EDIT_FRAME* parent = (LIB_EDIT_FRAME*) Panel->GetParent();
 
@@ -377,7 +377,7 @@ void LIB_EDIT_FRAME::StartMovePin( LIB_ITEM* aItem )
 
 /* Move pin to the current mouse position.  This function is called by the
  * cursor management code. */
-static void DrawMovePin( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void DrawMovePin( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                          bool aErase )
 {
     LIB_EDIT_FRAME* parent = (LIB_EDIT_FRAME*) aPanel->GetParent();

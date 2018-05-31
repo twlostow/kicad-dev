@@ -29,7 +29,7 @@
 
 #include <fctsys.h>
 #include <gr_basic.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <draw_graphic_text.h>
 #include <plotter.h>
 #include <trigo.h>
@@ -69,7 +69,7 @@ EDA_ITEM* SCH_SHEET_PIN::Clone() const
 }
 
 
-void SCH_SHEET_PIN::Draw( EDA_DRAW_PANEL* aPanel,
+void SCH_SHEET_PIN::Draw( DRAW_PANEL_BASE* aPanel,
                           wxDC*           aDC,
                           const wxPoint&  aOffset,
                           GR_DRAWMODE     aDraw_mode,

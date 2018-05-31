@@ -272,6 +272,8 @@ public:
         paintListener = aPaintListener;
     }
 
+    virtual void EnableDepthTest( bool aEnabled = false ) override;
+
     ///< Parameters passed to the GLU tesselator
     typedef struct
     {

@@ -42,7 +42,7 @@ class wxFindReplaceData;
 class PLOTTER;
 class NETLIST_OBJECT;
 class NETLIST_OBJECT_LIST;
-
+class DRAW_PANEL_BASE;
 
 enum DANGLING_END_T {
     UNKNOWN = 0,
@@ -186,7 +186,7 @@ public:
      * @param aColor COLOR4D::UNSPECIFIED to use the normal body item color,
      * or force this color if it is a valid color
      */
-    virtual void Draw( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint&  aOffset,
+    virtual void Draw( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint&  aOffset,
                        GR_DRAWMODE aDrawMode, COLOR4D aColor = COLOR4D::UNSPECIFIED ) = 0;
 
     /**

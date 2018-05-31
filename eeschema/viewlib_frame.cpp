@@ -30,7 +30,7 @@
 #include <fctsys.h>
 #include <kiface_i.h>
 #include <pgm_base.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <msgpanel.h>
 #include <bitmaps.h>
 
@@ -215,7 +215,7 @@ LIB_VIEW_FRAME::LIB_VIEW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
     m_auimgr.AddPane( m_cmpList, wxAuiPaneInfo( info ).Name( "m_cmpList" ).Left().Row( 1 ) );
 
     // Manage the draw panel
-    m_auimgr.AddPane( m_canvas, wxAuiPaneInfo().Name( "DrawFrame" ).CentrePane() );
+    m_auimgr.AddPane( m_canvas->GetWindow(), wxAuiPaneInfo().Name( "DrawFrame" ).CentrePane() );
 
     // Manage the message panel
     m_auimgr.AddPane( m_messagePanel,

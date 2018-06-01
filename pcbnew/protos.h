@@ -61,7 +61,7 @@ void DrawTraces( EDA_DRAW_PANEL* panel,
                  int             nbsegment,
                  GR_DRAWMODE     mode_color );
 
-void ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+void ShowNewTrackWhenMovingCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                    bool aErase );
 
 /**

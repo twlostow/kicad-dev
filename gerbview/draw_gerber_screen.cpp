@@ -77,7 +77,7 @@ void GERBVIEW_FRAME::PrintPage( wxDC* aDC, LSET aPrintMasklayer,
     GetGerberLayout()->AddLayerToPrintableList( graphiclayer );
     m_canvas->SetPrintMirrored( aPrintMirrorMode );
 
-    GetGerberLayout()->Draw( m_canvas, aDC, (GR_DRAWMODE) 0,
+    GetGerberLayout()->Draw( static_cast<EDA_DRAW_PANEL*> (m_canvas), aDC, (GR_DRAWMODE) 0,
                              wxPoint( 0, 0 ), &displayOptions );
 
     m_canvas->SetPrintMirrored( false );
@@ -116,12 +116,12 @@ void GERBVIEW_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
     // Draw according to the current setting.  This needs to be GR_COPY or GR_OR.
     m_DisplayOptions.m_NegativeDrawColor = GetNegativeItemsColor();
     m_DisplayOptions.m_BgDrawColor = GetDrawBgColor();
-    GetGerberLayout()->Draw( m_canvas, DC, drawMode, wxPoint( 0, 0 ), &m_DisplayOptions );
+    GetGerberLayout()->Draw( static_cast<EDA_DRAW_PANEL*> (m_canvas), DC, drawMode, wxPoint( 0, 0 ), &m_DisplayOptions );
 
     if( m_DisplayOptions.m_DisplayDCodes )
     {
         COLOR4D dcode_color = GetVisibleElementColor( LAYER_DCODES );
-        GetGerberLayout()->DrawItemsDCodeID( m_canvas, DC, GR_COPY, dcode_color );
+        GetGerberLayout()->DrawItemsDCodeID( static_cast<EDA_DRAW_PANEL*> (m_canvas), DC, GR_COPY, dcode_color );
     }
 
     // Draw the "background" now, i.e. grid and axis after gerber layers

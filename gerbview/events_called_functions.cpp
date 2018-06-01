@@ -203,7 +203,7 @@ void GERBVIEW_FRAME::Process_Special_Functions( wxCommandEvent& event )
         if( GetToolId() == ID_NO_TOOL_SELECTED )
             SetNoToolSelected();
         else
-            m_canvas->SetCursor( (wxStockCursor) m_canvas->GetCurrentCursor() );
+            GetLegacyCanvas()->SetCursor( (wxStockCursor) m_canvas->GetCurrentCursor() );
         break;
 
     default:
@@ -260,7 +260,7 @@ void GERBVIEW_FRAME::Process_Special_Functions( wxCommandEvent& event )
     case ID_POPUP_PLACE_BLOCK:
         if( !IsGalCanvasActive() )
         {
-            INSTALL_UNBUFFERED_DC( dc, m_canvas );
+            INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
             GetScreen()->m_BlockLocate.SetCommand( BLOCK_MOVE );
             m_canvas->SetAutoPanRequest( false );
             HandleBlockPlace( &dc );
@@ -270,7 +270,7 @@ void GERBVIEW_FRAME::Process_Special_Functions( wxCommandEvent& event )
     case ID_POPUP_ZOOM_BLOCK:
         if( !IsGalCanvasActive() )
         {
-            INSTALL_UNBUFFERED_DC( dc, m_canvas );
+            INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
             GetScreen()->m_BlockLocate.SetCommand( BLOCK_ZOOM );
             GetScreen()->m_BlockLocate.SetMessageBlock( this );
             HandleBlockEnd( &dc );

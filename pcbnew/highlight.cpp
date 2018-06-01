@@ -105,5 +105,5 @@ void PCB_EDIT_FRAME::HighLight( wxDC* DC )
     else
         GetBoard()->HighLightON();
 
-    GetBoard()->DrawHighLight( m_canvas, DC, GetBoard()->GetHighLightNetCode() );
+    GetBoard()->DrawHighLight( GetLegacyCanvas(), DC, GetBoard()->GetHighLightNetCode() );
 }

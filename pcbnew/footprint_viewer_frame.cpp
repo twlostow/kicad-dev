@@ -267,7 +267,7 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
                       .Left().Row( 2 ).MinSize( minsize ) );
 
     // Manage the draw panel, right pane.
-    m_auimgr.AddPane( m_canvas,
+    m_auimgr.AddPane( GetLegacyCanvas(),
                       wxAuiPaneInfo().Name( "DrawFrame" ).CentrePane() );
     m_auimgr.AddPane( (wxWindow*) GetGalCanvas(),
                       wxAuiPaneInfo().Name( "DrawFrameGal" ).CentrePane().Hide() );
@@ -899,7 +899,7 @@ void FOOTPRINT_VIEWER_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
         return;
 
     m_canvas->DrawBackGround( DC );
-    GetBoard()->Draw( m_canvas, DC, GR_COPY );
+    GetBoard()->Draw( GetLegacyCanvas(), DC, GR_COPY );
 
     MODULE* module = GetBoard()->m_Modules;
 

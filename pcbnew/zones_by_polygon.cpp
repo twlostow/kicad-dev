@@ -52,13 +52,13 @@
 #include <zone_filler.h>
 
 // Outline creation:
-static void Abort_Zone_Create_Outline( EDA_DRAW_PANEL* Panel, wxDC* DC );
-static void Show_New_Edge_While_Move_Mouse( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void Abort_Zone_Create_Outline( DRAW_PANEL_BASE* Panel, wxDC* DC );
+static void Show_New_Edge_While_Move_Mouse( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                             const wxPoint& aPosition, bool aErase );
 
 // Corner moving
-static void Abort_Zone_Move_Corner_Or_Outlines( EDA_DRAW_PANEL* Panel, wxDC* DC );
-static void Show_Zone_Corner_Or_Outline_While_Move_Mouse( EDA_DRAW_PANEL* aPanel,
+static void Abort_Zone_Move_Corner_Or_Outlines( DRAW_PANEL_BASE* Panel, wxDC* DC );
+static void Show_Zone_Corner_Or_Outline_While_Move_Mouse( DRAW_PANEL_BASE* aPanel,
                                                           wxDC*           aDC,
                                                           const wxPoint&  aPosition,
                                                           bool            aErase );
@@ -166,8 +166,8 @@ void PCB_EDIT_FRAME::duplicateZone( wxDC* aDC, ZONE_CONTAINER* aZone )
         GetBoard()->OnAreaPolygonModified( &s_AuxiliaryList, newZone );
 
         // Redraw zones
-        GetBoard()->RedrawAreasOutlines( m_canvas, aDC, GR_OR, newZone->GetLayer() );
-        GetBoard()->RedrawFilledAreas( m_canvas, aDC, GR_OR, newZone->GetLayer() );
+        GetBoard()->RedrawAreasOutlines( GetLegacyCanvas(), aDC, GR_OR, newZone->GetLayer() );
+        GetBoard()->RedrawFilledAreas( GetLegacyCanvas(), aDC, GR_OR, newZone->GetLayer() );
 
         DRC drc( this );
 
@@ -198,7 +198,7 @@ int PCB_EDIT_FRAME::Delete_LastCreatedCorner( wxDC* DC )
     if( !zone->GetNumCorners() )
         return 0;
 
-    zone->DrawWhileCreateOutline( m_canvas, DC, GR_XOR );
+    zone->DrawWhileCreateOutline( GetLegacyCanvas(), DC, GR_XOR );
 
     if( zone->GetNumCorners() > 2 )
     {
@@ -223,14 +223,15 @@ int PCB_EDIT_FRAME::Delete_LastCreatedCorner( wxDC* DC )
  * Function Abort_Zone_Create_Outline
  * cancels the Begin_Zone command if at least one EDGE_ZONE was created.
  */
-static void Abort_Zone_Create_Outline( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void Abort_Zone_Create_Outline( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    PCB_EDIT_FRAME* pcbframe = (PCB_EDIT_FRAME*) Panel->GetParent();
+    PCB_EDIT_FRAME* pcbframe = (PCB_EDIT_FRAME*) aPanel->GetParent();
     ZONE_CONTAINER* zone = pcbframe->GetBoard()->m_CurrentZoneContour;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( zone )
     {
-        zone->DrawWhileCreateOutline( Panel, DC, GR_XOR );
+        zone->DrawWhileCreateOutline( panel, DC, GR_XOR );
         zone->RemoveAllContours();
         if( zone->IsNew() )
         {
@@ -244,7 +245,7 @@ static void Abort_Zone_Create_Outline( EDA_DRAW_PANEL* Panel, wxDC* DC )
     pcbframe->SetCurItem( NULL );
     s_AddCutoutToCurrentZone = false;
     s_CurrentZone = NULL;
-    Panel->SetMouseCapture( NULL, NULL );
+    panel->SetMouseCapture( NULL, NULL );
 }
 
 
@@ -350,7 +351,7 @@ void PCB_EDIT_FRAME::End_Move_Zone_Corner_Or_Outlines( wxDC* DC, ZONE_CONTAINER*
     m_canvas->SetMouseCapture( NULL, NULL );
 
     if( DC )
-        aZone->Draw( m_canvas, DC, GR_OR );
+        aZone->Draw( GetLegacyCanvas(), DC, GR_OR );
 
     OnModify();
     s_AddCutoutToCurrentZone = false;
@@ -392,7 +393,7 @@ void PCB_EDIT_FRAME::Remove_Zone_Corner( wxDC* DC, ZONE_CONTAINER* aZone )
         if( DC )
         {  // Remove the full zone because this is no more an area
             aZone->UnFill();
-            aZone->DrawFilledArea( m_canvas, DC, GR_XOR );
+            aZone->DrawFilledArea( GetLegacyCanvas(), DC, GR_XOR );
         }
 
         GetBoard()->Delete( aZone );
@@ -403,8 +404,8 @@ void PCB_EDIT_FRAME::Remove_Zone_Corner( wxDC* DC, ZONE_CONTAINER* aZone )
 
     if( DC )
     {
-        GetBoard()->RedrawAreasOutlines( m_canvas, DC, GR_XOR, layer );
-        GetBoard()->RedrawFilledAreas( m_canvas, DC, GR_XOR, layer );
+        GetBoard()->RedrawAreasOutlines( GetLegacyCanvas(), DC, GR_XOR, layer );
+        GetBoard()->RedrawFilledAreas( GetLegacyCanvas(), DC, GR_XOR, layer );
     }
 
     s_AuxiliaryList.ClearListAndDeleteItems();
@@ -417,8 +418,8 @@ void PCB_EDIT_FRAME::Remove_Zone_Corner( wxDC* DC, ZONE_CONTAINER* aZone )
 
     if( DC )
     {
-        GetBoard()->RedrawAreasOutlines( m_canvas, DC, GR_OR, layer );
-        GetBoard()->RedrawFilledAreas( m_canvas, DC, GR_OR, layer );
+        GetBoard()->RedrawAreasOutlines( GetLegacyCanvas(), DC, GR_OR, layer );
+        GetBoard()->RedrawFilledAreas( GetLegacyCanvas(), DC, GR_OR, layer );
     }
 
     UpdateCopyOfZonesList( s_PickedList, s_AuxiliaryList, GetBoard() );
@@ -444,10 +445,11 @@ void PCB_EDIT_FRAME::Remove_Zone_Corner( wxDC* DC, ZONE_CONTAINER* aZone )
  * Function Abort_Zone_Move_Corner_Or_Outlines
  * cancels the Begin_Zone state if at least one EDGE_ZONE has been created.
  */
-void Abort_Zone_Move_Corner_Or_Outlines( EDA_DRAW_PANEL* Panel, wxDC* DC )
+void Abort_Zone_Move_Corner_Or_Outlines( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    PCB_EDIT_FRAME* pcbframe = (PCB_EDIT_FRAME*) Panel->GetParent();
+    PCB_EDIT_FRAME* pcbframe = (PCB_EDIT_FRAME*) aPanel->GetParent();
     ZONE_CONTAINER* zone     = (ZONE_CONTAINER*) pcbframe->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( zone->IsMoving() )
     {
@@ -474,10 +476,10 @@ void Abort_Zone_Move_Corner_Or_Outlines( EDA_DRAW_PANEL* Panel, wxDC* DC )
         }
     }
 
-    Panel->SetMouseCapture( NULL, NULL );
+    panel->SetMouseCapture( NULL, NULL );
     s_AuxiliaryList.ClearListAndDeleteItems();
     s_PickedList. ClearListAndDeleteItems();
-    Panel->Refresh();
+    panel->Refresh();
 
     pcbframe->SetCurItem( NULL );
     zone->ClearFlags();
@@ -487,15 +489,16 @@ void Abort_Zone_Move_Corner_Or_Outlines( EDA_DRAW_PANEL* Panel, wxDC* DC )
 
 
 /// Redraws the zone outline when moving a corner according to the cursor position
-void Show_Zone_Corner_Or_Outline_While_Move_Mouse( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+void Show_Zone_Corner_Or_Outline_While_Move_Mouse( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                                    const wxPoint& aPosition, bool aErase )
 {
     PCB_EDIT_FRAME* pcbframe = (PCB_EDIT_FRAME*) aPanel->GetParent();
     ZONE_CONTAINER* zone = (ZONE_CONTAINER*) pcbframe->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( aErase )    // Undraw edge in old position
     {
-        zone->Draw( aPanel, aDC, GR_XOR );
+        zone->Draw( panel, aDC, GR_XOR );
     }
 
     wxPoint pos = pcbframe->GetCrossHairPosition();
@@ -519,7 +522,7 @@ void Show_Zone_Corner_Or_Outline_While_Move_Mouse( EDA_DRAW_PANEL* aPanel, wxDC*
         zone->Outline()->Vertex( zone->GetSelectedCorner() ) = pos;
     }
 
-    zone->Draw( aPanel, aDC, GR_XOR );
+    zone->Draw( panel, aDC, GR_XOR );
 }
 
 
@@ -770,14 +773,14 @@ bool PCB_EDIT_FRAME::End_Zone( wxDC* DC )
 
     zone->ClearFlags();
 
-    zone->DrawWhileCreateOutline( m_canvas, DC, GR_XOR );
+    zone->DrawWhileCreateOutline( GetLegacyCanvas(), DC, GR_XOR );
 
     m_canvas->SetMouseCapture( NULL, NULL );
 
     // Undraw old drawings, because they can have important changes
     PCB_LAYER_ID layer = zone->GetLayer();
-    GetBoard()->RedrawAreasOutlines( m_canvas, DC, GR_XOR, layer );
-    GetBoard()->RedrawFilledAreas( m_canvas, DC, GR_XOR, layer );
+    GetBoard()->RedrawAreasOutlines( GetLegacyCanvas(), DC, GR_XOR, layer );
+    GetBoard()->RedrawFilledAreas( GetLegacyCanvas(), DC, GR_XOR, layer );
 
     // Save initial zones configuration, for undo/redo, before adding new zone
     s_AuxiliaryList.ClearListAndDeleteItems();
@@ -811,8 +814,8 @@ bool PCB_EDIT_FRAME::End_Zone( wxDC* DC )
     GetBoard()->OnAreaPolygonModified( &s_AuxiliaryList, zone );
 
     // Redraw the real edge zone :
-    GetBoard()->RedrawAreasOutlines( m_canvas, DC, GR_OR, layer );
-    GetBoard()->RedrawFilledAreas( m_canvas, DC, GR_OR, layer );
+    GetBoard()->RedrawAreasOutlines( GetLegacyCanvas(), DC, GR_OR, layer );
+    GetBoard()->RedrawFilledAreas( GetLegacyCanvas(), DC, GR_OR, layer );
 
     int ii = GetBoard()->GetAreaIndex( zone );   // test if zone exists
 
@@ -838,12 +841,13 @@ bool PCB_EDIT_FRAME::End_Zone( wxDC* DC )
 
 /* Redraws the zone outlines when moving mouse
  */
-static void Show_New_Edge_While_Move_Mouse( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void Show_New_Edge_While_Move_Mouse( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                             const wxPoint& aPosition, bool aErase )
 {
     PCB_EDIT_FRAME* pcbframe = (PCB_EDIT_FRAME*) aPanel->GetParent();
     wxPoint         c_pos    = pcbframe->GetCrossHairPosition();
     ZONE_CONTAINER* zone = pcbframe->GetBoard()->m_CurrentZoneContour;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( !zone )
         return;
@@ -855,7 +859,7 @@ static void Show_New_Edge_While_Move_Mouse( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
 
     if( aErase )    // Undraw edge in old position
     {
-        zone->DrawWhileCreateOutline( aPanel, aDC );
+        zone->DrawWhileCreateOutline( panel, aDC );
     }
 
     // Redraw the current edge in its new position
@@ -868,7 +872,7 @@ static void Show_New_Edge_While_Move_Mouse( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
 
     zone->SetCornerPosition( icorner, c_pos );
 
-    zone->DrawWhileCreateOutline( aPanel, aDC );
+    zone->DrawWhileCreateOutline( panel, aDC );
 }
 
 void PCB_EDIT_FRAME::Edit_Zone_Params( wxDC* DC, ZONE_CONTAINER* aZone )
@@ -931,7 +935,7 @@ void PCB_EDIT_FRAME::Edit_Zone_Params( wxDC* DC, ZONE_CONTAINER* aZone )
     for( int ii = 0; ii < GetBoard()->GetAreaCount(); ii++ )
     {
         ZONE_CONTAINER* edge_zone = GetBoard()->GetArea( ii );
-        edge_zone->Draw( m_canvas, DC, GR_XOR );
+        edge_zone->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
         if( IsGalCanvasActive() )
         {
@@ -950,7 +954,7 @@ void PCB_EDIT_FRAME::Edit_Zone_Params( wxDC* DC, ZONE_CONTAINER* aZone )
     GetBoard()->OnAreaPolygonModified( &s_AuxiliaryList, aZone );
 
     // Redraw the real new zone outlines
-    GetBoard()->RedrawAreasOutlines( m_canvas, DC, GR_OR, UNDEFINED_LAYER );
+    GetBoard()->RedrawAreasOutlines( GetLegacyCanvas(), DC, GR_OR, UNDEFINED_LAYER );
 
     UpdateCopyOfZonesList( s_PickedList, s_AuxiliaryList, GetBoard() );
 

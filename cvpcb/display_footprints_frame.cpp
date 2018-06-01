@@ -125,7 +125,7 @@ DISPLAY_FOOTPRINTS_FRAME::DISPLAY_FOOTPRINTS_FRAME( KIWAY* aKiway, CVPCB_MAINFRA
         m_auimgr.AddPane( m_drawToolBar,
                           wxAuiPaneInfo( vert ).Name( wxT( "m_drawToolBar" ) ).Right() );
 
-    m_auimgr.AddPane( m_canvas,
+    m_auimgr.AddPane( GetLegacyCanvas(),
                       wxAuiPaneInfo().Name( wxT( "DisplayFrame" ) ).CentrePane() );
 
     m_auimgr.AddPane( m_messagePanel,
@@ -556,7 +556,7 @@ void DISPLAY_FOOTPRINTS_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
         return;
 
     m_canvas->DrawBackGround( DC );
-    GetBoard()->Draw( m_canvas, DC, GR_COPY );
+    GetBoard()->Draw( GetLegacyCanvas(), DC, GR_COPY );
 
     MODULE* Module = GetBoard()->m_Modules;
 

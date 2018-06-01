@@ -61,7 +61,7 @@
  * @param aDC = Current device context
  * @param aOffset = Drawing offset
  **/
-static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset );
+static void drawPickedItems( DRAW_PANEL_BASE* aPanel, wxDC* aDC, wxPoint aOffset );
 
 /**
  * Function drawMovingBlock
@@ -71,7 +71,7 @@ static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset 
  * @param aPosition The cursor position in logical (drawing) units.
  * @param aErase = Erase block at current position
  **/
-static void drawMovingBlock( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void drawMovingBlock( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                              bool aErase );
 
 
@@ -441,11 +441,11 @@ void PCB_EDIT_FRAME::Block_SelectItems()
 }
 
 
-static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset )
+static void drawPickedItems( DRAW_PANEL_BASE* aPanel, wxDC* aDC, wxPoint aOffset )
 {
     PICKED_ITEMS_LIST* itemsList = &aPanel->GetScreen()->m_BlockLocate.GetItems();
     PCB_BASE_FRAME* frame = (PCB_BASE_FRAME*) aPanel->GetParent();
-
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
     g_Offset_Module = -aOffset;
 
     for( unsigned ii = 0; ii < itemsList->GetCount(); ii++ )
@@ -456,7 +456,7 @@ static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset 
         {
         case PCB_MODULE_T:
             frame->GetBoard()->m_Status_Pcb &= ~RATSNEST_ITEM_LOCAL_OK;
-            ((MODULE*) item)->DrawOutlinesWhenMoving( aPanel, aDC, g_Offset_Module );
+            ((MODULE*) item)->DrawOutlinesWhenMoving( panel, aDC, g_Offset_Module );
             break;
 
         case PCB_LINE_T:
@@ -466,12 +466,12 @@ static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset 
         case PCB_TARGET_T:
         case PCB_DIMENSION_T:    // Currently markers are not affected by block commands
         case PCB_MARKER_T:
-            item->Draw( aPanel, aDC, GR_XOR, aOffset );
+            item->Draw( panel, aDC, GR_XOR, aOffset );
             break;
 
         case PCB_ZONE_AREA_T:
-            item->Draw( aPanel, aDC, GR_XOR, aOffset );
-            ((ZONE_CONTAINER*) item)->DrawFilledArea( aPanel, aDC, GR_XOR, aOffset );
+            item->Draw( panel, aDC, GR_XOR, aOffset );
+            ((ZONE_CONTAINER*) item)->DrawFilledArea( panel, aDC, GR_XOR, aOffset );
             break;
 
         default:
@@ -483,10 +483,11 @@ static void drawPickedItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC, wxPoint aOffset 
 }
 
 
-static void drawMovingBlock( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void drawMovingBlock( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                              bool aErase )
 {
     BASE_SCREEN* screen = aPanel->GetScreen();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
     // do not show local module rastnest in block move, it is not usable.
     auto displ_opts = (PCB_DISPLAY_OPTIONS*)( aPanel->GetDisplayOptions() );
@@ -497,28 +498,28 @@ static void drawMovingBlock( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& a
     {
         if( screen->m_BlockLocate.GetMoveVector().x || screen->m_BlockLocate.GetMoveVector().y )
         {
-            screen->m_BlockLocate.Draw( aPanel, aDC, screen->m_BlockLocate.GetMoveVector(),
+            screen->m_BlockLocate.Draw( panel, aDC, screen->m_BlockLocate.GetMoveVector(),
                                         GR_XOR, BLOCK_OUTLINE_COLOR );
 
             if( blockOpts.drawItems )
-                drawPickedItems( aPanel, aDC, screen->m_BlockLocate.GetMoveVector() );
+                drawPickedItems( panel, aDC, screen->m_BlockLocate.GetMoveVector() );
         }
     }
 
 
     if( screen->m_BlockLocate.GetState() != STATE_BLOCK_STOP )
     {
-        screen->m_BlockLocate.SetMoveVector( aPanel->GetParent()->GetCrossHairPosition() -
+        screen->m_BlockLocate.SetMoveVector( panel->GetParent()->GetCrossHairPosition() -
                                              screen->m_BlockLocate.GetLastCursorPosition() );
     }
 
     if( screen->m_BlockLocate.GetMoveVector().x || screen->m_BlockLocate.GetMoveVector().y )
     {
-        screen->m_BlockLocate.Draw( aPanel, aDC, screen->m_BlockLocate.GetMoveVector(),
+        screen->m_BlockLocate.Draw( panel, aDC, screen->m_BlockLocate.GetMoveVector(),
                                     GR_XOR, BLOCK_OUTLINE_COLOR );
 
         if( blockOpts.drawItems )
-            drawPickedItems( aPanel, aDC, screen->m_BlockLocate.GetMoveVector() );
+            drawPickedItems( panel, aDC, screen->m_BlockLocate.GetMoveVector() );
     }
 
     displ_opts->m_Show_Module_Ratsnest = showRats;
@@ -806,4 +807,31 @@ void PCB_EDIT_FRAME::Block_Duplicate( bool aIncrement )
 
     Compile_Ratsnest( NULL, true );
     m_canvas->Refresh( true );
+}
+
+void DrawAndSizingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
+                                 bool aErase )
+{
+    BLOCK_SELECTOR* block;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
+
+    block = &panel->GetScreen()->m_BlockLocate;
+
+    block->SetMoveVector( wxPoint( 0, 0 ) );
+
+    if( aErase && aDC )
+        block->Draw( panel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
+
+    block->SetLastCursorPosition( panel->GetParent()->GetCrossHairPosition() );
+    block->SetEnd( panel->GetParent()->GetCrossHairPosition() );
+
+    if( aDC )
+        block->Draw( panel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
+
+    if( block->GetState() == STATE_BLOCK_INIT )
+    {
+        if( block->GetWidth() || block->GetHeight() )
+            // 2nd point exists: the rectangle is not surface anywhere
+            block->SetState( STATE_BLOCK_END );
+    }
 }

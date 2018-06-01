@@ -71,7 +71,7 @@ void FOOTPRINT_EDIT_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
 
     // Redraw the footprints
     for( MODULE* module = GetBoard()->m_Modules; module; module = module->Next() )
-        module->Draw( m_canvas, DC, GR_OR | GR_ALLOW_HIGHCONTRAST );
+        module->Draw( GetLegacyCanvas(), DC, GR_OR | GR_ALLOW_HIGHCONTRAST );
 
 #ifdef USE_WX_OVERLAY
 
@@ -108,7 +108,7 @@ void PCB_EDIT_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
     DrawWorkSheet( DC, GetScreen(), g_DrawDefaultLineThickness,
                     IU_PER_MILS, GetBoard()->GetFileName() );
 
-    GetBoard()->Draw( m_canvas, DC, GR_OR | GR_ALLOW_HIGHCONTRAST );
+    GetBoard()->Draw( GetLegacyCanvas(), DC, GR_OR | GR_ALLOW_HIGHCONTRAST );
 
     DrawGeneralRatsnest( DC );
 

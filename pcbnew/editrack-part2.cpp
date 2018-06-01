@@ -436,7 +436,7 @@ int PCB_EDIT_FRAME::EraseRedundantTrack( wxDC*              aDC,
                 // Marked track can be erased.
                 TRACK* NextS;
 
-                DrawTraces( m_canvas, aDC, pt_del, nb_segm, GR_XOR | GR_HIGHLIGHT );
+                DrawTraces( GetLegacyCanvas(), aDC, pt_del, nb_segm, GR_XOR | GR_HIGHLIGHT );
 
                 for( jj = 0; jj < nb_segm; jj++, pt_del = NextS )
                 {
@@ -466,7 +466,7 @@ int PCB_EDIT_FRAME::EraseRedundantTrack( wxDC*              aDC,
                         pt_del->SetState( IN_EDIT, false );
 
                         if( aDC )
-                            pt_del->Draw( m_canvas, aDC, GR_OR );
+                            pt_del->Draw( GetLegacyCanvas(), aDC, GR_OR );
                     }
 
                     pt_del->SetState( IN_EDIT | IS_LINKED, false );

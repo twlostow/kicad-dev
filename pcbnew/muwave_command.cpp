@@ -38,7 +38,7 @@ void PCB_EDIT_FRAME::ProcessMuWaveFunctions( wxCommandEvent& event )
 {
     int        id = event.GetId();
     wxPoint    pos;
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+    INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
 
     wxGetMousePosition( &pos.x, &pos.y );
 
@@ -111,7 +111,7 @@ void PCB_EDIT_FRAME::MuWaveCommand( wxDC* DC, const wxPoint& MousePos )
         break;
 
     default:
-        m_canvas->SetCursor( wxCURSOR_ARROW );
+        GetLegacyCanvas()->SetCursor( wxCURSOR_ARROW );
         DisplayError( this, wxT( "PCB_EDIT_FRAME::MuWaveCommand() id error" ) );
         SetNoToolSelected();
         break;

@@ -55,7 +55,7 @@ void PCB_EDIT_FRAME::Attribut_Segment( TRACK* track, wxDC* DC, bool Flag_On )
     OnModify();
     m_canvas->CrossHairOff( DC );   // Erase cursor shape
     track->SetState( TRACK_LOCKED, Flag_On );
-    track->Draw( m_canvas, DC, GR_OR | GR_HIGHLIGHT );
+    track->Draw( GetLegacyCanvas(), DC, GR_OR | GR_HIGHLIGHT );
     m_canvas->CrossHairOn( DC );    // Display cursor shape
 
     MSG_PANEL_ITEMS items;
@@ -75,7 +75,7 @@ void PCB_EDIT_FRAME::Attribut_Track( TRACK* track, wxDC* DC, bool Flag_On )
 
     m_canvas->CrossHairOff( DC );   // Erase cursor shape
     Track = GetBoard()->MarkTrace( track, &nb_segm, NULL, NULL, true );
-    DrawTraces( m_canvas, DC, Track, nb_segm, GR_OR | GR_HIGHLIGHT );
+    DrawTraces( GetLegacyCanvas(), DC, Track, nb_segm, GR_OR | GR_HIGHLIGHT );
 
     for( ; (Track != NULL) && (nb_segm > 0); nb_segm-- )
     {
@@ -117,7 +117,7 @@ void PCB_EDIT_FRAME::Attribut_net( wxDC* DC, int net_code, bool Flag_On )
 
         OnModify();
         Track->SetState( TRACK_LOCKED, Flag_On );
-        Track->Draw( m_canvas, DC, GR_OR | GR_HIGHLIGHT );
+        Track->Draw( GetLegacyCanvas(), DC, GR_OR | GR_HIGHLIGHT );
         Track = Track->Next();
     }
 

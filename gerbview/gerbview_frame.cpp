@@ -118,7 +118,7 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent ):
     SetScreen( new GBR_SCREEN( GetPageSettings().GetSizeIU() ) );
 
     // Create the PCB_LAYER_WIDGET *after* SetLayout():
-    m_LayersManager = new GERBER_LAYER_WIDGET( this, m_canvas );
+    m_LayersManager = new GERBER_LAYER_WIDGET( this, GetLegacyCanvas() );
 
     // LoadSettings() *after* creating m_LayersManager, because LoadSettings()
     // initialize parameters in m_LayersManager
@@ -181,8 +181,8 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent ):
         m_auimgr.AddPane( m_optionsToolBar,
                           wxAuiPaneInfo( vert ).Name( wxT( "m_optionsToolBar" ) ).Left() );
 
-    if( m_canvas )
-        m_auimgr.AddPane( m_canvas,
+    if( GetLegacyCanvas() )
+        m_auimgr.AddPane( GetLegacyCanvas(),
                           wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane() );
 
     if( GetGalCanvas() )
@@ -1280,4 +1280,9 @@ void GERBVIEW_FRAME::SetIconScale( int aScale )
     ReCreateAuxiliaryToolbar();
     Layout();
     SendSizeEvent();
+}
+
+void EDA_DRAW_FRAME::createCanvas()
+{
+    m_canvas = new EDA_DRAW_PANEL( this, -1, wxPoint( 0, 0 ), m_FrameSize );
 }

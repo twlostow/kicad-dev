@@ -48,10 +48,10 @@
 #include <pcbnew.h>
 
 
-static void ShowNewEdgeModule( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void ShowNewEdgeModule( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                bool erase );
-static void Abort_Move_ModuleOutline( EDA_DRAW_PANEL* Panel, wxDC* DC );
-static void ShowCurrentOutlineWhileMoving( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void Abort_Move_ModuleOutline( DRAW_PANEL_BASE* aPanel, wxDC* DC );
+static void ShowCurrentOutlineWhileMoving( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                            const wxPoint& aPosition, bool aErase );
 
 static double  ArcValue = 900;
@@ -64,7 +64,7 @@ void FOOTPRINT_EDIT_FRAME::Start_Move_EdgeMod( EDGE_MODULE* aEdge, wxDC* DC )
     if( aEdge == NULL )
         return;
 
-    aEdge->Draw( m_canvas, DC, GR_XOR );
+    aEdge->Draw( GetLegacyCanvas(), DC, GR_XOR );
     aEdge->SetFlags( IS_MOVED );
     MoveVector.x   = MoveVector.y = 0;
     CursorInitialPosition    = GetCrossHairPosition();
@@ -100,11 +100,12 @@ void FOOTPRINT_EDIT_FRAME::Place_EdgeMod( EDGE_MODULE* aEdge )
 /* Redraw the current moved graphic item when mouse is moving
  * Use this function to show an existing outline, in move command
 */
-static void ShowCurrentOutlineWhileMoving( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void ShowCurrentOutlineWhileMoving( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                            const wxPoint& aPosition, bool aErase )
 {
     BASE_SCREEN* screen = aPanel->GetScreen();
     EDGE_MODULE* edge   = (EDGE_MODULE*) screen->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
     if( edge == NULL )
         return;
@@ -113,12 +114,12 @@ static void ShowCurrentOutlineWhileMoving( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
 
     if( aErase )
     {
-        edge->Draw( aPanel, aDC, GR_XOR, MoveVector );
+        edge->Draw( panel, aDC, GR_XOR, MoveVector );
     }
 
-    MoveVector = -(aPanel->GetParent()->GetCrossHairPosition() - CursorInitialPosition);
+    MoveVector = -(panel->GetParent()->GetCrossHairPosition() - CursorInitialPosition);
 
-    edge->Draw( aPanel, aDC, GR_XOR, MoveVector );
+    edge->Draw( panel, aDC, GR_XOR, MoveVector );
 
     module->CalculateBoundingBox();
 }
@@ -127,11 +128,13 @@ static void ShowCurrentOutlineWhileMoving( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
 /* Redraw the current graphic item during its creation
  * Use this function to show a new outline, in begin command
  */
-static void ShowNewEdgeModule( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void ShowNewEdgeModule( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                bool aErase )
 {
     BASE_SCREEN* screen = aPanel->GetScreen();
     EDGE_MODULE* edge   = (EDGE_MODULE*) screen->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
+
 
     if( edge == NULL )
         return;
@@ -140,10 +143,10 @@ static void ShowNewEdgeModule( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint&
 
     //  if( erase )
     {
-        edge->Draw( aPanel, aDC, GR_XOR );
+        edge->Draw( panel, aDC, GR_XOR );
     }
 
-    edge->SetEnd( aPanel->GetParent()->GetCrossHairPosition() );
+    edge->SetEnd( panel->GetParent()->GetCrossHairPosition() );
 
     // Update relative coordinate.
     edge->SetEnd0( edge->GetEnd() - module->GetPosition() );
@@ -154,7 +157,7 @@ static void ShowNewEdgeModule( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint&
 
     edge->SetEnd0( pt );
 
-    edge->Draw( aPanel, aDC, GR_XOR );
+    edge->Draw( panel, aDC, GR_XOR );
 
     module->CalculateBoundingBox();
 }
@@ -293,30 +296,31 @@ void FOOTPRINT_EDIT_FRAME::Delete_Edge_Module( EDGE_MODULE* aEdge )
 
 /* abort function in moving outline.
  */
-static void Abort_Move_ModuleOutline( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void Abort_Move_ModuleOutline( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    EDGE_MODULE* edge = (EDGE_MODULE*) Panel->GetScreen()->GetCurItem();
+    EDGE_MODULE* edge = (EDGE_MODULE*) aPanel->GetScreen()->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
-    Panel->SetMouseCapture( NULL, NULL );
+    panel->SetMouseCapture( NULL, NULL );
 
     if( edge && ( edge->Type() == PCB_MODULE_EDGE_T ) )
     {
         if( edge->IsNew() )   // On aborting, delete new outline.
         {
             MODULE* module = (MODULE*) edge->GetParent();
-            edge->Draw( Panel, DC, GR_XOR, MoveVector );
+            edge->Draw( panel, DC, GR_XOR, MoveVector );
             edge->DeleteStructure();
             module->CalculateBoundingBox();
         }
         else   // On aborting, move existing outline to its initial position.
         {
-            edge->Draw( Panel, DC, GR_XOR, MoveVector );
+            edge->Draw( panel, DC, GR_XOR, MoveVector );
             edge->ClearFlags();
-            edge->Draw( Panel, DC, GR_OR );
+            edge->Draw( panel, DC, GR_OR );
         }
     }
 
-    Panel->GetScreen()->SetCurItem( NULL );
+    panel->GetScreen()->SetCurItem( NULL );
 }
 
 
@@ -376,7 +380,7 @@ EDGE_MODULE* FOOTPRINT_EDIT_FRAME::Begin_Edge_Module( EDGE_MODULE* aEdge,
         {
             if( aEdge->m_Start0 != aEdge->m_End0 )
             {
-                aEdge->Draw( m_canvas, DC, GR_OR );
+                aEdge->Draw( GetLegacyCanvas(), DC, GR_OR );
 
                 EDGE_MODULE* newedge = new EDGE_MODULE( *aEdge );
 

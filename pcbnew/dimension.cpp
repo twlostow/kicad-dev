@@ -49,12 +49,12 @@
 #include <pcb_layer_box_selector.h>
 
 /* Local functions */
-static void BuildDimension( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void BuildDimension( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                             const wxPoint& aPosition, bool aErase );
 
-static void MoveDimensionText( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void MoveDimensionText( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                const wxPoint& aPosition, bool aErase );
-static void AbortMoveDimensionText( EDA_DRAW_PANEL* aPanel, wxDC* aDC );
+static void AbortMoveDimensionText( DRAW_PANEL_BASE* aPanel, wxDC* aDC );
 
 
 /* Local variables : */
@@ -175,7 +175,7 @@ void DIALOG_DIMENSION_EDITOR::OnOKClick( wxCommandEvent& event )
 #ifndef USE_WX_OVERLAY
     if( m_DC )     // Delete old text.
     {
-        m_currentDimension->Draw( m_parent->GetCanvas(), m_DC, GR_XOR );
+        m_currentDimension->Draw( m_parent->GetLegacyCanvas(), m_DC, GR_XOR );
     }
 #endif
 
@@ -224,7 +224,7 @@ void DIALOG_DIMENSION_EDITOR::OnOKClick( wxCommandEvent& event )
 #ifndef USE_WX_OVERLAY
     if( m_DC )     // Display new text
     {
-        m_currentDimension->Draw( m_parent->GetCanvas(), m_DC, GR_OR );
+        m_currentDimension->Draw( m_parent->GetLegacyCanvas(), m_DC, GR_OR );
     }
 #else
     m_parent->Refresh();
@@ -235,25 +235,26 @@ void DIALOG_DIMENSION_EDITOR::OnOKClick( wxCommandEvent& event )
 }
 
 
-static void AbortBuildDimension( EDA_DRAW_PANEL* Panel, wxDC* aDC )
+static void AbortBuildDimension( DRAW_PANEL_BASE* Panel, wxDC* aDC )
 {
     DIMENSION* dimension = (DIMENSION*) Panel->GetScreen()->GetCurItem();
+    auto panel =static_cast<EDA_DRAW_PANEL*>( Panel );
 
     if( dimension )
     {
         if( dimension->IsNew() )
         {
-            dimension->Draw( Panel, aDC, GR_XOR );
+            dimension->Draw( panel, aDC, GR_XOR );
             dimension->DeleteStructure();
         }
         else
         {
-            dimension->Draw( Panel, aDC, GR_OR );
+            dimension->Draw( panel, aDC, GR_OR );
         }
     }
 
     status_dimension = 0;
-    ((PCB_EDIT_FRAME*)Panel->GetParent())->SetCurItem( NULL );
+    ((PCB_EDIT_FRAME*)panel->GetParent())->SetCurItem( NULL );
 }
 
 
@@ -284,7 +285,7 @@ DIMENSION* PCB_EDIT_FRAME::EditDimension( DIMENSION* aDimension, wxDC* aDC )
         aDimension->Text().SetThickness( width );
         aDimension->SetWidth( width );
         aDimension->AdjustDimensionDetails();
-        aDimension->Draw( m_canvas, aDC, GR_XOR );
+        aDimension->Draw( GetLegacyCanvas(), aDC, GR_XOR );
 
         m_canvas->SetMouseCapture( BuildDimension, AbortBuildDimension );
         return aDimension;
@@ -297,7 +298,7 @@ DIMENSION* PCB_EDIT_FRAME::EditDimension( DIMENSION* aDimension, wxDC* aDC )
         return aDimension;
     }
 
-    aDimension->Draw( m_canvas, aDC, GR_OR );
+    aDimension->Draw( GetLegacyCanvas(), aDC, GR_OR );
     aDimension->ClearFlags();
 
     /* ADD this new item in list */
@@ -313,12 +314,13 @@ DIMENSION* PCB_EDIT_FRAME::EditDimension( DIMENSION* aDimension, wxDC* aDC )
 }
 
 
-static void BuildDimension( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void BuildDimension( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                             const wxPoint& aPosition, bool aErase )
 {
     PCB_SCREEN* screen   = (PCB_SCREEN*) aPanel->GetScreen();
     DIMENSION*  Dimension = (DIMENSION*) screen->GetCurItem();
     wxPoint     pos = aPanel->GetParent()->GetCrossHairPosition();
+    auto panel =static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( Dimension == NULL )
         return;
@@ -326,7 +328,7 @@ static void BuildDimension( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
     // Erase previous dimension.
     if( aErase )
     {
-        Dimension->Draw( aPanel, aDC, GR_XOR );
+        Dimension->Draw( panel, aDC, GR_XOR );
     }
 
     Dimension->SetLayer( screen->m_Active_Layer );
@@ -347,7 +349,7 @@ static void BuildDimension( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
         Dimension->SetHeight( depl );
     }
 
-    Dimension->Draw( aPanel, aDC, GR_XOR );
+    Dimension->Draw( panel, aDC, GR_XOR );
 }
 
 
@@ -367,7 +369,7 @@ void PCB_EDIT_FRAME::DeleteDimension( DIMENSION* aDimension, wxDC* aDC )
         return;
 
     if( aDC )
-        aDimension->Draw( m_canvas, aDC, GR_XOR );
+        aDimension->Draw( GetLegacyCanvas(), aDC, GR_XOR );
 
     SaveCopyInUndoList( aDimension, UR_DELETED );
     aDimension->UnLink();
@@ -387,7 +389,7 @@ void PCB_EDIT_FRAME::BeginMoveDimensionText( DIMENSION* aItem, wxDC* DC )
     // Store the initial position for undo/abort command
     initialTextPosition = aItem->Text().GetTextPos();
 
-    aItem->Draw( m_canvas, DC, GR_XOR );
+    aItem->Draw( GetLegacyCanvas(), DC, GR_XOR );
     aItem->SetFlags( IS_MOVED );
     SetMsgPanel( aItem );
 
@@ -401,20 +403,21 @@ void PCB_EDIT_FRAME::BeginMoveDimensionText( DIMENSION* aItem, wxDC* DC )
 
 
 /* Move dimension text following the cursor. */
-static void MoveDimensionText( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void MoveDimensionText( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                bool aErase )
 {
     DIMENSION* dimension = (DIMENSION*) aPanel->GetScreen()->GetCurItem();
+    auto panel =static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( dimension == NULL )
         return;
 
     if( aErase )
-        dimension->Draw( aPanel, aDC, GR_XOR );
+        dimension->Draw( panel, aDC, GR_XOR );
 
-    dimension->Text().SetTextPos( aPanel->GetParent()->GetCrossHairPosition() );
+    dimension->Text().SetTextPos( panel->GetParent()->GetCrossHairPosition() );
 
-    dimension->Draw( aPanel, aDC, GR_XOR );
+    dimension->Draw( panel, aDC, GR_XOR );
 }
 
 
@@ -423,20 +426,21 @@ static void MoveDimensionText( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint&
  *
  * If a text is selected, its initial coord are regenerated
  */
-void AbortMoveDimensionText( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+void AbortMoveDimensionText( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     DIMENSION* dimension = (DIMENSION*) aPanel->GetScreen()->GetCurItem();
     ( (PCB_EDIT_FRAME*) aPanel->GetParent() )->SetCurItem( NULL );
+    auto panel =static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     aPanel->SetMouseCapture( NULL, NULL );
 
     if( dimension == NULL )  // Should not occur
         return;
 
-    dimension->Draw( aPanel, aDC, GR_XOR );
+    dimension->Draw( panel, aDC, GR_XOR );
     dimension->Text().SetTextPos( initialTextPosition );
     dimension->ClearFlags();
-    dimension->Draw( aPanel, aDC, GR_OR );
+    dimension->Draw( panel, aDC, GR_OR );
 }
 
 
@@ -451,7 +455,7 @@ void PCB_EDIT_FRAME::PlaceDimensionText( DIMENSION* aItem, wxDC* DC )
     if( aItem == NULL )
         return;
 
-    aItem->Draw( m_canvas, DC, GR_OR );
+    aItem->Draw( GetLegacyCanvas(), DC, GR_OR );
     OnModify();
 
     wxPoint tmp = aItem->Text().GetTextPos();

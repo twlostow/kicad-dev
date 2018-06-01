@@ -56,7 +56,7 @@ TRACK* PCB_EDIT_FRAME::Delete_Segment( wxDC* DC, TRACK* aTrack )
             DBG( g_CurrentTrackList.VerifyListIntegrity(); )
 
             // Delete the current trace
-            ShowNewTrackWhenMovingCursor( m_canvas, DC, wxDefaultPosition, false );
+            ShowNewTrackWhenMovingCursor( GetLegacyCanvas(), DC, wxDefaultPosition, false );
 
             // delete the most recently entered
             delete g_CurrentTrackList.PopBack();

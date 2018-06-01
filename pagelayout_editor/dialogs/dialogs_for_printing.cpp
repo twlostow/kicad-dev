@@ -156,7 +156,7 @@ void PLEDITOR_PRINTOUT::DrawPage( int aPageNum )
     EDA_RECT oldClipBox;
     wxRect   fitRect;
     wxDC*    dc = GetDC();
-    EDA_DRAW_PANEL* panel = m_parent->GetCanvas();
+    EDA_DRAW_PANEL* panel = m_parent->GetLegacyCanvas();
     PL_EDITOR_SCREEN* screen = m_parent->GetScreen();
 
     // Save current scale factor, offsets, and clip box.

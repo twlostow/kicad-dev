@@ -26,29 +26,30 @@ static wxPoint Pad_OldPos;
 
 /* Cancel move pad command.
  */
-static void Abort_Move_Pad( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void Abort_Move_Pad( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
     D_PAD* pad = s_CurrentSelectedPad;
-
-    Panel->SetMouseCapture( NULL, NULL );
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
+    
+    panel->SetMouseCapture( NULL, NULL );
 
     if( pad == NULL )
         return;
 
-    pad->Draw( Panel, DC, GR_XOR );
+    pad->Draw( panel, DC, GR_XOR );
     pad->ClearFlags();
     pad->SetPosition( Pad_OldPos );
-    pad->Draw( Panel, DC, GR_XOR );
+    pad->Draw( panel, DC, GR_XOR );
 
     // Pad move in progress: restore origin of dragged tracks, if any.
     for( unsigned ii = 0; ii < g_DragSegmentList.size(); ii++ )
     {
         TRACK* track = g_DragSegmentList[ii].m_Track;
-        track->Draw( Panel, DC, GR_XOR );
+        track->Draw( panel, DC, GR_XOR );
         track->SetState( IN_EDIT, false );
         track->ClearFlags();
         g_DragSegmentList[ii].RestoreInitialValues();
-        track->Draw( Panel, DC, GR_OR );
+        track->Draw( panel, DC, GR_OR );
     }
 
     EraseDragList();
@@ -58,31 +59,32 @@ static void Abort_Move_Pad( EDA_DRAW_PANEL* Panel, wxDC* DC )
 
 /* Draw in drag mode when moving a pad.
  */
-static void Show_Pad_Move( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Show_Pad_Move( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                            bool aErase )
 {
     TRACK*       Track;
     D_PAD*       pad    = s_CurrentSelectedPad;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( pad == NULL )       // Should not occur
         return;
 
     if( aErase )
-        pad->Draw( aPanel, aDC, GR_XOR );
+        pad->Draw( panel, aDC, GR_XOR );
 
-    pad->SetPosition( aPanel->GetParent()->GetCrossHairPosition() );
-    pad->Draw( aPanel, aDC, GR_XOR );
+    pad->SetPosition( panel->GetParent()->GetCrossHairPosition() );
+    pad->Draw( panel, aDC, GR_XOR );
 
     for( unsigned ii = 0; ii < g_DragSegmentList.size(); ii++ )
     {
         Track = g_DragSegmentList[ii].m_Track;
 
         if( aErase )
-            Track->Draw( aPanel, aDC, GR_XOR );
+            Track->Draw( panel, aDC, GR_XOR );
 
         g_DragSegmentList[ii].SetTrackEndsCoordinates( wxPoint(0, 0) );
 
-        Track->Draw( aPanel, aDC, GR_XOR );
+        Track->Draw( panel, aDC, GR_XOR );
     }
 }
 
@@ -101,9 +103,9 @@ void PCB_BASE_FRAME::StartMovePad( D_PAD* aPad, wxDC* aDC, bool aDragConnectedTr
     m_canvas->SetMouseCapture( Show_Pad_Move, Abort_Move_Pad );
 
     // Draw the pad, in SKETCH mode
-    aPad->Draw( m_canvas, aDC, GR_XOR );
+    aPad->Draw( GetLegacyCanvas(), aDC, GR_XOR );
     aPad->SetFlags( IS_MOVED );
-    aPad->Draw( m_canvas, aDC, GR_XOR );
+    aPad->Draw( GetLegacyCanvas(), aDC, GR_XOR );
 
     EraseDragList();
 
@@ -112,7 +114,7 @@ void PCB_BASE_FRAME::StartMovePad( D_PAD* aPad, wxDC* aDC, bool aDragConnectedTr
     {
         DRAG_LIST drglist( GetBoard() );
         drglist.BuildDragListe( aPad );
-        UndrawAndMarkSegmentsToDrag( m_canvas, aDC );
+        UndrawAndMarkSegmentsToDrag( GetLegacyCanvas(), aDC );
     }
 }
 
@@ -163,7 +165,7 @@ void PCB_BASE_FRAME::PlacePad( D_PAD* aPad, wxDC* DC )
     }
 
     aPad->SetPosition( pad_curr_position );
-    aPad->Draw( m_canvas, DC, GR_XOR );
+    aPad->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
     // Redraw dragged track segments
     for( unsigned ii = 0; ii < g_DragSegmentList.size(); ii++ )
@@ -178,13 +180,13 @@ void PCB_BASE_FRAME::PlacePad( D_PAD* aPad, wxDC* DC )
             track->SetEnd( aPad->GetPosition() );
 
         if( DC )
-            track->Draw( m_canvas, DC, GR_XOR );
+            track->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
         track->SetState( IN_EDIT, false );
         track->ClearFlags();
 
         if( DC )
-            track->Draw( m_canvas, DC, GR_OR );
+            track->Draw( GetLegacyCanvas(), DC, GR_OR );
     }
 
     // Compute local coordinates (i.e refer to module position and for module orient = 0)
@@ -197,7 +199,7 @@ void PCB_BASE_FRAME::PlacePad( D_PAD* aPad, wxDC* DC )
     aPad->SetY0( dY + aPad->GetPos0().y );
 
     if( DC )
-        aPad->Draw( m_canvas, DC, GR_OR );
+        aPad->Draw( GetLegacyCanvas(), DC, GR_OR );
 
     module->CalculateBoundingBox();
     module->SetLastEditTime();

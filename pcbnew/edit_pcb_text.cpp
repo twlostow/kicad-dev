@@ -40,9 +40,9 @@
 #include <class_board_item.h>
 
 
-static void Move_Texte_Pcb( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Move_Texte_Pcb( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                             bool aErase );
-static void Abort_Edit_Pcb_Text( EDA_DRAW_PANEL* Panel, wxDC* DC );
+static void Abort_Edit_Pcb_Text( DRAW_PANEL_BASE* aPanel, wxDC* DC );
 
 
 static TEXTE_PCB s_TextCopy( (BOARD_ITEM*) NULL ); /* copy of the edited text
@@ -55,18 +55,18 @@ static TEXTE_PCB s_TextCopy( (BOARD_ITEM*) NULL ); /* copy of the edited text
  * Abort current text edit progress.
  * If a text is selected, its initial coord are regenerated
  */
-void Abort_Edit_Pcb_Text( EDA_DRAW_PANEL* Panel, wxDC* DC )
+void Abort_Edit_Pcb_Text( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    TEXTE_PCB* TextePcb = (TEXTE_PCB*) Panel->GetScreen()->GetCurItem();
-    ( (PCB_EDIT_FRAME*) Panel->GetParent() )->SetCurItem( NULL );
-
-    Panel->SetMouseCapture( NULL, NULL );
+    TEXTE_PCB* TextePcb = (TEXTE_PCB*) aPanel->GetScreen()->GetCurItem();
+    ( (PCB_EDIT_FRAME*) aPanel->GetParent() )->SetCurItem( NULL );
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
+    panel->SetMouseCapture( NULL, NULL );
 
     if( TextePcb == NULL )  // Should not occur
         return;
 
 #ifndef USE_WX_OVERLAY
-    TextePcb->Draw( Panel, DC, GR_XOR );
+    TextePcb->Draw( panel, DC, GR_XOR );
 #endif
 
     if( TextePcb->IsNew() )  // If new: remove it
@@ -79,9 +79,9 @@ void Abort_Edit_Pcb_Text( EDA_DRAW_PANEL* Panel, wxDC* DC )
     TextePcb->SwapData( &s_TextCopy );
     TextePcb->ClearFlags();
 #ifndef USE_WX_OVERLAY
-    TextePcb->Draw( Panel, DC, GR_OR );
+    TextePcb->Draw( panel, DC, GR_OR );
 #else
-    Panel->Refresh();
+    panel->Refresh();
 #endif
 }
 
@@ -97,7 +97,7 @@ void PCB_EDIT_FRAME::Place_Texte_Pcb( TEXTE_PCB* TextePcb, wxDC* DC )
     if( TextePcb == NULL )
         return;
 
-    TextePcb->Draw( m_canvas, DC, GR_OR );
+    TextePcb->Draw( GetLegacyCanvas(), DC, GR_OR );
     OnModify();
 
     if( TextePcb->IsNew() )  // If new: prepare undo command
@@ -155,20 +155,21 @@ void PCB_EDIT_FRAME::StartMoveTextePcb( TEXTE_PCB* aTextePcb, wxDC* aDC, bool aE
 
 
 // Move  PCB text following the cursor.
-static void Move_Texte_Pcb( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Move_Texte_Pcb( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                             bool aErase )
 {
     TEXTE_PCB* TextePcb = (TEXTE_PCB*) aPanel->GetScreen()->GetCurItem();
-
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
+    
     if( TextePcb == NULL )
         return;
 
     if( aErase )
-        TextePcb->Draw( aPanel, aDC, GR_XOR );
+        TextePcb->Draw( panel, aDC, GR_XOR );
 
-    TextePcb->SetTextPos( aPanel->GetParent()->GetCrossHairPosition() );
+    TextePcb->SetTextPos( panel->GetParent()->GetCrossHairPosition() );
 
-    TextePcb->Draw( aPanel, aDC, GR_XOR );
+    TextePcb->Draw( panel, aDC, GR_XOR );
 }
 
 
@@ -177,7 +178,7 @@ void PCB_EDIT_FRAME::Delete_Texte_Pcb( TEXTE_PCB* TextePcb, wxDC* DC )
     if( TextePcb == NULL )
         return;
 
-    TextePcb->Draw( m_canvas, DC, GR_XOR );
+    TextePcb->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
     SaveCopyInUndoList( TextePcb, UR_DELETED );
     TextePcb->UnLink();
@@ -241,12 +242,12 @@ void PCB_EDIT_FRAME::Rotate_Texte_Pcb( TEXTE_PCB* TextePcb, wxDC* DC )
         return;
 
     // Erase previous text:
-    TextePcb->Draw( m_canvas, DC, GR_XOR );
+    TextePcb->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
     TextePcb->SetTextAngle( TextePcb->GetTextAngle() + 900 );
 
     // Redraw text in new position:
-    TextePcb->Draw( m_canvas, DC, GR_XOR );
+    TextePcb->Draw( GetLegacyCanvas(), DC, GR_XOR );
     SetMsgPanel( TextePcb );
 
     if( TextePcb->GetFlags() == 0 )    // i.e. not edited, or moved
@@ -266,11 +267,11 @@ void PCB_EDIT_FRAME::FlipTextePcb( TEXTE_PCB* aTextePcb, wxDC* aDC )
     if( aTextePcb == NULL )
         return;
 
-    aTextePcb->Draw( m_canvas, aDC, GR_XOR );
+    aTextePcb->Draw( GetLegacyCanvas(), aDC, GR_XOR );
 
     aTextePcb->Flip( aTextePcb->GetTextPos() );
 
-    aTextePcb->Draw( m_canvas, aDC, GR_XOR );
+    aTextePcb->Draw( GetLegacyCanvas(), aDC, GR_XOR );
     SetMsgPanel( aTextePcb );
 
     if( aTextePcb->GetFlags() == 0 )    // i.e. not edited, or moved

@@ -35,10 +35,10 @@
 #include <worksheet_dataitem.h>
 
 
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                      bool erase );
 
-static void DrawMovingItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC );
+static void DrawMovingItems( DRAW_PANEL_BASE* aPanel, wxDC* aDC );
 
 static void ConfigureDrawList( WS_DRAW_ITEM_LIST* aDrawList,
         PL_EDITOR_SCREEN* aScreen, PL_EDITOR_FRAME* aFrame );
@@ -157,7 +157,7 @@ bool PL_EDITOR_FRAME::HandleBlockEnd( wxDC* DC )
 }
 
 
-static void DrawMovingItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+static void DrawMovingItems( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     auto screen = static_cast<PL_EDITOR_SCREEN*>( aPanel->GetScreen() );
     auto frame = static_cast<PL_EDITOR_FRAME*>( aPanel->GetParent() );
@@ -182,21 +182,22 @@ static void DrawMovingItems( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
 
 /* Traces the outline of the block structures of a repositioning move
  */
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPositon,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPositon,
                                      bool aErase )
 {
     auto screen = aPanel->GetScreen();
     auto block = &screen->m_BlockLocate;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( aErase )
     {
-        block->Draw( aPanel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
-        DrawMovingItems( aPanel, aDC );
+        block->Draw( panel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
+        DrawMovingItems( panel, aDC );
     }
 
-    block->SetMoveVector( aPanel->GetParent()->GetCrossHairPosition() - block->GetLastCursorPosition() );
-    block->Draw( aPanel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
-    DrawMovingItems( aPanel, aDC );
+    block->SetMoveVector( panel->GetParent()->GetCrossHairPosition() - block->GetLastCursorPosition() );
+    block->Draw( panel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
+    DrawMovingItems( panel, aDC );
 }
 
 
@@ -236,4 +237,31 @@ void PL_EDITOR_FRAME::Block_Move( wxDC* DC )
     }
 
     m_canvas->Refresh( true );
+}
+
+void DrawAndSizingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
+                                 bool aErase )
+{
+    BLOCK_SELECTOR* block;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
+
+    block = &panel->GetScreen()->m_BlockLocate;
+
+    block->SetMoveVector( wxPoint( 0, 0 ) );
+
+    if( aErase && aDC )
+        block->Draw( panel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
+
+    block->SetLastCursorPosition( panel->GetParent()->GetCrossHairPosition() );
+    block->SetEnd( panel->GetParent()->GetCrossHairPosition() );
+
+    if( aDC )
+        block->Draw( panel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
+
+    if( block->GetState() == STATE_BLOCK_INIT )
+    {
+        if( block->GetWidth() || block->GetHeight() )
+            // 2nd point exists: the rectangle is not surface anywhere
+            block->SetState( STATE_BLOCK_END );
+    }
 }

@@ -261,7 +261,7 @@ bool DIALOG_PCB_TEXT_PROPERTIES::TransferDataFromWindow()
     // Erase old text on screen if context is available
     if( m_DC )
     {
-        m_SelectedPCBText->Draw( m_Parent->GetCanvas(), m_DC, GR_XOR );
+        m_SelectedPCBText->Draw( m_Parent->GetLegacyCanvas(), m_DC, GR_XOR );
     }
 #endif
 
@@ -341,7 +341,7 @@ bool DIALOG_PCB_TEXT_PROPERTIES::TransferDataFromWindow()
     // Finally, display new text if there is a context to do so
     if( m_DC )
     {
-        m_SelectedPCBText->Draw( m_Parent->GetCanvas(), m_DC, GR_OR );
+        m_SelectedPCBText->Draw( m_Parent->GetLegacyCanvas(), m_DC, GR_OR );
     }
 #else
     m_Parent->Refresh();

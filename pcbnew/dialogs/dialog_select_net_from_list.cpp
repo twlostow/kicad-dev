@@ -184,7 +184,7 @@ void DIALOG_SELECT_NET_FROM_LIST::HighlightNet( bool aEnabled, const wxString& a
     }
     else
     {
-        INSTALL_UNBUFFERED_DC( dc, m_frame->GetCanvas() );
+        INSTALL_UNBUFFERED_DC( dc, m_frame->GetLegacyCanvas() );
 
         if( m_brd->IsHighLightNetON() )
             m_frame->HighLight( &dc );

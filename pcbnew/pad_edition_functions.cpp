@@ -207,7 +207,7 @@ void PCB_BASE_FRAME::RotatePad( D_PAD* aPad, wxDC* DC )
     OnModify();
 
     if( DC )
-        module->Draw( m_canvas, DC, GR_XOR );
+        module->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
     wxSize  sz = aPad->GetSize();
     std::swap( sz.x, sz.y );
@@ -232,5 +232,5 @@ void PCB_BASE_FRAME::RotatePad( D_PAD* aPad, wxDC* DC )
     SetMsgPanel( aPad );
 
     if( DC )
-        module->Draw( m_canvas, DC, GR_OR );
+        module->Draw( GetLegacyCanvas(), DC, GR_OR );
 }

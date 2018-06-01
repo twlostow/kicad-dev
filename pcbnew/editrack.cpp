@@ -43,8 +43,8 @@
 #include <connectivity_data.h>
 
 
-static void Abort_Create_Track( EDA_DRAW_PANEL* panel, wxDC* DC );
-void        ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void Abort_Create_Track( DRAW_PANEL_BASE* panel, wxDC* DC );
+void        ShowNewTrackWhenMovingCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                           const wxPoint& aPosition, bool aErase );
 static void ComputeBreakPoint( TRACK* track, int n, wxPoint end );
 static void DeleteNullTrackSegments( BOARD* pcb, DLIST<TRACK>& aTrackList );
@@ -57,16 +57,17 @@ static PICKED_ITEMS_LIST s_ItemsListPicker;
 
 /* Function called to abort a track creation
  */
-static void Abort_Create_Track( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void Abort_Create_Track( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    PCB_EDIT_FRAME* frame = (PCB_EDIT_FRAME*) Panel->GetParent();
+    PCB_EDIT_FRAME* frame = (PCB_EDIT_FRAME*) aPanel->GetParent();
     BOARD* pcb = frame->GetBoard();
     TRACK* track = dyn_cast<TRACK*>( frame->GetCurItem() );
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( track )
     {
         // Erase the current drawing
-        ShowNewTrackWhenMovingCursor( Panel, DC, wxDefaultPosition, false );
+        ShowNewTrackWhenMovingCursor( panel, DC, wxDefaultPosition, false );
 
         if( pcb->IsHighLightNetON() )
             frame->HighLight( DC );
@@ -74,7 +75,7 @@ static void Abort_Create_Track( EDA_DRAW_PANEL* Panel, wxDC* DC )
         pcb->PopHighLight();
 
         if( pcb->IsHighLightNetON() )
-            pcb->DrawHighLight( Panel, DC, pcb->GetHighLightNetCode() );
+            pcb->DrawHighLight( panel, DC, pcb->GetHighLightNetCode() );
 
         frame->ClearMsgPanel();
 
@@ -168,7 +169,7 @@ TRACK* PCB_EDIT_FRAME::Begin_Route( TRACK* aTrack, wxDC* aDC )
         DBG( g_CurrentTrackList.VerifyListIntegrity() );
 
         GetBoard()->HighLightON();
-        GetBoard()->DrawHighLight( m_canvas, aDC, GetBoard()->GetHighLightNetCode() );
+        GetBoard()->DrawHighLight( GetLegacyCanvas(), aDC, GetBoard()->GetHighLightNetCode() );
 
         // Display info about track Net class, and init track and vias sizes:
         g_CurrentTrackSegment->SetNetCode( GetBoard()->GetHighLightNetCode() );
@@ -509,7 +510,7 @@ bool PCB_EDIT_FRAME::End_Route( TRACK* aTrack, wxDC* aDC )
         SetMsgPanel( GetBoard() );
 
         // Redraw the entire new track.
-        DrawTraces( m_canvas, aDC, firstTrack, newCount, GR_OR );
+        DrawTraces( GetLegacyCanvas(), aDC, firstTrack, newCount, GR_OR );
     }
 
     wxASSERT( g_FirstTrackSegment == NULL );
@@ -522,7 +523,7 @@ bool PCB_EDIT_FRAME::End_Route( TRACK* aTrack, wxDC* aDC )
     GetBoard()->PopHighLight();
 
     if( GetBoard()->IsHighLightNetON() )
-        GetBoard()->DrawHighLight( m_canvas, aDC, GetBoard()->GetHighLightNetCode() );
+        GetBoard()->DrawHighLight( GetLegacyCanvas(), aDC, GetBoard()->GetHighLightNetCode() );
 
     m_canvas->SetMouseCapture( NULL, NULL );
     SetCurItem( NULL );
@@ -589,7 +590,7 @@ TRACK* LocateIntrusion( TRACK* listStart, TRACK* aTrack, LAYER_NUM aLayer, const
  *   the magnetic hit instead of solving the violation
  * - should locate conflicting tracks also when we're crossing over them
  */
-static void PushTrack( EDA_DRAW_PANEL* panel )
+static void PushTrack( DRAW_PANEL_BASE* panel )
 {
     PCB_SCREEN* screen = (PCB_SCREEN*) panel->GetParent()->GetScreen();
     BOARD*      pcb    = ( (PCB_BASE_FRAME*) (panel->GetParent()) )->GetBoard();
@@ -663,7 +664,7 @@ inline void DrawViaCirclesWhenEditingNewTrack( EDA_RECT* aPanelClipBox,
 
 /* Redraw the current track being created when the mouse cursor is moved
  */
-void ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+void ShowNewTrackWhenMovingCursor( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                    bool aErase )
 {
 //    DBG( g_CurrentTrackList.VerifyListIntegrity(); );
@@ -671,6 +672,7 @@ void ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPo
     PCB_SCREEN*     screen = (PCB_SCREEN*) aPanel->GetScreen();
     PCB_BASE_FRAME* frame  = (PCB_BASE_FRAME*) aPanel->GetParent();
     auto displ_opts = (PCB_DISPLAY_OPTIONS*) aPanel-> GetDisplayOptions();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
     bool tmp = displ_opts->m_DisplayPcbTrackFill;
     displ_opts->m_DisplayPcbTrackFill = true;
@@ -687,13 +689,13 @@ void ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPo
     // Values to Via circle
     int boardViaRadius = frame->GetDesignSettings().GetCurrentViaSize()/2;
     int viaRadiusWithClearence = boardViaRadius+netclass->GetClearance();
-    EDA_RECT* panelClipBox=aPanel->GetClipBox();
+    EDA_RECT* panelClipBox=panel->GetClipBox();
 
 #ifndef USE_WX_OVERLAY
     // Erase old track
     if( aErase )
     {
-        DrawTraces( aPanel, aDC, g_FirstTrackSegment, g_CurrentTrackList.GetCount(), GR_XOR );
+        DrawTraces( panel, aDC, g_FirstTrackSegment, g_CurrentTrackList.GetCount(), GR_XOR );
 
         frame->TraceAirWiresToTargets( aDC );
 
@@ -759,7 +761,7 @@ void ShowNewTrackWhenMovingCursor( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPo
 
     // Redraw the new track
     DBG( g_CurrentTrackList.VerifyListIntegrity(); );
-    DrawTraces( aPanel, aDC, g_FirstTrackSegment, g_CurrentTrackList.GetCount(), GR_XOR );
+    DrawTraces( panel, aDC, g_FirstTrackSegment, g_CurrentTrackList.GetCount(), GR_XOR );
 
     if( showTrackClearanceMode >= PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_TRACKS_AND_VIA_AREAS )
     {

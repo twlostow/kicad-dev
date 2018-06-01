@@ -1332,7 +1332,7 @@ void DIALOG_PAD_PROPERTIES::redraw()
         if( bbox.GetSize().x > 0 && bbox.GetSize().y > 0 )
         {
             // gives a size to the full drawable area
-            BOX2I drawbox;
+            BOX2D drawbox;
             drawbox.Move( m_dummyPad->GetPosition() );
             drawbox.Inflate( bbox.GetSize().x*2, bbox.GetSize().y*2 );
             view->SetBoundary( drawbox );

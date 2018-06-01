@@ -67,7 +67,7 @@ void MoveMarkedItemsExactly( MODULE* module, const wxPoint& centre,
                              bool force_all = false );
 
 // Local functions:
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                      bool aErase );
 static int  MarkItemsInBloc( MODULE* module, EDA_RECT& Rect );
 
@@ -352,11 +352,12 @@ void FOOTPRINT_EDIT_FRAME::HandleBlockPlace( wxDC* DC )
 /* Traces the outline of the search block structures
  * The entire block follows the cursor
  */
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                      bool aErase )
 {
     BASE_SCREEN*            screen = aPanel->GetScreen();
     FOOTPRINT_EDIT_FRAME*   moduleEditFrame = static_cast<FOOTPRINT_EDIT_FRAME*>( aPanel->GetParent() );
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
     wxASSERT( moduleEditFrame );
     MODULE* currentModule = moduleEditFrame->GetBoard()->m_Modules;
@@ -366,7 +367,7 @@ static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wx
 
     if( aErase )
     {
-        block->Draw( aPanel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
+        block->Draw( panel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
 
         if( currentModule )
         {
@@ -382,7 +383,7 @@ static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wx
                 {
                 case PCB_MODULE_TEXT_T:
                 case PCB_MODULE_EDGE_T:
-                    item->Draw( aPanel, aDC, g_XorMode, move_offset );
+                    item->Draw( panel, aDC, g_XorMode, move_offset );
                     break;
 
                 default:
@@ -397,7 +398,7 @@ static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wx
                 if( !pad->IsSelected() )
                     continue;
 
-                pad->Draw( aPanel, aDC, g_XorMode, move_offset );
+                pad->Draw( panel, aDC, g_XorMode, move_offset );
             }
         }
     }
@@ -405,7 +406,7 @@ static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wx
     // Repaint new view.
     block->SetMoveVector( moduleEditFrame->GetCrossHairPosition() - block->GetLastCursorPosition() );
 
-    block->Draw( aPanel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
+    block->Draw( panel, aDC, block->GetMoveVector(), g_XorMode, block->GetColor() );
 
     if( currentModule )
     {
@@ -421,7 +422,7 @@ static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wx
             {
             case PCB_MODULE_TEXT_T:
             case PCB_MODULE_EDGE_T:
-                item->Draw( aPanel, aDC, g_XorMode, move_offset );
+                item->Draw( panel, aDC, g_XorMode, move_offset );
                 break;
 
             default:
@@ -436,7 +437,7 @@ static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wx
             if( !pad->IsSelected() )
                 continue;
 
-            pad->Draw( aPanel, aDC, g_XorMode, move_offset );
+            pad->Draw( panel, aDC, g_XorMode, move_offset );
         }
     }
 }

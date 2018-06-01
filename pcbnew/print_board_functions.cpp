@@ -90,7 +90,7 @@ void FOOTPRINT_EDIT_FRAME::PrintPage( wxDC* aDC,
     for( MODULE* module = GetBoard()->m_Modules;  module;  module = module->Next() )
     {
         module->Move( offset );
-        Print_Module( m_canvas, aDC, module, drawmode, aPrintMaskLayer, drillShapeOpt );
+        Print_Module( GetLegacyCanvas(), aDC, module, drawmode, aPrintMaskLayer, drillShapeOpt );
         module->Move( -offset );
     }
 
@@ -179,7 +179,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
         case PCB_TEXT_T:
         case PCB_TARGET_T:
             if( aPrintMask[item->GetLayer()] )
-                item->Draw( m_canvas, aDC, drawmode );
+                item->Draw( GetLegacyCanvas(), aDC, drawmode );
             break;
 
         case PCB_MARKER_T:
@@ -209,7 +209,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
         }
         else
         {
-            track->Draw( m_canvas, aDC, drawmode );
+            track->Draw( GetLegacyCanvas(), aDC, drawmode );
         }
     }
 
@@ -219,7 +219,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
         if( !( aPrintMask & track->GetLayerSet() ).any() )
             continue;
 
-        track->Draw( m_canvas, aDC, drawmode );
+        track->Draw( GetLegacyCanvas(), aDC, drawmode );
     }
 
     // Draw filled areas (i.e. zones)
@@ -228,7 +228,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
         ZONE_CONTAINER* zone = Pcb->GetArea( ii );
 
         if( aPrintMask[zone->GetLayer()] )
-            zone->DrawFilledArea( m_canvas, aDC, drawmode );
+            zone->DrawFilledArea( GetLegacyCanvas(), aDC, drawmode );
     }
 
     // Draw footprints, this is done at last in order to print the pad holes in
@@ -238,7 +238,7 @@ void PCB_EDIT_FRAME::PrintPage( wxDC* aDC,
 
     for( MODULE* module = (MODULE*) Pcb->m_Modules; module;  module = module->Next() )
     {
-        Print_Module( m_canvas, aDC, module, drawmode, aPrintMask, drillShapeOpt );
+        Print_Module( GetLegacyCanvas(), aDC, module, drawmode, aPrintMask, drillShapeOpt );
     }
 
     D_PAD::m_PadSketchModePenSize = tmp;

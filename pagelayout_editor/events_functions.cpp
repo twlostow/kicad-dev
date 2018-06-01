@@ -355,7 +355,7 @@ DPOINT initialPosition;         // The initial position of the item to move, in 
 wxPoint initialPositionUi;      // The initial position of the item to move, in Ui
 wxPoint initialCursorPosition;  // The initial position of the cursor
 
-static void moveItem( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase )
+static void moveItem( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase )
 {
     PL_EDITOR_SCREEN* screen = (PL_EDITOR_SCREEN*) aPanel->GetScreen();
     WORKSHEET_DATAITEM *item = screen->GetCurItem();
@@ -395,7 +395,7 @@ static void moveItem( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPositio
  * and when the user aborts the move command.
  * Restores the initial position of the item
  */
-static void abortMoveItem( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+static void abortMoveItem( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     PL_EDITOR_SCREEN* screen = (PL_EDITOR_SCREEN*) aPanel->GetScreen();
     WORKSHEET_DATAITEM *item = screen->GetCurItem();

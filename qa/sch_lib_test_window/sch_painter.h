@@ -48,6 +48,7 @@ class SCH_SHEET_PIN;
 class SCH_MARKER;
 class SCH_NO_CONNECT;
 class SCH_LINE;
+class SCH_BUS_ENTRY_BASE;
 
 namespace KIGFX
 {
@@ -104,7 +105,7 @@ private:
 	void draw( LIB_PIN *, int );
 	void draw( LIB_CIRCLE *, int );
 	void draw( LIB_ITEM *, int );
-	void draw( LIB_PART *, int );
+	void draw( LIB_PART *, int, bool aDrawFields = true );
     void draw( LIB_ARC *, int );
     void draw( LIB_POLYLINE *, int );
     void draw( LIB_FIELD *, int );
@@ -121,6 +122,7 @@ private:
     void draw( SCH_NO_CONNECT *, int );
     void draw( SCH_MARKER *, int );
     void draw( SCH_LINE *, int );
+    void draw ( SCH_BUS_ENTRY_BASE *aEntry, int aLayer );
 
 
     void defaultColors( const LIB_ITEM *aItem );

@@ -198,7 +198,7 @@ void FOOTPRINT_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
     int        id = event.GetId();
     wxPoint    pos;
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+    INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
 
     wxGetMousePosition( &pos.x, &pos.y );
 

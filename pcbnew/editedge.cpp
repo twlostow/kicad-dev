@@ -42,9 +42,9 @@
 #include <class_drawsegment.h>
 
 
-static void Abort_EditEdge( EDA_DRAW_PANEL* aPanel, wxDC* DC );
-static void DrawSegment( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase );
-static void Move_Segment( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Abort_EditEdge( DRAW_PANEL_BASE* aPanel, wxDC* DC );
+static void DrawSegment( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase );
+static void Move_Segment( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                           bool aErase );
 
 
@@ -58,7 +58,7 @@ void PCB_EDIT_FRAME::Start_Move_DrawItem( DRAWSEGMENT* drawitem, wxDC* DC )
     if( drawitem == NULL )
         return;
 
-    drawitem->Draw( m_canvas, DC, GR_XOR );
+    drawitem->Draw( GetLegacyCanvas(), DC, GR_XOR );
     drawitem->SetFlags( IS_MOVED );
     s_InitialPosition = s_LastPosition = GetCrossHairPosition();
     SetMsgPanel( drawitem );
@@ -78,7 +78,7 @@ void PCB_EDIT_FRAME::Place_DrawItem( DRAWSEGMENT* drawitem, wxDC* DC )
 
     drawitem->ClearFlags();
     SaveCopyInUndoList(drawitem, UR_MOVED, s_LastPosition - s_InitialPosition);
-    drawitem->Draw( m_canvas, DC, GR_OR );
+    drawitem->Draw( GetLegacyCanvas(), DC, GR_OR );
     m_canvas->SetMouseCapture( NULL, NULL );
     SetCurItem( NULL );
     OnModify();
@@ -87,26 +87,27 @@ void PCB_EDIT_FRAME::Place_DrawItem( DRAWSEGMENT* drawitem, wxDC* DC )
 /*
  * Redraw segment during cursor movement.
  */
-static void Move_Segment( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Move_Segment( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                           bool aErase )
 {
     DRAWSEGMENT* segment = (DRAWSEGMENT*) aPanel->GetScreen()->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
     if( segment == NULL )
         return;
 
     if( aErase )
-        segment->Draw( aPanel, aDC, GR_XOR );
+        segment->Draw( panel, aDC, GR_XOR );
 
     wxPoint delta;
-    delta = aPanel->GetParent()->GetCrossHairPosition() - s_LastPosition;
+    delta = panel->GetParent()->GetCrossHairPosition() - s_LastPosition;
 
     segment->SetStart( segment->GetStart() + delta );
     segment->SetEnd(   segment->GetEnd()   + delta );
 
-    s_LastPosition = aPanel->GetParent()->GetCrossHairPosition();
+    s_LastPosition = panel->GetParent()->GetCrossHairPosition();
 
-    segment->Draw( aPanel, aDC, GR_XOR );
+    segment->Draw( panel, aDC, GR_XOR );
 }
 
 
@@ -123,7 +124,7 @@ void PCB_EDIT_FRAME::Delete_Segment_Edge( DRAWSEGMENT* Segment, wxDC* DC )
     {
         // Delete current segment.
         displ_opts->m_DisplayDrawItemsFill = SKETCH;
-        Segment->Draw( m_canvas, DC, GR_XOR );
+        Segment->Draw( GetLegacyCanvas(), DC, GR_XOR );
         PtStruct = Segment->Back();
         Segment ->DeleteStructure();
 
@@ -135,7 +136,7 @@ void PCB_EDIT_FRAME::Delete_Segment_Edge( DRAWSEGMENT* Segment, wxDC* DC )
     }
     else if( Segment->GetFlags() == 0 )
     {
-        Segment->Draw( m_canvas, DC, GR_XOR );
+        Segment->Draw( GetLegacyCanvas(), DC, GR_XOR );
         Segment->ClearFlags();
         SaveCopyInUndoList(Segment, UR_DELETED);
         Segment->UnLink();
@@ -209,38 +210,39 @@ void PCB_EDIT_FRAME::Delete_Drawings_All_Layer( PCB_LAYER_ID aLayer )
 }
 
 
-static void Abort_EditEdge( EDA_DRAW_PANEL* aPanel, wxDC* DC )
+static void Abort_EditEdge( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
     DRAWSEGMENT* Segment = (DRAWSEGMENT*) aPanel->GetScreen()->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
     if( Segment == NULL )
     {
-        aPanel->SetMouseCapture( NULL, NULL );
+        panel->SetMouseCapture( NULL, NULL );
         return;
     }
 
     if( Segment->IsNew() )
     {
-        aPanel->CallMouseCapture( DC, wxDefaultPosition, false );
+        panel->CallMouseCapture( DC, wxDefaultPosition, false );
         Segment ->DeleteStructure();
         Segment = NULL;
     }
     else
     {
-        wxPoint pos = aPanel->GetParent()->GetCrossHairPosition();
-        aPanel->GetParent()->SetCrossHairPosition( s_InitialPosition );
-        aPanel->CallMouseCapture( DC, wxDefaultPosition, true );
-        aPanel->GetParent()->SetCrossHairPosition( pos );
+        wxPoint pos = panel->GetParent()->GetCrossHairPosition();
+        panel->GetParent()->SetCrossHairPosition( s_InitialPosition );
+        panel->CallMouseCapture( DC, wxDefaultPosition, true );
+        panel->GetParent()->SetCrossHairPosition( pos );
         Segment->ClearFlags();
-        Segment->Draw( aPanel, DC, GR_OR );
+        Segment->Draw( panel, DC, GR_OR );
     }
 
 #ifdef USE_WX_OVERLAY
-    aPanel->Refresh();
+    panel->Refresh();
 #endif
 
-    aPanel->SetMouseCapture( NULL, NULL );
-    ( (PCB_EDIT_FRAME*) aPanel->GetParent() )->SetCurItem( NULL );
+    panel->SetMouseCapture( NULL, NULL );
+    ( (PCB_EDIT_FRAME*) panel->GetParent() )->SetCurItem( NULL );
 }
 
 
@@ -285,7 +287,7 @@ DRAWSEGMENT* PCB_EDIT_FRAME::Begin_DrawSegment( DRAWSEGMENT* Segment, STROKE_T s
                 OnModify();
                 Segment->ClearFlags();
 
-                Segment->Draw( m_canvas, DC, GR_OR );
+                Segment->Draw( GetLegacyCanvas(), DC, GR_OR );
 
                 DrawItem = Segment;
 
@@ -318,7 +320,7 @@ void PCB_EDIT_FRAME::End_Edge( DRAWSEGMENT* Segment, wxDC* DC )
     if( Segment == NULL )
         return;
 
-    Segment->Draw( m_canvas, DC, GR_OR );
+    Segment->Draw( GetLegacyCanvas(), DC, GR_OR );
 
     // Delete if segment length is zero.
     if( Segment->GetStart() == Segment->GetEnd() )
@@ -340,34 +342,36 @@ void PCB_EDIT_FRAME::End_Edge( DRAWSEGMENT* Segment, wxDC* DC )
 
 /* Redraw segment during cursor movement
  */
-static void DrawSegment( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase )
+static void DrawSegment( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition, bool aErase )
 {
     DRAWSEGMENT* Segment = (DRAWSEGMENT*) aPanel->GetScreen()->GetCurItem();
     auto frame = (PCB_EDIT_FRAME*) ( aPanel->GetParent() );
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
+
     if( Segment == NULL )
         return;
 
-    auto displ_opts = (PCB_DISPLAY_OPTIONS*) ( aPanel->GetDisplayOptions() );
+    auto displ_opts = (PCB_DISPLAY_OPTIONS*) ( panel->GetDisplayOptions() );
     bool tmp = displ_opts->m_DisplayDrawItemsFill;
 
     displ_opts->m_DisplayDrawItemsFill = SKETCH;
 
     if( aErase )
-        Segment->Draw( aPanel, aDC, GR_XOR );
+        Segment->Draw( panel, aDC, GR_XOR );
 
     if( frame->Settings().m_use45DegreeGraphicSegments && Segment->GetShape() == S_SEGMENT )
     {
         wxPoint pt;
 
-        pt = CalculateSegmentEndPoint( aPanel->GetParent()->GetCrossHairPosition(),
+        pt = CalculateSegmentEndPoint( panel->GetParent()->GetCrossHairPosition(),
                                        Segment->GetStart() );
         Segment->SetEnd( pt );
     }
     else    // here the angle is arbitrary
     {
-        Segment->SetEnd( aPanel->GetParent()->GetCrossHairPosition() );
+        Segment->SetEnd( panel->GetParent()->GetCrossHairPosition() );
     }
 
-    Segment->Draw( aPanel, aDC, GR_XOR );
+    Segment->Draw( panel, aDC, GR_XOR );
     displ_opts->m_DisplayDrawItemsFill = tmp;
 }

@@ -267,7 +267,7 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     // no net in footprint editor: make it non visible
     GetBoard()->SetElementVisibility( LAYER_NO_CONNECTS, false );
 
-    m_Layers = new PCB_LAYER_WIDGET( this, GetCanvas(), true );
+    m_Layers = new PCB_LAYER_WIDGET( this, GetLegacyCanvas(), true );
 
     // LoadSettings() *after* creating m_LayersManager, because LoadSettings()
     // initialize parameters in m_LayersManager
@@ -333,7 +333,7 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_auimgr.AddPane( m_optionsToolBar,
                       wxAuiPaneInfo( vert ).Name( "m_optionsToolBar" ). Left().Layer(1) );
 
-    m_auimgr.AddPane( m_canvas,
+    m_auimgr.AddPane( GetLegacyCanvas(),
                       wxAuiPaneInfo().Name( "DrawFrame" ).CentrePane() );
     m_auimgr.AddPane( (wxWindow*) GetGalCanvas(),
                       wxAuiPaneInfo().Name( "DrawFrameGal" ).CentrePane().Hide() );

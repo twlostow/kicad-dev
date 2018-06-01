@@ -225,7 +225,7 @@ bool DIALOG_EDIT_FPTEXT::TransferDataFromWindow()
 #ifndef USE_WX_OVERLAY
     if( m_dc )     //Erase old text on screen
     {
-        m_currentText->Draw( m_boardEditor->GetCanvas(), m_dc, GR_XOR,
+        m_currentText->Draw( m_boardEditor->GetLegacyCanvas(), m_dc, GR_XOR,
                              (m_currentText->IsMoving()) ? MoveVector : wxPoint( 0, 0 ) );
     }
 #endif
@@ -338,7 +338,7 @@ bool DIALOG_EDIT_FPTEXT::TransferDataFromWindow()
 #ifndef USE_WX_OVERLAY
     if( m_dc )     // Display new text
     {
-        m_currentText->Draw( m_boardEditor->GetCanvas(), m_dc, GR_XOR,
+        m_currentText->Draw( m_boardEditor->GetLegacyCanvas(), m_dc, GR_XOR,
                 (m_currentText->IsMoving()) ? MoveVector : wxPoint( 0, 0 ) );
     }
 #else

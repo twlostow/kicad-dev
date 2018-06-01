@@ -38,6 +38,8 @@
 
 #include <class_libentry.h>
 #include <sch_io_mgr.h>
+#include <sch_screen.h>
+#include <sch_component.h>
 
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
@@ -51,6 +53,8 @@
 #include <kiface_i.h>
 #include <project.h>
 #include <kiway_player.h>
+#include <symbol_lib_table.h>
+#include <class_library.h>
 
 using namespace KIGFX;
 
@@ -115,7 +119,7 @@ void SCH_TEST_FRAME::OnMotion( wxMouseEvent& aEvent )
 {
     auto vc = m_galPanel->GetViewControls();
     auto pos = vc->GetCursorPosition( );
-    printf("x %d y %d\n", (int)pos.x, (int)pos.y);
+    //printf("x %d y %d\n", (int)pos.x, (int)pos.y);
     aEvent.Skip();
 }
 
@@ -162,7 +166,7 @@ LIB_PART* SCH_TEST_FRAME::LoadAndDisplayPart( const std::string& filename )
         return nullptr;
     }
 
-    printf("sym %p\n", sym);
+//    printf("sym %p\n", sym);
 
     LIB_PART *part = sym->GetPart();
 
@@ -197,6 +201,33 @@ SCH_SHEET* SCH_TEST_FRAME::LoadAndDisplaySchematic( const std::string& filename 
 
         printf( "%s\n", (const char*) msg.mb_str() );
         return nullptr;
+    }
+
+
+    Prj().SetProjectFullName("/home/twl/Kicad-dev/kicad-build/debug-dev/qa/sch_lib_test_window/dsi_shield.pro");
+    Prj().SchLibs()->LoadAllLibraries( &Prj(), true );
+
+    //Prj().SchSymbolLibTable()->LoadSymbol( aLibId );
+
+    auto cacheLib = Prj().SchLibs()->GetCacheLibrary();
+
+    //printf("cache library @ %p\n", cacheLib );
+
+
+    auto item = sheet->GetScreen()->GetDrawItems();
+    for ( ; item; item=item->Next() )
+    {
+        if( item->Type() == SCH_COMPONENT_T )
+        {
+            auto cmp = static_cast<SCH_COMPONENT*>( item );
+    //        printf("process comp %p %s\n", item, (const char *) cmp->GetLibId().Format().c_str() );
+
+            cmp->Resolve( *Prj().SchSymbolLibTable(), cacheLib );
+
+            //cmp->SetLibId( cmp->GetLibId(), Prj().SchSymbolLibTable(), nullptr );
+
+
+        }
     }
 
     SetSchematic( sheet );
@@ -267,7 +298,8 @@ SCH_TEST_FRAME::SCH_TEST_FRAME( KIWAY* aKiway, wxWindow* aParent )
     m_galPanel->SetEventDispatcher( m_toolDispatcher.get() );
     m_toolManager->InvokeTool( "eeschema.InteractiveSelection" );
 
-    LoadAndDisplaySchematic("dsi_shield.sch");
+    //LoadLibrary("dsi_shield-cache.lib");
+    LoadAndDisplaySchematic("/home/twl/Kicad-dev/kicad-build/debug-dev/qa/sch_lib_test_window/dsi_shield.sch");
 
 }
 
@@ -285,3 +317,45 @@ void SCH_TEST_FRAME::OnExit( wxCommandEvent& WXUNUSED( event ) )
 }
 
 //IMPLEMENT_APP( GAL_TEST_APP );
+
+SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
+{
+    // This is a lazy loading function, it loads the project specific table when
+    // that table is asked for, not before.
+    SYMBOL_LIB_TABLE* tbl = (SYMBOL_LIB_TABLE*) GetElem( ELEM_SYMBOL_LIB_TABLE );
+
+    // its gotta be NULL or a SYMBOL_LIB_TABLE, or a bug.
+    wxASSERT( !tbl || dynamic_cast<SYMBOL_LIB_TABLE*>( tbl ) );
+
+    if( !tbl )
+    {
+        // Stack the project specific SYMBOL_LIB_TABLE overlay on top of the global table.
+        // ~SYMBOL_LIB_TABLE() will not touch the fallback table, so multiple projects may
+        // stack this way, all using the same global fallback table.
+        tbl = new SYMBOL_LIB_TABLE( &SYMBOL_LIB_TABLE::GetGlobalLibTable() );
+
+        SetElem( ELEM_SYMBOL_LIB_TABLE, tbl );
+
+        wxString prjPath = wxGetCwd();
+
+        wxASSERT( !prjPath.empty() );
+
+        wxFileName fn( prjPath, SYMBOL_LIB_TABLE::GetSymbolLibTableFileName() );
+
+        try
+        {
+            printf("Loading '%s'",(const char*) fn.GetFullPath().c_str());
+            tbl->Load( fn.GetFullPath() );
+        }
+        catch( const IO_ERROR& ioe )
+        {
+            wxString msg;
+            msg.Printf( _( "An error occurred loading the symbol library table \"%s\"." ),
+                        fn.GetFullPath() );
+            printf("ERR %s\n", (const char *) msg.c_str() );
+            //DisplayErrorMessage( NULL, msg, ioe.What() );
+        }
+    }
+
+    return tbl;
+}

@@ -51,7 +51,7 @@ EDA_DRAW_PANEL_GAL( aParentWindow, aWindowId, aPosition, aSize, aOptions, aGalTy
     m_painter.reset( new KIGFX::SCH_PAINTER( m_gal ) );
 
     m_view->SetPainter( m_painter.get() );
-    m_view->SetScaleLimits( 1000000.0, 0.001 );
+    m_view->SetScaleLimits( 2000000.0, 30000.0 );
     m_view->SetMirror( false, false );
 
     setDefaultLayerOrder();

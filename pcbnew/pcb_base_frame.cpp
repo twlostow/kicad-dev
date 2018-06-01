@@ -353,7 +353,7 @@ void PCB_BASE_FRAME::FocusOnLocation( const wxPoint& aPos,
     }
     else
     {
-        INSTALL_UNBUFFERED_DC( dc, m_canvas );
+        INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
 
         // There may be need to reframe the drawing.
         if( aCenterView || !m_canvas->IsPointOnDisplay( aPos ) )
@@ -364,16 +364,16 @@ void PCB_BASE_FRAME::FocusOnLocation( const wxPoint& aPos,
         else
         {
             // Put cursor on item position
-            m_canvas->CrossHairOff( &dc );
+            GetLegacyCanvas()->CrossHairOff( &dc );
             SetCrossHairPosition( aPos );
 
             if( aWarpMouseCursor )
-                m_canvas->MoveCursorToCrossHair();
+                GetLegacyCanvas()->MoveCursorToCrossHair();
         }
 
         // Be sure cross hair cursor is ON:
-        m_canvas->CrossHairOn( &dc );
-        m_canvas->CrossHairOn( &dc );
+        GetLegacyCanvas()->CrossHairOn( &dc );
+        GetLegacyCanvas()->CrossHairOn( &dc );
     }
 }
 
@@ -1093,4 +1093,9 @@ void PCB_BASE_FRAME::OnUpdateSwitchCanvas( wxUpdateUIEvent& aEvent )
         if( ii.galType == canvasType )
             item->Check( true );
     }
+}
+
+void EDA_DRAW_FRAME::createCanvas()
+{
+    m_canvas = new EDA_DRAW_PANEL( this, -1, wxPoint( 0, 0 ), m_FrameSize );
 }

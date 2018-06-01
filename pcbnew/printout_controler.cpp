@@ -267,7 +267,7 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
 
     GRResetPenAndBrush( dc );
 
-    EDA_DRAW_PANEL* panel = m_Parent->GetCanvas();
+    EDA_DRAW_PANEL* panel = m_Parent->GetLegacyCanvas();
     EDA_RECT        tmp   = *panel->GetClipBox();
 
     // Set clip box to the max size

@@ -68,7 +68,7 @@ void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 {
     int         id = event.GetId();
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+    INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
     MODULE* module;
     auto displ_opts = (PCB_DISPLAY_OPTIONS*)GetDisplayOptions();
 
@@ -619,10 +619,10 @@ void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
              * and zone_cont->m_CornerSelection+1
              * and start move the new corner
              */
-            zone_cont->Draw( m_canvas, &dc, GR_XOR );
+            zone_cont->Draw( GetLegacyCanvas(), &dc, GR_XOR );
             zone_cont->Outline()->InsertVertex( zone_cont->GetSelectedCorner(), pos );
             zone_cont->SetSelectedCorner( zone_cont->GetSelectedCorner() + 1 );
-            zone_cont->Draw( m_canvas, &dc, GR_XOR );
+            zone_cont->Draw( GetLegacyCanvas(), &dc, GR_XOR );
             m_canvas->SetAutoPanRequest( true );
             Start_Move_Zone_Corner( &dc, zone_cont, zone_cont->GetSelectedCorner(), true );
         }
@@ -1215,14 +1215,14 @@ void PCB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             TRACK*  track = (TRACK*) GetScreen()->GetCurItem();
             wxPoint pos   = GetCrossHairPosition();
 
-            track->Draw( m_canvas, &dc, GR_XOR );
+            track->Draw( GetLegacyCanvas(), &dc, GR_XOR );
             PICKED_ITEMS_LIST itemsListPicker;
 
             TRACK*  newtrack = GetBoard()->CreateLockPoint( pos, track, &itemsListPicker );
 
             SaveCopyInUndoList( itemsListPicker, UR_UNSPECIFIED );
-            track->Draw( m_canvas, &dc, GR_XOR );
-            newtrack->Draw( m_canvas, &dc, GR_XOR );
+            track->Draw( GetLegacyCanvas(), &dc, GR_XOR );
+            newtrack->Draw( GetLegacyCanvas(), &dc, GR_XOR );
 
             // compute the new ratsnest, because connectivity could change
             TestNetConnection( &dc, track->GetNetCode() );
@@ -1386,7 +1386,7 @@ void PCB_EDIT_FRAME::RemoveStruct( BOARD_ITEM* Item, wxDC* DC )
         if( Item == GetCurItem() )
             SetCurItem( NULL );
 
-        ( (MARKER_PCB*) Item )->Draw( m_canvas, DC, GR_XOR );
+        ( (MARKER_PCB*) Item )->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
         // delete the marker, and free memory.  Don't use undo stack.
         GetBoard()->Delete( Item );
@@ -1487,7 +1487,7 @@ void PCB_EDIT_FRAME::OnSelectTool( wxCommandEvent& aEvent )
     int id = aEvent.GetId();
     int lastToolID = GetToolId();
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+    INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
     auto displ_opts = (PCB_DISPLAY_OPTIONS*)GetDisplayOptions();
 
     // Stop the current command and deselect the current tool.
@@ -1689,7 +1689,7 @@ void PCB_BASE_EDIT_FRAME::duplicateItem( BOARD_ITEM* aItem, bool aIncrement )
     {
         m_canvas->MoveCursorToCrossHair();
 
-        INSTALL_UNBUFFERED_DC( dc, m_canvas );
+        INSTALL_UNBUFFERED_DC( dc, GetLegacyCanvas() );
 
         wxPoint crossHairPos = GetCrossHairPosition();
 

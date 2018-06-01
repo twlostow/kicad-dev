@@ -195,7 +195,7 @@ FOOTPRINT_WIZARD_FRAME::FOOTPRINT_WIZARD_FRAME( KIWAY* aKiway,
     m_auimgr.AddPane( m_parameterGrid, wxAuiPaneInfo( panePrms ) );
 
     // Manage the draw panel
-    m_auimgr.AddPane( m_canvas,
+    m_auimgr.AddPane( GetLegacyCanvas(),
                       wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane() );
 
     // Manage the message panel

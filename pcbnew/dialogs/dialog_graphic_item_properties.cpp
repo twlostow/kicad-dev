@@ -245,7 +245,7 @@ bool DIALOG_GRAPHIC_ITEM_PROPERTIES::TransferDataFromWindow()
     wxString msg;
 
     if( m_DC )
-        m_item->Draw( m_parent->GetCanvas(), m_DC, GR_XOR );
+        m_item->Draw( m_parent->GetLegacyCanvas(), m_DC, GR_XOR );
 
     msg = m_Center_StartXCtrl->GetValue();
     m_item->SetStartX( ValueFromString( g_UserUnit, msg ) );
@@ -280,7 +280,7 @@ bool DIALOG_GRAPHIC_ITEM_PROPERTIES::TransferDataFromWindow()
     commit.Push( _( "Modify drawing properties" ) );
 
     if( m_DC )
-        m_item->Draw( m_parent->GetCanvas(), m_DC, GR_OR );
+        m_item->Draw( m_parent->GetLegacyCanvas(), m_DC, GR_OR );
 
     m_parent->SetMsgPanel( m_item );
 

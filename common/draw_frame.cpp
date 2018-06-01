@@ -133,6 +133,7 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent,
     KIWAY_PLAYER( aKiway, aParent, aFrameType, aTitle, aPos, aSize, aStyle, aFrameName ),
     m_galDisplayOptions( std::make_unique<KIGFX::GAL_DISPLAY_OPTIONS>() )
 {
+    m_useSingleCanvasPane = false;
     m_socketServer        = nullptr;
     m_drawToolBar         = NULL;
     m_optionsToolBar      = NULL;
@@ -369,12 +370,12 @@ void EDA_DRAW_FRAME::OnToggleCrossHairStyle( wxCommandEvent& aEvent )
     galOpts.m_fullscreenCursor = !galOpts.m_fullscreenCursor;
     galOpts.NotifyChanged();
 
-    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+    auto canvas =  GetLegacyCanvas();
 
     INSTALL_UNBUFFERED_DC( dc, canvas );
 
-    m_canvas->CrossHairOff( &dc );
-    m_canvas->CrossHairOn( &dc );
+    canvas->CrossHairOff( &dc );
+    canvas->CrossHairOn( &dc );
 }
 
 
@@ -974,7 +975,7 @@ void EDA_DRAW_FRAME::AdjustScrollBars( const wxPoint& aCenterPositionIU )
     if( IsGalCanvasActive() )
         return;
 
-    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+    auto canvas =  GetLegacyCanvas();
 
     BASE_SCREEN* screen = GetScreen();
 
@@ -1222,14 +1223,16 @@ void EDA_DRAW_FRAME::UseGalCanvas( bool aEnable )
         AdjustScrollBars( wxPoint( center.x, center.y ) );
     }
 
-//fixme-gal
-    //m_canvas->SetEvtHandlerEnabled( !aEnable );
-//    Canvas()->SetEvtHandlerEnabled( aEnable );
+    // hack hack hack...
+    if ( !m_useSingleCanvasPane )
+    {
+        GetLegacyCanvas()->SetEvtHandlerEnabled( !aEnable );
+        GetGalCanvas()->SetEvtHandlerEnabled( aEnable );
 
-    // Switch panes
-/*    m_auimgr.GetPane( wxT( "DrawFrame" ) ).Show( !aEnable );
-    m_auimgr.GetPane( wxT( "DrawFrameGal" ) ).Show( aEnable );
-    m_auimgr.Update();*/
+        m_auimgr.GetPane( wxT( "DrawFrame" ) ).Show( !aEnable );
+        m_auimgr.GetPane( wxT( "DrawFrameGal" ) ).Show( aEnable );
+        m_auimgr.Update();
+    }
 
     // Reset current tool on switch();
     SetNoToolSelected();

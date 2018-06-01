@@ -322,7 +322,7 @@ void PCB_BASE_FRAME::AddModuleToBoard( MODULE* module, wxDC* aDC )
         //RecalculateAllTracksNetcode();
 
         if( aDC )
-            module->Draw( m_canvas, aDC, GR_OR );
+            module->Draw( GetLegacyCanvas(), aDC, GR_OR );
     }
 }
 

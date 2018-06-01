@@ -59,12 +59,7 @@ static wxSize  ShapeSize;
 static int     PolyShapeType;
 
 
-static void Exit_Self( EDA_DRAW_PANEL* aPanel, wxDC* aDC );
-
-static void ShowBoundingBoxMicroWaveInductor( EDA_DRAW_PANEL* aPanel,
-                                              wxDC*           aDC,
-                                              const wxPoint&  aPosition,
-                                              bool            aErase );
+static void Exit_Self( DRAW_PANEL_BASE* aPanel, wxDC* aDC );
 
 
 ///> An inductor pattern temporarily used during mu-wave inductor creation
@@ -77,7 +72,7 @@ static bool s_inductorInProgress = false;
 /* This function shows on screen the bounding box of the inductor that will be
  * created at the end of the build inductor process
  */
-static void ShowBoundingBoxMicroWaveInductor( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void ShowBoundingBoxMicroWaveInductor( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                               const wxPoint& aPosition, bool aErase )
 {
     /* Calculate the orientation and size of the box containing the inductor:
@@ -127,7 +122,7 @@ static void ShowBoundingBoxMicroWaveInductor( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
 }
 
 
-void Exit_Self( EDA_DRAW_PANEL* aPanel, wxDC* aDC )
+void Exit_Self( DRAW_PANEL_BASE* aPanel, wxDC* aDC )
 {
     if( aPanel->IsMouseCaptured() )
         aPanel->CallMouseCapture( aDC, wxDefaultPosition, false );
@@ -160,7 +155,7 @@ void PCB_EDIT_FRAME::Begin_Self( wxDC* DC )
         if( footprint )
         {
             SetMsgPanel( footprint );
-            footprint->Draw( m_canvas, DC, GR_OR );
+            footprint->Draw( GetLegacyCanvas(), DC, GR_OR );
         }
 
         else if( !errorMessage.IsEmpty() )
@@ -715,7 +710,7 @@ void PCB_EDIT_FRAME::Edit_Gap( wxDC* DC, MODULE* aModule )
         return;
     }
 
-    aModule->Draw( m_canvas, DC, GR_XOR );
+    aModule->Draw( GetLegacyCanvas(), DC, GR_XOR );
 
     // Calculate the current dimension.
     gap_size = next_pad->GetPos0().x - pad->GetPos0().x - pad->GetSize().x;
@@ -758,5 +753,5 @@ void PCB_EDIT_FRAME::Edit_Gap( wxDC* DC, MODULE* aModule )
 
     next_pad->SetPosition( padpos );
 
-    aModule->Draw( m_canvas, DC, GR_OR );
+    aModule->Draw( GetLegacyCanvas(), DC, GR_OR );
 }

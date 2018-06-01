@@ -73,10 +73,6 @@ void SCH_VIEW::Update( KIGFX::VIEW_ITEM* aItem )
     SCH_VIEW::Update( aItem, -1 );
 }
 
-void SCH_VIEW::SetWorksheet( KIGFX::WORKSHEET_VIEWITEM* aWorksheet )
-{
-
-}
 
 static const LAYER_NUM SCH_LAYER_ORDER[] =
 {
@@ -91,16 +87,20 @@ void SCH_VIEW::DisplaySheet( SCH_SHEET *aSheet )
 
     for( auto item = sc->GetDrawItems(); item; item = item->Next() )
     {
-        printf("-- ADD SCHITEM %p\n", item );
+        //printf("-- ADD SCHITEM %p\n", item );
         Add(item);
     }
+
+    m_worksheet.reset ( new KIGFX::WORKSHEET_VIEWITEM( &aSheet->GetScreen()->GetPageSettings(), &aSheet->GetScreen()->GetTitleBlock() ) );
+    m_worksheet->SetMilsToIUfactor(1);
+    Add( m_worksheet.get() );
 }
 
 void SCH_VIEW::DisplayComponent( LIB_PART *aPart )
 {
     for ( auto &item : aPart->GetDrawItems() )
     {
-        printf("-- ADD %p\n", &item );
+        //printf("-- ADD %p\n", &item );
         Add( &item );
     }
 }

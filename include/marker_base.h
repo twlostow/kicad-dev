@@ -29,10 +29,10 @@
 #include <drc_item.h>
 #include <gr_basic.h>
 
+#include <class_drawpanel.h>
 
 /* Marker are mainly used to show a DRC or ERC error or warning
  */
-
 
 class MARKER_BASE
 {

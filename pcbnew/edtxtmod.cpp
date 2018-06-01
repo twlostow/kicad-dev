@@ -46,9 +46,9 @@
 #include <class_pcb_text.h>
 
 
-static void Show_MoveTexte_Module( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Show_MoveTexte_Module( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                    bool aErase );
-static void AbortMoveTextModule( EDA_DRAW_PANEL* Panel, wxDC* DC );
+static void AbortMoveTextModule( DRAW_PANEL_BASE* aPanel, wxDC* DC );
 
 
 wxPoint        MoveVector;              // Move vector for move edge, exported
@@ -95,7 +95,7 @@ TEXTE_MODULE* FOOTPRINT_EDIT_FRAME::CreateTextModule( MODULE* aModule, wxDC* aDC
     text->ClearFlags();
 
     if( aDC )
-        text->Draw( m_canvas, aDC, GR_OR );
+        text->Draw( GetLegacyCanvas(), aDC, GR_OR );
 
     SetMsgPanel( text );
 
@@ -119,11 +119,11 @@ void PCB_BASE_FRAME::RotateTextModule( TEXTE_MODULE* Text, wxDC* DC )
     }
 
     // we expect MoveVector to be (0,0) if there is no move in progress
-    Text->Draw( m_canvas, DC, GR_XOR, MoveVector );
+    Text->Draw( GetLegacyCanvas(), DC, GR_XOR, MoveVector );
 
     Text->SetTextAngle( Text->GetTextAngle() + 900 );
 
-    Text->Draw( m_canvas, DC, GR_XOR, MoveVector );
+    Text->Draw( GetLegacyCanvas(), DC, GR_XOR, MoveVector );
     SetMsgPanel( Text );
 
     if( module )
@@ -160,21 +160,22 @@ void PCB_BASE_FRAME::DeleteTextModule( TEXTE_MODULE* Text )
  *
  * If a text is selected, its initial coordinates are regenerated.
  */
-static void AbortMoveTextModule( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void AbortMoveTextModule( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    BASE_SCREEN*  screen = Panel->GetScreen();
+    BASE_SCREEN*  screen = aPanel->GetScreen();
     TEXTE_MODULE* Text   = static_cast<TEXTE_MODULE*>( screen->GetCurItem() );
     MODULE*       Module;
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
 
-    Panel->SetMouseCapture( NULL, NULL );
+    panel->SetMouseCapture( NULL, NULL );
 
     if( Text == NULL )
         return;
 
     Module = static_cast<MODULE*>( Text->GetParent() );
 
-    Text->DrawUmbilical( Panel, DC, GR_XOR, -MoveVector );
-    Text->Draw( Panel, DC, GR_XOR, MoveVector );
+    Text->DrawUmbilical( panel, DC, GR_XOR, -MoveVector );
+    Text->Draw( panel, DC, GR_XOR, MoveVector );
 
     // If the text was moved (the move does not change internal data)
     // it could be rotated while moving. So set old value for orientation
@@ -182,7 +183,7 @@ static void AbortMoveTextModule( EDA_DRAW_PANEL* Panel, wxDC* DC )
         Text->SetTextAngle( TextInitialOrientation );
 
     // Redraw the text
-    Panel->RefreshDrawingRect( Text->GetBoundingBox() );
+    panel->RefreshDrawingRect( Text->GetBoundingBox() );
 
     // leave it at (0,0) so we can use it Rotate when not moving.
     MoveVector.x = MoveVector.y = 0;
@@ -229,7 +230,7 @@ void PCB_BASE_FRAME::PlaceTexteModule( TEXTE_MODULE* Text, wxDC* DC )
     if( Text != NULL )
     {
         m_canvas->RefreshDrawingRect( Text->GetBoundingBox() );
-        Text->DrawUmbilical( m_canvas, DC, GR_XOR, -MoveVector );
+        Text->DrawUmbilical( GetLegacyCanvas(), DC, GR_XOR, -MoveVector );
 
         // Update the coordinates for anchor.
         MODULE* Module = static_cast<MODULE*>( Text->GetParent() );
@@ -273,11 +274,13 @@ void PCB_BASE_FRAME::PlaceTexteModule( TEXTE_MODULE* Text, wxDC* DC )
 }
 
 
-static void Show_MoveTexte_Module( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPosition,
+static void Show_MoveTexte_Module( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
                                    bool aErase )
 {
     BASE_SCREEN*  screen = aPanel->GetScreen();
     TEXTE_MODULE* Text   = static_cast<TEXTE_MODULE*>( screen->GetCurItem() );
+    auto panel = static_cast<EDA_DRAW_PANEL*>(aPanel);
+
 
     if( Text == NULL )
         return;
@@ -285,18 +288,18 @@ static void Show_MoveTexte_Module( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPo
     // Erase umbilical and text if necessary
     if( aErase )
     {
-        Text->DrawUmbilical( aPanel, aDC, GR_XOR, -MoveVector );
-        Text->Draw( aPanel, aDC, GR_XOR, MoveVector );
+        Text->DrawUmbilical( panel, aDC, GR_XOR, -MoveVector );
+        Text->Draw( panel, aDC, GR_XOR, MoveVector );
     }
 
-    MoveVector = TextInitialPosition - aPanel->GetParent()->GetCrossHairPosition();
+    MoveVector = TextInitialPosition - panel->GetParent()->GetCrossHairPosition();
 
     // Draw umbilical if text moved
     if( MoveVector.x || MoveVector.y )
-        Text->DrawUmbilical( aPanel, aDC, GR_XOR, -MoveVector );
+        Text->DrawUmbilical( panel, aDC, GR_XOR, -MoveVector );
 
     // Redraw text
-    Text->Draw( aPanel, aDC, GR_XOR, MoveVector );
+    Text->Draw( panel, aDC, GR_XOR, MoveVector );
 }
 
 void PCB_BASE_FRAME::ResetTextSize( BOARD_ITEM* aItem, wxDC* aDC )

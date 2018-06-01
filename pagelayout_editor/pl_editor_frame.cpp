@@ -166,7 +166,7 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                           wxAuiPaneInfo( vert ).Name( wxT( "m_optionsToolBar" ) ).Left() );
 
     if( m_canvas )
-        m_auimgr.AddPane( m_canvas,
+        m_auimgr.AddPane( GetLegacyCanvas(),
                           wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane().Layer( 5 ) );
 
     if( m_messagePanel )
@@ -769,4 +769,9 @@ void PL_EDITOR_FRAME::OnNewPageLayout()
 const wxString PL_EDITOR_FRAME::GetZoomLevelIndicator() const
 {
     return EDA_DRAW_FRAME::GetZoomLevelIndicator();
+}
+
+void EDA_DRAW_FRAME::createCanvas()
+{
+    m_canvas = new EDA_DRAW_PANEL( this, -1, wxPoint( 0, 0 ), m_FrameSize );
 }

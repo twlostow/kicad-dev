@@ -76,6 +76,8 @@ class EDA_DRAW_FRAME : public KIWAY_PLAYER
     ///< GAL display options - this is the frame's interface to setting GAL display options
     std::unique_ptr<KIGFX::GAL_DISPLAY_OPTIONS> m_galDisplayOptions;
 
+    bool m_useSingleCanvasPane;
+
 protected:
 
     wxSocketServer*                          m_socketServer;

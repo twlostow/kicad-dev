@@ -298,7 +298,7 @@ void FOOTPRINT_WIZARD_FRAME::RedrawActiveWindow( wxDC* DC, bool EraseBg )
         return;
 
     m_canvas->DrawBackGround( DC );
-    GetBoard()->Draw( m_canvas, DC, GR_COPY );
+    GetBoard()->Draw( GetLegacyCanvas(), DC, GR_COPY );
 
     MODULE* module = GetBoard()->m_Modules;
 

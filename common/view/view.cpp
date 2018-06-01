@@ -1421,7 +1421,7 @@ struct VIEW::extentsVisitor
             extents.Merge( aItem->ViewBBox() );
 
             auto bb = aItem->ViewBBox();
-
+        
         return false;
     }
 };
@@ -1490,7 +1490,6 @@ bool VIEW::IsVisible( const VIEW_ITEM* aItem ) const
     return viewData->m_flags & VISIBLE;
 }
 
-
 void VIEW::Update( VIEW_ITEM* aItem )
 {
     Update( aItem, ALL );
@@ -1501,14 +1500,13 @@ void VIEW::Update( VIEW_ITEM* aItem, int aUpdateFlags )
 {
     auto viewData = aItem->viewPrivData();
 
-
-
     if( !viewData )
         return;
 
     assert( aUpdateFlags != NONE );
 
     viewData->m_requiredUpdate |= aUpdateFlags;
+
 }
 
 const int VIEW::TOP_LAYER_MODIFIER = -VIEW_MAX_LAYERS;

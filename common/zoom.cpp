@@ -54,7 +54,7 @@ void EDA_DRAW_FRAME::RedrawScreen( const wxPoint& aCenterPoint, bool aWarpPointe
     if( aWarpPointer )
         m_canvas->MoveCursorToCrossHair();
 
-    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+    auto canvas = GetLegacyCanvas();
 
     canvas->Refresh();
     canvas->Update();
@@ -65,7 +65,7 @@ void EDA_DRAW_FRAME::RedrawScreen2( const wxPoint& posBefore )
     if( IsGalCanvasActive() )
         return;
 
-    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+    auto canvas = GetLegacyCanvas();
 
     // relative screen position to center before zoom
     wxPoint dPos = posBefore - canvas->GetClientSize() / 2;
@@ -91,7 +91,7 @@ double EDA_DRAW_FRAME::bestZoom( double sizeX, double sizeY, double scaleFactor,
     if( IsGalCanvasActive() )
         return 1.0;
 
-    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+    auto canvas = GetLegacyCanvas();
 
     double bestzoom = std::max( sizeX * scaleFactor / (double) canvas->GetClientSize().x,
                                 sizeY * scaleFactor / (double) canvas->GetClientSize().y );
@@ -140,7 +140,7 @@ void EDA_DRAW_FRAME::Window_Zoom( EDA_RECT& Rect )
     // Compute the best zoom
     Rect.Normalize();
 
-    auto canvas = reinterpret_cast<wxScrolledWindow*>(m_canvas);
+    auto canvas =  GetLegacyCanvas();
 
     wxSize size = canvas->GetClientSize();
 

@@ -90,7 +90,7 @@ void DIALOG_FIND::onButtonFindItemClick( wxCommandEvent& aEvent )
     }
     prevSearchString = searchString;
 
-    parent->GetCanvas()->GetViewStart( &screen->m_StartVisu.x, &screen->m_StartVisu.y );
+    parent->GetLegacyCanvas()->GetViewStart( &screen->m_StartVisu.x, &screen->m_StartVisu.y );
 
     int count = 0;
 
@@ -151,7 +151,7 @@ void DIALOG_FIND::onButtonFindMarkerClick( wxCommandEvent& aEvent )
     wxPoint     pos;
     foundItem = NULL;
 
-    parent->GetCanvas()->GetViewStart( &screen->m_StartVisu.x, &screen->m_StartVisu.y );
+    parent->GetLegacyCanvas()->GetViewStart( &screen->m_StartVisu.x, &screen->m_StartVisu.y );
 
     MARKER_PCB* marker = parent->GetBoard()->GetMARKER( markerCount++ );
 

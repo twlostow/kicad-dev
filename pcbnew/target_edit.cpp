@@ -45,7 +45,7 @@
 
 // Routines Locales
 static void AbortMoveAndEditTarget( EDA_DRAW_PANEL* Panel, wxDC* DC );
-static void ShowTargetShapeWhileMovingMouse( EDA_DRAW_PANEL* aPanel,
+static void ShowTargetShapeWhileMovingMouse( DRAW_PANEL_BASE* aPanel,
                                              wxDC*           aDC,
                                              const wxPoint&  aPosition,
                                              bool            aErase );
@@ -129,9 +129,10 @@ void TARGET_PROPERTIES_DIALOG_EDITOR::OnOkClick( wxCommandEvent& event )
 {
     BOARD_COMMIT commit( m_Parent );
     commit.Modify( m_Target );
+    auto frame = static_cast<PCB_EDIT_FRAME*> ( m_parent );
 
     if( m_DC )
-        m_Target->Draw( m_Parent->GetCanvas(), m_DC, GR_XOR );
+        m_Target->Draw( frame->GetLegacyCanvas(), m_DC, GR_XOR );
 
     // Save old item in undo list, if is is not currently edited (will be later if so)
     bool pushCommit = ( m_Target->GetFlags() == 0 );
@@ -149,7 +150,7 @@ void TARGET_PROPERTIES_DIALOG_EDITOR::OnOkClick( wxCommandEvent& event )
     m_Target->SetShape( m_TargetShape->GetSelection() ? 1 : 0 );
 
     if( m_DC )
-        m_Target->Draw( m_Parent->GetCanvas(), m_DC, ( m_Target->IsMoving() ) ? GR_XOR : GR_OR );
+        m_Target->Draw( frame->GetLegacyCanvas(), m_DC, ( m_Target->IsMoving() ) ? GR_XOR : GR_OR );
 
     if( pushCommit )
         commit.Push( _( "Modified alignment target" ) );
@@ -163,29 +164,30 @@ void PCB_EDIT_FRAME::DeleteTarget( PCB_TARGET* aTarget, wxDC* DC )
     if( aTarget == NULL )
         return;
 
-    aTarget->Draw( m_canvas, DC, GR_XOR );
+    aTarget->Draw( GetLegacyCanvas(), DC, GR_XOR );
     SaveCopyInUndoList( aTarget, UR_DELETED );
     aTarget->UnLink();
 }
 
 
-static void AbortMoveAndEditTarget( EDA_DRAW_PANEL* Panel, wxDC* DC )
+static void AbortMoveAndEditTarget( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    BASE_SCREEN* screen  = Panel->GetScreen();
+    BASE_SCREEN* screen  = aPanel->GetScreen();
     PCB_TARGET*  target = (PCB_TARGET*) screen->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
-    ( (PCB_EDIT_FRAME*) Panel->GetParent() )->SetCurItem( NULL );
+    ( (PCB_EDIT_FRAME*) panel->GetParent() )->SetCurItem( NULL );
 
-    Panel->SetMouseCapture( NULL, NULL );
+    panel->SetMouseCapture( NULL, NULL );
 
     if( target == NULL )
         return;
 
-    target->Draw( Panel, DC, GR_XOR );
+    target->Draw( panel, DC, GR_XOR );
 
     if( target->IsNew() )     // If it is new, delete it
     {
-        target->Draw( Panel, DC, GR_XOR );
+        target->Draw( panel, DC, GR_XOR );
         target->DeleteStructure();
         target = NULL;
     }
@@ -200,7 +202,7 @@ static void AbortMoveAndEditTarget( EDA_DRAW_PANEL* Panel, wxDC* DC )
         }
 
         target->ClearFlags();
-        target->Draw( Panel, DC, GR_OR );
+        target->Draw( panel, DC, GR_OR );
     }
 }
 
@@ -241,7 +243,7 @@ void PCB_EDIT_FRAME::PlaceTarget( PCB_TARGET* aTarget, wxDC* DC )
     if( aTarget == NULL )
         return;
 
-    aTarget->Draw( m_canvas, DC, GR_OR );
+    aTarget->Draw( GetLegacyCanvas(), DC, GR_OR );
     m_canvas->SetMouseCapture( NULL, NULL );
     SetCurItem( NULL );
     OnModify();
@@ -273,19 +275,20 @@ void PCB_EDIT_FRAME::PlaceTarget( PCB_TARGET* aTarget, wxDC* DC )
 
 
 // Redraw the contour of the track while moving the mouse
-static void ShowTargetShapeWhileMovingMouse( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void ShowTargetShapeWhileMovingMouse( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                              const wxPoint& aPosition, bool aErase )
 {
     BASE_SCREEN* screen  = aPanel->GetScreen();
     PCB_TARGET*  target = (PCB_TARGET*) screen->GetCurItem();
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
 
     if( target == NULL )
         return;
 
     if( aErase )
-        target->Draw( aPanel, aDC, GR_XOR );
+        target->Draw( panel, aDC, GR_XOR );
 
-    target->SetPosition( aPanel->GetParent()->GetCrossHairPosition() );
+    target->SetPosition( panel->GetParent()->GetCrossHairPosition() );
 
-    target->Draw( aPanel, aDC, GR_XOR );
+    target->Draw( panel, aDC, GR_XOR );
 }

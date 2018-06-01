@@ -36,7 +36,7 @@ public:
     /// @copydoc VIEW::Update()
     virtual void Update( VIEW_ITEM* aItem ) override;
 
-    void SetWorksheet( KIGFX::WORKSHEET_VIEWITEM* aWorksheet );
+//    void SetWorksheet( KIGFX::WORKSHEET_VIEWITEM* aWorksheet );
 
 private:
     std::unique_ptr<WORKSHEET_VIEWITEM> m_worksheet;

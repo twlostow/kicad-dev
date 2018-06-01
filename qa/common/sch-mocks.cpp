@@ -442,7 +442,7 @@ PART_LIBS* PROJECT::SchLibs()
     return libs;
 }
 
-SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
+/*SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
 {
     // This is a lazy loading function, it loads the project specific table when
     // that table is asked for, not before.
@@ -482,7 +482,7 @@ SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
     }
 
     return tbl;
-}
+}*/
 
 int SCH_EDIT_FRAME::BlockCommand( EDA_KEY aKey ){}
 void SCH_EDIT_FRAME::HandleBlockPlace( wxDC* DC ){}

@@ -527,7 +527,9 @@ void EDA_DRAW_FRAME::createCanvas()
     m_canvas = new SCH_DRAW_PANEL( this, -1, wxPoint( 0,
                         0 ), m_FrameSize, options, EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
 
+
+    m_useSingleCanvasPane = true;
+
     SetGalCanvas( static_cast<SCH_DRAW_PANEL*> (m_canvas) );
     UseGalCanvas( true );
-
 }

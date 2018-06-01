@@ -37,7 +37,7 @@
 #include <gerber_file_image_list.h>
 
 // Call back function used in block command
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC,
                                      const wxPoint& aPosition, bool erase );
 
 
@@ -143,7 +143,7 @@ bool GERBVIEW_FRAME::HandleBlockEnd( wxDC* DC )
 
 /* Traces the outline of the block structures of a repositioning move
  */
-static void DrawMovingBlockOutlines( EDA_DRAW_PANEL* aPanel, wxDC* aDC, const wxPoint& aPositon,
+static void DrawMovingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPositon,
                                      bool aErase )
 {
     BASE_SCREEN* screen = aPanel->GetScreen();
@@ -219,4 +219,32 @@ void GERBVIEW_FRAME::Block_Move()
     }
 
     m_canvas->Refresh( true );
+}
+
+
+void DrawAndSizingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPosition,
+                                 bool aErase )
+{
+    BLOCK_SELECTOR* block;
+    auto panel = static_cast<EDA_DRAW_PANEL*>( aPanel );
+
+    block = &panel->GetScreen()->m_BlockLocate;
+
+    block->SetMoveVector( wxPoint( 0, 0 ) );
+
+    if( aErase && aDC )
+        block->Draw( panel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
+
+    block->SetLastCursorPosition( panel->GetParent()->GetCrossHairPosition() );
+    block->SetEnd( panel->GetParent()->GetCrossHairPosition() );
+
+    if( aDC )
+        block->Draw( panel, aDC, wxPoint( 0, 0 ), g_XorMode, block->GetColor() );
+
+    if( block->GetState() == STATE_BLOCK_INIT )
+    {
+        if( block->GetWidth() || block->GetHeight() )
+            // 2nd point exists: the rectangle is not surface anywhere
+            block->SetState( STATE_BLOCK_END );
+    }
 }

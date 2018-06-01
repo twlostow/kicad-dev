@@ -765,9 +765,9 @@ void PCB_EDIT_FRAME::OnSelectOptionToolbar( wxCommandEvent& event )
         if( GetToolId() == ID_TRACK_BUTT )
         {
             if( Settings().m_legacyDrcOn )
-                m_canvas->SetCursor( wxCURSOR_PENCIL );
+                GetLegacyCanvas()->SetCursor( wxCURSOR_PENCIL );
             else
-                m_canvas->SetCursor( wxCURSOR_QUESTION_ARROW );
+                GetLegacyCanvas()->SetCursor( wxCURSOR_QUESTION_ARROW );
         }
         break;
 

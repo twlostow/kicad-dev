@@ -351,7 +351,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     SetBoard( new BOARD() );
 
     // Create the PCB_LAYER_WIDGET *after* SetBoard():
-    m_Layers = new PCB_LAYER_WIDGET( this, GetCanvas() );
+    m_Layers = new PCB_LAYER_WIDGET( this, GetLegacyCanvas() );
 
     m_drc = new DRC( this );        // these 2 objects point to each other
     m_plotDialog = nullptr;
@@ -440,7 +440,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     }
 
     if( m_canvas )
-        m_auimgr.AddPane( m_canvas,
+        m_auimgr.AddPane( GetLegacyCanvas(),
                           wxAuiPaneInfo().Name( wxT( "DrawFrame" ) ).CentrePane() );
 
     if( GetGalCanvas() )

@@ -658,7 +658,7 @@ bool DIALOG_FOOTPRINT_BOARD_EDITOR::TransferDataFromWindow()
     if( m_DC )
     {
         m_Parent->GetCanvas()->CrossHairOff( m_DC );
-        m_CurrentModule->Draw( m_Parent->GetCanvas(), m_DC, GR_XOR );
+        m_CurrentModule->Draw( m_Parent->GetLegacyCanvas(), m_DC, GR_XOR );
     }
 
     BOARD_COMMIT commit( m_Parent );
@@ -780,7 +780,7 @@ bool DIALOG_FOOTPRINT_BOARD_EDITOR::TransferDataFromWindow()
 
     if( m_DC )
     {
-        m_CurrentModule->Draw( m_Parent->GetCanvas(), m_DC, GR_OR );
+        m_CurrentModule->Draw( m_Parent->GetLegacyCanvas(), m_DC, GR_OR );
         m_Parent->GetCanvas()->CrossHairOn( m_DC );
     }
 

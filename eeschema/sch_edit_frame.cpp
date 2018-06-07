@@ -1529,45 +1529,12 @@ void SCH_EDIT_FRAME::SetIconScale( int aScale )
 
 void SCH_EDIT_FRAME::SetScreen( BASE_SCREEN* aScreen )
 {
-    printf("SCH set screen %p\n", aScreen );
     EDA_DRAW_FRAME::SetScreen( aScreen );
     auto c = static_cast<SCH_DRAW_PANEL*>(m_canvas);
     c->DisplaySheet( static_cast<SCH_SCREEN*>( aScreen ) );
     auto bb = c->GetView()->CalculateExtents() ;
-
-    printf("Extents: %d %d %d %d\n", bb.GetOrigin().x, bb.GetOrigin().y, bb.GetSize().x, bb.GetSize().y );
-
     BOX2D bb2 ( bb.GetOrigin(), bb.GetSize() );
-
     c->GetView()->SetViewport( bb2 );
-}
-
-void SCH_EDIT_FRAME::AddToScreen( SCH_ITEM* aItem )
-{
-        GetScreen()->Append( aItem );
-        GetCanvas()->GetView()->Add( aItem );
-}
-
-void SCH_EDIT_FRAME::AddToScreen( DLIST<SCH_ITEM>& aItems )
-{
-    std::vector<SCH_ITEM*> tmp;
-        SCH_ITEM* itemList = aItems.begin();
-
-        while( itemList )
-        {
-            itemList->SetList( nullptr );
-            GetCanvas()->GetView()->Add( itemList );
-            itemList = itemList->Next();
-        }
-
-        GetScreen()->Append( aItems );
-
-}
-
-void SCH_EDIT_FRAME::RemoveFromScreen( SCH_ITEM* aItem )
-{
-    GetCanvas()->GetView()->Remove( aItem );
-    GetScreen()->Remove( aItem );
 }
 
 const BOX2I SCH_EDIT_FRAME::GetDocumentExtents() const
@@ -1576,16 +1543,4 @@ const BOX2I SCH_EDIT_FRAME::GetDocumentExtents() const
     int sizeY = GetScreen()->GetPageSettings().GetHeightIU();
 
     return BOX2I( VECTOR2I(0, 0), VECTOR2I( sizeX, sizeY ) );
-}
-
-void SCH_EDIT_FRAME::SyncView()
-{
-    auto screen = GetScreen();
-    auto gal = GetGalCanvas()->GetGAL();
-
-    auto gs = screen->GetGridSize();
-
-    gal->SetGridSize( VECTOR2D( gs.x, gs.y ));
-
-    GetGalCanvas()->GetView()->UpdateAllItems( KIGFX::ALL );
 }

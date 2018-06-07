@@ -144,6 +144,17 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM *aItem, int aLayer )
     m_gal->EnableDepthTest( false );
     m_gal->AdvanceDepth();
 
+/*    m_gal->SetLineWidth( 10 );
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke (true);
+    m_gal->SetStrokeColor( COLOR4D(0.0, 0.0, 0.0, 1.0) );
+    m_gal->SetGlyphSize ( VECTOR2D(100,100) );
+
+    m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
+    m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+
+    m_gal->StrokeText( wxT("Test"), VECTOR2D(0, 0), 0.0 );
+*/
 	switch(item->Type())
 	{
 		HANDLE_ITEM(LIB_PART_T, LIB_PART);
@@ -200,7 +211,6 @@ static VECTOR2D mapCoords( const wxPoint& aCoord )
 void SCH_PAINTER::draw ( LIB_RECTANGLE *aComp, int aLayer )
 {
 	defaultColors(aComp);
-
     m_gal->DrawRectangle( mapCoords( aComp->GetPosition() ),
                           mapCoords( aComp->GetEnd() ) );
 
@@ -290,8 +300,7 @@ void SCH_PAINTER::draw ( LIB_FIELD *aField, int aLayer )
 
 
     auto pos = mapCoords( aField->GetPosition() );
-    double orient = aField->GetTextAngleRadians() + M_PI;
-
+    double orient = aField->GetTextAngleRadians();
 
     m_gal->StrokeText( aField->GetText(), pos, orient );
 }
@@ -376,9 +385,11 @@ void SCH_PAINTER::draw ( LIB_TEXT *aText, int aLayer )
     m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
 
     EDA_RECT bBox = aText->GetBoundingBox();
+    bBox.RevertYAxis();
+    
     auto pos = mapCoords( bBox.Centre() );
 
-    double orient = aText->GetTextAngleRadians() + M_PI;
+    double orient = aText->GetTextAngleRadians();
 
     m_gal->SetFontBold ( aText->IsBold() );
     m_gal->SetFontItalic ( aText->IsItalic() );

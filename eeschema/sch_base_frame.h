@@ -254,6 +254,12 @@ public:
 
     virtual void RedrawScreen2( const wxPoint& posBefore ) override;
 
+    void AddToScreen( SCH_ITEM* aItem );
+    void AddToScreen( DLIST<SCH_ITEM>& aItems );
+    void RemoveFromScreen( SCH_ITEM* aItem );
+
+    void SyncView();
+
 
 protected:
 

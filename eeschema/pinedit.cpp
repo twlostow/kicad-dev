@@ -45,6 +45,7 @@
 #include <../common/dialogs/dialog_display_info_HTML_base.h>
 #include <dialog_lib_edit_pin.h>
 
+#include <sch_view.h>
 
 extern void IncrementLabelMember( wxString& name, int aIncrement );
 
@@ -54,7 +55,7 @@ static void DrawMovePin( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPos
 
 
 static wxPoint OldPos;
-static wxPoint PinPreviousPos;
+//static wxPoint PinPreviousPos;
 static ELECTRICAL_PINTYPE LastPinType   = PIN_INPUT;
 static int     LastPinOrient        = PIN_RIGHT;
 static GRAPHIC_PINSHAPE LastPinShape = PINSHAPE_LINE;
@@ -208,10 +209,12 @@ void LIB_EDIT_FRAME::OnEditPin( wxCommandEvent& event )
 /**
  * Clean up after aborting a move pin command.
  */
-static void AbortPinMove( DRAW_PANEL_BASE* Panel, wxDC* DC )
+static void AbortPinMove( DRAW_PANEL_BASE* aPanel, wxDC* DC )
 {
-    LIB_EDIT_FRAME* parent = (LIB_EDIT_FRAME*) Panel->GetParent();
+    LIB_EDIT_FRAME* parent = (LIB_EDIT_FRAME*) aPanel->GetParent();
+    auto panel = static_cast<SCH_DRAW_PANEL*>( aPanel );
 
+    
     if( parent == NULL )
         return;
 
@@ -226,11 +229,14 @@ static void AbortPinMove( DRAW_PANEL_BASE* Panel, wxDC* DC )
         delete pin;
     else
         parent->RestoreComponent();
+    
+    panel->GetView()->ClearPreview();
+    panel->GetView()->ClearHiddenFlags();
+        
 
     // clear edit flags
     parent->SetDrawItem( NULL );
     parent->SetLastDrawItem( NULL );
-    Panel->Refresh( true );
 }
 
 
@@ -356,7 +362,7 @@ void LIB_EDIT_FRAME::StartMovePin( LIB_ITEM* aItem )
 
     cur_pin->SetFlags( IS_LINKED | IS_MOVED );
 
-    PinPreviousPos = OldPos = cur_pin->GetPosition();
+    //PinPreviousPos = OldPos = cur_pin->GetPosition();
     startPos.x = OldPos.x;
     startPos.y = -OldPos.y;
 
@@ -390,35 +396,21 @@ static void DrawMovePin( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoint& aPos
     if( cur_pin == NULL || cur_pin->Type() != LIB_PIN_T )
         return;
 
-    wxPoint pinpos = cur_pin->GetPosition();
-    int show_opts = PIN_DRAW_TEXTS | PIN_DRAW_DANGLING | PIN_DANGLING_HIDDEN;
+    
+    printf("DrawMovePin\n");
 
-    if( parent->GetShowElectricalType() )
-        show_opts |= PIN_DRAW_ELECTRICAL_TYPE_NAME;
-
-    // In LIB_PIN::Draw() a void* parameter used as flag to pass show_opts.
-    // Build it:
-    void* showOptions = reinterpret_cast<void*>( show_opts );
-
-    // Erase pin in old position
-    if( aErase )
-    {
-        cur_pin->Move( PinPreviousPos );
-        cur_pin->Draw( aPanel, aDC, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED, g_XorMode,
-                          showOptions, DefaultTransform );
-    }
-
+    auto p =  aPanel->GetParent()->GetCrossHairPosition( true );
+    
     // Redraw pin in new position
-    cur_pin->Move( aPanel->GetParent()->GetCrossHairPosition( true ) );
-    cur_pin->Draw( aPanel, aDC, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED, g_XorMode,
-                   showOptions, DefaultTransform );
+    cur_pin->Move(p);
 
-    PinPreviousPos = cur_pin->GetPosition();
+    auto view = parent->GetCanvas()->GetView();
 
-    /* Keep the original position for existing pin (for Undo command)
-     * and the current position for a new pin */
-    if( !cur_pin->IsNew() )
-        cur_pin->Move( pinpos );
+    auto copy_pin = static_cast<LIB_PIN*>( cur_pin->Clone() );
+
+    view->Hide( cur_pin );
+    view->ClearPreview();
+    view->AddToPreview( copy_pin );
 }
 
 
@@ -446,7 +438,7 @@ void LIB_EDIT_FRAME::CreatePin( wxDC* DC )
     if( SynchronizePins() )
         pin->SetFlags( IS_LINKED );
 
-    pin->Move( GetCrossHairPosition( true ) );
+    pin->Move( GetCrossHairPosition( ) );
     pin->SetLength( GetLastPinLength() );
     pin->SetOrientation( LastPinOrient );
     pin->SetType( LastPinType );
@@ -456,7 +448,7 @@ void LIB_EDIT_FRAME::CreatePin( wxDC* DC )
     pin->SetConvert( LastPinCommonConvert ? 0 : m_convert );
     pin->SetUnit( LastPinCommonUnit ? 0 : m_unit );
     pin->SetVisible( LastPinVisible );
-    PinPreviousPos = pin->GetPosition();
+    //PinPreviousPos = pin->GetPosition();
     m_canvas->SetIgnoreMouseEvents( true );
     wxCommandEvent cmd( wxEVT_COMMAND_MENU_SELECTED );
     cmd.SetId( ID_LIBEDIT_EDIT_PIN );
@@ -472,22 +464,6 @@ void LIB_EDIT_FRAME::CreatePin( wxDC* DC )
     {
         ClearTempCopyComponent();
         m_canvas->SetMouseCapture( DrawMovePin, AbortPinMove );
-
-        if( DC )
-        {
-            int show_opts = PIN_DRAW_TEXTS | PIN_DRAW_DANGLING | PIN_DANGLING_HIDDEN;
-
-            if( GetShowElectricalType() )
-                show_opts |= PIN_DRAW_ELECTRICAL_TYPE_NAME;
-
-            // In LIB_PIN::Draw() a void* parameter used as flag to pass show_opts.
-            // Build it:
-            void* showOptions = reinterpret_cast<void*>( show_opts );
-
-            pin->Draw( m_canvas, DC, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED, GR_COPY,
-                       showOptions, DefaultTransform );
-        }
-
     }
 }
 

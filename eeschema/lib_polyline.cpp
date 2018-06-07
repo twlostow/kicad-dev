@@ -401,14 +401,11 @@ void LIB_POLYLINE::BeginEdit( STATUS_FLAGS aEditMode, const wxPoint aPosition )
             prevPoint = point;
             index++;
         }
-
-        SetEraseLastDrawItem();
     }
     else if( aEditMode == IS_MOVED )
     {
         m_initialCursorPos = aPosition;
         m_initialPos = m_PolyPoints[0];
-        SetEraseLastDrawItem();
     }
 
     m_Flags = aEditMode;
@@ -457,16 +454,14 @@ void LIB_POLYLINE::EndEdit( const wxPoint& aPosition, bool aAbort )
     }
 
     m_Flags = 0;
-    SetEraseLastDrawItem( false );
 }
 
 
-void LIB_POLYLINE::calcEdit( const wxPoint& aPosition )
+void LIB_POLYLINE::CalcEdit( const wxPoint& aPosition )
 {
     if( m_Flags == IS_NEW )
     {
         m_PolyPoints[ GetCornerCount() - 1 ] = aPosition;
-        SetEraseLastDrawItem();
     }
     else if( m_Flags == IS_RESIZED )
     {

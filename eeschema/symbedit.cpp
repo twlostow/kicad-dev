@@ -140,10 +140,10 @@ void LIB_EDIT_FRAME::LoadOneSymbol()
 
         newItem->SetParent( part );
         part->AddDrawItem( newItem );
+        item.ClearSelected();
     }
 
     part->RemoveDuplicateDrawItems();
-    part->ClearSelectedItems();
 
     OnModify();
     m_canvas->Refresh();

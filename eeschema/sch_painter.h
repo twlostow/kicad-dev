@@ -80,6 +80,12 @@ public:
 
         return luma < 0.5;
     }
+
+private:
+
+    bool m_showPinsElectricalType;
+    bool m_libraryEditorMode;
+    
 };
 
 

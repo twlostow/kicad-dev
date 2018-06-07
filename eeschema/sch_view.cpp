@@ -92,7 +92,7 @@ void SCH_VIEW::DisplaySheet( SCH_SCREEN *aSheet )
 
     for( auto item = aSheet->GetDrawItems(); item; item = item->Next() )
     {
-        printf("-- ADD SCHITEM %p\n", item );
+        //printf("-- ADD SCHITEM %p\n", item );
         Add(item);
     }
 
@@ -118,7 +118,7 @@ void SCH_VIEW::DisplayComponent( LIB_PART *aPart )
 
     for ( auto &item : aPart->GetDrawItems() )
     {
-        printf("-- ADD %p\n", &item );
+        //printf("-- ADD %p\n", &item );
         Add( &item );
     }
 

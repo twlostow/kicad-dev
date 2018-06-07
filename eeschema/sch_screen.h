@@ -107,6 +107,8 @@ public:
 
     ~SCH_SCREEN();
 
+    DLIST< SCH_ITEM > & GetDrawList() { return m_drawList; }
+
     virtual wxString GetClass() const override
     {
         return wxT( "SCH_SCREEN" );

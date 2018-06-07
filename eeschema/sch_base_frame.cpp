@@ -37,7 +37,7 @@
 #include <sch_view.h>
 #include "dialogs/dialog_sym_lib_table.h"
 
-
+#include <gal/graphics_abstraction_layer.h>
 
 LIB_ALIAS* SchGetLibAlias( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable, PART_LIB* aCacheLib,
                            wxWindow* aParent, bool aShowErrorMsg )
@@ -532,4 +532,47 @@ void EDA_DRAW_FRAME::createCanvas()
 
     SetGalCanvas( static_cast<SCH_DRAW_PANEL*> (m_canvas) );
     UseGalCanvas( true );
+}
+
+
+void SCH_BASE_FRAME::AddToScreen( SCH_ITEM* aItem )
+{
+        GetScreen()->Append( aItem );
+        GetCanvas()->GetView()->Add( aItem );
+}
+
+void SCH_BASE_FRAME::AddToScreen( DLIST<SCH_ITEM>& aItems )
+{
+    std::vector<SCH_ITEM*> tmp;
+        SCH_ITEM* itemList = aItems.begin();
+
+        while( itemList )
+        {
+            itemList->SetList( nullptr );
+            GetCanvas()->GetView()->Add( itemList );
+            itemList = itemList->Next();
+        }
+
+        GetScreen()->Append( aItems );
+
+}
+
+void SCH_BASE_FRAME::RemoveFromScreen( SCH_ITEM* aItem )
+{
+    GetCanvas()->GetView()->Remove( aItem );
+    GetScreen()->Remove( aItem );
+}
+
+void SCH_BASE_FRAME::SyncView()
+{
+    auto screen = GetScreen();
+    auto gal = GetGalCanvas()->GetGAL();
+
+    auto gs = screen->GetGridSize();
+
+    gal->SetGridSize( VECTOR2D( gs.x, gs.y ));
+
+    printf("SyncView: grid %d %d\n", (int)gs.x, (int)gs.y );
+
+    GetGalCanvas()->GetView()->UpdateAllItems( KIGFX::ALL );
 }

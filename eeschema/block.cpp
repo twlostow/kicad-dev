@@ -569,12 +569,14 @@ void DrawAndSizingBlockOutlines( DRAW_PANEL_BASE* aPanel, wxDC* aDC, const wxPoi
 {
     auto panel =static_cast<SCH_DRAW_PANEL*>(aPanel);
     auto area = panel->GetView()->GetSelectionArea();
-    BLOCK_SELECTOR* block;
+    auto frame = static_cast<EDA_BASE_FRAME*>(aPanel->GetParent());
 
+    BLOCK_SELECTOR* block;
+    bool isLibEdit = frame->IsType( FRAME_SCH_LIB_EDITOR );
 
     block = &aPanel->GetScreen()->m_BlockLocate;
     block->SetMoveVector( wxPoint( 0, 0 ) );
-    block->SetLastCursorPosition( aPanel->GetParent()->GetCrossHairPosition() );
+    block->SetLastCursorPosition( aPanel->GetParent()->GetCrossHairPosition( isLibEdit ) );
     block->SetEnd( aPanel->GetParent()->GetCrossHairPosition() );
 
     panel->GetView()->ClearPreview();

@@ -100,6 +100,7 @@ void LIB_EDIT_FRAME::GetComponentFromRedoList( wxCommandEvent& event )
     DisplayCmpDoc();
     OnModify();
     m_canvas->Refresh();
+    RebuildView();
 }
 
 
@@ -151,4 +152,5 @@ void LIB_EDIT_FRAME::GetComponentFromUndoList( wxCommandEvent& event )
     DisplayCmpDoc();
     OnModify();
     m_canvas->Refresh();
+    RebuildView();
 }

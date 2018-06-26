@@ -54,6 +54,8 @@
 #include <dialog_erc.h>
 
 #include <wildcards_and_files_ext.h>
+#include <sch_view.h>
+#include <sch_painter.h>
 
 #define FR_HISTORY_LIST_CNT     10   ///< Maximum number of find and replace strings.
 

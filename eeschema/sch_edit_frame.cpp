@@ -70,6 +70,7 @@
 #include <netlist_exporter_kicad.h>
 #include <kiway.h>
 #include <sch_view.h>
+#include <sch_painter.h>
 
 #include <gal/graphics_abstraction_layer.h>
 
@@ -454,6 +455,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ):
 
     Bind( wxEVT_COMMAND_MENU_SELECTED, &SCH_EDIT_FRAME::OnEditSymbolLibTable, this,
           ID_EDIT_SYM_LIB_TABLE );
+
 }
 
 

@@ -737,6 +737,9 @@ void ROUTER_TOOL::performRouting()
             if( m_router->FixRoute( m_endSnapPoint, m_endItem ) )
                 break;
 
+            if( evt->Modifier( MD_SHIFT ) ) // end the track, no matter what.
+                break;
+            
             if( needLayerSwitch )
                 switchLayerOnViaPlacement();
 

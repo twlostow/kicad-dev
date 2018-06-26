@@ -379,6 +379,8 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
     return 0;
 }
 
+#include <valgrind/callgrind.h>
+
 int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
@@ -397,6 +399,9 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
 
     if( m_dragging )
         return 0;
+
+
+    CALLGRIND_START_INSTRUMENTATION;
 
     Activate();
 
@@ -580,7 +585,8 @@ int EDIT_TOOL::Main( const TOOL_EVENT& aEvent )
         m_commit->Revert();
     else
         m_commit->Push( _( "Drag" ) );
-
+    CALLGRIND_STOP_INSTRUMENTATION;
+      CALLGRIND_DUMP_STATS;
     return 0;
 }
 

@@ -173,6 +173,7 @@ COLOR4D GetLayerColor( SCH_LAYER_ID aLayer )
 
 void SetLayerColor( COLOR4D aColor, SCH_LAYER_ID aLayer )
 {
+    printf("SetLayerColor %d\n", aLayer );
     // Do not allow non-background layers to be completely white.
     // This ensures the BW printing recognizes that the colors should be
     // printed black.

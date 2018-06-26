@@ -101,6 +101,7 @@ public:
 
 protected:
 
+    virtual void onPaint( wxPaintEvent& WXUNUSED( aEvent ) ) override;
 
     KIGFX::SCH_VIEW* view() const;
 

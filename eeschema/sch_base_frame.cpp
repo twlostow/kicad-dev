@@ -25,6 +25,8 @@
 #include <base_units.h>
 #include <kiway.h>
 #include <sch_draw_panel.h>
+#include <sch_view.h>
+#include <sch_painter.h>
 #include <confirm.h>
 
 #include <class_library.h>

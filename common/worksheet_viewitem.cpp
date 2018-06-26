@@ -86,6 +86,8 @@ void WORKSHEET_VIEWITEM::ViewDraw( int aLayer, VIEW* aView ) const
     wxString sheetName( m_sheetName.c_str(), wxConvUTF8 );
     WS_DRAW_ITEM_LIST drawList;
 
+    printf("Draw %d\n", aLayer );
+
     drawList.SetPenSize( settings->GetWorksheetLineWidth() );
     // Sorry, but I don't get this multi #ifdef from include/convert_to_biu.h, so here goes a magic
     // number. IU_PER_MILS should be 25400 (as in a different compilation unit), but somehow

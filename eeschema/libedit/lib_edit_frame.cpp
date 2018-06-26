@@ -1809,10 +1809,11 @@ void LIB_EDIT_FRAME::SetScreen( BASE_SCREEN* aScreen )
 
 void LIB_EDIT_FRAME::RebuildView()
 {
-    auto c = static_cast<SCH_DRAW_PANEL*>(m_canvas);
-    c->GetView()->Clear();
-    c->DisplayComponent( m_my_part );    
-    c->GetView()->HideWorksheet();
+    auto view = GetCanvas()->GetView();
+    view->Clear();
+    view->DisplayComponent( m_my_part );    
+    view->HideWorksheet();
+    view->ClearHiddenFlags();
 }
 
 const BOX2I LIB_EDIT_FRAME::GetDocumentExtents() const

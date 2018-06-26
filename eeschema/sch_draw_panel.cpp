@@ -659,3 +659,14 @@ void SCH_DRAW_PANEL::SetDefaultCursor()
 {
     SetCursor( (wxStockCursor) m_defaultCursor );
 }
+
+void SCH_DRAW_PANEL::onPaint( wxPaintEvent& aEvent )
+{
+    printf("DPPaint\n");
+    // sync colors settings with the legacy view
+    if( m_painter )
+        static_cast<KIGFX::SCH_PAINTER*>(m_painter.get())->GetSettings()->ImportLegacyColors( nullptr );
+    
+    EDA_DRAW_PANEL_GAL::onPaint( aEvent );
+}
+    

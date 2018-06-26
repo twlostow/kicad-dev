@@ -247,6 +247,8 @@ void LIB_EDIT_FRAME::PlacePin()
 {
     LIB_PIN* cur_pin  = (LIB_PIN*) GetDrawItem();
 
+    printf("PlacePin!\n");
+
     // Some tests
     if( !cur_pin || cur_pin->Type() != LIB_PIN_T )
     {
@@ -284,7 +286,10 @@ void LIB_EDIT_FRAME::PlacePin()
             m_canvas->SetIgnoreMouseEvents( false );
 
             if( !status )
+            {
+                RebuildView();
                 return;
+            }
             else
                 ask_for_pin = false;
         }
@@ -327,6 +332,10 @@ void LIB_EDIT_FRAME::PlacePin()
 
     OnModify();
     m_canvas->Refresh();
+
+    printf("Rebuild %d %d\n", cur_pin->GetPosition().x, cur_pin->GetPosition().y );
+    RebuildView();
+
 }
 
 

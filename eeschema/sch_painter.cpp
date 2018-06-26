@@ -73,56 +73,25 @@ namespace KIGFX {
         }
     };
 
-    const std::vector<COLOR_DEF> defaultColors =
-    {
-            COLOR_DEF( "Color4DWireEx",             LAYER_WIRE,                 COLOR4D( GREEN ) ),
-            COLOR_DEF( "Color4DBusEx",              LAYER_BUS,                  COLOR4D( BLUE ) ),
-            COLOR_DEF( "Color4DConnEx",             LAYER_JUNCTION,             COLOR4D( GREEN ) ),
-            COLOR_DEF( "Color4DLLabelEx",           LAYER_LOCLABEL,             COLOR4D( BLACK ) ),
-            COLOR_DEF( "Color4DHLabelEx",           LAYER_HIERLABEL,            COLOR4D( BROWN ) ),
-            COLOR_DEF( "Color4DGLabelEx",           LAYER_GLOBLABEL,            COLOR4D( RED ) ),
-            COLOR_DEF( "Color4DPinNumEx",           LAYER_PINNUM,               COLOR4D( RED ) ),
-            COLOR_DEF( "Color4DPinNameEx",          LAYER_PINNAM,               COLOR4D( CYAN ) ),
-            COLOR_DEF( "Color4DFieldEx",            LAYER_FIELDS,               COLOR4D( MAGENTA ) ),
-            COLOR_DEF( "Color4DReferenceEx",        LAYER_REFERENCEPART,        COLOR4D( CYAN ) ),
-            COLOR_DEF( "Color4DValueEx",            LAYER_VALUEPART,            COLOR4D( CYAN ) ),
-            COLOR_DEF( "Color4DNoteEx",             LAYER_NOTES,                COLOR4D( LIGHTBLUE ) ),
-            COLOR_DEF( "Color4DBodyEx",             LAYER_DEVICE,               COLOR4D( RED ) ),
-            COLOR_DEF( "Color4DBodyBgEx",           LAYER_DEVICE_BACKGROUND,    COLOR4D( LIGHTYELLOW ) ),
-            COLOR_DEF( "Color4DNetNameEx",          LAYER_NETNAM,               COLOR4D( DARKGRAY ) ),
-            COLOR_DEF( "Color4DPinEx",              LAYER_PIN,                  COLOR4D( RED ) ),
-            COLOR_DEF( "Color4DSheetEx",            LAYER_SHEET,                COLOR4D( MAGENTA ) ),
-            COLOR_DEF( "Color4DSheetFileNameEx",    LAYER_SHEETFILENAME,        COLOR4D( BROWN ) ),
-            COLOR_DEF( "Color4DSheetNameEx",        LAYER_SHEETNAME,            COLOR4D( CYAN ) ),
-            COLOR_DEF( "Color4DSheetLabelEx",       LAYER_SHEETLABEL,           COLOR4D( BROWN ) ),
-            COLOR_DEF( "Color4DNoConnectEx",        LAYER_NOCONNECT,            COLOR4D( BLUE ) ),
-            COLOR_DEF( "Color4DErcWEx",             LAYER_ERC_WARN,             COLOR4D( GREEN ) ),
-            COLOR_DEF( "Color4DErcEEx",             LAYER_ERC_ERR,              COLOR4D( RED ) ),
-            COLOR_DEF( "Color4DGridEx",             LAYER_SCHEMATIC_GRID,       COLOR4D( DARKGRAY ) ),
-            COLOR_DEF( "Color4DBgCanvasEx",         LAYER_SCHEMATIC_BACKGROUND, COLOR4D( WHITE ) ),
-            COLOR_DEF( "Color4DBrighenedEx",        LAYER_BRIGHTENED,           COLOR4D( PUREMAGENTA ) )
-        };
 
 SCH_RENDER_SETTINGS::SCH_RENDER_SETTINGS()
 {
-  for ( const auto& l : defaultColors )
-  {
-      auto c = l.color;
-      m_layerColors[l.layer] = c;
-  }
-
-  m_backgroundColor = m_layerColors [ LAYER_SCHEMATIC_BACKGROUND ];
+    ImportLegacyColors( nullptr );
 }
 
 void SCH_RENDER_SETTINGS::ImportLegacyColors( const COLORS_DESIGN_SETTINGS* aSettings )
 {
+    for( int layer = SCH_LAYER_ID_START; layer < SCH_LAYER_ID_END; layer ++)
+    {
+        m_layerColors[ layer ] = ::GetLayerColor( static_cast<SCH_LAYER_ID>( layer ) );
+    }
 
+    m_backgroundColor = ::GetLayerColor( LAYER_SCHEMATIC_BACKGROUND );
 }
 
 const COLOR4D& SCH_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
 {
-  static COLOR4D col(0.0, 0.0, 0.0, 1.0);
-  return col;
+  return m_layerColors[ aLayer ];
 }
 
 SCH_PAINTER::SCH_PAINTER( GAL* aGal ) :
@@ -140,6 +109,15 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM *aItem, int aLayer )
 {
 	auto item2 = static_cast<const EDA_ITEM *>(aItem);
     auto item = const_cast<EDA_ITEM*>(item2);
+
+
+    //printf("Import\n");
+    m_schSettings.ImportLegacyColors( nullptr );
+
+    //auto c =GetLayerColor( LAYER_SCHEMATIC_BACKGROUND );
+    //printf("bkgd %.02f %.02f %.02f %.02f\n", c.r, c.g, c.b, c.a);
+    //auto c2 = m_schSettings.GetLayerColor ( LAYER_SCHEMATIC_BACKGROUND );
+    //printf("bkgd2 %.02f %.02f %.02f %.02f\n", c2.r, c2.g, c2.b, c2.a);
 
     m_gal->EnableDepthTest( false );
     m_gal->AdvanceDepth();
@@ -211,6 +189,8 @@ static VECTOR2D mapCoords( const wxPoint& aCoord )
 void SCH_PAINTER::draw ( LIB_RECTANGLE *aComp, int aLayer )
 {
 	defaultColors(aComp);
+    //m_gal->SetIsStroke( true );
+    m_gal->SetLineWidth( aComp->GetPenSize() );
     m_gal->DrawRectangle( mapCoords( aComp->GetPosition() ),
                           mapCoords( aComp->GetEnd() ) );
 
@@ -278,7 +258,6 @@ void SCH_PAINTER::draw ( LIB_ARC *aArc, int aLayer )
 
 void SCH_PAINTER::draw ( LIB_FIELD *aField, int aLayer )
 {
-
     if(!aField->IsVisible())
       return;
 
@@ -289,10 +268,28 @@ void SCH_PAINTER::draw ( LIB_FIELD *aField, int aLayer )
     else
       w = aField->GetPenSize();
 
+
+    COLOR4D color;
+
+        switch( aField->GetId() )
+        {
+        case REFERENCE:
+            color = m_schSettings.GetLayerColor( LAYER_REFERENCEPART );
+            break;
+
+        case VALUE:
+            color = m_schSettings.GetLayerColor( LAYER_VALUEPART );
+            break;
+
+        default:
+            color = m_schSettings.GetLayerColor( LAYER_FIELDS );
+        break;
+    }
+
     m_gal->SetLineWidth(w);
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke (true);
-    m_gal->SetStrokeColor( aField->GetDefaultColor () );
+    m_gal->SetStrokeColor( color );
     m_gal->SetGlyphSize ( aField->GetTextSize() );
 
     m_gal->SetHorizontalJustify( aField->GetHorizJustify( ) );
@@ -355,7 +352,6 @@ void SCH_PAINTER::draw ( SCH_FIELD *aField, int aLayer )
 
 void SCH_PAINTER::draw ( LIB_POLYLINE *aLine, int aLayer )
 {
-
   defaultColors(aLine);
   std::deque<VECTOR2D> vtx;
 
@@ -378,7 +374,7 @@ void SCH_PAINTER::draw ( LIB_TEXT *aText, int aLayer )
     m_gal->SetLineWidth(w);
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke (true);
-    m_gal->SetStrokeColor( aText-> GetDefaultColor () );
+    //m_gal->SetStrokeColor(  );
     m_gal->SetGlyphSize ( aText->GetTextSize() );
 
     m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
@@ -549,7 +545,6 @@ void SCH_PAINTER::draw ( LIB_PIN *aPin, int aLayer )
 
 // Draw the labels
 
-
     int labelWidth = std::min ( GetDefaultLineThickness(), width );
     LIB_PART* libEntry = (const_cast<LIB_PIN *> (aPin)) ->GetParent();
     m_gal->SetLineWidth ( labelWidth );
@@ -606,11 +601,11 @@ void SCH_PAINTER::draw ( LIB_PIN *aPin, int aLayer )
             break;
           case PIN_DOWN:
             m_gal->SetHorizontalJustify ( GR_TEXT_HJUSTIFY_RIGHT );
-            m_gal->StrokeText ( aPin->GetName(), pos + VECTOR2D ( 0, -textOffset - len), M_PI / 2);
+            m_gal->StrokeText ( aPin->GetName(), pos + VECTOR2D ( 0, textOffset + len), M_PI / 2);
             break;
           case PIN_UP:
             m_gal->SetHorizontalJustify ( GR_TEXT_HJUSTIFY_LEFT );
-            m_gal->StrokeText ( aPin->GetName(), pos + VECTOR2D ( 0, textOffset + len), M_PI / 2);
+            m_gal->StrokeText ( aPin->GetName(), pos + VECTOR2D ( 0, - textOffset - len), M_PI / 2);
             break;
         }
     }
@@ -699,6 +694,16 @@ void SCH_PAINTER::draw ( SCH_TEXT *aText, int aLayer )
 {
     COLOR4D     color;
     int         linewidth = aText->GetThickness() == 0 ? GetDefaultLineThickness() : aText->GetThickness();
+
+    switch ( aText->Type() )
+    {
+        case SCH_HIERARCHICAL_LABEL_T:
+            color = m_schSettings.GetLayerColor( LAYER_SHEETLABEL );
+            break;
+        default:
+            color = m_schSettings.GetLayerColor( LAYER_NOTES );
+            break;
+    }
 
     linewidth = Clamp_Text_PenSize( linewidth, aText->GetTextSize(), aText->IsBold() );
 
@@ -918,7 +923,7 @@ void SCH_PAINTER::draw ( SCH_HIERLABEL *aLabel, int aLayer )
 
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
-
+    m_gal->SetStrokeColor( m_schSettings.GetLayerColor( LAYER_SHEETLABEL ) );
     m_gal->DrawPolyline( pts2 );
     m_gal->AdvanceDepth(); // fixme
 
@@ -932,7 +937,7 @@ void SCH_PAINTER::draw ( SCH_SHEET *aSheet, int aLayer )
     VECTOR2D pos = aSheet->GetPosition();
     VECTOR2D size = aSheet->GetSize();
 
-    m_gal->SetStrokeColor( GetLayerColor( LAYER_SHEET ) );
+    m_gal->SetStrokeColor( m_schSettings.GetLayerColor( LAYER_SHEET ) );
     m_gal->SetFillColor ( COLOR4D(1.0, 1.0, 1.0, 0.5) );
     m_gal->SetIsStroke ( true );
     m_gal->SetIsFill ( true );
@@ -943,7 +948,7 @@ void SCH_PAINTER::draw ( SCH_SHEET *aSheet, int aLayer )
     if( aSheet->IsVerticalOrientation() )
         nameAngle = -M_PI/2;
 
-    m_gal->SetStrokeColor( GetLayerColor( LAYER_SHEETNAME ) );
+    m_gal->SetStrokeColor( m_schSettings.GetLayerColor( LAYER_SHEETNAME ) );
 
     auto text = wxT( "Sheet: " ) + aSheet->GetName();
 
@@ -960,7 +965,7 @@ void SCH_PAINTER::draw ( SCH_SHEET *aSheet, int aLayer )
 
     txtSize = aSheet->GetFileNameSize();
     m_gal->SetGlyphSize( VECTOR2D( txtSize, txtSize ) );
-    m_gal->SetStrokeColor( GetLayerColor( LAYER_SHEETFILENAME ) );
+    m_gal->SetStrokeColor( m_schSettings.GetLayerColor( LAYER_SHEETFILENAME ) );
     m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_TOP );
 
     text = wxT( "File: " ) + aSheet->GetFileName();

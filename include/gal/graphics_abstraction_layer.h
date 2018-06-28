@@ -636,6 +636,11 @@ public:
         worldUnitLength = aWorldUnitLength;
     }
 
+    inline void SetScreenSize( const VECTOR2I& aSize )
+    {
+        screenSize = aSize;
+    }
+
     /**
      * @brief Set the dots per inch of the screen.
      *

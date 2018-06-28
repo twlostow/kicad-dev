@@ -1098,7 +1098,6 @@ void CAIRO_GAL::initSurface()
     cairo_set_line_cap( context, CAIRO_LINE_CAP_ROUND );
 
     lineWidth = 0;
-
     isInitialized = true;
 }
 

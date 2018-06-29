@@ -80,7 +80,8 @@ CAIRO_PRINT_CTX::~CAIRO_PRINT_CTX()
     g->ReleaseHDC( static_cast<HDC>( m_hdc ) );
 #endif /* __WXMSW__ */
 
-    cairo_surface_destroy( m_surface );
-    cairo_destroy( m_ctx );
-    delete m_gcdc;
+    // TODO prevent leaks
+    //cairo_surface_destroy( m_surface );
+    //cairo_destroy( m_ctx );
+    //delete m_gcdc;
 }

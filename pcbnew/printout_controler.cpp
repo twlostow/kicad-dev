@@ -39,8 +39,15 @@
 #include <base_units.h>
 #include <pcb_base_frame.h>
 #include <class_board.h>
+#include <class_zone.h>
+#include <class_module.h>
 #include <pcbnew.h>
 #include <trace_helpers.h>
+
+#include <cairo_print_ctx.h>
+#include <gal/cairo/cairo_gal.h>
+#include <pcb_view.h>
+#include <pcb_painter.h>
 
 #include <printout_controler.h>
 
@@ -132,6 +139,58 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 }
 
 
+void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
+{
+    BOARD* board = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
+    wxPrinterDC* printerDC = dynamic_cast<wxPrinterDC*>( GetDC() );
+    wxCHECK( printerDC, /*void*/ );
+    CAIRO_PRINT_CTX printCtx( *printerDC );
+
+    KIGFX::GAL_DISPLAY_OPTIONS options;
+    KIGFX::CAIRO_GAL gal( m_Parent, options, printCtx.GetContext(), printCtx.GetSurface() );
+    KIGFX::PCB_PAINTER painter( &gal );
+    KIGFX::PCB_VIEW view( true );
+    view.SetGAL( &gal );
+    view.SetPainter( &painter );
+
+    VECTOR2I screenSize( 100, 100 );
+    gal.SetScreenSize( screenSize );
+    BOX2I bBox = board->ViewBBox();
+    VECTOR2D vsize = bBox.GetSize();
+    double scale = view.GetScale() / std::max( fabs( vsize.x / screenSize.x ),
+                                                fabs( vsize.y / screenSize.y ) );
+    view.SetScale( scale / 3 );
+    view.SetCenter( bBox.Centre() );
+
+    for( auto zone : board->Zones() )
+    {
+        zone->CacheTriangulation();
+        view.Add( zone );
+    }
+
+    // Load drawings
+    for( auto drawing : const_cast<BOARD*>(board)->Drawings() )
+        view.Add( drawing );
+
+    // Load tracks
+    for( TRACK* track = board->m_Track; track; track = track->Next() )
+        view.Add( track );
+
+    // Load modules and its additional elements
+    for( MODULE* module = board->m_Modules; module; module = module->Next() )
+        view.Add( module );
+
+    // Segzones (deprecated, equivalent of ZONE_CONTAINERfilled areas for very old boards)
+    for( SEGZONE* zone = board->m_SegZoneDeprecated; zone; zone = zone->Next() )
+        view.Add( zone );
+
+    view.UpdateItems();
+    gal.BeginDrawing();
+    view.Redraw();
+    gal.EndDrawing();
+}
+
+#if 0
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
 {
     wxPoint       offset;
@@ -364,3 +423,4 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     panel->SetClipBox( tmp );
     GRForceBlackPen( false );
 }
+#endif

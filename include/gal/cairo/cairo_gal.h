@@ -85,6 +85,8 @@ public:
                wxWindow* aParent, wxEvtHandler* aMouseListener = NULL,
                wxEvtHandler* aPaintListener = NULL, const wxString& aName = wxT( "CairoCanvas" ) );
 
+    CAIRO_GAL( wxWindow* aParent, GAL_DISPLAY_OPTIONS& aDisplayOptions, cairo_t* aContext, cairo_surface_t* aSurface );
+
     virtual ~CAIRO_GAL();
 
     ///> @copydoc GAL::IsVisible()

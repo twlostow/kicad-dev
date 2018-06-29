@@ -103,6 +103,35 @@ CAIRO_GAL::CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
 }
 
 
+CAIRO_GAL::CAIRO_GAL( wxWindow* aParent, GAL_DISPLAY_OPTIONS& aDisplayOptions,
+        cairo_t* aContext, cairo_surface_t* aSurface )
+    : GAL( aDisplayOptions ), wxWindow( aParent, wxID_ANY ),
+    context( aContext ), surface( aSurface )
+{
+    // TODO extract common part
+    // Initialise grouping
+    isGrouping          = false;
+    isElementAdded      = false;
+    groupCounter        = 0;
+    currentGroup        = nullptr;
+
+    // Initialise compositing state
+    mainBuffer          = 0;
+    overlayBuffer       = 0;
+    validCompositor     = false;
+    SetTarget( TARGET_NONCACHED );
+
+    // Initialise Cairo state
+    cairo_matrix_init_identity( &cairoWorldScreenMatrix );
+    isInitialized = false;
+    initSurface();
+
+    bitmapBuffer        = nullptr;
+    bitmapBufferBackup  = nullptr;
+    wxOutput            = nullptr;
+}
+
+
 CAIRO_GAL::~CAIRO_GAL()
 {
     deinitSurface();
@@ -128,13 +157,29 @@ bool CAIRO_GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 
 void CAIRO_GAL::BeginDrawing()
 {
+#if 0
     initSurface();
+#endif
 
     if( !validCompositor )
         setCompositor();
 
     compositor->SetMainContext( context );
     compositor->SetBuffer( mainBuffer );
+
+    // Clear the screen
+    m_clearColor = backgroundColor;
+    ClearScreen();
+
+    // Compute the world <-> screen transformations
+    ComputeWorldScreenMatrix();
+
+    cairo_matrix_init( &cairoWorldScreenMatrix, worldScreenMatrix.m_data[0][0],
+                       worldScreenMatrix.m_data[1][0], worldScreenMatrix.m_data[0][1],
+                       worldScreenMatrix.m_data[1][1], worldScreenMatrix.m_data[0][2],
+                       worldScreenMatrix.m_data[1][2] );
+
+    cairo_set_matrix( context, &cairoWorldScreenMatrix );
 }
 
 
@@ -147,6 +192,7 @@ void CAIRO_GAL::EndDrawing()
     compositor->DrawBuffer( mainBuffer );
     compositor->DrawBuffer( overlayBuffer );
 
+#if 0
     // Now translate the raw context data from the format stored
     // by cairo into a format understood by wxImage.
     pixman_image_t* dstImg = pixman_image_create_bits(PIXMAN_r8g8b8,
@@ -171,6 +217,7 @@ void CAIRO_GAL::EndDrawing()
     clientDC.Blit( 0, 0, screenSize.x, screenSize.y, &mdc, 0, 0, wxCOPY );
 
     deinitSurface();
+#endif
 }
 
 
@@ -653,7 +700,7 @@ void CAIRO_GAL::Restore()
 
 int CAIRO_GAL::BeginGroup()
 {
-    initSurface();
+    //initSurface();
 
     // If the grouping is started: the actual path is stored in the group, when
     // a attribute was changed or when grouping stops with the end group method.
@@ -674,7 +721,7 @@ void CAIRO_GAL::EndGroup()
     storePath();
     isGrouping = false;
 
-    deinitSurface();
+    //deinitSurface();
 }
 
 
@@ -1065,9 +1112,9 @@ void CAIRO_GAL::initSurface()
         return;
 
     // Create the Cairo surface
-    surface = cairo_image_surface_create_for_data( (unsigned char*) bitmapBuffer, GAL_FORMAT,
-                                                   wxBufferWidth, screenSize.y, stride );
-    context = cairo_create( surface );
+    //surface = cairo_image_surface_create_for_data( (unsigned char*) bitmapBuffer, GAL_FORMAT,
+                                                   //wxBufferWidth, screenSize.y, stride );
+    //context = cairo_create( surface );
 #ifdef __WXDEBUG__
     cairo_status_t status = cairo_status( context );
     wxASSERT_MSG( status == CAIRO_STATUS_SUCCESS, wxT( "Cairo context creation error" ) );
@@ -1076,9 +1123,9 @@ void CAIRO_GAL::initSurface()
 
     cairo_set_antialias( context, CAIRO_ANTIALIAS_NONE );
 
-    m_clearColor = backgroundColor;
     // Clear the screen
-    ClearScreen( );
+    m_clearColor = backgroundColor;
+    ClearScreen();
 
     // Compute the world <-> screen transformations
     ComputeWorldScreenMatrix();

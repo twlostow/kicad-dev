@@ -189,7 +189,6 @@ void GAL::ComputeWorldScreenMatrix()
     scale.SetScale( VECTOR2D( worldScale, worldScale ) );
 
     MATRIX3x3D flip;
-
     flip.SetIdentity();
     flip.SetScale( VECTOR2D( globalFlipX ? -1.0 : 1.0, globalFlipY ? -1.0 : 1.0 ) );
 
@@ -197,7 +196,7 @@ void GAL::ComputeWorldScreenMatrix()
     lookat.SetIdentity();
     lookat.SetTranslation( -lookAtPoint );
 
-    worldScreenMatrix = translation * flip * scale * lookat * worldScreenMatrix;
+    worldScreenMatrix = translation * flip * scale * lookat;
     screenWorldMatrix = worldScreenMatrix.Inverse();
 }
 

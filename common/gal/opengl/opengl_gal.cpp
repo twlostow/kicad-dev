@@ -317,6 +317,9 @@ void OPENGL_GAL::BeginDrawing()
         // Set shader parameter
         GLint ufm_fontTexture       = shader->AddParameter( "fontTexture" );
         GLint ufm_fontTextureWidth  = shader->AddParameter( "fontTextureWidth" );
+        
+            printf("fontTex %d %d\n", ufm_fontTexture, ufm_fontTextureWidth);
+
         shader->Use();
         shader->SetParameter( ufm_fontTexture,       (int) FONT_TEXTURE_UNIT  );
         shader->SetParameter( ufm_fontTextureWidth,  (int) font_image.width  );
@@ -325,6 +328,14 @@ void OPENGL_GAL::BeginDrawing()
 
         isBitmapFontInitialized = true;
     }
+
+    auto matrix = GetScreenWorldMatrix();
+    float pixelSize = std::min(std::abs(matrix.GetScale().x), std::abs(matrix.GetScale().y ) );
+
+    printf("ufm_worldPixelSize %d %.1f\n", ufm_worldPixelSize, pixelSize );
+    shader->Use();
+    shader->SetParameter( ufm_worldPixelSize, pixelSize );
+    shader->Deactivate();
 
     // Something betreen BeginDrawing and EndDrawing seems to depend on
     // this texture unit being active, but it does not assure it itself.
@@ -420,13 +431,12 @@ void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndP
                               double aWidth )
 {
     VECTOR2D startEndVector = aEndPoint - aStartPoint;
-    double   lineAngle      = startEndVector.Angle();
-
+    
     // Width must be nonzero for anything to appear
     if( aWidth <= 0 )
         aWidth = 1.0;
 
-    if( isFillEnabled )
+   // if( isFillEnabled )
     {
         // Filled tracks
         currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
@@ -435,11 +445,12 @@ void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndP
         drawLineQuad( aStartPoint, aEndPoint );
 
         // Draw line caps
-        drawFilledSemiCircle( aStartPoint, aWidth / 2, lineAngle + M_PI / 2 );
-        drawFilledSemiCircle( aEndPoint,   aWidth / 2, lineAngle - M_PI / 2 );
+        //drawFilledSemiCircle( aStartPoint, aWidth / 2, lineAngle + M_PI / 2 );
+        //drawFilledSemiCircle( aEndPoint,   aWidth / 2, lineAngle - M_PI / 2 );
     }
-    else
-    {
+    #if 0
+    //else
+    //{
         // Outlined tracks
         double lineLength = startEndVector.EuclideanNorm();
 
@@ -462,6 +473,7 @@ void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndP
 
         Restore();
     }
+    #endif
 }
 
 
@@ -1404,35 +1416,66 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     VECTOR2D startEndVector = aEndPoint - aStartPoint;
     double   lineLength     = startEndVector.EuclideanNorm();
 
-    if( lineLength <= 0.0 )
-        return;
-
-    double   scale          = 0.5 * lineWidth / lineLength;
-
-    // The perpendicular vector also needs transformations
-    glm::vec4 vector = currentManager->GetTransformation() *
-                       glm::vec4( -startEndVector.y * scale, startEndVector.x * scale, 0.0, 0.0 );
+    auto vs = startEndVector.Resize( 0.5 * lineWidth );
+    auto vp = vs.Perpendicular();
+    float aspect = ( lineLength + lineWidth ) / lineWidth;
 
     currentManager->Reserve( 6 );
 
     // Line width is maintained by the vertex shader
-    currentManager->Shader( SHADER_LINE, vector.x, vector.y, lineWidth );
-    currentManager->Vertex( aStartPoint.x, aStartPoint.y, layerDepth );    // v0
+    /*currentManager->Shader( SHADER_LINE_A, aspect, vp.x - vs.x, vp.y - vs.y );
+    currentManager->Vertex( aStartPoint + vp - vs, layerDepth );
 
-    currentManager->Shader( SHADER_LINE, -vector.x, -vector.y, lineWidth );
-    currentManager->Vertex( aStartPoint.x, aStartPoint.y, layerDepth );    // v1
+    currentManager->Shader( SHADER_LINE_B, aspect, -vp.x - vs.x, -vp.y - vs.y );
+    currentManager->Vertex( aStartPoint - vp - vs, layerDepth );
 
-    currentManager->Shader( SHADER_LINE, -vector.x, -vector.y, lineWidth );
-    currentManager->Vertex( aEndPoint.x, aEndPoint.y, layerDepth );        // v3
+    currentManager->Shader( SHADER_LINE_C, aspect, -vp.x + vs.x, -vp.y + vs.y );
+    currentManager->Vertex( aEndPoint - vp + vs, layerDepth );
 
-    currentManager->Shader( SHADER_LINE, vector.x, vector.y, lineWidth );
-    currentManager->Vertex( aStartPoint.x, aStartPoint.y, layerDepth );    // v0
+    currentManager->Shader( SHADER_LINE_A, aspect, -vp.x + vs.x, -vp.y + vs.y );
+    currentManager->Vertex( aEndPoint - vp + vs, layerDepth );        
 
-    currentManager->Shader( SHADER_LINE, -vector.x, -vector.y, lineWidth );
-    currentManager->Vertex( aEndPoint.x, aEndPoint.y, layerDepth );        // v3
+    currentManager->Shader( SHADER_LINE_B, aspect, vp.x + vs.x, vp.y + vs.y);
+    currentManager->Vertex( aEndPoint + vp + vs, layerDepth );        
 
-    currentManager->Shader( SHADER_LINE, vector.x, vector.y, lineWidth );
-    currentManager->Vertex( aEndPoint.x, aEndPoint.y, layerDepth );        // v2
+    currentManager->Shader( SHADER_LINE_C, aspect, vp.x - vs.x, vp.y - vs.y );
+    currentManager->Vertex( aStartPoint + vp - vs, layerDepth ); */
+
+    /*(currentManager->Shader( SHADER_LINE_A, aspect, vp.x - vs.x, vp.y - vs.y );
+    currentManager->Vertex( aStartPoint, layerDepth );
+
+    currentManager->Shader( SHADER_LINE_B, aspect, -vp.x - vs.x, -vp.y - vs.y );
+    currentManager->Vertex( aStartPoint, layerDepth );
+
+    currentManager->Shader( SHADER_LINE_C, aspect, -vp.x + vs.x, -vp.y + vs.y );
+    currentManager->Vertex( aEndPoint, layerDepth );
+
+    currentManager->Shader( SHADER_LINE_D, aspect, -vp.x + vs.x, -vp.y + vs.y );
+    currentManager->Vertex( aEndPoint, layerDepth );        
+
+    currentManager->Shader( SHADER_LINE_E, aspect, vp.x + vs.x, vp.y + vs.y);
+    currentManager->Vertex( aEndPoint, layerDepth );        
+
+    currentManager->Shader( SHADER_LINE_F, aspect, vp.x - vs.x, vp.y - vs.y );
+    currentManager->Vertex( aStartPoint, layerDepth ); */
+
+    currentManager->Shader( SHADER_LINE_A, aspect, vs.x, vs.y );
+    currentManager->Vertex( aStartPoint, layerDepth );
+
+    currentManager->Shader( SHADER_LINE_B, aspect, vs.x, vs.y );
+    currentManager->Vertex( aStartPoint, layerDepth );
+
+    currentManager->Shader( SHADER_LINE_C, aspect, vs.x, vs.y );
+    currentManager->Vertex( aEndPoint, layerDepth );
+
+    currentManager->Shader( SHADER_LINE_D, aspect, vs.x, vs.y );
+    currentManager->Vertex( aEndPoint, layerDepth );        
+
+    currentManager->Shader( SHADER_LINE_E, aspect, vs.x, vs.y );
+    currentManager->Vertex( aEndPoint, layerDepth );        
+
+    currentManager->Shader( SHADER_LINE_F, aspect, vs.x, vs.y );
+    currentManager->Vertex( aStartPoint, layerDepth );
 }
 
 
@@ -1841,6 +1884,10 @@ void OPENGL_GAL::init()
     cachedManager->SetShader( *shader );
     nonCachedManager->SetShader( *shader );
     overlayManager->SetShader( *shader );
+
+    shader->Use();
+    ufm_worldPixelSize        = shader->AddParameter( "worldPixelSize" );
+    shader->Deactivate();
 
     GL_CONTEXT_MANAGER::Get().UnlockCtx( glPrivContext );
     isInitialized = true;

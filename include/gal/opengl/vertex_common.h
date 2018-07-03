@@ -43,7 +43,14 @@ enum SHADER_MODE
     SHADER_LINE,
     SHADER_FILLED_CIRCLE,
     SHADER_STROKED_CIRCLE,
-    SHADER_FONT
+    SHADER_FONT,
+    SHADER_LINE_A,
+    SHADER_LINE_B,
+    SHADER_LINE_C,
+    SHADER_LINE_D,
+    SHADER_LINE_E,
+    SHADER_LINE_F
+
 };
 
 ///> Data structure for vertices {X,Y,Z,R,G,B,A,shader&param}

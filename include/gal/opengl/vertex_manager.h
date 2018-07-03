@@ -39,6 +39,7 @@
 #include <stack>
 #include <memory>
 #include <wx/log.h>
+#include <math/vector2d.h>
 
 namespace KIGFX
 {
@@ -105,6 +106,20 @@ public:
      * @return True if successful, false otherwise.
      */
     bool Vertex( GLfloat aX, GLfloat aY, GLfloat aZ );
+
+    /**
+     * Function Vertex()
+     * adds a vertex with the given coordinates to the currently set item. Vertex coordinates will
+     * have the current transformation matrix applied.
+     *
+     * @param aXY are the XY coordinates of the new vertex.
+     * @param aZ is the Z coordinate of the new vertex.
+     * @return True if successful, false otherwise.
+     */
+    bool Vertex( const VECTOR2D& aXY, GLfloat aZ )
+    {
+        return Vertex( aXY.x, aXY.y, aZ );
+    }
 
     /**
      * Function Vertices()

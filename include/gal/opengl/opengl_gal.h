@@ -324,7 +324,7 @@ private:
     bool                    isInitialized;              ///< Basic initialization flag, has to be done
                                                         ///< when the window is visible
     bool                    isGrouping;                 ///< Was a group started?
-
+    bool                    ufm_worldPixelSize;
     ///< Update handler for OpenGL settings
     bool updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions ) override;
 

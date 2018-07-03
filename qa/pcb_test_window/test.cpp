@@ -27,6 +27,8 @@ public:
 
 wxFrame* CreateMainFrame( const std::string& aFileName )
 {
+    wxDisableAsserts();
+
     auto frame = new OED_TEST_FRAME( nullptr, wxT( "PCB Test Window" ) );
 
     if( aFileName != "" )
@@ -44,21 +46,53 @@ void OED_TEST_FRAME::registerTools()
     m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
 }
 
-class STUPID_ITEM : public KIGFX::VIEW_ITEM
+class STUPID_ITEM : public EDA_ITEM
 {
 public:
     
-    
+    STUPID_ITEM() : EDA_ITEM( NOT_USED ) {}
+
+    virtual wxString GetClass() const override
+     {
+         return "Dupa"; 
+     }
+                     
+    virtual void Show( int nestLevel, std::ostream& os ) const override
+    {
+
+    }
+
     /// @copydoc VIEW_ITEM::ViewDraw()
     void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override
     {
         auto gal = aView->GetGAL();
 
         gal->SetIsStroke(true);
-        gal->SetStrokeColor( COLOR4D( 1.0, 0.0, 0.0, 1.0 ));
-        gal->DrawSegment( VECTOR2D( -1000000, 0), VECTOR2D( 1000000, 0), 100000.0);
+        gal->SetStrokeColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ));
+        gal->SetFillColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ));
+     
+        VECTOR2D c(0, 0);
+        VECTOR2D r( 10000000.0 , 10000000.0 );
+        float w = 10000.0;
 
+        for( float  a = 0.0; a < 360.0; a += 5.0 )
+        {
+            float ca =cos(a * M_PI/180.0);
+            float sa =sin(a * M_PI/180.0);
+
+            gal->DrawSegment(  c+VECTOR2D( ca * r.x, sa * r.y), c, w );
+
+        }
+
+        
+        gal->SetStrokeColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ));
+        gal->SetLineWidth(1.0);
+        gal->SetIsFill(false);
+        gal->AdvanceDepth();
+        //gal->DrawCircle(a, 10000.0);
+        //gal->DrawCircle(b, 10000.0);
     }
+
 
     /// @copydoc VIEW_ITEM::ViewGetLayers()
     void ViewGetLayers( int aLayers[], int& aCount ) const override

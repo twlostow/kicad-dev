@@ -142,9 +142,7 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
 {
     BOARD* board = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
-    wxPrinterDC* printerDC = dynamic_cast<wxPrinterDC*>( GetDC() );
-    wxCHECK( printerDC, /*void*/ );
-    CAIRO_PRINT_CTX printCtx( *printerDC );
+    CAIRO_PRINT_CTX printCtx( GetDC() );
 
     KIGFX::GAL_DISPLAY_OPTIONS options;
     KIGFX::CAIRO_GAL gal( m_Parent, options, printCtx.GetContext(), printCtx.GetSurface() );

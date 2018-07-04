@@ -20,8 +20,8 @@
 #define _CAIRO_PRINT_CTX_H_
 
 #include <cairo.h>
-#include <wx/dcprint.h>
 
+class wxDC;
 class wxGCDC;
 
 /**
@@ -31,7 +31,7 @@ class wxGCDC;
 class CAIRO_PRINT_CTX
 {
 public:
-    CAIRO_PRINT_CTX( wxPrinterDC& aPrintDC );
+    CAIRO_PRINT_CTX( wxDC* aDC );
     ~CAIRO_PRINT_CTX();
 
     cairo_t* GetContext()

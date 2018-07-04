@@ -18,7 +18,11 @@
 
 #include "cairo_print_ctx.h"
 #include <stdexcept>
+#include <wx/dcclient.h>
 #include <wx/dcgraph.h>
+#include <wx/dcmemory.h>
+#include <wx/dcprint.h>
+
 
 #ifdef __WXMSW__
 #include <windows.h>
@@ -32,10 +36,18 @@
 #endif /* __WXMAC__ */
 
 
-CAIRO_PRINT_CTX::CAIRO_PRINT_CTX( wxPrinterDC& aPrinterDC )
-    : m_ctx( nullptr ), m_surface( nullptr )
+CAIRO_PRINT_CTX::CAIRO_PRINT_CTX( wxDC* aDC )
+    : m_gcdc( nullptr ),m_ctx( nullptr ), m_surface( nullptr )
 {
-    m_gcdc = new wxGCDC( aPrinterDC );
+    if( wxPrinterDC* printerDC = dynamic_cast<wxPrinterDC*>( aDC ) )
+        m_gcdc = new wxGCDC( *printerDC );
+    else if( wxMemoryDC* memoryDC = dynamic_cast<wxMemoryDC*>( aDC ) )
+        m_gcdc = new wxGCDC( *memoryDC );
+    else if( wxWindowDC* windowDC = dynamic_cast<wxWindowDC*>( aDC ) )
+        m_gcdc = new wxGCDC( *windowDC );
+    else
+        throw std::runtime_error( "Unhandled wxDC type" );
+
     wxGraphicsContext* gctx = m_gcdc->GetGraphicsContext();
 
     if( !gctx )

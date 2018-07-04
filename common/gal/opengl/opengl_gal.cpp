@@ -411,46 +411,29 @@ void OPENGL_GAL::EndUpdate()
 
 void OPENGL_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
-    const VECTOR2D  startEndVector = aEndPoint - aStartPoint;
-    double          lineAngle = startEndVector.Angle();
-
     currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
 
     drawLineQuad( aStartPoint, aEndPoint );
-
-    // Line caps
-    if( lineWidth > 1.0 )
-    {
-        drawFilledSemiCircle( aStartPoint, lineWidth / 2, lineAngle + M_PI / 2 );
-        drawFilledSemiCircle( aEndPoint,   lineWidth / 2, lineAngle - M_PI / 2 );
-    }
 }
 
 
 void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
                               double aWidth )
 {
-    VECTOR2D startEndVector = aEndPoint - aStartPoint;
-    
+  
     // Width must be nonzero for anything to appear
     if( aWidth <= 0 )
         aWidth = 1.0;
 
-   // if( isFillEnabled )
+    //if( isFillEnabled || aWidth == 1.0 )
     {
-        // Filled tracks
         currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
 
         SetLineWidth( aWidth );
         drawLineQuad( aStartPoint, aEndPoint );
-
-        // Draw line caps
-        //drawFilledSemiCircle( aStartPoint, aWidth / 2, lineAngle + M_PI / 2 );
-        //drawFilledSemiCircle( aEndPoint,   aWidth / 2, lineAngle - M_PI / 2 );
     }
-    #if 0
     //else
-    //{
+    /*{
         // Outlined tracks
         double lineLength = startEndVector.EuclideanNorm();
 
@@ -472,8 +455,8 @@ void OPENGL_GAL::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndP
         drawStrokedSemiCircle( VECTOR2D( lineLength, 0.0 ), aWidth / 2, -M_PI / 2 );
 
         Restore();
-    }
-    #endif
+    }*/
+    
 }
 
 
@@ -1417,48 +1400,11 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     double   lineLength     = startEndVector.EuclideanNorm();
 
     auto vs = startEndVector.Resize( 0.5 * lineWidth );
-    auto vp = vs.Perpendicular();
     float aspect = ( lineLength + lineWidth ) / lineWidth;
 
     currentManager->Reserve( 6 );
 
     // Line width is maintained by the vertex shader
-    /*currentManager->Shader( SHADER_LINE_A, aspect, vp.x - vs.x, vp.y - vs.y );
-    currentManager->Vertex( aStartPoint + vp - vs, layerDepth );
-
-    currentManager->Shader( SHADER_LINE_B, aspect, -vp.x - vs.x, -vp.y - vs.y );
-    currentManager->Vertex( aStartPoint - vp - vs, layerDepth );
-
-    currentManager->Shader( SHADER_LINE_C, aspect, -vp.x + vs.x, -vp.y + vs.y );
-    currentManager->Vertex( aEndPoint - vp + vs, layerDepth );
-
-    currentManager->Shader( SHADER_LINE_A, aspect, -vp.x + vs.x, -vp.y + vs.y );
-    currentManager->Vertex( aEndPoint - vp + vs, layerDepth );        
-
-    currentManager->Shader( SHADER_LINE_B, aspect, vp.x + vs.x, vp.y + vs.y);
-    currentManager->Vertex( aEndPoint + vp + vs, layerDepth );        
-
-    currentManager->Shader( SHADER_LINE_C, aspect, vp.x - vs.x, vp.y - vs.y );
-    currentManager->Vertex( aStartPoint + vp - vs, layerDepth ); */
-
-    /*(currentManager->Shader( SHADER_LINE_A, aspect, vp.x - vs.x, vp.y - vs.y );
-    currentManager->Vertex( aStartPoint, layerDepth );
-
-    currentManager->Shader( SHADER_LINE_B, aspect, -vp.x - vs.x, -vp.y - vs.y );
-    currentManager->Vertex( aStartPoint, layerDepth );
-
-    currentManager->Shader( SHADER_LINE_C, aspect, -vp.x + vs.x, -vp.y + vs.y );
-    currentManager->Vertex( aEndPoint, layerDepth );
-
-    currentManager->Shader( SHADER_LINE_D, aspect, -vp.x + vs.x, -vp.y + vs.y );
-    currentManager->Vertex( aEndPoint, layerDepth );        
-
-    currentManager->Shader( SHADER_LINE_E, aspect, vp.x + vs.x, vp.y + vs.y);
-    currentManager->Vertex( aEndPoint, layerDepth );        
-
-    currentManager->Shader( SHADER_LINE_F, aspect, vp.x - vs.x, vp.y - vs.y );
-    currentManager->Vertex( aStartPoint, layerDepth ); */
-
     currentManager->Shader( SHADER_LINE_A, aspect, vs.x, vs.y );
     currentManager->Vertex( aStartPoint, layerDepth );
 

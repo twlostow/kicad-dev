@@ -72,6 +72,9 @@ const int SHADER_LINE_C                 = 7;
 const int SHADER_LINE_D                 = 8;
 const int SHADER_LINE_E                 = 9;
 const int SHADER_LINE_F                 = 10;
+const int SHADER_ATTR_OUTLINE           = 0x100;
+const int SHADER_ATTR_DASHED            = 0x200;
+const int SHADER_MODE_MASK              = 0xff;
 
 // Minimum line width
 const float MIN_WIDTH = 1.0;
@@ -82,6 +85,8 @@ attribute vec4 attrShaderParams;
 varying vec4 shaderParams;
 varying vec2 circleCoords;
 varying float dotFactor;
+varying float edgeThreshold;
+varying float v2;
 
 void computeLineCoords( bool posture, vec2 offset, vec2 texcoord, vec2 dir )
 {
@@ -91,7 +96,9 @@ void computeLineCoords( bool posture, vec2 offset, vec2 texcoord, vec2 dir )
     {
         gl_Position = gl_ModelViewProjectionMatrix * vec4( gl_Vertex.x + offset.x, gl_Vertex.y + offset.y, gl_Vertex.z, gl_Vertex.w );
         shaderParams[0] = SHADER_LINE_A;
+        edgeThreshold = (floor(w / worldPixelSize) - 2.0) * worldPixelSize / w;
         gl_TexCoord[0].st = texcoord;
+        v2 = 1.0 / floor(w/worldPixelSize);
     }
     else
     {
@@ -104,6 +111,8 @@ void computeLineCoords( bool posture, vec2 offset, vec2 texcoord, vec2 dir )
 
 void main()
 {
+    int mode = int(shaderParams[0] );// & SHADER_MODE_MASK;
+    
     // Pass attributes to the fragment shader
     shaderParams = attrShaderParams;
     
@@ -207,6 +216,8 @@ const float SHADER_LINE_C                 = 7.0;
 
 varying vec4 shaderParams;
 varying vec2 circleCoords;
+varying float edgeThreshold;
+varying float v2;
 uniform sampler2D fontTexture;
 
 // Needed to reconstruct the mipmap level / texel derivative
@@ -222,27 +233,64 @@ void filledCircle( vec2 aCoord )
         discard;
 }
 
-void drawLine( vec2 aCoord )
+float pixelSegDistance( vec2 aCoord )
 {
-
     if (shaderParams[0] == SHADER_LINE_B)
     {
         gl_FragColor = gl_Color;
-        return;       
+        return 0.0;       
     }
 
     float aspect = shaderParams[1];
     float dist;
-    vec2 v = vec2( 1.0 - (aspect - abs(gl_TexCoord[0].s)), gl_TexCoord[0].t);
+    vec2 v = vec2( 1.0 - (aspect - abs(aCoord.s)), aCoord.t);
 
     if( v.x <= 0.0 )
     {
-        dist = abs(gl_TexCoord[0].t);
+        dist = abs(aCoord.t);
     } else {
         dist = length(v);
     }
 
-    if( dist <= 1.0 )
+    return dist; 
+}
+
+int isPixelInSegment( vec2 aCoord )
+{
+    return pixelSegDistance(aCoord) <= 1.0 ? 1 : 0;
+}
+
+int isLikelyEdgePixel( vec2 aCoord )
+{
+    float d = pixelSegDistance(aCoord);
+    return (d >= edgeThreshold && d <= 1.0) ? 1 : 0;
+
+}
+
+bool isEdgePixel( vec2 aCoord )
+{
+    //if(isLikelyEdgePixel( aCoord ) == 0)
+      //  return false;
+
+    int n_on = 0;
+
+    n_on += isPixelInSegment( aCoord + vec2(-v2, -v2 ));
+    n_on += isPixelInSegment( aCoord + vec2(-v2, 0 ));
+    n_on += isPixelInSegment( aCoord + vec2(-v2, v2 ));
+    n_on += isPixelInSegment( aCoord + vec2(0, -v2 ));
+    n_on += isPixelInSegment( aCoord + vec2(0, v2 ));
+    n_on += isPixelInSegment( aCoord + vec2(v2, -v2 ));
+    n_on += isPixelInSegment( aCoord + vec2(v2, 0 ));
+    n_on += isPixelInSegment( aCoord + vec2(v2, v2 ));
+    
+    return (n_on >= 3 && n_on < 6);
+}
+
+void drawLine( vec2 aCoord )
+{
+    if( isEdgePixel( aCoord ) )
+        gl_FragColor = vec4(1.0, 0, 0, 1.0);
+    else if( isPixelInSegment( aCoord ) != 0)
         gl_FragColor = gl_Color;
     else
         discard;
@@ -273,7 +321,7 @@ void main()
 {
     if( shaderParams[0] == SHADER_LINE_A )
     {
-        drawLine( circleCoords );
+        drawLine( gl_TexCoord[0].st );
     }
     else if( shaderParams[0] == SHADER_FILLED_CIRCLE )
     {

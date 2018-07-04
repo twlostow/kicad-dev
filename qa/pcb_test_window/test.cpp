@@ -68,8 +68,8 @@ public:
         auto gal = aView->GetGAL();
 
         gal->SetIsStroke(true);
-        gal->SetStrokeColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ));
-        gal->SetFillColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ));
+        gal->SetStrokeColor( COLOR4D( 0.3, 0.3, 0.3, 1.0 ));
+        gal->SetFillColor( COLOR4D( 0.3, 0.3, 0.3, 1.0 ));
      
         VECTOR2D c(0, 0);
         VECTOR2D r( 10000000.0 , 10000000.0 );

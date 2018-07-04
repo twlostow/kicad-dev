@@ -178,10 +178,10 @@ public:
      * @param aParam2 is the optional parameter for a shader.
      * @param aParam3 is the optional parameter for a shader.
      */
-    inline void Shader( GLfloat aShaderType, GLfloat aParam1 = 0.0f,
+    inline void Shader( int aShaderType, GLfloat aParam1 = 0.0f,
                         GLfloat aParam2 = 0.0f, GLfloat aParam3 = 0.0f )
     {
-        m_shader[0] = aShaderType;
+        m_shader[0] = (float) aShaderType;
         m_shader[1] = aParam1;
         m_shader[2] = aParam2;
         m_shader[3] = aParam3;

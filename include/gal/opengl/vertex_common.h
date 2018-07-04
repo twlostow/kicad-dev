@@ -49,8 +49,9 @@ enum SHADER_MODE
     SHADER_LINE_C,
     SHADER_LINE_D,
     SHADER_LINE_E,
-    SHADER_LINE_F
-
+    SHADER_LINE_F,
+    SHADER_ATTR_OUTLINE = 0x100,
+    SHADER_ATTR_DASHED = 0x200
 };
 
 ///> Data structure for vertices {X,Y,Z,R,G,B,A,shader&param}

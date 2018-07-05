@@ -396,7 +396,7 @@ public:
      */
     inline void SetLayerVisible( int aLayer, bool aVisible = true )
     {
-        wxASSERT( aLayer < (int) m_layers.size() );
+        wxCHECK( aLayer < (int) m_layers->size(), /*void*/ );
 
         if( (*m_layers)[aLayer].visible != aVisible )
         {
@@ -413,13 +413,13 @@ public:
      */
     inline bool IsLayerVisible( int aLayer ) const
     {
-        wxASSERT( aLayer < (int) m_layers.size() );
+        wxCHECK( aLayer < (int) m_layers->size(), false );
         return m_layers->at( aLayer ).visible;
     }
 
     inline void SetLayerDisplayOnly( int aLayer, bool aDisplayOnly = true )
     {
-        wxASSERT( aLayer < (int) m_layers.size() );
+        wxCHECK( aLayer < (int) m_layers->size(), /*void*/ );
         (*m_layers)[aLayer].displayOnly = aDisplayOnly;
     }
 
@@ -431,7 +431,7 @@ public:
      */
     inline void SetLayerTarget( int aLayer, RENDER_TARGET aTarget )
     {
-        wxASSERT( aLayer < (int) m_layers.size() );
+        wxCHECK( aLayer < (int) m_layers->size(), /*void*/ );
 
         (*m_layers)[aLayer].target = aTarget;
     }
@@ -592,7 +592,7 @@ public:
     /// Returns true if the layer is cached
     inline bool IsCached( int aLayer ) const
     {
-        wxASSERT( aLayer < (int) m_layers.size() );
+        wxCHECK( aLayer < (int) m_layers->size(), false );
 
         try
         {

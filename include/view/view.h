@@ -28,6 +28,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <memory>
 
 #include <math/box2.h>
 #include <gal/definitions.h>
@@ -397,11 +398,11 @@ public:
     {
         wxASSERT( aLayer < (int) m_layers.size() );
 
-        if( m_layers[aLayer].visible != aVisible )
+        if( (*m_layers)[aLayer].visible != aVisible )
         {
             // Target has to be redrawn after changing its visibility
-            MarkTargetDirty( m_layers[aLayer].target );
-            m_layers[aLayer].visible = aVisible;
+            MarkTargetDirty( (*m_layers)[aLayer].target );
+            (*m_layers)[aLayer].visible = aVisible;
         }
     }
 
@@ -413,15 +414,13 @@ public:
     inline bool IsLayerVisible( int aLayer ) const
     {
         wxASSERT( aLayer < (int) m_layers.size() );
-
-        return m_layers.at( aLayer ).visible;
+        return m_layers->at( aLayer ).visible;
     }
 
     inline void SetLayerDisplayOnly( int aLayer, bool aDisplayOnly = true )
     {
         wxASSERT( aLayer < (int) m_layers.size() );
-
-        m_layers[aLayer].displayOnly = aDisplayOnly;
+        (*m_layers)[aLayer].displayOnly = aDisplayOnly;
     }
 
     /**
@@ -434,7 +433,7 @@ public:
     {
         wxASSERT( aLayer < (int) m_layers.size() );
 
-        m_layers[aLayer].target = aTarget;
+        (*m_layers)[aLayer].target = aTarget;
     }
 
     /**
@@ -597,7 +596,7 @@ public:
 
         try
         {
-            return m_layers.at( aLayer ).target == TARGET_CACHED;
+            return m_layers->at( aLayer ).target == TARGET_CACHED;
         }
         catch( const std::out_of_range& )
         {
@@ -681,8 +680,13 @@ public:
         m_reverseDrawOrder = aFlag;
     }
 
-    static const int VIEW_MAX_LAYERS = 512;      ///< maximum number of layers that may be shown
+    /**
+     * Returns a new VIEW object that shares the same set of VIEW_ITEMs and LAYERs.
+     * GAL, PAINTER and other properties are left uninitialized.
+     */
+    std::unique_ptr<VIEW> DataReference() const;
 
+    static constexpr int VIEW_MAX_LAYERS = 512;      ///< maximum number of layers that may be shown
 
 private:
     struct VIEW_LAYER
@@ -794,7 +798,10 @@ private:
     bool m_enableOrderModifier;
 
     /// Contains set of possible displayed layers and its properties
-    LAYER_MAP m_layers;
+    std::shared_ptr<LAYER_MAP> m_layers;
+
+    /// Flat list of all items
+    std::shared_ptr<std::vector<VIEW_ITEM*>> m_allItems;
 
     /// Sorted list of pointers to members of m_layers
     LAYER_ORDER m_orderedLayers;
@@ -840,8 +847,6 @@ private:
     static const int TOP_LAYER_MODIFIER;
 
     /// Flat list of all items
-    std::vector<VIEW_ITEM*> m_allItems;
-
     /// Flag to respect draw priority when drawing items
     bool m_useDrawPriority;
 
@@ -850,6 +855,8 @@ private:
 
     /// Flag to reverse the draw order when using draw priority
     bool m_reverseDrawOrder;
+
+    VIEW( const VIEW& ) = delete;
 };
 } // namespace KIGFX
 

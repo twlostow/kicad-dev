@@ -3,6 +3,8 @@
  *
  * Copyright (C) 2012 Torsten Hueter, torstenhtr <at> gmx.de
  * Copyright (C) 2012 Kicad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2017-2018 CERN
+ * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
  * CairoGal - Graphics Abstraction Layer for Cairo
  *
@@ -63,36 +65,12 @@ namespace KIGFX
 {
 class CAIRO_COMPOSITOR;
 
-class CAIRO_GAL : public GAL, public wxWindow
+class CAIRO_GAL_BASE : public GAL
 {
 public:
-    /**
-     * Constructor CAIRO_GAL
-     *
-     * @param aParent is the wxWidgets immediate wxWindow parent of this object.
-     *
-     * @param aMouseListener is the wxEvtHandler that should receive the mouse events,
-     *  this can be can be any wxWindow, but is often a wxFrame container.
-     *
-     * @param aPaintListener is the wxEvtHandler that should receive the paint
-     *  event.  This can be any wxWindow, but is often a derived instance
-     *  of this class or a containing wxFrame.  The "paint event" here is
-     *  a wxCommandEvent holding EVT_GAL_REDRAW, as sent by PostPaint().
-     *
-     * @param aName is the name of this window for use by wxWindow::FindWindowByName()
-     */
-    CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
-               wxWindow* aParent, wxEvtHandler* aMouseListener = NULL,
-               wxEvtHandler* aPaintListener = NULL, const wxString& aName = wxT( "CairoCanvas" ) );
+    CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions );
 
-    CAIRO_GAL( wxWindow* aParent, GAL_DISPLAY_OPTIONS& aDisplayOptions, cairo_t* aContext, cairo_surface_t* aSurface );
-
-    virtual ~CAIRO_GAL();
-
-    ///> @copydoc GAL::IsVisible()
-    bool IsVisible() const override {
-        return IsShownOnScreen();
-    }
+    virtual ~CAIRO_GAL_BASE();
 
     // ---------------
     // Drawing methods
@@ -148,14 +126,11 @@ public:
     /// @brief Resizes the canvas.
     virtual void ResizeScreen( int aWidth, int aHeight ) override;
 
-    /// @brief Shows/hides the GAL canvas
-    virtual bool Show( bool aShow ) override;
-
     /// @copydoc GAL::Flush()
     virtual void Flush() override;
 
     /// @copydoc GAL::ClearScreen()
-    virtual void ClearScreen( ) override;
+    virtual void ClearScreen() override;
 
     // -----------------
     // Attribute setting
@@ -230,21 +205,6 @@ public:
     // Handling the world <-> screen transformation
     // --------------------------------------------------------
 
-    /// @copydoc GAL::SaveScreen()
-    virtual void SaveScreen() override;
-
-    /// @copydoc GAL::RestoreScreen()
-    virtual void RestoreScreen() override;
-
-    /// @copydoc GAL::SetTarget()
-    virtual void SetTarget( RENDER_TARGET aTarget ) override;
-
-    /// @copydoc GAL::GetTarget()
-    virtual RENDER_TARGET GetTarget() const override;
-
-    /// @copydoc GAL::ClearTarget()
-    virtual void ClearTarget( RENDER_TARGET aTarget ) override;
-
     /// @copydoc GAL::SetNegativeDrawMode()
     virtual void SetNegativeDrawMode( bool aSetting ) override;
 
@@ -255,50 +215,13 @@ public:
     /// @copydoc GAL::DrawCursor()
     virtual void DrawCursor( const VECTOR2D& aCursorPosition ) override;
 
-    /**
-     * Function PostPaint
-     * posts an event to m_paint_listener.  A post is used so that the actual drawing
-     * function can use a device context type that is not specific to the wxEVT_PAINT event.
-     */
-    void PostPaint()
-    {
-        if( paintListener )
-        {
-            wxPaintEvent redrawEvent;
-            wxPostEvent( paintListener, redrawEvent );
-        }
-    }
-
-    void SetMouseListener( wxEvtHandler* aMouseListener )
-    {
-        mouseListener = aMouseListener;
-    }
-
-    void SetPaintListener( wxEvtHandler* aPaintListener )
-    {
-        paintListener = aPaintListener;
-    }
-
 protected:
+    void resetContext();
+
     virtual void drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
 
-private:
     /// Super class definition
     typedef GAL super;
-
-    // Compositing variables
-    std::shared_ptr<CAIRO_COMPOSITOR> compositor;   ///< Object for layers compositing
-    unsigned int            mainBuffer;             ///< Handle to the main buffer
-    unsigned int            overlayBuffer;          ///< Handle to the overlay buffer
-    RENDER_TARGET           currentTarget;          ///< Current rendering target
-    bool                    validCompositor;        ///< Compositor initialization flag
-
-    // Variables related to wxWidgets
-    wxWindow*               parentWindow;           ///< Parent window
-    wxEvtHandler*           mouseListener;          ///< Mouse listener
-    wxEvtHandler*           paintListener;          ///< Paint listener
-    unsigned int            bufferSize;             ///< Size of buffers cairoOutput, bitmapBuffers
-    unsigned char*          wxOutput;               ///< wxImage comaptible buffer
 
     /// Maximum number of arguments for one command
     static const int MAX_CAIRO_ARGUMENTS = 4;
@@ -342,45 +265,132 @@ private:
     unsigned int                groupCounter;       ///< Counter used for generating keys for groups
     GROUP*                      currentGroup;       ///< Currently used group
 
-    // Variables related to Cairo <-> wxWidgets
     cairo_matrix_t      cairoWorldScreenMatrix; ///< Cairo world to screen transformation matrix
     cairo_t*            currentContext;         ///< Currently used Cairo context for drawing
     cairo_t*            context;                ///< Cairo image
     cairo_surface_t*    surface;                ///< Cairo surface
-    unsigned int*       bitmapBuffer;           ///< Storage of the cairo image
-    unsigned int*       bitmapBufferBackup;     ///< Backup storage of the cairo image
-    int                 stride;                 ///< Stride value for Cairo
-    bool                isInitialized;          ///< Are Cairo image & surface ready to use
-    COLOR4D             backgroundColor;        ///< Background color
-
-    int wxBufferWidth;
-
-    ///> Cairo-specific update handlers
-    bool updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions ) override;
 
     void flushPath();
-    // Methods
     void storePath();                           ///< Store the actual path
-
-    // Event handlers
-    /**
-     * @brief Paint event handler.
-     *
-     * @param aEvent is the paint event.
-     */
-    void onPaint( wxPaintEvent& aEvent );
-
-    /**
-     * @brief Mouse event handler, forwards the event to the child.
-     *
-     * @param aEvent is the mouse event to be forwarded.
-     */
-    void skipMouseEvent( wxMouseEvent& aEvent );
 
     /**
      * @brief Blits cursor into the current screen.
      */
     virtual void blitCursor( wxMemoryDC& clientDC );
+
+    /// Drawing polygons & polylines is the same in cairo, so here is the common code
+    void drawPoly( const std::deque<VECTOR2D>& aPointList );
+    void drawPoly( const VECTOR2D aPointList[], int aListSize );
+    void drawPoly( const SHAPE_LINE_CHAIN& aLineChain );
+
+    /**
+     * @brief Returns a valid key that can be used as a new group number.
+     *
+     * @return An unique group number that is not used by any other group.
+     */
+    unsigned int getNewGroupNumber();
+
+    /// Format used to store pixels
+    static constexpr cairo_format_t GAL_FORMAT = CAIRO_FORMAT_RGB24;
+};
+
+
+class CAIRO_GAL : public CAIRO_GAL_BASE, public wxWindow
+{
+public:
+    /**
+     * Constructor CAIRO_GAL_BASE
+     *
+     * @param aParent is the wxWidgets immediate wxWindow parent of this object.
+     *
+     * @param aMouseListener is the wxEvtHandler that should receive the mouse events,
+     *  this can be can be any wxWindow, but is often a wxFrame container.
+     *
+     * @param aPaintListener is the wxEvtHandler that should receive the paint
+     *  event.  This can be any wxWindow, but is often a derived instance
+     *  of this class or a containing wxFrame.  The "paint event" here is
+     *  a wxCommandEvent holding EVT_GAL_REDRAW, as sent by PostPaint().
+     *
+     * @param aName is the name of this window for use by wxWindow::FindWindowByName()
+     */
+    CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
+               wxWindow* aParent, wxEvtHandler* aMouseListener = NULL,
+               wxEvtHandler* aPaintListener = NULL, const wxString& aName = wxT( "CairoCanvas" ) );
+
+    virtual ~CAIRO_GAL();
+
+    ///> @copydoc GAL::IsVisible()
+    bool IsVisible() const override
+    {
+        return IsShownOnScreen();
+    }
+
+    virtual void BeginDrawing() override;
+
+    virtual void EndDrawing() override;
+
+    virtual void ResizeScreen( int aWidth, int aHeight ) override;
+
+    virtual bool Show( bool aShow ) override;
+
+    virtual void SaveScreen() override;
+
+    virtual void RestoreScreen() override;
+
+    virtual int BeginGroup() override;
+
+    virtual void EndGroup() override;
+
+    virtual void SetTarget( RENDER_TARGET aTarget ) override;
+
+    virtual RENDER_TARGET GetTarget() const override;
+
+    virtual void ClearTarget( RENDER_TARGET aTarget ) override;
+
+    /**
+     * Posts an event to m_paint_listener.  A post is used so that the actual drawing
+     * function can use a device context type that is not specific to the wxEVT_PAINT event.
+     */
+    void PostPaint()
+    {
+        if( paintListener )
+        {
+            wxPaintEvent redrawEvent;
+            wxPostEvent( paintListener, redrawEvent );
+        }
+    }
+
+    void SetMouseListener( wxEvtHandler* aMouseListener )
+    {
+        mouseListener = aMouseListener;
+    }
+
+    void SetPaintListener( wxEvtHandler* aPaintListener )
+    {
+        paintListener = aPaintListener;
+    }
+
+protected:
+    // Compositor related variables
+    std::shared_ptr<CAIRO_COMPOSITOR> compositor;   ///< Object for layers compositing
+    unsigned int            mainBuffer;             ///< Handle to the main buffer
+    unsigned int            overlayBuffer;          ///< Handle to the overlay buffer
+    RENDER_TARGET           currentTarget;          ///< Current rendering target
+    bool                    validCompositor;        ///< Compositor initialization flag
+
+    // Variables related to wxWidgets
+    wxWindow*               parentWindow;           ///< Parent window
+    wxEvtHandler*           mouseListener;          ///< Mouse listener
+    wxEvtHandler*           paintListener;          ///< Paint listener
+    unsigned int            bufferSize;             ///< Size of buffers cairoOutput, bitmapBuffers
+    unsigned char*          wxOutput;               ///< wxImage comaptible buffer
+
+    // Variables related to Cairo <-> wxWidgets
+    unsigned int*       bitmapBuffer;           ///< Storage of the cairo image
+    unsigned int*       bitmapBufferBackup;     ///< Backup storage of the cairo image
+    int                 stride;                 ///< Stride value for Cairo
+    int                 wxBufferWidth;
+    bool                isInitialized;          ///< Are Cairo image & surface ready to use
 
     /// Prepare Cairo surfaces for drawing
     void initSurface();
@@ -397,24 +407,25 @@ private:
     /// Prepare the compositor
     void setCompositor();
 
-    /// Drawing polygons & polylines is the same in cairo, so here is the common code
-    void drawPoly( const std::deque<VECTOR2D>& aPointList );
-    void drawPoly( const VECTOR2D aPointList[], int aListSize );
-    void drawPoly( const SHAPE_LINE_CHAIN& aLineChain );
+    // Event handlers
+    /**
+     * @brief Paint event handler.
+     *
+     * @param aEvent is the paint event.
+     */
+    void onPaint( wxPaintEvent& aEvent );
 
     /**
-     * @brief Returns a valid key that can be used as a new group number.
+     * @brief Mouse event handler, forwards the event to the child.
      *
-     * @return An unique group number that is not used by any other group.
+     * @param aEvent is the mouse event to be forwarded.
      */
-    unsigned int getNewGroupNumber();
+    void skipMouseEvent( wxMouseEvent& aEvent );
 
-    /// Format used to store pixels
-    static const cairo_format_t GAL_FORMAT = CAIRO_FORMAT_RGB24;
-
-    ///> Opacity of a single layer
-    static const float LAYER_ALPHA;
+    ///> Cairo-specific update handlers
+    bool updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions ) override;
 };
+
 } // namespace KIGFX
 
 #endif  // CAIROGAL_H_

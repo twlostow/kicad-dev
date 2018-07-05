@@ -16,13 +16,13 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cairo_print_ctx.h"
+#include <gal/cairo/cairo_print.h>
+
 #include <stdexcept>
 #include <wx/dcclient.h>
 #include <wx/dcgraph.h>
 #include <wx/dcmemory.h>
 #include <wx/dcprint.h>
-
 
 #ifdef __WXMSW__
 #include <windows.h>
@@ -35,6 +35,7 @@
 #include <cairo-quartz.h>
 #endif /* __WXMAC__ */
 
+using namespace KIGFX;
 
 CAIRO_PRINT_CTX::CAIRO_PRINT_CTX( wxDC* aDC )
     : m_gcdc( nullptr ),m_ctx( nullptr ), m_surface( nullptr )
@@ -92,8 +93,18 @@ CAIRO_PRINT_CTX::~CAIRO_PRINT_CTX()
     g->ReleaseHDC( static_cast<HDC>( m_hdc ) );
 #endif /* __WXMSW__ */
 
-    // TODO prevent leaks
     //cairo_surface_destroy( m_surface );
     //cairo_destroy( m_ctx );
     //delete m_gcdc;
+}
+
+
+CAIRO_PRINT_GAL::CAIRO_PRINT_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
+        cairo_t* aContext, cairo_surface_t* aSurface )
+    : CAIRO_GAL_BASE( aDisplayOptions )
+{
+    context = currentContext = aContext;
+    surface = aSurface;
+    m_clearColor = COLOR4D( 1.0, 1.0, 1.0, 1.0 );
+    resetContext();
 }

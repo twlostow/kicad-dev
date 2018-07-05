@@ -65,6 +65,7 @@ set( GAL_SRCS
     # Cairo GAL
     gal/cairo/cairo_gal.cpp
     gal/cairo/cairo_compositor.cpp
+    gal/cairo/cairo_print.cpp
     )
 
 add_library( gal STATIC ${GAL_SRCS} )
@@ -246,7 +247,6 @@ set( COMMON_SRCS
     bitmap_base.cpp
     block_commande.cpp
     build_version.cpp
-    cairo_print_ctx.cpp
     colors_design_settings.cpp
     colors.cpp
     commit.cpp

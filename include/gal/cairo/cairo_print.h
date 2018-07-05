@@ -16,14 +16,16 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CAIRO_PRINT_CTX_H_
-#define _CAIRO_PRINT_CTX_H_
+#ifndef _CAIRO_PRINT_H_
+#define _CAIRO_PRINT_H_
 
-#include <cairo.h>
+#include <gal/cairo/cairo_gal.h>
 
 class wxDC;
 class wxGCDC;
 
+namespace KIGFX
+{
 /**
  * CAIRO_PRINT_CTX provides a Cairo context created from wxPrintDC.
  * It allows one to prepare printouts using the Cairo library and let wxWidgets handle the rest.
@@ -34,12 +36,12 @@ public:
     CAIRO_PRINT_CTX( wxDC* aDC );
     ~CAIRO_PRINT_CTX();
 
-    cairo_t* GetContext()
+    cairo_t* GetContext() const
     {
         return m_ctx;
     }
 
-    cairo_surface_t* GetSurface()
+    cairo_surface_t* GetSurface() const
     {
         return m_surface;
     }
@@ -54,4 +56,15 @@ private:
 #endif /* __WXMSW__ */
 };
 
-#endif /* _CAIRO_PRINT_CTX_H_ */
+
+class CAIRO_PRINT_GAL : public CAIRO_GAL_BASE
+{
+public:
+    CAIRO_PRINT_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
+            cairo_t* aContext, cairo_surface_t* aSurface );
+};
+} // namespace KIGFX
+
+#endif /* _CAIRO_PRINT_H_ */
+
+

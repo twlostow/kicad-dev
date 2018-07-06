@@ -322,8 +322,8 @@ void VIEW::AddLayer( int aLayer, bool aDisplayOnly )
     if( m_layers->find( aLayer ) == m_layers->end() )
     {
         (*m_layers)[aLayer]                = VIEW_LAYER();
+        (*m_layers)[aLayer].items.reset( new VIEW_RTREE() );
         (*m_layers)[aLayer].id             = aLayer;
-        (*m_layers)[aLayer].items          = new VIEW_RTREE();
         (*m_layers)[aLayer].renderingOrder = aLayer;
         (*m_layers)[aLayer].visible        = true;
         (*m_layers)[aLayer].displayOnly    = aDisplayOnly;
@@ -693,7 +693,7 @@ void VIEW::ReorderLayerData( std::unordered_map<int, int> aReorderMap )
 {
     LAYER_MAP new_map;
 
-    for( auto it : *m_layers )
+    for( const auto& it : *m_layers )
     {
         int orig_idx = it.first;
         VIEW_LAYER layer = it.second;

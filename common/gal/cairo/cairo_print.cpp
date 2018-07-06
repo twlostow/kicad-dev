@@ -93,9 +93,9 @@ CAIRO_PRINT_CTX::~CAIRO_PRINT_CTX()
     g->ReleaseHDC( static_cast<HDC>( m_hdc ) );
 #endif /* __WXMSW__ */
 
-    //cairo_surface_destroy( m_surface );
-    //cairo_destroy( m_ctx );
-    //delete m_gcdc;
+    cairo_surface_destroy( m_surface );
+    cairo_destroy( m_ctx );
+    delete m_gcdc;
 }
 
 
@@ -103,6 +103,8 @@ CAIRO_PRINT_GAL::CAIRO_PRINT_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
         cairo_t* aContext, cairo_surface_t* aSurface )
     : CAIRO_GAL_BASE( aDisplayOptions )
 {
+    cairo_reference( aContext );
+    cairo_surface_reference( aSurface );
     context = currentContext = aContext;
     surface = aSurface;
     m_clearColor = COLOR4D( 1.0, 1.0, 1.0, 1.0 );

@@ -44,7 +44,7 @@ using namespace KIGFX;
 
 
 CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
-    GAL( aDisplayOptions )
+    GAL( aDisplayOptions ), surface( nullptr ), context( nullptr )
 {
     // Initialise grouping
     isGrouping          = false;
@@ -67,6 +67,12 @@ CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
 CAIRO_GAL_BASE::~CAIRO_GAL_BASE()
 {
     ClearCache();
+
+    if( surface )
+        cairo_surface_destroy( surface );
+
+    if( context )
+        cairo_destroy( context );
 }
 
 
@@ -958,7 +964,6 @@ CAIRO_GAL::CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
 
 CAIRO_GAL::~CAIRO_GAL()
 {
-    deinitSurface();
     deleteBitmaps();
 }
 
@@ -1171,7 +1176,9 @@ void CAIRO_GAL::deinitSurface()
         return;
 
     cairo_destroy( context );
+    context = nullptr;
     cairo_surface_destroy( surface );
+    surface = nullptr;
 
     isInitialized = false;
 }

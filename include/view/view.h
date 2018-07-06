@@ -693,7 +693,7 @@ private:
     {
         bool                    visible;         ///< is the layer to be rendered?
         bool                    displayOnly;     ///< is the layer display only?
-        VIEW_RTREE*             items;           ///< R-tree indexing all items on this layer.
+        std::shared_ptr<VIEW_RTREE> items;       ///< R-tree indexing all items on this layer.
         int                     renderingOrder;  ///< rendering order of this layer
         int                     id;              ///< layer ID
         RENDER_TARGET           target;          ///< where the layer should be rendered

@@ -36,6 +36,8 @@ add_executable(test_polygon_triangulation
   ../common/mocks.cpp
   ../../common/base_units.cpp
   test_polygon_triangulation.cpp
+  ./ttl2/src/utils/HandleId.cpp
+  ./ttl2/src/halfedge/HeTriang.cpp
 )
 
 include_directories( BEFORE ${INC_BEFORE} )
@@ -51,6 +53,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/polygon
     ${CMAKE_SOURCE_DIR}/common/geometry
     ${CMAKE_SOURCE_DIR}/qa/common
+    ${CMAKE_SOURCE_DIR}/qa/polygon_triangulation
+    ${CMAKE_SOURCE_DIR}/qa/polygon_triangulation/ttl2/include
     ${Boost_INCLUDE_DIR}
     ${INC_AFTER}
 )

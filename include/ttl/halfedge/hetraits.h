@@ -181,6 +181,11 @@ struct TTLtraits
         return ttl_util::Orient2DFast( pa, pb, pc );
     }
 
+    static void SwapEdge( TRIANGULATION* triang, DART& dart) {
+      if (!dart.GetEdge()->IsConstrained()) triang->SwapEdge(dart.GetEdge());
+    }
+
+
     //@} // End of Geometric Predicates Group
 };
 

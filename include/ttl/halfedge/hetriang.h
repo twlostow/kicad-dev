@@ -180,7 +180,7 @@ class EDGE
 {
 public:
     /// Constructor
-    EDGE() : m_isLeadingEdge( false )
+    EDGE() : m_isLeadingEdge( false ), m_isConstrained( false )
     {
     }
 
@@ -234,6 +234,16 @@ public:
         m_twinEdge.reset();
     }
 
+    void SetConstrained(bool val=true)
+    { 
+	    m_isConstrained = val;
+	    if (!m_twinEdge.expired()) 
+		    m_twinEdge.lock()->m_isConstrained = val; 
+    }
+
+    bool IsConstrained() const { return m_isConstrained; }
+
+
     /// Returns the next edge in face
     inline const EDGE_PTR& GetNextEdgeInFace() const
     {
@@ -270,6 +280,7 @@ protected:
     EDGE_WEAK_PTR   m_twinEdge;
     EDGE_PTR        m_nextEdgeInFace;
     bool            m_isLeadingEdge;
+    bool            m_isConstrained;
 };
 
 class DART; // Forward declaration (class in this namespace)

@@ -995,7 +995,6 @@ bool TRIANGULATION_HELPER::locateFaceWithNode( const NODE_TYPE& aNode, DART_TYPE
  *   \see
  *   LocateTriangle
  */
-extern int do_logging;
 
 template <class TRAITS_TYPE, class POINT_TYPE, class DART_TYPE>
 bool TRIANGULATION_HELPER::LocateFaceSimplest( const POINT_TYPE& aPoint, DART_TYPE& aDart )
@@ -1017,9 +1016,6 @@ bool TRIANGULATION_HELPER::LocateFaceSimplest( const POINT_TYPE& aPoint, DART_TY
     DART_TYPE dart_start;
     dart_start = aDart;
     DART_TYPE dart_prev;
-
-    if(do_logging)
-    printf("lfs start %d %d\n", dart_start.GetEdge()->GetSourceNode()->GetX(),   dart_start.GetEdge()->GetSourceNode()->GetY () );
 
     DART_TYPE d0;
     for( ;; )

@@ -35,7 +35,20 @@
 
 #include <unordered_set>
 #include <utility>
+#include <cassert>
 
+
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+
+#include <ttl/halfedge/hetriang.h>
+#include <ttl/halfedge/hetraits.h>
+#include <ttl/ttl.h>
+
+#define SHOW_THE_BUG
+
+using namespace std;
 
 BOARD* loadBoard( const std::string& filename )
 {
@@ -58,112 +71,89 @@ BOARD* loadBoard( const std::string& filename )
 }
 
 
-#include <ttl2/include/ttl/halfedge/HeDart.h>
-#include <ttl2/include/ttl/halfedge/HeTraits.h>
-#include <ttl2/include/ttl/halfedge/HeTriang.h>
-#include <ttl2/include/ttl/ttl.h>
-
-//using namespace hed; // (to avoid using prefix hed::)
-
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-using namespace std;
-
-
 // ------------------------------------------------------------------------------------------------
 // Interpret two points as being coincident
-inline bool eqPoints( hed::Node*& p1, hed::Node*& p2 )
+inline bool eqPoints( hed::NODE_PTR p1, hed::NODE_PTR p2 )
 {
-    double       dx = p1->x() - p2->x();
-    double       dy = p1->y() - p2->y();
-    double       dist2 = dx * dx + dy * dy;
-    const double eps = 1.0e-12;
-    if( dist2 < eps )
-        return true;
+    int       dx = p1->GetX() - p2->GetX();
+    int       dy = p1->GetY() - p2->GetY();
+    
 
-    return false;
+
+    return (dx ==0 && dy == 0);
 }
 
 
 // ------------------------------------------------------------------------------------------------
 // Lexicographically compare two points (2D)
-inline bool ltLexPoint( const hed::Node* p1, const hed::Node* p2 )
+inline bool ltLexPoint( const hed::NODE_PTR p1, const hed::NODE_PTR p2 )
 {
-    return ( p1->x() < p2->x() ) || ( p1->x() == p2->x() && p1->y() < p2->y() );
+    return ( p1->GetX() < p2->GetX() ) || ( p1->GetX() == p2->GetX() && p1->GetY() < p2->GetY() );
 };
 
-hed::Node* findNode( const std::vector<hed::Node*>& nodes, VECTOR2I p )
+hed::NODE_PTR findNode( const std::vector<hed::NODE_PTR>& nodes, VECTOR2I p )
 {
     for( auto n : nodes )
     {
-        if( n->x() == p.x && n->y() == p.y )
+        if( n->GetX() == p.x && n->GetY() == p.y )
             return n;
     }
+
+    assert(false);
 
     return nullptr;
 }
 
-int findNodeIndex( const std::vector<hed::Node*>& nodes, VECTOR2I p )
+hed::DART findDart( hed::TRIANGULATION& triang, hed::NODE_PTR node )
 {
-    int i = 0;
-    for( auto n : nodes )
-    {
-        if( n->x() == p.x && n->y() == p.y )
-            return i;
+    hed::DART  d1 = triang.CreateDart();
+    ttl::TRIANGULATION_HELPER helper(triang);
 
-        i++;
-    }
+#ifdef SHOW_THE_BUG
+    assert( helper.LocateTriangle<hed::TTLtraits>( node, d1 ) == true ); // WTF? this doesn't call LocateTriangle AT ALL
+#else
+    helper.LocateTriangle<hed::TTLtraits>( node, d1 );
+#endif
 
-    return i;
-}
-
-hed::Dart findDart( hed::Triangulation& triang, hed::Node* node )
-{
-    hed::Dart  d1 = triang.createDart();
-    auto       tri = ttl::locateTriangle<hed::TTLtraits>( *node, d1 );
-
-    bool found = false;
     for( int j = 0; j <= 2; j++ )
     {
-        auto nn = d1.getNode();
+        auto nn = d1.GetNode();
 
-        if( nn->x() == node->x() && nn->y() == node->y() )
-        {
-            found = true;
-            break;
-        }
+        if( nn->GetX() == node->GetX() && nn->GetY() == node->GetY() )
+  	    return d1;
 
-        d1.alpha0().alpha1();
+        d1.Alpha0().Alpha1();
     }
 
-    assert( found );
+    assert( false );
     return d1;
 }
 
 struct Tri 
 {
-    hed::Node *v[3];
-    hed::Edge *e[3];
-    hed::Edge *m_lead;
-    Tri( hed::Edge *lead = nullptr)
+    hed::NODE_PTR v[3];
+    hed::EDGE_PTR e[3];
+    hed::EDGE_PTR m_lead;
+    
+    Tri( hed::EDGE_PTR lead = nullptr)
     {
         if(!lead)
             return;
             
         m_lead = lead;
-        auto dart = hed::Dart(lead, true);
-        hed::Node* prev = nullptr;
+        auto dart = hed::DART(lead, true);
+        hed::NODE_PTR prev = nullptr;
+    
         for( int j = 0; j <= 2; j++ )
         {
-            auto e2 = dart.getEdge();
+            auto e2 = dart.GetEdge();
 
             e[j] = e2;
-            v[j] = e2->getSourceNode() == prev ? e2->getTargetNode() : e2->getSourceNode();
+            v[j] = e2->GetSourceNode() == prev ? e2->GetTargetNode() : e2->GetSourceNode();
 
             prev = v[j];
 
-            dart.alpha0().alpha1();
+            dart.Alpha0().Alpha1();
         }
     }
 
@@ -171,24 +161,24 @@ struct Tri
     {
         for (int j=0;j<=2;j++)
         {
-            if(e[j] && !e[j]->isConstrained() )
+            if ( e[j] && !e[j]->IsConstrained() )
             {
-                auto twin = e[j]->getTwinEdge();
-                if(twin)
-                    tris.push_back( Tri( twin ));
+                auto twin = e[j]->GetTwinEdge();
+                if( twin )
+                    tris.push_back( Tri( twin ) );
             }
         }
     }
 
-    hed::Edge* getLeadingEdge() const { return m_lead; }
+    hed::EDGE_PTR getLeadingEdge() const { return m_lead; }
 
     const VECTOR2I center() const
     {
         double x=0,y=0;
         for(int j=0;j<=2;j++)
         {
-            x+=v[j]->x();
-            y+=v[j]->y();
+            x+=v[j]->GetX();
+            y+=v[j]->GetY();
         }
         VECTOR2I c( (int)x/3.0, (int)y/3.0 );
         return c;
@@ -196,12 +186,12 @@ struct Tri
 
     const VECTOR2I vertex(int j) const
     {
-        return VECTOR2I((int)v[j]->x(), (int) v[j]->y() );
+        return VECTOR2I((int)v[j]->GetX(), (int) v[j]->GetY() );
     }
 
     bool isWellDefined() const
     {
-        auto c = center();
+            auto c = center();
         return vertex(0) !=c && vertex(1) != c && vertex(2) != c;
     }
 };
@@ -225,8 +215,7 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
     if(poly.size() == 0)
         return;
 
-    //POLY_GRID_PARTITION part (poly);
-    std::vector<hed::Node*> nodes;
+    std::vector<hed::NODE_PTR> nodes;
     auto                    bb = poly[0].BBox();
 
     const int gridPointDensity = std::min( 10000000, std::max(bb.GetWidth() / 10, bb.GetHeight() / 10 ) );
@@ -243,10 +232,10 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
         for( int i = 0; i < outl.PointCount(); i++)
         {
             auto p = outl.CPoint(i);
-            hed::Node* node = new hed::Node( p.x, p.y );
+            hed::NODE_PTR node ( new hed::NODE( p.x, p.y ) );
             nodes.push_back( node );
-            node->setFlag(true);
-            node->setId(i);
+            node->SetFlag(true);
+            node->SetId(i);
         }
     }
 
@@ -261,9 +250,9 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
             if( !containsPoint( poly, p ) )
                 continue;
 
-            auto node = new hed::Node( p.x, p.y, 0 );
-            node->setFlag(false);
-            node->setId(-1);
+            hed::NODE_PTR node ( new hed::NODE( p.x, p.y, 0 ) );
+            node->SetFlag(false);
+            node->SetId(-1);
             nodes.push_back( node );
         }
 
@@ -276,7 +265,7 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
     std::sort( nodes.begin(), nodes.end(), ltLexPoint );
 
     // Remove coincident points to avoid degenerate triangles. (eqPoints is defined above)
-    std::vector<hed::Node*>::iterator new_end = std::unique( nodes.begin(), nodes.end(), eqPoints );
+    std::vector<hed::NODE_PTR>::iterator new_end = std::unique( nodes.begin(), nodes.end(), eqPoints );
 
     if( nodes.size() < 3 )
     {
@@ -286,8 +275,15 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
 
 
     // Make the triangulation
-    hed::Triangulation triang;
-    triang.createDelaunay( nodes.begin(), new_end );
+    hed::TRIANGULATION triang;
+    triang.CreateDelaunay( nodes.begin(), new_end );
+
+    ttl::TRIANGULATION_HELPER helper( triang );
+
+    int nconstr = 0;
+    char str[1024];
+    sprintf(str,"edges_%d.txt", index);
+    FILE *f = fopen( str, "wb" );
 
     for( const auto& outl : poly )
     {
@@ -295,97 +291,32 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
         {
             if( outl.CSegment(i).A == outl.CSegment(i).B )
                 continue;
-                
+            
             auto n1 = findNode( nodes, outl.CSegment(i).A );
             auto n2 = findNode( nodes, outl.CSegment(i).B );
             
             auto d1 = findDart( triang, n1 );
             auto d2 = findDart( triang, n2 );
-            auto dart = ttl::insertConstraint<hed::TTLtraits>( d1, d2, false );
-            dart.getEdge()->setConstrained();
+            
+            auto dart = helper.InsertConstraint<hed::TTLtraits>( d1, d2, true );
+            dart.GetEdge()->SetConstrained();
+
+            nconstr++;
         }
     }
 
-/*
-    for( auto i = 0; i < outl.SegmentCount(); i++ )
-    {
-        auto a = outl.CSegment(i).A;
-        auto b = outl.CSegment(i).B;
-        auto dart = triang.createDart();
-        auto nodea = findNode( nodes, a );
-        auto nodeb = findNode( nodes, b );
-        auto tri = ttl::locateTriangle<hed::TTLtraits>( *nodea, dart );
-
-        std::vector<hed::Edge*> toCheck;
-
-//REAL_TYPE Orient2DFast( REAL_TYPE aPA[2], REAL_TYPE aPB[2], REAL_TYPE aPC[2] )
-
-        for( int j = 0; j <= 2; j++ )
-        {
-            auto edge = dart.getEdge();
-
-            if ( ( edge->getSourceNode() == nodea && edge->getTargetNode() == nodeb )
-            || ( edge->getSourceNode() == nodeb && edge->getTargetNode() == nodea ) )
-            {
-                printf("i %d j %d\n", i, j);
-            }
-
-            dart.alpha0().alpha1();
-        }
-
-
-    }
-*/
-
-
-
-#if 0
-    auto outl = poly.COutline(0);
-    for( auto i = 0; i < outl.SegmentCount(); i++ )
-    {
-        SEG s = outl.CSegment(i);
-        hed::Node* n1 = findNode(nodes, s.A );
-        hed::Node* n2 = findNode(nodes, s.B );
-
-       /* if ( !n1 )
-            n1 = new hed::Node ( s.A.x, s.A.y );
-        if ( !n2 )
-            n2 = new hed::Node ( s.B.x, s.B.y );*/
-
-        
-        printf("n %p %p\n", n1, n2 );
-        hed::Dart d1 = triang.createDart();
-        auto tri = ttl::locateFaceSimplest<hed::TTLtraits>(*n1, d1);
-        hed::Dart d2 = triang.createDart();
-        auto tri2 = ttl::locateFaceSimplest<hed::TTLtraits>(*n2, d2);
-
-        printf("d1 %d d2 %d %p %p %p %p\n", d1.getNode() == n2 ? 1: 0, d2.getNode() == n1 ? 1 : 0, n1, n2 ,d1.getNode(), d2.getNode() );
-
-        auto e1 = d1.getEdge();
-        auto e2 = d2.getEdge();
-        
-        printf("tri %d %d\n", !!tri, !!tri2 );
-
-        auto dart = ttl::insertConstraint<hed::TTLtraits>(d1, d2, false);
-        dart.getEdge()->setConstrained();
-    }
-#endif
-
+    
 
     cnt.Show();
 
-    printf( "Triang edges : %d\n", triang.noTriangles() );
+    printf( "Triang edges : %d constr %d\n", triang.NoTriangles(), nconstr );
 
+    const std::list<hed::EDGE_PTR> edges = triang.GetLeadingEdges( );
 
-    const std::list<hed::Edge*> edges = triang.getLeadingEdges( );
-
-    char str[1024];
-    sprintf(str,"edges_%d.txt", index);
-    FILE* f = fopen( str, "wb" );
     
     Tri startTriangle;
     bool found = false;
-
+    int i = 0;
     for( auto& e : edges )
     {
         Tri t (e);
@@ -396,6 +327,7 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
         {
             startTriangle = t;
             found = true;
+            break;
         }
     }
     
@@ -403,17 +335,26 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
 
     auto outl = poly[0];
 
-    for(int i = 0; i < outl.SegmentCount(); i++)
+    std::list<hed::EDGE_PTR> allEdges;
+
+    triang.GetEdges( allEdges );
+
+    printf("All Edges : %d\n", allEdges.size() );
+
+    for( auto& e : allEdges )
     {
-        auto p0 = outl.CPoint(i);
-        auto p1 = outl.CPoint(i+1);
+        VECTOR2I p0 ( e->GetSourceNode()->GetX(), e->GetSourceNode()->GetY() );
+        VECTOR2I p1 ( e->GetTargetNode()->GetX(), e->GetTargetNode()->GetY() );
+        
+        if(!e->IsConstrained() )
+            continue;
 
         fprintf(f,"%d %d %d %d %d\n", p0.x, p0.y, p1.x, p1.y, 1);
     }
 
     
     std::deque<Tri> Q;
-    std::set<hed::Edge*> processedEdges;
+    std::set<hed::EDGE_PTR> processedEdges;
     Q.push_back(startTriangle);
 
     do {
@@ -431,8 +372,8 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
         auto p2 = t.vertex(2);
 
         fprintf(f,"%d %d %d %d %d\n", p0.x, p0.y, p1.x, p1.y, 0);
-        fprintf(f,"%d %d %d %d %d\n", p2.x, p2.y, p1.x, p1.y, 0);
         fprintf(f,"%d %d %d %d %d\n", p0.x, p0.y, p2.x, p2.y, 0);
+        fprintf(f,"%d %d %d %d %d\n", p2.x, p2.y, p1.x, p1.y, 0);
 
         std::vector<Tri> adj_v;
         t.getAdjacentTriangles( adj_v );
@@ -445,131 +386,7 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
         }
     } while(1);
 
-    #if 0
-    for( auto& e : edges )
-    {
-        auto dart = hed::Dart(e, true);
-        hed::Node* n1, *n2;
-        bool refFound = false;
-
-        VECTOR2I ref;
-    //    std::vector<VECTOR2I> pts;
-
-        for( int j = 0; j <= 2; j++ )
-        {
-            auto e2 = dart.getEdge();
-
-            n1 = e2->getSourceNode();
-            n2 = e2->getTargetNode();
-
-            if( e2->isConstrained() )
-            {
-                bool dir = false, dir2=false;
-
-                if( ( ( n1->id() + 1) % outl.PointCount() ) == n2->id() )
-                    dir = true;
-                if( ( ( n2->id() + 1) % outl.PointCount() ) == n1->id() )
-                    dir2 = true;
-
-                if( !dir )
-                    std::swap(n1, n2);
-
-                refFound = true;
-                break;
-            }
-
-            
-            dart.alpha0().alpha1();
-        }
-
-
-        VECTOR2I pr0( n1->x(), n1->y() );
-        VECTOR2I pr1( n2->x(), n2->y() );
-
-        bool reject = false;
-
-        if(refFound)
-        {
-            
-            dart = hed::Dart(e, true);
-
-            VECTOR2I pt;
-
-            for( int j = 0; j <= 2; j++ )
-            {
-                auto e2 = dart.getEdge();
-
-                auto n1a = e2->getSourceNode();
-                auto n2a = e2->getTargetNode();
-
-                if( n1->x() == n1a->x() && n1->y() == n1a->y() && ( n2->x() != n2a->x() || n2->y() != n2a->y() ) )
-                {
-                    pt = VECTOR2I( n2a->x(), n2a->y() );
-                }
-                
-                if( n1->x() == n2a->x() && n1->y() == n2a->y() && ( n2->x() != n1a->x() || n2->y() != n1a->y() ) )
-                {
-                    pt = VECTOR2I( n1a->x(), n1a->y() );
-                }
-                
-                dart.alpha0().alpha1();
-            }
-            
-            auto det = (pt - pr0).Cross(pr1 - pr0);
-
-            if (det > 0)
-                reject = true;
-        }
-
-        
-        if(reject)
-            continue;
-
-        dart = hed::Dart(e, true);
-
-        for( int j = 0; j <= 2; j++ )
-        {
-            auto e2 = dart.getEdge();
-
-                auto n1a = e2->getSourceNode();
-                auto n2a = e2->getTargetNode();
-                VECTOR2I p1( n1a->x(), n1a->y() );
-                VECTOR2I p0( n2a->x(), n2a->y() );
-            
-                fprintf( f, "%d %d %d %d %d\n",p0.x,p0.y,p1.x,p1.y, e2->isConstrained()?1:0);
-                dart.alpha0().alpha1();
-        }
-            
-    }
-    
-    /*for( auto& e : *edges )
-    {
-        int outside = 0;
-        auto n0 = e->getSourceNode();
-        auto n1 = e->getTargetNode();
-
-        //if(!e->isConstrained() )
-        //    continue;
-
-        VECTOR2I p0 ( n0->x(), n0->y() );
-        VECTOR2I p1 ( n1->x(), n1->y() );
-        
-        VECTOR2I midp( (p0 + p1) / 2);
-
-        if( !n0->getFlag() || !n1->getFlag() )
-        {
-            outside = 0;
-        } else {
-            if( !poly.Contains( midp ) && !e->isConstrained() )
-                outside = 1;
-        }
-
-        if( !outside )
-        fprintf( f, "%d %d %d %d %d\n",p0.x,p0.y,p1.x,p1.y, e->isConstrained()?1:0);
-    }*/
-
-#endif
-
+   
 
     fclose( f );
 }

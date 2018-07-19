@@ -367,6 +367,8 @@ public:
     /// Destructor
     ~TRIANGULATION();
 
+    ttl::TRIANGULATION_HELPER* GetHelper() const { return m_helper; }
+
     /// Creates a Delaunay triangulation from a set of points
     void CreateDelaunay( NODES_CONTAINER::iterator aFirst, NODES_CONTAINER::iterator aLast );
 

@@ -64,6 +64,11 @@ std::list<p2t::Triangle*> CDT::GetMap()
   return sweep_context_->GetMap();
 }
 
+void CDT::AddEdge(Point* p, Point* q)
+{
+  sweep_context_->AddEdge(p, q);
+}
+
 CDT::~CDT()
 {
   delete sweep_context_;

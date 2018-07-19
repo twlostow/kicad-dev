@@ -56,6 +56,8 @@ SweepContext(std::vector<Point*> polyline);
 /// Destructor
 ~SweepContext();
 
+void AddEdge( Point* p, Point* q );
+
 void set_head(Point* p1);
 
 Point* head();

@@ -74,6 +74,9 @@ public:
    */
   void AddPoint(Point* point);
   
+  void AddEdge(Point* p, Point* q);
+  
+
   /**
    * Triangulate - do this AFTER you've added the polyline, holes, and Steiner points
    */

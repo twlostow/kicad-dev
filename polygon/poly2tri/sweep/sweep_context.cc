@@ -110,6 +110,11 @@ void SweepContext::InitEdges(std::vector<Point*> polyline)
   }
 }
 
+void SweepContext::AddEdge( Point* p, Point* q )
+{
+  edge_list.push_back( new Edge( *p, *q ));
+}
+
 Point* SweepContext::GetPoint(const int& index)
 {
   return points_[index];

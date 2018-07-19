@@ -26,6 +26,7 @@
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_poly_set.h>
 
+#include <set>
 #include <io_mgr.h>
 #include <kicad_plugin.h>
 
@@ -33,20 +34,20 @@
 #include <class_zone.h>
 #include <profile.h>
 
+#include <cassert>
 #include <unordered_set>
 #include <utility>
-#include <cassert>
 
 
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 
-#include <ttl/halfedge/hetriang.h>
 #include <ttl/halfedge/hetraits.h>
+#include <ttl/halfedge/hetriang.h>
 #include <ttl/ttl.h>
 
-#define SHOW_THE_BUG
+// #define SHOW_THE_BUG
 
 using namespace std;
 
@@ -75,12 +76,11 @@ BOARD* loadBoard( const std::string& filename )
 // Interpret two points as being coincident
 inline bool eqPoints( hed::NODE_PTR p1, hed::NODE_PTR p2 )
 {
-    int       dx = p1->GetX() - p2->GetX();
-    int       dy = p1->GetY() - p2->GetY();
-    
+    int dx = p1->GetX() - p2->GetX();
+    int dy = p1->GetY() - p2->GetY();
 
 
-    return (dx ==0 && dy == 0);
+    return ( dx == 0 && dy == 0 );
 }
 
 
@@ -99,18 +99,19 @@ hed::NODE_PTR findNode( const std::vector<hed::NODE_PTR>& nodes, VECTOR2I p )
             return n;
     }
 
-    assert(false);
+    assert( false );
 
     return nullptr;
 }
 
 hed::DART findDart( hed::TRIANGULATION& triang, hed::NODE_PTR node )
 {
-    hed::DART  d1 = triang.CreateDart();
-    ttl::TRIANGULATION_HELPER helper(triang);
+    hed::DART                 d1 = triang.CreateDart();
+    ttl::TRIANGULATION_HELPER helper( triang );
 
 #ifdef SHOW_THE_BUG
-    assert( helper.LocateTriangle<hed::TTLtraits>( node, d1 ) == true ); // WTF? this doesn't call LocateTriangle AT ALL
+    assert( helper.LocateTriangle<hed::TTLtraits>( node, d1 )
+            == true ); // WTF? this doesn't call LocateTriangle AT ALL
 #else
     helper.LocateTriangle<hed::TTLtraits>( node, d1 );
 #endif
@@ -120,7 +121,7 @@ hed::DART findDart( hed::TRIANGULATION& triang, hed::NODE_PTR node )
         auto nn = d1.GetNode();
 
         if( nn->GetX() == node->GetX() && nn->GetY() == node->GetY() )
-  	    return d1;
+            return d1;
 
         d1.Alpha0().Alpha1();
     }
@@ -129,21 +130,21 @@ hed::DART findDart( hed::TRIANGULATION& triang, hed::NODE_PTR node )
     return d1;
 }
 
-struct Tri 
+struct Tri
 {
     hed::NODE_PTR v[3];
     hed::EDGE_PTR e[3];
     hed::EDGE_PTR m_lead;
-    
-    Tri( hed::EDGE_PTR lead = nullptr)
+
+    Tri( hed::EDGE_PTR lead = nullptr )
     {
-        if(!lead)
+        if( !lead )
             return;
-            
+
         m_lead = lead;
-        auto dart = hed::DART(lead, true);
+        auto          dart = hed::DART( lead, true );
         hed::NODE_PTR prev = nullptr;
-    
+
         for( int j = 0; j <= 2; j++ )
         {
             auto e2 = dart.GetEdge();
@@ -159,9 +160,9 @@ struct Tri
 
     void getAdjacentTriangles( std::vector<Tri>& tris )
     {
-        for (int j=0;j<=2;j++)
+        for( int j = 0; j <= 2; j++ )
         {
-            if ( e[j] && !e[j]->IsConstrained() )
+            if( e[j] && !e[j]->IsConstrained() )
             {
                 auto twin = e[j]->GetTwinEdge();
                 if( twin )
@@ -170,44 +171,51 @@ struct Tri
         }
     }
 
-    hed::EDGE_PTR getLeadingEdge() const { return m_lead; }
+    hed::EDGE_PTR getLeadingEdge() const
+    {
+        return m_lead;
+    }
 
     const VECTOR2I center() const
     {
-        double x=0,y=0;
-        for(int j=0;j<=2;j++)
+        double x = 0, y = 0;
+        for( int j = 0; j <= 2; j++ )
         {
-            x+=v[j]->GetX();
-            y+=v[j]->GetY();
+            x += v[j]->GetX();
+            y += v[j]->GetY();
         }
-        VECTOR2I c( (int)x/3.0, (int)y/3.0 );
+        VECTOR2I c( (int) x / 3.0, (int) y / 3.0 );
         return c;
     }
 
-    const VECTOR2I vertex(int j) const
+    const VECTOR2I vertex( int j ) const
     {
-        return VECTOR2I((int)v[j]->GetX(), (int) v[j]->GetY() );
+        return VECTOR2I( (int) v[j]->GetX(), (int) v[j]->GetY() );
     }
 
     bool isWellDefined() const
     {
-            auto c = center();
-        return vertex(0) !=c && vertex(1) != c && vertex(2) != c;
+        auto c = center();
+        return vertex( 0 ) != c && vertex( 1 ) != c && vertex( 2 ) != c;
     }
 };
 
-static bool containsPoint( const SHAPE_POLY_SET::POLYGON& poly, const VECTOR2I& p)
+static bool containsPoint( const SHAPE_POLY_SET::POLYGON& poly, const VECTOR2I& p )
 {
     if( !poly[0].PointInside( p ) )
         return false;
 
-    for(int i = 1; i < poly.size(); i++)
+    for( int i = 1; i < poly.size(); i++ )
         if( poly[i].PointInside( p ) )
             return false;
 
     return true;
 }
 
+
+#include <valgrind/callgrind.h>
+
+#if 0
 
 void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
 {
@@ -276,36 +284,32 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
 
     // Make the triangulation
     hed::TRIANGULATION triang;
-    triang.CreateDelaunay( nodes.begin(), new_end );
-
-    ttl::TRIANGULATION_HELPER helper( triang );
+//    ttl::TRIANGULATION_HELPER helper( triang );
 
     int nconstr = 0;
     char str[1024];
     sprintf(str,"edges_%d.txt", index);
     FILE *f = fopen( str, "wb" );
+    PROF_COUNTER cntc("constr-delaunay");
 
-    for( const auto& outl : poly )
+
+    hed::EDGE_PTR bedge = triang.InitTwoEnclosingTriangles( nodes.begin(), new_end );
+    hed::DART dc(bedge);
+    hed::DART d_iter = dc;
+    auto helper = triang.GetHelper();
+
+    //for( auto it = nodes.; it != aLast; ++it )
     {
-        for( auto i = 0; i < outl.SegmentCount(); i++ )
-        {
-            if( outl.CSegment(i).A == outl.CSegment(i).B )
-                continue;
-            
-            auto n1 = findNode( nodes, outl.CSegment(i).A );
-            auto n2 = findNode( nodes, outl.CSegment(i).B );
-            
-            auto d1 = findDart( triang, n1 );
-            auto d2 = findDart( triang, n2 );
-            
-            auto dart = helper.InsertConstraint<hed::TTLtraits>( d1, d2, true );
-            dart.GetEdge()->SetConstrained();
-
-            nconstr++;
-        }
+        helper->InsertNode<hed::TTLtraits>( d_iter, *it );
     }
 
-    
+
+
+
+    helper->RemoveRectangularBoundary<hed::TTLtraits>( dc );
+
+    cntc.Show();
+
 
     cnt.Show();
 
@@ -390,6 +394,268 @@ void test2( SHAPE_POLY_SET::POLYGON& poly, int index )
 
     fclose( f );
 }
+#endif
+
+#include <poly2tri/poly2tri.h>
+
+struct comparePoints
+{
+    int operator()( const VECTOR2I& a, const VECTOR2I& b )
+    {
+        return ( a.x < b.x ) || ( a.x == b.x && a.y < b.y );
+    }
+};
+
+void test_p2t( SHAPE_POLY_SET::POLYGON& poly, int index )
+{
+    std::vector<p2t::Point*>                       outlinePts, holePts;
+    std::map<VECTOR2I, p2t::Point*, comparePoints> pmap;
+    std::map<VECTOR2I, std::set<int>, comparePoints>           hole_idx;
+
+    int outlineIndex = 0;
+
+    for( const auto& outl : poly )
+    {
+        if( outlineIndex != 0 )
+        {
+            //printf( "hole %d pts %d\n", outlineIndex, outl.PointCount() );
+            for( int i = 0; i < outl.PointCount(); i++ )
+            {
+                auto p = outl.CPoint( i );
+
+                auto it = hole_idx.find( p );
+                if( it == hole_idx.end() )
+                    hole_idx[p] = std::set<int>();
+                else if( it->first != p )
+                {
+                    //printf("DUPA ZBITA: %d %d %d %d\n", it->first.x, it->first.y, p.x, p.y);
+                }
+
+                hole_idx[p].insert( outlineIndex );
+            }
+        }
+
+        outlineIndex++;
+    }
+
+    int fcnt = 0;
+    for( auto h : hole_idx )
+    {
+        char str[1024];
+        
+        if( h.second.size() >= 2 )
+        {
+            sprintf(str,"holes_%d.txt", fcnt++);
+
+            FILE *fout =fopen(str,"wb");
+            int ucnt = 1;
+
+            for( auto idx : h.second )
+            {
+                auto outl = poly[ idx ];
+                for( int i = 0; i < outl.SegmentCount(); i++ )
+                {
+                    auto s = outl.CSegment(i);
+                    fprintf(fout,"%d %d %d %d %d\n", s.A.x , s.A.y, s.B.x, s.B.y, ucnt);
+                }
+
+                ucnt++;
+
+            }
+            fclose(fout);
+        }
+    }
+
+
+    return;
+    for( const auto& outl : poly )
+    {
+
+        for( int i = 0; i < outl.PointCount(); i++ )
+        {
+            auto        p = outl.CPoint( i );
+            auto        it = pmap.find( p );
+            p2t::Point* p2tp;
+
+            if( it != pmap.end() )
+            {
+                p2tp = it->second;
+            }
+            else
+            {
+                p2tp = new p2t::Point( p.x, p.y );
+                pmap[p] = p2tp;
+            }
+
+            if( outlineIndex == 0 )
+                outlinePts.push_back( p2tp );
+            else
+                holePts.push_back( p2tp );
+        }
+
+
+        outlineIndex++;
+    }
+
+    p2t::CDT cdt( outlinePts );
+
+    auto bb = poly[0].BBox();
+
+    const int gridPointDensity =
+            std::min( 10000000, std::max( bb.GetWidth() / 10, bb.GetHeight() / 10 ) );
+    const int nGridPointsX = ( bb.GetWidth() / gridPointDensity ) + 1;
+    const int nGridPointsY = ( bb.GetHeight() / gridPointDensity ) + 1;
+
+    if( poly.size() == 1 && poly[0].PointCount() < 3 )
+        return;
+
+    for( int xi = 0; xi < nGridPointsX; xi++ )
+        for( int yi = 0; yi < nGridPointsY; yi++ )
+        {
+            VECTOR2I p = bb.Centre();
+
+            p.x += ( (double) xi - (double) nGridPointsX / 2.0 ) * (double) gridPointDensity;
+            p.y += ( (double) yi - (double) nGridPointsY / 2.0 ) * (double) gridPointDensity;
+
+            if( !containsPoint( poly, p ) )
+                continue;
+
+            p2t::Point* p2tp = new p2t::Point( p.x, p.y );
+            cdt.AddPoint( p2tp );
+        }
+
+
+    PROF_COUNTER cnt( "Triangulate" );
+    for( auto p : holePts )
+        cdt.AddPoint( p );
+
+    outlineIndex = 0;
+    for( const auto& outl : poly )
+    {
+
+        for( int i = 0; i < outl.SegmentCount(); i++ )
+        {
+            if( outl.CSegment( i ).A == outl.CSegment( i ).B )
+                continue;
+
+
+            auto        s = outl.CSegment( i );
+            p2t::Point* p = pmap.find( s.A )->second;
+            p2t::Point* q = pmap.find( s.B )->second;
+
+            printf( "%p %p %d %d %d %d\n", p, q, s.A.x, s.A.y, s.B.x, s.B.y );
+
+            if( outlineIndex != 0 )
+                cdt.AddEdge( p, q );
+        }
+
+        outlineIndex++;
+    }
+
+
+    cdt.Triangulate();
+
+    cnt.Show();
+
+    char str[1024];
+    sprintf( str, "cdt_%d.txt", index );
+    FILE* f = fopen( str, "wb" );
+    for( auto t : cdt.GetTriangles() )
+    {
+
+
+        auto a = t->GetPoint( 0 );
+        auto b = t->GetPoint( 1 );
+        auto c = t->GetPoint( 2 );
+
+        fprintf( f, "%.0f %.0f %.0f %.0f 1\n", a->x, a->y, b->x, b->y );
+        fprintf( f, "%.0f %.0f %.0f %.0f 1\n", c->x, c->y, b->x, b->y );
+        fprintf( f, "%.0f %.0f %.0f %.0f 1\n", a->x, a->y, c->x, c->y );
+    }
+
+    fclose( f );
+}
+
+
+#if 0
+void cdt_test()
+{
+    int scale = 1000000;
+    std::vector<p2t::Point*> pts;
+
+    pts.push_back( new p2t::Point( 0 * scale, 0 * scale) );
+    pts.push_back( new p2t::Point( 1000* scale, 0 * scale) );
+    pts.push_back( new p2t::Point( 1000* scale, 1000 * scale) );
+    pts.push_back( new p2t::Point( 0* scale, 1000 * scale) );
+
+    p2t::CDT cdt( pts );
+
+    pts.clear();
+
+    for(int xi = 0; xi < 5; xi++)
+        for(int yi = 0; yi < 5; yi++)
+        {
+            pts.clear();
+            int cx = 100 * xi * scale + 100 * scale;
+            int cy = 100 * yi * scale + 100 * scale;
+            int r = 50* scale;
+
+
+            cdt.AddPoint(  new p2t::Point( cx - r, cy ) );
+            cdt.AddPoint(  new p2t::Point( cx , cy + r ) );
+            cdt.AddPoint(  new p2t::Point( cx + r, cy ) );
+            cdt.AddPoint(  new p2t::Point( cx , cy - r ) );
+            
+            //for(int a = 0; a < 36; a++)
+            //{
+                //int x = (double)cx + (double)r * cos( (double) a * M_PI / 18.0 );
+                //int y = (double)cy + (double)r * sin( (double) a * M_PI / 18.0 );
+
+              //  cdt.AddPoint(  new p2t::Point(x, y ) );
+
+  //              pts.push_back( new p2t::Point(x, y ));
+            //}
+//            cdt.AddHole( pts );
+        }
+
+    /*p2t::Point* p1;
+
+    pts.push_back( new p2t::Point( 500, 0 + 100 ) );
+    pts.push_back( new p2t::Point( 600, 100 + 100 ) );
+    pts.push_back( p1 = new p2t::Point( 500, 200 + 100 ) );
+    pts.push_back( new p2t::Point( 400, 100 + 100 ) );
+
+    cdt.AddHole( pts );
+
+    pts.clear();
+
+    pts.push_back( new p2t::Point( 501, 0 + 300 ) );
+    pts.push_back( new p2t::Point( 600, 100 + 300 ) );
+    pts.push_back( new p2t::Point( 500, 200 + 300 ) );
+    pts.push_back( new p2t::Point( 400, 100 + 300 ) );
+
+    cdt.AddHole( pts );*/
+
+    cdt.Triangulate();
+
+    FILE* f = fopen( "cdt.txt", "wb" );
+    for( auto t : cdt.GetTriangles() )
+    {
+
+
+        auto a = t->GetPoint( 0 );
+        auto b = t->GetPoint( 1 );
+        auto c = t->GetPoint( 2 );
+
+        fprintf( f, "%.0f %.0f %.0f %.0f 1\n", a->x, a->y, b->x, b->y );
+        fprintf( f, "%.0f %.0f %.0f %.0f 1\n", c->x, c->y, b->x, b->y );
+        fprintf( f, "%.0f %.0f %.0f %.0f 1\n", a->x, a->y, c->x, c->y );
+    }
+
+    fclose( f );
+}
+
+#endif
 
 int main( int argc, char* argv[] )
 {
@@ -397,7 +663,6 @@ int main( int argc, char* argv[] )
 
     if( !brd )
         return -1;
-
 
     PROF_COUNTER cnt( "allBoard" );
 
@@ -408,27 +673,17 @@ int main( int argc, char* argv[] )
         auto           zone = brd->GetArea( z );
         SHAPE_POLY_SET poly = zone->GetFilledPolysList();
         poly.Unfracture( SHAPE_POLY_SET::PM_FAST );
+        poly.Simplify( SHAPE_POLY_SET::PM_FAST );
         //  poly.CacheTriangulation();
 
-        printf( "zone %d/%d\n", ( z + 1 ), brd->GetAreaCount() );
 
         if( poly.OutlineCount() == 0 )
             continue;
-        
-        test2( poly.Polygon(0), z );
-#if 0
-        PROF_COUNTER unfrac("unfrac");
-        
-        unfrac.Show();
 
-        PROF_COUNTER triangulate("triangulate");
+        printf( "zone %d/%d\n", ( z + 1 ), brd->GetAreaCount() );
 
-        for(int i =0; i< poly.OutlineCount(); i++)
-        {
-            poly.triangulatePoly( &poly.Polygon(i) );
-        }
-        triangulate.Show();
-#endif
+        for( int o = 0; o < poly.OutlineCount(); o++ )
+            test_p2t( poly.Polygon( o ), z * 100 + o );
     }
 
     cnt.Show();

@@ -37,6 +37,7 @@
 #include <cstddef>
 #include <assert.h>
 #include <cmath>
+#include <cstdio>
 
 namespace p2t {
 
@@ -137,6 +138,7 @@ struct Edge {
         q = &p1;
         p = &p2;
       } else if (p1.x == p2.x) {
+        printf("p1 %p p2 %p\n", &p1, &p2);
         // Repeat points
         assert(false);
       }

@@ -57,10 +57,10 @@ public:
          return "Dupa"; 
      }
                      
-    virtual void Show( int nestLevel, std::ostream& os ) const override
+    /*virtual void Show( int nestLevel, std::ostream& os ) const override
     {
 
-    }
+    }*/
 
     /// @copydoc VIEW_ITEM::ViewDraw()
     void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override

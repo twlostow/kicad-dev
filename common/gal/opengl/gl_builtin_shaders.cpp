@@ -98,7 +98,7 @@ void computeLineCoords( bool posture, vec2 offset, vec2 texcoord, vec2 dir )
         shaderParams[0] = SHADER_LINE_A;
         edgeThreshold = (floor(w / worldPixelSize) - 2.0) * worldPixelSize / w;
         gl_TexCoord[0].st = texcoord;
-        v2 = 1.0 / floor(w/worldPixelSize);
+        v2 = worldPixelSize  / w * 1.4142135;
     }
     else
     {
@@ -267,6 +267,7 @@ int isLikelyEdgePixel( vec2 aCoord )
 
 }
 
+/*
 bool isEdgePixel( vec2 aCoord )
 {
     //if(isLikelyEdgePixel( aCoord ) == 0)
@@ -274,16 +275,34 @@ bool isEdgePixel( vec2 aCoord )
 
     int n_on = 0;
 
-    n_on += isPixelInSegment( aCoord + vec2(-v2, -v2 ));
+    //n_on += isPixelInSegment( aCoord + vec2(-v2, -v2 ));
+    
+    
     n_on += isPixelInSegment( aCoord + vec2(-v2, 0 ));
-    n_on += isPixelInSegment( aCoord + vec2(-v2, v2 ));
+    //n_on += isPixelInSegment( aCoord + vec2(-v2, v2 ));
     n_on += isPixelInSegment( aCoord + vec2(0, -v2 ));
     n_on += isPixelInSegment( aCoord + vec2(0, v2 ));
-    n_on += isPixelInSegment( aCoord + vec2(v2, -v2 ));
+    //n_on += isPixelInSegment( aCoord + vec2(v2, -v2 ));
     n_on += isPixelInSegment( aCoord + vec2(v2, 0 ));
-    n_on += isPixelInSegment( aCoord + vec2(v2, v2 ));
+    //n_on += isPixelInSegment( aCoord + vec2(v2, v2 ));
     
-    return (n_on >= 3 && n_on < 6);
+    return (n_on > 0); //2 && n_on <= 5);
+}
+*/
+
+bool isEdgePixel( vec2 aCoord )
+{
+    int n_on = isPixelInSegment( aCoord );
+
+    if( n_on == 0)
+        return false;
+
+    n_on += isPixelInSegment( aCoord + vec2(-v2, 0 ));
+    n_on += isPixelInSegment( aCoord + vec2(v2, 0 ));
+    n_on += isPixelInSegment( aCoord + vec2(0, -v2 ));
+    n_on += isPixelInSegment( aCoord + vec2(0, v2 ));
+    
+    return (n_on >= 2 && n_on < 5);
 }
 
 void drawLine( vec2 aCoord )

@@ -44,8 +44,7 @@
 #include <pcbnew.h>
 #include <trace_helpers.h>
 
-#include <cairo_print_ctx.h>
-#include <gal/cairo/cairo_gal.h>
+#include <gal/cairo/cairo_print.h>
 #include <pcb_view.h>
 #include <pcb_painter.h>
 
@@ -142,51 +141,41 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
 {
     BOARD* board = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
-    CAIRO_PRINT_CTX printCtx( GetDC() );
+    KIGFX::CAIRO_PRINT_CTX printCtx( GetDC() );
+
+    // Print parameters
+    //wxRect paper = printerDC->GetPaperRect();
+    wxSize pageSizeIU = m_Parent->GetPageSizeIU();
+    bool  printMirror = m_PrintParams.m_PrintMirror;
+    wxPoint offset;
+    double userscale;
 
     KIGFX::GAL_DISPLAY_OPTIONS options;
-    KIGFX::CAIRO_GAL gal( m_Parent, options, printCtx.GetContext(), printCtx.GetSurface() );
+    KIGFX::CAIRO_PRINT_GAL gal( options, printCtx.GetContext(), printCtx.GetSurface() );
     KIGFX::PCB_PAINTER painter( &gal );
-    KIGFX::PCB_VIEW view( true );
-    view.SetGAL( &gal );
-    view.SetPainter( &painter );
+    std::unique_ptr<KIGFX::VIEW> view( static_cast<PCB_BASE_FRAME*>( m_Parent )->GetGalCanvas()->GetView()->DataReference() );
 
-    VECTOR2I screenSize( 100, 100 );
-    gal.SetScreenSize( screenSize );
+    gal.SetScreenDPI( 300 );
+    view->SetGAL( &gal );
+    view->SetPainter( &painter );
+
+    for( int i = 0; i < KIGFX::VIEW::VIEW_MAX_LAYERS; i++ )
+        view->SetLayerTarget( i, KIGFX::TARGET_NONCACHED );
+
+    VECTOR2I screenSize( 1024, 1024 );
+    gal.ResizeScreen( screenSize.x, screenSize.y );
     BOX2I bBox = board->ViewBBox();
     VECTOR2D vsize = bBox.GetSize();
-    double scale = view.GetScale() / std::max( fabs( vsize.x / screenSize.x ),
+    double scale = view->GetScale() / std::max( fabs( vsize.x / screenSize.x ),
                                                 fabs( vsize.y / screenSize.y ) );
-    view.SetScale( scale / 3 );
-    view.SetCenter( bBox.Centre() );
+    view->SetScale( 20 );
+    view->SetCenter( bBox.Centre() );
 
-    for( auto zone : board->Zones() )
-    {
-        zone->CacheTriangulation();
-        view.Add( zone );
-    }
-
-    // Load drawings
-    for( auto drawing : const_cast<BOARD*>(board)->Drawings() )
-        view.Add( drawing );
-
-    // Load tracks
-    for( TRACK* track = board->m_Track; track; track = track->Next() )
-        view.Add( track );
-
-    // Load modules and its additional elements
-    for( MODULE* module = board->m_Modules; module; module = module->Next() )
-        view.Add( module );
-
-    // Segzones (deprecated, equivalent of ZONE_CONTAINERfilled areas for very old boards)
-    for( SEGZONE* zone = board->m_SegZoneDeprecated; zone; zone = zone->Next() )
-        view.Add( zone );
-
-    view.UpdateItems();
     gal.BeginDrawing();
-    view.Redraw();
+    view->Redraw();
     gal.EndDrawing();
 }
+
 
 #if 0
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )

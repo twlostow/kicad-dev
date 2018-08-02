@@ -263,7 +263,7 @@ void CAIRO_GAL_BASE::DrawCurve( const VECTOR2D& aStartPoint, const VECTOR2D& aCo
 }
 
 
-void CAIRO_GAL::DrawBitmap( const BITMAP_BASE& aBitmap )
+void CAIRO_GAL_BASE::DrawBitmap( const BITMAP_BASE& aBitmap )
 {
     int ppi = aBitmap.GetPPI();
     double worldIU_per_mm = 1/(worldUnitLength/2.54)/1000;

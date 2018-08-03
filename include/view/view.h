@@ -272,16 +272,27 @@ public:
      * Sets limits for view area.
      * @param aBoundary is the box that limits view area.
      */
-    inline void SetBoundary( const BOX2I& aBoundary )
+    inline void SetBoundary( const BOX2D& aBoundary )
     {
         m_boundary = aBoundary;
+    }
+
+     /**
+     * Function SetBoundary()
+     * Sets limits for view area.
+     * @param aBoundary is the box that limits view area.
+     */
+    inline void SetBoundary( const BOX2I& aBoundary )
+    {
+        m_boundary.SetOrigin( aBoundary.GetOrigin() );
+        m_boundary.SetEnd( aBoundary.GetEnd() );
     }
 
     /**
      * Function GetBoundary()
      * @return Current view area boundary.
      */
-    inline const BOX2I& GetBoundary() const
+    inline const BOX2D& GetBoundary() const
     {
         return m_boundary;
     }
@@ -684,7 +695,7 @@ public:
     static const int VIEW_MAX_LAYERS = 512;      ///< maximum number of layers that may be shown
 
 
-private:
+protected:
     struct VIEW_LAYER
     {
         bool                    visible;         ///< is the layer to be rendered?
@@ -809,7 +820,7 @@ private:
     double m_scale;
 
     /// View boundaries
-    BOX2I m_boundary;
+    BOX2D m_boundary;
 
     /// Scale lower limit
     double m_minScale;

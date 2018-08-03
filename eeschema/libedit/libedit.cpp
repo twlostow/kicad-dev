@@ -33,7 +33,7 @@
 #include <gr_basic.h>
 #include <macros.h>
 #include <pgm_base.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <confirm.h>
 #include <gestfich.h>
 
@@ -158,7 +158,9 @@ bool LIB_EDIT_FRAME::LoadOneLibraryPartAux( LIB_ALIAS* aEntry, const wxString& a
 
     LIB_PART* lib_part = m_libMgr->GetBufferedPart( m_aliasName, aLibrary );
     wxASSERT( lib_part );
-    SetScreen( m_libMgr->GetScreen( lib_part->GetName(), aLibrary ) );
+    
+    auto s = m_libMgr->GetScreen( lib_part->GetName(), aLibrary );
+    SetScreen( s );
     SetCurPart( new LIB_PART( *lib_part ) );
     SetCurLib( aLibrary );
 

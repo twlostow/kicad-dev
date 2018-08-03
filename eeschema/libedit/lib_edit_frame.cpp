@@ -31,7 +31,7 @@
 #include <fctsys.h>
 #include <pgm_base.h>
 #include <kiface_i.h>
-#include <class_drawpanel.h>
+#include <sch_draw_panel.h>
 #include <base_screen.h>
 #include <confirm.h>
 #include <eda_doc.h>
@@ -66,6 +66,7 @@
 #include <menus_helpers.h>
 #include <wx/progdlg.h>
 #include <tool/context_menu.h>
+#include <sch_view.h>
 
 int LIB_EDIT_FRAME::           m_unit    = 1;
 int LIB_EDIT_FRAME::           m_convert = 1;
@@ -263,7 +264,8 @@ LIB_EDIT_FRAME::LIB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                       .Caption( _( "Libraries" ) ).MinSize( 250, -1 ).Resizable() );
     m_auimgr.AddPane( m_drawToolBar, EDA_PANE().VToolbar().Name( "ToolsToolbar" ).Right().Layer(1) );
 
-    m_auimgr.AddPane( m_canvas, EDA_PANE().Canvas().Name( "DrawFrame" ).Center() );
+    m_auimgr.AddPane( m_canvas->GetWindow(),
+                      wxAuiPaneInfo().Name( "DrawFrame" ).CentrePane() );
 
     m_auimgr.Update();
 
@@ -278,6 +280,9 @@ LIB_EDIT_FRAME::LIB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     wxCommandEvent evt( wxEVT_COMMAND_MENU_SELECTED, ID_ZOOM_PAGE );
     wxPostEvent( this, evt );
+
+    SyncView();
+    GetGalCanvas()->GetViewControls()->SetSnapping( true );
 }
 
 
@@ -666,7 +671,8 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         break;
     }
 
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
+ //fixme-gal
+    //INSTALL_UNBUFFERED_DC( dc, m_canvas );
 
     switch( id )
     {
@@ -681,14 +687,14 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         m_canvas->MoveCursorToCrossHair();
         if( item )
         {
-            EndDrawGraphicItem( &dc );
+            EndDrawGraphicItem( nullptr );
         }
         break;
 
     case ID_POPUP_LIBEDIT_BODY_EDIT_ITEM:
         if( item )
         {
-            m_canvas->CrossHairOff( &dc );
+            m_canvas->CrossHairOff( );
 
             switch( item->Type() )
             {
@@ -696,18 +702,18 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             case LIB_CIRCLE_T:
             case LIB_RECTANGLE_T:
             case LIB_POLYLINE_T:
-                EditGraphicSymbol( &dc, item );
+                EditGraphicSymbol( nullptr, item );
                 break;
 
             case LIB_TEXT_T:
-                EditSymbolText( &dc, item );
+                EditSymbolText( nullptr, item );
                 break;
 
             default:
                 ;
             }
 
-            m_canvas->CrossHairOn( &dc );
+            m_canvas->CrossHairOn( );
         }
         break;
 
@@ -720,11 +726,11 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             m_canvas->MoveCursorToCrossHair();
             STATUS_FLAGS oldFlags = item->GetFlags();
             item->ClearFlags();
-            item->Draw( m_canvas, &dc, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED, g_XorMode, NULL,
+    /*        item->Draw( m_canvas, &dc, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED, g_XorMode, NULL,
                               DefaultTransform );
             ( (LIB_POLYLINE*) item )->DeleteSegment( GetCrossHairPosition( true ) );
             item->Draw( m_canvas, &dc, wxPoint( 0, 0 ), COLOR4D::UNSPECIFIED, g_XorMode, NULL,
-                              DefaultTransform );
+                              DefaultTransform );*/
             item->SetFlags( oldFlags );
             m_lastDrawItem = NULL;
         }
@@ -732,7 +738,7 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
     case ID_POPUP_LIBEDIT_DELETE_ITEM:
         if( item )
-            deleteItem( &dc, item );
+            deleteItem( nullptr, item );
 
         break;
 
@@ -741,9 +747,13 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             break;
 
         if( item->Type() == LIB_PIN_T )
+        {
             StartMovePin( item );
+        }
         else
-            StartMoveDrawSymbol( &dc, item );
+        {
+            StartMoveDrawSymbol( nullptr, item );
+        }
         break;
 
     case ID_POPUP_LIBEDIT_MODIFY_ITEM:
@@ -758,7 +768,7 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
             || item->Type() == LIB_ARC_T
             )
         {
-            StartModifyDrawSymbol( &dc, item );
+            StartModifyDrawSymbol( nullptr, item );
         }
 
         break;
@@ -767,7 +777,7 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         if( item == NULL )
             break;
 
-        m_canvas->CrossHairOff( &dc );
+        m_canvas->CrossHairOff( nullptr );
 
         if( item->Type() == LIB_FIELD_T )
         {
@@ -775,7 +785,7 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
         }
 
         m_canvas->MoveCursorToCrossHair();
-        m_canvas->CrossHairOn( &dc );
+        m_canvas->CrossHairOn( );
         break;
 
     case ID_POPUP_LIBEDIT_PIN_GLOBAL_CHANGE_PINSIZE_ITEM:
@@ -798,65 +808,65 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
     case ID_POPUP_ZOOM_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_ZOOM );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_DELETE_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_DELETE );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_DUPLICATE_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_DUPLICATE );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_SELECT_ITEMS_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_SELECT_ITEMS_ONLY );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case ID_POPUP_MIRROR_Y_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_MIRROR_Y );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockPlace( &dc );
+        HandleBlockPlace( nullptr );
         break;
 
     case ID_POPUP_MIRROR_X_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_MIRROR_X );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockPlace( &dc );
+        HandleBlockPlace( nullptr );
         break;
 
     case ID_POPUP_ROTATE_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         block.SetCommand( BLOCK_ROTATE );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockPlace( &dc );
+        HandleBlockPlace( nullptr );
         break;
 
     case ID_POPUP_PLACE_BLOCK:
         m_canvas->SetAutoPanRequest( false );
         m_canvas->MoveCursorToCrossHair();
-        HandleBlockPlace( &dc );
+        HandleBlockPlace( nullptr );
         break;
 
     case wxID_COPY:
         block.SetCommand( BLOCK_COPY );
         block.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     case wxID_PASTE:
-        HandleBlockBegin( &dc, BLOCK_PASTE, GetCrossHairPosition() );
+        HandleBlockBegin( nullptr, BLOCK_PASTE, GetCrossHairPosition() );
         break;
 
     case wxID_CUT:
@@ -865,7 +875,7 @@ void LIB_EDIT_FRAME::Process_Special_Functions( wxCommandEvent& event )
 
         block.SetCommand( BLOCK_CUT );
         block.SetMessageBlock( this );
-        HandleBlockEnd( &dc );
+        HandleBlockEnd( nullptr );
         break;
 
     default:
@@ -946,6 +956,8 @@ void LIB_EDIT_FRAME::SetCurPart( LIB_PART* aPart )
 
     // Ensure synchronized pin edit can be enabled only symbols with interchangeable units
     m_syncPinEdit = aPart && aPart->IsMulti() && !aPart->UnitsLocked();
+
+    RebuildView();
 }
 
 
@@ -1177,7 +1189,6 @@ void LIB_EDIT_FRAME::OnRotateItem( wxCommandEvent& aEvent )
 
 void LIB_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
 {
-    INSTALL_UNBUFFERED_DC( dc, m_canvas );
     SCH_SCREEN* screen = GetScreen();
     BLOCK_SELECTOR& block = screen->m_BlockLocate;
 
@@ -1202,14 +1213,14 @@ void LIB_EDIT_FRAME::OnOrient( wxCommandEvent& aEvent )
             m_canvas->MoveCursorToCrossHair();
             block.SetMessageBlock( this );
             block.SetCommand( BLOCK_MIRROR_X );
-            HandleBlockEnd( &dc );
+            HandleBlockEnd( nullptr );
         }
         else if( aEvent.GetId() == ID_LIBEDIT_MIRROR_Y )
         {
             m_canvas->MoveCursorToCrossHair();
             block.SetMessageBlock( this );
             block.SetCommand( BLOCK_MIRROR_Y );
-            HandleBlockEnd( &dc );
+            HandleBlockEnd( nullptr );
         }
     }
 }
@@ -1362,6 +1373,7 @@ void LIB_EDIT_FRAME::deleteItem( wxDC* aDC, LIB_ITEM* aItem )
     SetDrawItem( NULL );
     m_lastDrawItem = NULL;
     OnModify();
+    RebuildView();
     m_canvas->CrossHairOn( aDC );
 }
 
@@ -1656,5 +1668,34 @@ void LIB_EDIT_FRAME::ShowChangedLanguage()
 
     // status bar
     UpdateMsgPanel();
+}
+
+void LIB_EDIT_FRAME::SetScreen( BASE_SCREEN* aScreen )
+{
+    EDA_DRAW_FRAME::SetScreen( aScreen );
+}
+
+void LIB_EDIT_FRAME::RebuildView()
+{
+    auto view = GetCanvas()->GetView();
+    view->Clear();
+    view->DisplayComponent( m_my_part );    
+    view->HideWorksheet();
+    view->ClearHiddenFlags();
+}
+
+const BOX2I LIB_EDIT_FRAME::GetDocumentExtents() const
+{
+    LIB_PART*  part = GetCurPart();
+
+    if( !part )
+    {
+        return BOX2I( VECTOR2I(-100, -100), VECTOR2I( 200, 200 ) );
+    }
+    else
+    {
+        EDA_RECT boundingBox = part->GetUnitBoundingBox( m_unit, m_convert );
+        return BOX2I( boundingBox.GetOrigin(), VECTOR2I( boundingBox.GetWidth(), boundingBox.GetHeight() ) );
+    }
 }
 

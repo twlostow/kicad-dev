@@ -1310,6 +1310,7 @@ void DIALOG_PAD_PROPERTIES::redraw()
             BOX2I drawbox;
             drawbox.Move( m_dummyPad->GetPosition() );
             drawbox.Inflate( bbox.GetSize().x*2, bbox.GetSize().y*2 );
+            
             view->SetBoundary( drawbox );
 
             // Autozoom

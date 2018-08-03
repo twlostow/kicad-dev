@@ -624,6 +624,9 @@ int ReadHotkeyConfigFile( const wxString& aFilename, struct EDA_HOTKEY_CONFIG* a
     // read data
     std::vector<char> buffer( size );
     cfgfile.Read( buffer.data(), size );
+    
+    buffer.push_back(0);
+
     wxString data( buffer.data(), wxConvUTF8 );
 
     // Is this the wxConfig format? If so, remove "Keys=" and parse the newlines.

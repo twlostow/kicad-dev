@@ -199,7 +199,8 @@ void GAL::ComputeWorldScreenMatrix()
     lookat.SetIdentity();
     lookat.SetTranslation( -lookAtPoint );
 
-    worldScreenMatrix = translation * rotate * flip * scale * lookat;
+    //worldScreenMatrix = translation * rotate * flip * scale * lookat;
+    worldScreenMatrix = translation * flip * scale * rotate * lookat;
     screenWorldMatrix = worldScreenMatrix.Inverse();
 }
 

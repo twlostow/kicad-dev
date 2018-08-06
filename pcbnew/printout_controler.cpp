@@ -141,37 +141,65 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
 {
     BOARD* board = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
-    KIGFX::CAIRO_PRINT_CTX printCtx( GetDC() );
+    wxDC* dc = GetDC();
+    KIGFX::CAIRO_PRINT_CTX printCtx( dc );
 
     // Print parameters
     //wxRect paper = printerDC->GetPaperRect();
-    wxSize pageSizeIU = m_Parent->GetPageSizeIU();
-    bool  printMirror = m_PrintParams.m_PrintMirror;
+    //wxSize pageSizeIU = m_Parent->GetPageSizeIU();
+    //bool  printMirror = m_PrintParams.m_PrintMirror;
     wxPoint offset;
-    double userscale;
+    //double userscale;
+
+
+
+
 
     KIGFX::GAL_DISPLAY_OPTIONS options;
     KIGFX::CAIRO_PRINT_GAL gal( options, printCtx.GetContext(), printCtx.GetSurface() );
     KIGFX::PCB_PAINTER painter( &gal );
     std::unique_ptr<KIGFX::VIEW> view( static_cast<PCB_BASE_FRAME*>( m_Parent )->GetGalCanvas()->GetView()->DataReference() );
 
-    gal.SetScreenDPI( 300 );
+    //int ppiPrinterX, ppiPrinterY;
+    //GetPPIPrinter( &ppiPrinterX, &ppiPrinterY );
+    wxASSERT( dc->GetPPI().x == dc->GetPPI().y );
+    gal.SetScreenDPI( dc->GetPPI().x );
+
+    view->SetScaleLimits(10e9, 0.0001);
     view->SetGAL( &gal );
     view->SetPainter( &painter );
 
     for( int i = 0; i < KIGFX::VIEW::VIEW_MAX_LAYERS; i++ )
         view->SetLayerTarget( i, KIGFX::TARGET_NONCACHED );
 
-    VECTOR2I screenSize( 1024, 1024 );
-    gal.ResizeScreen( screenSize.x, screenSize.y );
+    gal.ResizeScreen( dc->GetSize().x, dc->GetSize().y );
     BOX2I bBox = board->ViewBBox();
-    VECTOR2D vsize = bBox.GetSize();
-    double scale = view->GetScale() / std::max( fabs( vsize.x / screenSize.x ),
-                                                fabs( vsize.y / screenSize.y ) );
-    view->SetScale( 20 );
-    view->SetCenter( bBox.Centre() );
+    bool rotate = false;
 
+    if( IsPreview() )
+    {
+        MapScreenSizeToPage();
+    }
+    else if( m_PrintParams.m_PageSetupData->GetPrintData().GetOrientation() == wxLANDSCAPE )
+    {
+        rotate = true;
+        //gal.ResizeScreen( dc->GetSize().y, dc->GetSize().x );
+        //gal.SetRotation(m_PrintParams.m_XScaleAdjust);
+        //auto bbox_size = bBox.GetSize();
+        //bBox.SetSize(bbox_size.y, bbox_size.x);
+    }
+
+    //double accurate_Xscale = (double) ppiPrinterX / (IU_PER_MILS*1000);
+    //double accurate_Yscale = (double) ppiPrinterY / (IU_PER_MILS*1000);
+
+    //view->SetScale( m_PrintParams.m_PrintScale );
+    //OffsetLogicalOrigin(-100000, -100000);
+    //view->SetCenter( bBox.Centre() );
+    gal.ComputeWorldScreenMatrix();
+    view->SetViewport( BOX2D( bBox.GetPosition(), bBox.GetSize() ) );
     gal.BeginDrawing();
+    if( rotate )
+        gal.Rotate( -M_PI / 2 );
     view->Redraw();
     gal.EndDrawing();
 }

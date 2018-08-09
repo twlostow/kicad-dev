@@ -279,7 +279,6 @@ void VIEW::OnDestroy( VIEW_ITEM* aItem )
         data->m_view->VIEW::Remove( aItem );
 
     delete data;
-    aItem->ClearViewPrivData();
 }
 
 

@@ -28,9 +28,12 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <memory>
 
 #include <math/box2.h>
 #include <gal/definitions.h>
+
+#include <view/view_overlay.h> // fixme
 
 namespace KIGFX
 {
@@ -683,6 +686,7 @@ public:
 
     static const int VIEW_MAX_LAYERS = 512;      ///< maximum number of layers that may be shown
 
+    std::shared_ptr<VIEW_OVERLAY> MakeOverlay();
 
 private:
     struct VIEW_LAYER

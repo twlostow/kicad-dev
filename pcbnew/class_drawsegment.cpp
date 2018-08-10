@@ -48,6 +48,7 @@
 #include <class_drawsegment.h>
 #include <base_units.h>
 
+#include <anchor.h>
 
 DRAWSEGMENT::DRAWSEGMENT( BOARD_ITEM* aParent, KICAD_T idtype ) :
     BOARD_ITEM( aParent, idtype )
@@ -988,4 +989,57 @@ void DRAWSEGMENT::SwapData( BOARD_ITEM* aImage )
     assert( aImage->Type() == PCB_LINE_T );
 
     std::swap( *((DRAWSEGMENT*) this), *((DRAWSEGMENT*) aImage) );
+}
+
+const std::vector<ANCHOR*> DRAWSEGMENT::GetAnchors()
+{
+    std::vector<ANCHOR *> rv;
+
+    VECTOR2I start ( GetStart() );
+    VECTOR2I end ( GetStart() );
+
+    switch( m_Shape )
+    {
+    case S_ARC:
+        rv.push_back( new ANCHOR ( this, GetCenter(), AF_ORIGIN | AF_SNAPPABLE | AF_CONSTRAINABLE) );
+        rv.push_back( new ANCHOR ( this, GetArcEnd(), AF_CORNER | AF_SNAPPABLE | AF_CONSTRAINABLE) );
+        rv.push_back( new ANCHOR ( this, GetArcStart(), AF_CORNER | AF_SNAPPABLE | AF_CONSTRAINABLE ) );
+        break;
+
+    case S_SEGMENT:
+    {
+        rv.push_back( new ANCHOR ( this, start,  AF_CORNER | AF_SNAPPABLE | AF_CONSTRAINABLE ) );
+        rv.push_back( new ANCHOR ( this, end, AF_CORNER | AF_SNAPPABLE | AF_CONSTRAINABLE ) );
+        VECTOR2I origin;
+        origin.x = start.x + ( start.x - end.x ) / 2;
+        origin.y = start.y + ( start.y - end.y ) / 2;
+        rv.push_back( new ANCHOR ( this, GetEnd(), AF_ORIGIN | AF_SNAPPABLE ) );
+        break;
+    }
+
+    case S_CIRCLE:
+    {
+        int r = ( start - end ).EuclideanNorm();
+        auto a = new ANCHOR(this, start, AF_ORIGIN | AF_SNAPPABLE | AF_CONSTRAINABLE );
+        rv.push_back(a);
+        a = new ANCHOR(this, start , AF_OUTLINE | AF_SNAPPABLE | AF_CONSTRAINABLE );
+        a->SetOffset( VECTOR2I( -r, 0 ) );
+        rv.push_back(a);
+        a = new ANCHOR(this, start , AF_OUTLINE | AF_SNAPPABLE | AF_CONSTRAINABLE );
+        a->SetOffset( VECTOR2I( r, 0 ) );
+        rv.push_back(a);
+        a = new ANCHOR(this, start , AF_OUTLINE | AF_SNAPPABLE | AF_CONSTRAINABLE );
+        a->SetOffset( VECTOR2I( 0, -r ) );
+        rv.push_back(a);
+        a = new ANCHOR(this, start , AF_OUTLINE | AF_SNAPPABLE | AF_CONSTRAINABLE );
+        a->SetOffset( VECTOR2I( 0, r ) );
+        rv.push_back(a);
+        break;
+    }
+
+        default:
+        break;
+    }
+
+    return rv;
 }

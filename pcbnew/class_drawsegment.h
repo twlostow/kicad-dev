@@ -37,11 +37,21 @@
 
 #include <geometry/shape_poly_set.h>
 
+class ANCHOR;
 class LINE_READER;
 class EDA_DRAW_FRAME;
 class MODULE;
 class MSG_PANEL_ITEM;
 
+enum DRAWSEGMENT_FLAGS
+{
+    DSF_CONSTRAIN_LENGTH = 0x1,
+    DSF_CONSTRAIN_DIRECTION = 0x2,
+    DSF_CONSTRAIN_POSITION = 0x4,
+    DSF_CONSTRAIN_START_ANGLE = 0x8,
+    DSF_CONSTRAIN_CENTRAL_ANGLE = 0x10,
+    DSF_CONSTRAIN_RADIUS = 0x20
+};
 
 class DRAWSEGMENT : public BOARD_ITEM
 {
@@ -278,6 +288,8 @@ public:
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
 #endif
+
+    virtual const std::vector<ANCHOR*> GetAnchors() override;
 };
 
 #endif  // CLASS_DRAWSEGMENT_H_

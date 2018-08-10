@@ -40,6 +40,7 @@ class BOARD;
 class BOARD_ITEM_CONTAINER;
 class EDA_DRAW_PANEL;
 class SHAPE_POLY_SET;
+class ANCHOR;
 
 /**
  * Enum STROKE_T
@@ -71,6 +72,7 @@ class BOARD_ITEM : public EDA_ITEM
 protected:
     PCB_LAYER_ID    m_Layer;
 
+    static int getTrailingInt( const wxString& aStr );
     static int getNextNumberInSequence( const std::set<int>& aSeq, bool aFillSequenceGaps );
 
 public:
@@ -307,27 +309,46 @@ public:
     }
 
 
-    virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
+    /**
+     * Function FormatInternalUnits
+     * converts \a aValue from board internal units to a string appropriate for writing to file.
+     *
+     * @note Internal units for board items can be either deci-mils or nanometers depending
+     *       on how KiCad is build.
+     * @param aValue A coordinate value to convert.
+     * @return A std::string object containing the converted value.
+     */
+    static std::string FormatInternalUnits( int aValue );
 
     /**
-     * Function TransformShapeWithClearanceToPolygon
-     * Convert the item shape to a closed polygon
-     * Used in filling zones calculations
-     * Circles and arcs are approximated by segments
-     * @param aCornerBuffer = a buffer to store the polygon
-     * @param aClearanceValue = the clearance around the pad
-     * @param aCircleToSegmentsCount = the number of segments to approximate a circle
-     * @param aCorrectionFactor = the correction to apply to circles radius to keep
-     * clearance when the circle is approximated by segment bigger or equal
-     * to the real clearance value (usually near from 1.0)
-     * @param ignoreLineWidth = used for edge cut items where the line width is only
-     * for visualization
+     * Function FormatAngle
+     * converts \a aAngle from board units to a string appropriate for writing to file.
+     *
+     * @note Internal angles for board items can be either degrees or tenths of degree
+     *       on how KiCad is built.
+     * @param aAngle A angle value to convert.
+     * @return A std::string object containing the converted angle.
      */
+
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
+
     virtual void TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
                                                int aClearanceValue,
                                                int aCircleToSegmentsCount,
                                                double aCorrectionFactor,
                                                bool ignoreLineWidth = false ) const;
+                                               double aCorrectionFactor ) const;
+
+   /**
+     * Function GetAnchors()
+     * Returns a set of anchors attached to the item. The anchors can be used for snapping
+     * or mechanical constraints.
+     *
+     * @return A std::vector containg a list of anchors. Pointer ownership belongs to the caller.
+     */
+
+    virtual const std::vector<ANCHOR*> GetAnchors();
+
 };
 
 #endif /* BOARD_ITEM_STRUCT_H */

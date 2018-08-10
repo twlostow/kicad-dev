@@ -279,3 +279,9 @@ void BOARD_ITEM::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBu
                                            {
     wxASSERT_MSG(false, wxT("Called TransformShapeWithClearanceToPolygon() on unsupported BOARD_ITEM."));
 };
+
+
+const std::vector<ANCHOR*> BOARD_ITEM::GetAnchors()
+{
+    return std::vector<ANCHOR*>();
+}

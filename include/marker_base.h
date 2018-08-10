@@ -28,7 +28,7 @@
 
 #include <drc_item.h>
 #include <gr_basic.h>
-
+#include <eda_rect.h>
 
 /* Marker are mainly used to show a DRC or ERC error or warning
  */

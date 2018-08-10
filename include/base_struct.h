@@ -116,8 +116,8 @@ typedef const INSPECTOR_FUNC& INSPECTOR;    /// std::function passed to nested u
 #define IS_DRAGGED     (1 << 6)    ///< Item being dragged
 #define IS_DELETED     (1 << 7)
 #define IS_WIRE_IMAGE  (1 << 8)    ///< Item to be drawn as wireframe while editing
-#define STARTPOINT     (1 << 9)    ///< When a line is selected, these flags indicate which
-#define ENDPOINT       (1 << 10)   ///< ends.  (Used to support dragging.)
+#define STARTPOINT     (1 << 9)
+#define ENDPOINT       (1 << 10)
 #define SELECTED       (1 << 11)
 #define SELECTEDNODE   (1 << 12)   ///< flag indicating that the structure has already selected
 #define STRUCT_DELETED (1 << 13)   ///< flag indication structures to be erased
@@ -143,11 +143,11 @@ typedef const INSPECTOR_FUNC& INSPECTOR;    /// std::function passed to nested u
 #define IS_DANGLING    (1 << 29)   ///< indicates a pin is dangling
 
 // WARNING: if you add flags, you'll probably need to adjust the masks in GetEditFlags() and
-// ClearTempFlags().
+
 
 #define EDA_ITEM_ALL_FLAGS -1
 
-typedef unsigned STATUS_FLAGS;
+typedef uint64_t STATUS_FLAGS;
 
 /**
  * Class EDA_ITEM
@@ -277,6 +277,9 @@ public:
     {
         ClearFlags( GetEditFlags() );
     }
+
+    uint32_t GetUserFlags() const;
+    void SetUserFlags( uint32_t aFlags, int value );
 
     /**
      * Function IsType

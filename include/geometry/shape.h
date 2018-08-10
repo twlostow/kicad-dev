@@ -50,6 +50,8 @@ enum SHAPE_TYPE
     SH_ARC              ///> circular arc
 };
 
+class SHAPE_LINE_CHAIN;
+
 /**
  * Class SHAPE
  *
@@ -160,6 +162,8 @@ public:
     virtual bool Parse( std::stringstream& aStream );
 
     virtual const std::string Format( ) const;
+
+    virtual const SHAPE_LINE_CHAIN ConvertToPolyline( bool aWire = true, int aOffset = 0, double aApproximationAccuracy = 0.01);
 
 protected:
     ///> type of our shape

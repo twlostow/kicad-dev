@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2015 CERN
+ * Copyright (C) 2017 CERN
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -22,25 +22,30 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-
-#include <geometry/shape.h>
+#include <geometry/shape_segment.h>
 #include <geometry/shape_line_chain.h>
 
-bool SHAPE::Parse( std::stringstream& aStream )
+const SHAPE_LINE_CHAIN SHAPE_SEGMENT::ConvertToPolyline( bool aWire, int aOffset, double aApproximationAccuracy )
 {
-    assert( false );
-    return false;
+    assert( aWire );
+
+    SHAPE_LINE_CHAIN rv;
+
+    rv.Append( m_seg.A );
+    rv.Append( m_seg.B );
+
+    return rv;
 }
 
 
-const std::string SHAPE::Format() const
+const std::string SHAPE_SEGMENT::Format() const
 {
-    assert( false );
-    return std::string( "" );
-}
+    std::stringstream ss;
 
-const SHAPE_LINE_CHAIN SHAPE::ConvertToPolyline( bool aWire, int aOffset, double aApproximationAccuracy )
-{
-    assert( false );
-    return SHAPE_LINE_CHAIN();
+    ss << "2 0 ";
+
+    ss << m_seg.A.x << " " << m_seg.A.y << " ";
+    ss << m_seg.B.x << " " << m_seg.B.y << " ";
+
+    return ss.str();
 }

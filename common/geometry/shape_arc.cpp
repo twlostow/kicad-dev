@@ -78,7 +78,8 @@ bool SHAPE_ARC::Collide( const SEG& aSeg, int aClearance ) const
     return true;
 }
 
-#if 0
+
+
 bool SHAPE_ARC::ConstructFromCorners( VECTOR2I aP0, VECTOR2I aP1, double aCenterAngle )
 {
     VECTOR2D mid = ( VECTOR2D( aP0 ) + VECTOR2D( aP1 ) ) * 0.5;
@@ -88,7 +89,7 @@ bool SHAPE_ARC::ConstructFromCorners( VECTOR2I aP0, VECTOR2I aP1, double aCenter
 
     m_pc = mid + d * ( 1.0 / tan( aCenterAngle / 2.0 * M_PI / 180.0 ) );
     m_p0 = aP0;
-    m_p1 = aP1;
+    m_centralAngle = aCenterAngle;
 
     return true;
 }
@@ -98,7 +99,7 @@ bool SHAPE_ARC::ConstructFromCornerAndAngles( VECTOR2I aP0,
         double aCenterAngle,
         double aRadius )
 {
-    m_p0 = aP0;
+    /*m_p0 = aP0;
     auto d1 = VECTOR2D( 1.0, 0.0 ).Rotate( aStartAngle * M_PI / 180.0 ) * aRadius;
     auto d2 =
         VECTOR2D( 1.0, 0.0 ).Rotate( (aStartAngle + aCenterAngle) * M_PI / 180.0 ) * aRadius;
@@ -108,13 +109,13 @@ bool SHAPE_ARC::ConstructFromCornerAndAngles( VECTOR2I aP0,
 
     if( aCenterAngle < 0 )
         std::swap( m_p0, m_p1 );
-
+*/
     return true;
 }
 
 bool SHAPE_ARC::ConstructFromCenterAndAngles( VECTOR2I aCenter, double aRadius, double aStartAngle, double aCenterAngle )
 {
-    double ea = aStartAngle + aCenterAngle;
+  /*  double ea = aStartAngle + aCenterAngle;
 
     m_fullCircle = false;
     m_pc = aCenter;
@@ -132,10 +133,9 @@ bool SHAPE_ARC::ConstructFromCenterAndAngles( VECTOR2I aCenter, double aRadius, 
     {
         std::swap(m_p0, m_p1);
     }
-
+*/
     return true;
 }
-#endif
 
 
 const VECTOR2I SHAPE_ARC::GetP1() const

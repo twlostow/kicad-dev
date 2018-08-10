@@ -1538,3 +1538,11 @@ void D_PAD::SwapData( BOARD_ITEM* aImage )
 
     std::swap( *((MODULE*) this), *((MODULE*) aImage) );
 }
+
+
+const std::vector<ANCHOR*> D_PAD::GetAnchors()
+{
+    std::vector<ANCHOR*> rv;
+    return rv;
+}
+

@@ -32,6 +32,7 @@
 
 
 #include <class_board_item.h>
+#include <eda_rect.h>
 #include <marker_base.h>
 
 // Coordinates count for the basic shape marker

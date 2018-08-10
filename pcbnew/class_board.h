@@ -33,7 +33,7 @@
 
 #include <dlist.h>
 #include <core/iterators.h>
-
+#include <eda_rect.h>
 #include <common.h>                         // PAGE_INFO
 #include <layers_id_colors_and_visibility.h>
 #include <netinfo.h>

@@ -30,6 +30,7 @@
 #include <math/vector2d.h>
 #include <core/optional.h>
 #include <origin_viewitem.h>
+#include <anchor.h>
 
 #include <layers_id_colors_and_visibility.h>
 
@@ -37,8 +38,22 @@
 
 class PCB_BASE_FRAME;
 
+
 class GRID_HELPER {
+private:
+
+    class PREVIEW;
+
 public:
+
+
+
+    enum SNAP_MODE
+    {
+        SM_DRAW = 1,
+        SM_CONSTRAIN = 2,
+        SM_CURRENT_LAYER = 4
+    };
 
     GRID_HELPER( PCB_BASE_FRAME* aFrame );
     ~GRID_HELPER();
@@ -52,45 +67,23 @@ public:
     void SetAuxAxes( bool aEnable, const VECTOR2I& aOrigin = VECTOR2I( 0, 0 ), bool aEnableDiagonal = false );
 
     VECTOR2I Align( const VECTOR2I& aPoint ) const;
-
     VECTOR2I AlignToSegment ( const VECTOR2I& aPoint, const SEG& aSeg );
-
     VECTOR2I BestDragOrigin( const VECTOR2I& aMousePos, BOARD_ITEM* aItem );
     VECTOR2I BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDraggedItem );
 
+
+    void SetSnapMode( int aMode = SM_DRAW );
+    void Update( );
+    const VECTOR2I Snap() const;
+
+    void AddAuxItems( const std::vector<BOARD_ITEM*>& auxItems );
+    void ClearAuxItems();
+    
 private:
-    enum ANCHOR_FLAGS {
-        CORNER = 0x1,
-        OUTLINE = 0x2,
-        SNAPPABLE = 0x4,
-        ORIGIN = 0x8
-    };
 
-    struct ANCHOR
-    {
-        ANCHOR( VECTOR2I aPos, int aFlags = CORNER | SNAPPABLE, BOARD_ITEM* aItem = NULL ):
-            pos( aPos ), flags( aFlags ), item( aItem ) {} ;
-
-        VECTOR2I pos;
-        int flags;
-        BOARD_ITEM* item;
-
-        double Distance( const VECTOR2I& aP ) const
-        {
-            return ( aP - pos ).EuclideanNorm();
-        }
-
-        //bool CanSnapItem( const BOARD_ITEM* aItem ) const;
-    };
-
-    std::vector<ANCHOR> m_anchors;
+    std::vector<ANCHOR*> m_anchors;
 
     std::set<BOARD_ITEM*> queryVisible( const BOX2I& aArea ) const;
-
-    void addAnchor( const VECTOR2I& aPos, int aFlags = CORNER | SNAPPABLE, BOARD_ITEM* aItem = NULL )
-    {
-        m_anchors.push_back( ANCHOR( aPos, aFlags, aItem ) );
-    }
 
     ANCHOR* nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers );
 
@@ -98,13 +91,22 @@ private:
 
     void clearAnchors()
     {
+        for ( auto a : m_anchors )
+            delete a;
+
         m_anchors.clear();
     }
 
+
+    OPT<ANCHOR*> m_currentAnchor;
+    PREVIEW *m_preview;
     PCB_BASE_FRAME* m_frame;
     OPT<VECTOR2I> m_auxAxis;
     bool m_diagonalAuxAxesEnable;
     KIGFX::ORIGIN_VIEWITEM m_viewSnapPoint, m_viewAxis;
+    int m_snapMode;
+    std::vector<ANCHOR*> m_currentAnchorSet;
+    std::vector<BOARD_ITEM*> m_auxItems;
 };
 
 #endif

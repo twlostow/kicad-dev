@@ -139,7 +139,7 @@ public:
 
     // Drawing Tool
     /// Activation of the drawing tool (line)
-    static TOOL_ACTION drawLine;
+    static TOOL_ACTION drawOutline;
 
     // Activation of the drawing tool (graphic polygons)
     static TOOL_ACTION drawGraphicPolygon;

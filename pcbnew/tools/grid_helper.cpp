@@ -35,18 +35,73 @@ using namespace std::placeholders;
 
 #include <view/view.h>
 #include <view/view_controls.h>
+#include <view/view_group.h>
 #include <gal/graphics_abstraction_layer.h>
 
 #include <geometry/shape_line_chain.h>
 
 #include "grid_helper.h"
 
+class GRID_HELPER::PREVIEW : public KIGFX::VIEW_GROUP
+{
+private:
+    GRID_HELPER* m_parent;
+
+public:
+
+
+    PREVIEW( GRID_HELPER* aParent ) :
+        m_parent( aParent )
+    {};
+
+
+    ///> @copydoc VIEW_ITEM::ViewBBox()
+    virtual const BOX2I ViewBBox() const override
+    {
+        BOX2I b;
+
+        b.SetMaximum();
+        return b;
+    }
+
+    ///> @copydoc VIEW_ITEM::ViewDraw()
+    virtual void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override
+    {
+        auto gal = aView->GetGAL();
+
+        gal->SetFillColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
+        gal->SetStrokeColor( KIGFX::COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
+        gal->SetIsFill( true );
+        gal->PushDepth();
+        gal->SetLayerDepth( gal->GetMinDepth() );
+
+        gal->SetLineWidth( 1.0 );
+        int n = 0;
+        gal->SetIsStroke( true );
+
+        float size = aView->ToWorld( 10 );
+
+        for ( const auto& a : m_parent->m_currentAnchorSet )
+        {
+            gal->DrawRectangle( a->GetPos() - size / 2, a->GetPos() + size / 2 );
+        }
+
+        gal->PopDepth();
+    }
+
+    ///> @copydoc VIEW_ITEM::ViewGetLayers()
+    virtual void ViewGetLayers( int aLayers[], int& aCount ) const override
+    {
+        aCount = 1;
+        aLayers[0] = LAYER_GP_OVERLAY;
+    }
+};
 
 GRID_HELPER::GRID_HELPER( PCB_BASE_FRAME* aFrame ) :
     m_frame( aFrame )
 {
     m_diagonalAuxAxesEnable = true;
-    KIGFX::VIEW* view = m_frame->GetGalCanvas()->GetView();
+    auto view = m_frame->GetGalCanvas()->GetView();
 
     m_viewAxis.SetSize( 20000 );
     m_viewAxis.SetStyle( KIGFX::ORIGIN_VIEWITEM::CROSS );
@@ -60,11 +115,17 @@ GRID_HELPER::GRID_HELPER( PCB_BASE_FRAME* aFrame ) :
     m_viewSnapPoint.SetDrawAtZero( true );
     view->Add( &m_viewSnapPoint );
     view->SetVisible( &m_viewSnapPoint, false );
+
+    m_preview = new PREVIEW ( this );
+    view->Add ( m_preview );
 }
 
 
 GRID_HELPER::~GRID_HELPER()
 {
+    auto view = m_frame->GetGalCanvas()->GetView();
+    view->Remove ( m_preview );
+    view->Remove ( &m_viewAxis ) ;
 }
 
 
@@ -180,9 +241,9 @@ VECTOR2I GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos, BOARD_ITEM* aIt
     double worldScale = m_frame->GetGalCanvas()->GetGAL()->GetWorldScale();
     double lineSnapMinCornerDistance = 50.0 / worldScale;
 
-    ANCHOR* nearestOutline = nearestAnchor( aMousePos, OUTLINE, LSET::AllLayersMask() );
-    ANCHOR* nearestCorner = nearestAnchor( aMousePos, CORNER, LSET::AllLayersMask() );
-    ANCHOR* nearestOrigin = nearestAnchor( aMousePos, ORIGIN, LSET::AllLayersMask() );
+    ANCHOR* nearestOutline  = nearestAnchor( aMousePos, AF_OUTLINE, LSET::AllLayersMask() );
+    ANCHOR* nearestCorner   = nearestAnchor( aMousePos, AF_CORNER, LSET::AllLayersMask() );
+    ANCHOR* nearestOrigin   = nearestAnchor( aMousePos, AF_ORIGIN, LSET::AllLayersMask() );
     ANCHOR* best = NULL;
     double minDist = std::numeric_limits<double>::max();
 
@@ -211,7 +272,7 @@ VECTOR2I GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos, BOARD_ITEM* aIt
             best = nearestOutline;
     }
 
-    return best ? best->pos : aMousePos;
+    return best ? best->GetPos() : aMousePos;
 }
 
 
@@ -230,6 +291,11 @@ std::set<BOARD_ITEM*> GRID_HELPER::queryVisible( const BOX2I& aArea ) const
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( it->first );
 
         if( view->IsVisible( item ) )
+            items.insert ( item );
+    }
+
+    for ( auto item : m_auxItems )
+    {
             items.insert ( item );
     }
 
@@ -258,7 +324,7 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
     else
         layers = LSET::AllLayersMask();
 
-    ANCHOR* nearest = nearestAnchor( aOrigin, CORNER | SNAPPABLE, layers );
+    auto nearest = nearestAnchor( aOrigin, AF_CORNER | AF_SNAPPABLE, layers );
 
     VECTOR2I nearestGrid = Align( aOrigin );
     double gridDist = ( nearestGrid - aOrigin ).EuclideanNorm();
@@ -269,9 +335,9 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
 
         if( nearest && snapDist < gridDist )
         {
-            m_viewSnapPoint.SetPosition( nearest->pos );
+            m_viewSnapPoint.SetPosition( nearest->GetPos() );
             m_frame->GetGalCanvas()->GetView()->SetVisible( &m_viewSnapPoint, true );
-            return nearest->pos;
+            return nearest->GetPos();
         }
     }
 
@@ -282,6 +348,7 @@ VECTOR2I GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDrag
 
 void GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos )
 {
+    #if 0
     VECTOR2I origin;
 
     switch( aItem->Type() )
@@ -414,30 +481,105 @@ void GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos )
 
         break;
    }
+#endif
 }
 
 
-GRID_HELPER::ANCHOR* GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers )
+ANCHOR* GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers )
 {
     double minDist = std::numeric_limits<double>::max();
-    ANCHOR* best = NULL;
+    ANCHOR* best = nullptr;
 
-    for( ANCHOR& a : m_anchors )
+    for( auto a : m_anchors )
     {
-        if( !aMatchLayers[a.item->GetLayer()] )
+        if( !aMatchLayers[a->GetOwner()->GetLayer()] )
             continue;
 
-        if( ( aFlags & a.flags ) != aFlags )
+        if( ( aFlags & a->GetFlags() ) != aFlags )
             continue;
 
-        double dist = a.Distance( aPos );
+        double dist = a->Distance( aPos );
 
         if( dist < minDist )
         {
             minDist = dist;
-            best = &a;
+            best = a;
         }
     }
 
     return best;
+}
+
+
+const VECTOR2I GRID_HELPER::Snap( ) const
+{
+    if ( m_currentAnchor )
+    {
+        return (*m_currentAnchor)->GetPos();
+    } else {
+        auto controls = m_frame->GetGalCanvas()->GetViewControls();
+        return controls->GetCursorPosition();
+    }
+}
+
+void GRID_HELPER::SetSnapMode( int aMode )
+{
+    m_snapMode = aMode;
+    Update();
+}
+
+void GRID_HELPER::Update( )
+{
+    auto controls = m_frame->GetGalCanvas()->GetViewControls();
+    auto mousePos = controls->GetMousePosition();
+    double worldScale = m_frame->GetGalCanvas()->GetGAL()->GetWorldScale();
+    int snapRange = (int) ( 100.0 / worldScale );
+
+    auto view = m_frame->GetGalCanvas()->GetView();
+    view->Update ( m_preview );
+
+
+    m_currentAnchorSet.clear();
+
+    BOX2I bb( VECTOR2I( mousePos.x - snapRange / 2, mousePos.y - snapRange / 2 ), VECTOR2I( snapRange,
+                    snapRange ) );
+
+    for( BOARD_ITEM* item : queryVisible( bb ) )
+    {
+        const auto anchors = item->GetAnchors();
+        //
+        std::copy( anchors.begin(), anchors.end(), std::back_inserter(m_currentAnchorSet) );
+//        printf("%p : %d anchors\n", item, anchors.size() );
+    }
+
+    printf("Total anchors : %d\n", m_anchors.size() );
+
+    int size = m_frame->GetGalCanvas()->GetView()->ToWorld( 10 );
+
+    for ( const auto a : m_currentAnchorSet )
+    {
+        auto p = a->GetPos();
+        int dx = std::abs(p.x - mousePos.x);
+        int dy = std::abs(p.y - mousePos.y);
+
+        if ( dx < size / 2 && dy < size / 2 )
+        {
+            controls->ForceCursorPosition( true, p );
+            m_currentAnchor = a;
+            return;
+        }
+    }
+
+    m_currentAnchor = NULLOPT;
+    controls->ForceCursorPosition( false );
+}
+
+void GRID_HELPER::AddAuxItems( const std::vector<BOARD_ITEM*>& auxItems )
+{
+    m_auxItems = auxItems;
+}
+
+void GRID_HELPER::ClearAuxItems()
+{
+    m_auxItems.clear();
 }

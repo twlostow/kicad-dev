@@ -144,7 +144,7 @@ typedef const INSPECTOR_FUNC& INSPECTOR;    /// std::function passed to nested u
 
 #define EDA_ITEM_ALL_FLAGS -1
 
-typedef unsigned STATUS_FLAGS;
+typedef uint64_t STATUS_FLAGS;
 
 /**
  * Class EDA_ITEM
@@ -256,6 +256,9 @@ public:
     void SetFlags( STATUS_FLAGS aMask ) { m_Flags |= aMask; }
     void ClearFlags( STATUS_FLAGS aMask = EDA_ITEM_ALL_FLAGS ) { m_Flags &= ~aMask; }
     STATUS_FLAGS GetFlags() const { return m_Flags; }
+
+    uint32_t GetUserFlags() const;
+    void SetUserFlags( uint32_t aFlags, int value );
 
     /**
      * Function IsType

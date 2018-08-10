@@ -30,6 +30,8 @@
 
 #include <tool/tool_menu.h>
 
+#include <geometry/outline_shape_builder.h>
+
 namespace KIGFX
 {
     class VIEW;
@@ -39,6 +41,7 @@ class BOARD;
 class PCB_BASE_EDIT_FRAME;
 class DRAWSEGMENT;
 class POLYGON_GEOM_MANAGER;
+class SHAPE;
 
 /**
  * Class DRAWING_TOOL
@@ -90,12 +93,12 @@ public:
     MODE GetDrawingMode() const;
 
     /**
-     * Function DrawLine()
-     * Starts interactively drawing a line. After invoking the function it expects the user
-     * to click at least two times to determine the origin and the end for a line. If there are
+     * Function DrawOutline()
+     * Starts interactively drawing a graphical outline. After invoking the function it expects the user
+     * to click at least two times to determine the origin and the end for the outline. If there are
      * more clicks, the line is drawn as a continous polyline.
      */
-    int DrawLine( const TOOL_EVENT& aEvent );
+    int DrawOutline( const TOOL_EVENT& aEvent );
 
     /**
      * Function DrawCircle()
@@ -256,6 +259,9 @@ private:
     int getSegmentWidth( PCB_LAYER_ID aLayer ) const;
 
     ///> Selects a non-copper layer for drawing
+    const std::vector<DRAWSEGMENT*> convertOutlineShapeToDS( const OUTLINE_SHAPE& aOutline );
+
+    ///> Selects a non-copper layer for drawing
     PCB_LAYER_ID getDrawingLayer() const;
 
     KIGFX::VIEW* m_view;
@@ -263,9 +269,15 @@ private:
     BOARD* m_board;
     PCB_BASE_EDIT_FRAME* m_frame;
     MODE m_mode;
+    OUTLINE_SHAPE_TYPE m_outlineShapeType;
+    bool m_outlineShapePosture;
+    int m_outlineArcRadius;
 
     /// Stores the current line width for multisegment drawing.
     unsigned int m_lineWidth;
+
+    /// Menu model displayed by the tool.
+    TOOL_MENU m_menu;
 
     // How does line width change after one -/+ key press.
     static const unsigned int WIDTH_STEP;

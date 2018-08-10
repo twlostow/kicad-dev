@@ -26,6 +26,9 @@
  * @brief Hashing functions for EDA_ITEMs.
  */
 
+#ifndef __HASH_EDA_H
+#define __HASH_EDA_H
+
 #include <cstdlib>
 
 class EDA_ITEM;
@@ -52,3 +55,6 @@ enum HASH_FLAGS
  * @return Hash value.
  */
 std::size_t hash_eda( const EDA_ITEM* aItem, int aFlags = HASH_FLAGS::ALL );
+
+#endif
+

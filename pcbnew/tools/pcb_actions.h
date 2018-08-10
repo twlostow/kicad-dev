@@ -132,6 +132,10 @@ public:
     static TOOL_ACTION drag45Degree;
     static TOOL_ACTION dragFreeAngle;
 
+    // Drawing Tool
+    /// Activation of the drawing tool (line)
+    static TOOL_ACTION drawOutline;
+
 
     // Drawing Tool Activations
     static TOOL_ACTION drawLine;
@@ -270,7 +274,7 @@ public:
     /// Tool for creating an array of objects
     static TOOL_ACTION createArray;
 
-    /// Display module edges as outlines
+    /// Clipboard
     static TOOL_ACTION moduleEdgeOutlines;
 
     // Pad tools

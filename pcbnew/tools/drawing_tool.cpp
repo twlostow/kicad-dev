@@ -32,6 +32,7 @@
 #include <id.h>
 #include <pcbnew_id.h>
 #include <confirm.h>
+#include <dialogs/dialog_ask_for_value.h>
 #include <import_gfx/dialog_import_gfx.h>
 
 #include <view/view_group.h>
@@ -39,8 +40,13 @@
 #include <view/view.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_manager.h>
+#include <geometry/direction45.h>
 #include <geometry/geometry_utils.h>
+#include <geometry/shape_arc.h>
+#include <geometry/shape_segment.h>
+
 #include <ratsnest_data.h>
+
 #include <board_commit.h>
 #include <scoped_set_reset.h>
 #include <bitmaps.h>
@@ -65,10 +71,9 @@
 using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
 
 // Drawing tool actions
-TOOL_ACTION PCB_ACTIONS::drawLine( "pcbnew.InteractiveDrawing.line",
+TOOL_ACTION PCB_ACTIONS::drawOutline( "pcbnew.InteractiveDrawing.outline",
         AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_ADD_LINE ),
-        _( "Draw Line" ), _( "Draw a line" ),
-        add_graphical_segments_xpm, AF_ACTIVATE );
+        _( "Draw Line" ), _( "Draw a line" ), NULL, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::drawPolygon( "pcbnew.InteractiveDrawing.graphicPolygon",
         AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_ADD_POLYGON ),
@@ -163,6 +168,9 @@ DRAWING_TOOL::DRAWING_TOOL() :
     m_board( nullptr ), m_frame( nullptr ), m_mode( MODE::NONE ),
     m_lineWidth( 1 )
 {
+    m_outlineShapeType = SHT_LINE;
+    m_outlineShapePosture = false;
+    m_outlineArcRadius = 2000000;
 }
 
 
@@ -179,12 +187,16 @@ bool DRAWING_TOOL::Init()
 
     // some interactive drawing tools can undo the last point
     auto canUndoPoint = [ this ] ( const SELECTION& aSel ) {
-                            return m_mode == MODE::ARC || m_mode == MODE::ZONE;
+                            return m_mode == MODE::ARC || m_mode == MODE::ZONE || m_mode == MODE::LINE;
                         };
 
     // functor for zone-only actions
     auto zoneActiveFunctor = [this ] ( const SELECTION& aSel ) {
                                  return m_mode == MODE::ZONE;
+                             };
+
+    auto drawingOutline = [this ] ( const SELECTION& aSel ) {
+                              return m_mode == MODE::LINE;
                              };
 
     auto& ctxMenu = m_menu.GetMenu();
@@ -199,10 +211,15 @@ bool DRAWING_TOOL::Init()
 
     ctxMenu.AddSeparator( canUndoPoint, 500 );
 
+    ctxMenu.AddItem( switchOutlinePosture, drawingOutline, 1000 );
+    ctxMenu.AddItem( switchOutlineShape, drawingOutline, 1000 );
+    ctxMenu.AddItem( changeCornerRadius, drawingOutline, 1000 );
+
+    ctxMenu.AddItem( switchOutlinePosture, zoneActiveFunctor, 1000 );
+    ctxMenu.AddItem( switchOutlineShape, zoneActiveFunctor, 1000 );
+
     // Type-specific sub-menus will be added for us by other tools
     // For example, zone fill/unfill is provided by the PCB control tool
-
-    // Finally, add the standard zoom/grid items
     m_menu.AddStandardSubMenus( getEditFrame<PCB_BASE_FRAME>() );
 
     return true;
@@ -225,45 +242,286 @@ DRAWING_TOOL::MODE DRAWING_TOOL::GetDrawingMode() const
 }
 
 
-int DRAWING_TOOL::DrawLine( const TOOL_EVENT& aEvent )
+const std::vector<DRAWSEGMENT*> DRAWING_TOOL::convertOutlineShapeToDS( const OUTLINE_SHAPE& aOutline )
 {
-    if( m_editModules && !m_frame->GetModel() )
-        return 0;
+    std::vector<DRAWSEGMENT*> rv;
 
-    BOARD_ITEM_CONTAINER* parent = m_frame->GetModel();
-    DRAWSEGMENT* line = m_editModules ? new EDGE_MODULE( (MODULE*) parent ) : new DRAWSEGMENT;
+    for( const auto& elt : aOutline.GetElements() )
+    {
+        for( const auto shape : elt.shapes )
+        {
+            BOARD_ITEM_CONTAINER* parent = m_frame->GetModel();
+            DRAWSEGMENT* ds = m_editModules ? new EDGE_MODULE( (MODULE*) parent )
+                            : new DRAWSEGMENT;
 
-    auto startingPoint = boost::make_optional<VECTOR2D>( false, VECTOR2D( 0, 0 ) );
-    BOARD_COMMIT commit( m_frame );
+            ds->SetWidth( m_lineWidth );
+            ds->SetLayer( getDrawingLayer() );
 
+            switch( shape->Type() )
+            {
+                case SH_SEGMENT:
+                {
+                    auto seg = static_cast<SHAPE_SEGMENT*>( shape );
+                    ds->SetShape( S_SEGMENT );
+                    ds->SetStart( wxPoint( seg->GetSeg().A.x, seg->GetSeg().A.y ) );
+                    ds->SetEnd( wxPoint(  seg->GetSeg().B.x, seg->GetSeg().B.y ) );
+                    ds->SetUserFlags( DSF_CONSTRAIN_DIRECTION, true );
+                    rv.push_back(ds);
+                    break;
+                }
+                case SH_ARC:
+                {
+                    auto arc = static_cast<SHAPE_ARC*>( shape );
+                    ds->SetShape( S_ARC );
+                    ds->SetStart( wxPoint( arc->GetCenter().x, arc->GetCenter().y ) );
+                    ds->SetArcStart( wxPoint( arc->GetP0().x, arc->GetP0().y ) );
+
+                    int side = arc->GetChord().Side( arc->GetCenter() );
+                    auto ang = arc->GetCentralAngle();
+
+                    ds->SetAngle( ( side ? 1.0 : -1.0) * ang * 10.0 );
+                    ds->SetUserFlags( DSF_CONSTRAIN_RADIUS | DSF_CONSTRAIN_START_ANGLE | DSF_CONSTRAIN_CENTRAL_ANGLE, true );
+                    rv.push_back(ds);
+                    break;
+                }
+                default:
+                    assert(false);
+            }
+        }
+    }
+
+    return rv;
+}
+
+int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
+{
+    KIGFX::VIEW_GROUP preview;
+    GRID_HELPER grid( frame () );
+    OUTLINE_SHAPE_BUILDER outlineBuilder;
+    OUTLINE_SHAPE outlineShape;
+    std::vector<DRAWSEGMENT*> dsegs;
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::LINE );
 
+    m_view->Add( &preview );
+
     m_frame->SetToolID( m_editModules ? ID_MODEDIT_LINE_TOOL : ID_PCB_ADD_LINE_BUTT,
-            wxCURSOR_PENCIL, _( "Add graphic line" ) );
+            wxCURSOR_PENCIL, _( "Add outlines" ) );
+    m_lineWidth = getSegmentWidth( getDrawingLayer() );
 
-    while( drawSegment( S_SEGMENT, line, startingPoint ) )
+    // Add a VIEW_GROUP that serves as a preview for the new item
+    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+    m_controls->ShowCursor( true );
+    m_controls->SetSnapping( true );
+
+    Activate();
+
+    outlineBuilder.SetShapeType( m_outlineShapeType );
+    outlineBuilder.SetDiagonal( m_outlineShapePosture );
+
+    bool started = false;
+    bool needRefresh = true;
+
+    grid.SetSnapMode( GRID_HELPER::SM_DRAW );
+
+    // Main loop: keep receiving events
+    while( OPT_TOOL_EVENT evt = Wait() )
     {
-        if( line )
-        {
-            if( m_editModules )
-                static_cast<EDGE_MODULE*>( line )->SetLocalCoord();
+        grid.Update( );
+        auto cursorPos = grid.Snap();
 
-            commit.Add( line );
-            commit.Push( _( "Draw a line segment" ) );
-            startingPoint = VECTOR2D( line->GetEnd() );
-        }
-        else
+        printf("setautopan %d\n", !!started);
+        m_controls->SetAutoPan( started );
+
+        if( TOOL_EVT_UTILS::IsCancelInteractive( *evt ) )
         {
-            startingPoint = NULLOPT;
+            preview.Clear();
+            m_view->Update( &preview );
+
+            for ( auto ds : dsegs )
+            {
+                delete ds;
+            }
+
+            printf("cancel\n");
+            dsegs.clear();
+            outlineShape.Clear();
+            grid.ClearAuxItems();
+            grid.Update();
+
+            
+            if ( !started )
+                break;
+
+            started = false;
+        }
+        else if( evt->IsAction( &PCB_ACTIONS::layerChanged ) )
+        {
+            for ( auto ds : dsegs)
+                ds->SetLayer( getDrawingLayer() );
+
+            needRefresh = true;
+
+        }
+        else if( evt->IsAction( &switchOutlineShape ) )
+        {
+            outlineBuilder.NextShapeType();
+            m_outlineShapeType = outlineBuilder.GetShapeType();
+
+            needRefresh = true;
+        }
+        else if( evt->IsAction( &switchOutlinePosture ) )
+        {
+            outlineBuilder.FlipPosture();
+            m_outlineShapePosture = outlineBuilder.IsDiagonal();
+
+            needRefresh = true;
+        }
+        else if( evt->IsAction( &changeCornerRadius ) )
+        {
+            int radius = outlineBuilder.GetArcRadius();
+            if ( AskForValue ( frame(), _("Set Corner Radius"), _("Value: "), 100000, 100000000, radius ) )
+            {
+                outlineBuilder.SetArcRadius( radius );
+                m_outlineArcRadius = radius;
+            }
+            needRefresh = true;
+        }
+        else if( evt->IsClick( BUT_RIGHT ) )
+        {
+            m_menu.ShowContextMenu();
+        }
+        else if( evt->IsAction( &deleteLastPoint ) )
+        {
+            outlineShape.DeleteLastElement();
+            outlineShape.DeleteLastElement();
+            auto p = outlineShape.GetLastPoint();
+            outlineBuilder.SetStart( p );
+            outlineBuilder.SetEnd( cursorPos );
+            outlineBuilder.ConstructAndAppend ( outlineShape );
+            grid.ClearAuxItems();
+            grid.Update();
+            needRefresh = true;
+        }
+        else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) )
+        {
+            if( !started )
+            {
+                // Init the new item attributes
+                outlineBuilder.SetStart( cursorPos );
+                outlineBuilder.SetEnd( cursorPos );
+                outlineShape.SetInitialPoint( cursorPos );
+                m_controls->SetAutoPan( true );
+                m_controls->CaptureCursor( true );
+
+                started = true;
+            }
+            else
+            {
+                if( outlineBuilder.GetEnd() == outlineBuilder.GetStart()
+                    || ( evt->IsDblClick( BUT_LEFT ) ) )
+                    {
+                        BOARD_COMMIT commit( frame() );
+
+                        dsegs = convertOutlineShapeToDS( outlineShape );
+                
+                        for (auto ds : dsegs )
+                        {
+                            commit.Add( ds );
+                        }
+
+                        commit.Push( _( "Draw an outline" ) );
+                        
+                        dsegs.clear();
+                        grid.ClearAuxItems();
+                        grid.Update();
+                        preview.Clear();
+                        outlineShape.Clear();
+                        m_view->Update( &preview );
+                        m_controls->SetAutoPan( false );
+            
+                        started = false;
+                        
+                        needRefresh = true;
+                    }
+                    else
+                    {
+
+                        outlineBuilder.SetStart( outlineBuilder.GetEnd() );
+                        outlineBuilder.SetEnd( outlineBuilder.GetEnd() );
+                        outlineBuilder.FlipPosture();
+                        outlineBuilder.ConstructAndAppend ( outlineShape );
+                        dsegs.clear();
+                        needRefresh = true;
+                    }
+
+                preview.Clear();
+            }
+        }
+        else if( evt->IsMotion() )
+        {
+            if( !started )
+                continue;
+
+            outlineBuilder.SetEnd( cursorPos );
+            needRefresh = true;
+        }
+        else if( evt->IsAction( &PCB_ACTIONS::incWidth ) )
+        {
+            m_lineWidth += WIDTH_STEP;
+
+            for ( auto ds : dsegs)
+            {
+                ds->SetWidth( m_lineWidth );
+            }
+
+            needRefresh = true;
+
+        }
+        else if( evt->IsAction( &PCB_ACTIONS::decWidth ) && ( m_lineWidth > WIDTH_STEP ) )
+        {
+            m_lineWidth -= WIDTH_STEP;
+
+            for ( auto ds : dsegs)
+            {
+                ds->SetWidth( m_lineWidth );
+            }
+
+            needRefresh = true;
+
         }
 
-        line = m_editModules ? new EDGE_MODULE( (MODULE*) parent ) : new DRAWSEGMENT;
+        if( needRefresh )
+        {
+            outlineShape.DeleteLastElement();
+
+            outlineBuilder.ConstructAndAppend ( outlineShape );
+            dsegs = convertOutlineShapeToDS( outlineShape );
+            preview.Clear();
+
+            std::vector<BOARD_ITEM *> items;
+
+            for ( auto ds : dsegs)
+            {
+                preview.Add(ds);
+                items.push_back(ds);
+            }
+
+            grid.AddAuxItems( items );
+                        
+            m_view->Update( &preview );
+            needRefresh = false;
+        }
     }
+
+    m_view->Remove( &preview );
+    m_controls->SetAutoPan( false );
+    m_controls->CaptureCursor( false );
 
     m_frame->SetNoToolSelected();
 
     return 0;
 }
+
 
 
 int DRAWING_TOOL::DrawCircle( const TOOL_EVENT& aEvent )
@@ -629,7 +887,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
             break;
 
             case SET_END:
-                dimension->SetEnd( (wxPoint) cursorPos );
+                dimension->SetEnd( wxPoint( cursorPos.x, cursorPos.y ) );
 
                 if( !!evt->Modifier( MD_CTRL ) )
                     constrainDimension( dimension );
@@ -642,7 +900,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
             case SET_HEIGHT:
             {
-                if( (wxPoint) cursorPos != dimension->GetPosition() )
+                if( wxPoint( cursorPos.x, cursorPos.y ) != dimension->GetPosition() )
                 {
                     assert( dimension->GetOrigin() != dimension->GetEnd() );
                     assert( dimension->GetWidth() > 0 );
@@ -808,7 +1066,7 @@ int DRAWING_TOOL::PlaceImportedGraphics( const TOOL_EVENT& aEvent )
         else
             commit.Add( item );
 
-        ptr.release();
+        it->release();
     }
 
     if( !dlg.IsPlacementInteractive() )

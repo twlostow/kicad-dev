@@ -396,13 +396,13 @@ public:
      */
     inline void SetLayerVisible( int aLayer, bool aVisible = true )
     {
-        wxCHECK( aLayer < (int) m_layers->size(), /*void*/ );
+        wxCHECK( aLayer < (int) m_layers.size(), /*void*/ );
 
-        if( (*m_layers)[aLayer].visible != aVisible )
+        if( m_layers[aLayer].visible != aVisible )
         {
             // Target has to be redrawn after changing its visibility
-            MarkTargetDirty( (*m_layers)[aLayer].target );
-            (*m_layers)[aLayer].visible = aVisible;
+            MarkTargetDirty( m_layers[aLayer].target );
+            m_layers[aLayer].visible = aVisible;
         }
     }
 
@@ -413,14 +413,14 @@ public:
      */
     inline bool IsLayerVisible( int aLayer ) const
     {
-        wxCHECK( aLayer < (int) m_layers->size(), false );
-        return m_layers->at( aLayer ).visible;
+        wxCHECK( aLayer < (int) m_layers.size(), false );
+        return m_layers.at( aLayer ).visible;
     }
 
     inline void SetLayerDisplayOnly( int aLayer, bool aDisplayOnly = true )
     {
-        wxCHECK( aLayer < (int) m_layers->size(), /*void*/ );
-        (*m_layers)[aLayer].displayOnly = aDisplayOnly;
+        wxCHECK( aLayer < (int) m_layers.size(), /*void*/ );
+        m_layers[aLayer].displayOnly = aDisplayOnly;
     }
 
     /**
@@ -431,9 +431,9 @@ public:
      */
     inline void SetLayerTarget( int aLayer, RENDER_TARGET aTarget )
     {
-        wxCHECK( aLayer < (int) m_layers->size(), /*void*/ );
+        wxCHECK( aLayer < (int) m_layers.size(), /*void*/ );
 
-        (*m_layers)[aLayer].target = aTarget;
+        m_layers[aLayer].target = aTarget;
     }
 
     /**
@@ -592,11 +592,11 @@ public:
     /// Returns true if the layer is cached
     inline bool IsCached( int aLayer ) const
     {
-        wxCHECK( aLayer < (int) m_layers->size(), false );
+        wxCHECK( aLayer < (int) m_layers.size(), false );
 
         try
         {
-            return m_layers->at( aLayer ).target == TARGET_CACHED;
+            return m_layers.at( aLayer ).target == TARGET_CACHED;
         }
         catch( const std::out_of_range& )
         {
@@ -798,7 +798,7 @@ private:
     bool m_enableOrderModifier;
 
     /// Contains set of possible displayed layers and its properties
-    std::shared_ptr<LAYER_MAP> m_layers;
+    LAYER_MAP m_layers;
 
     /// Flat list of all items
     std::shared_ptr<std::vector<VIEW_ITEM*>> m_allItems;

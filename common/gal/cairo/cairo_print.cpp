@@ -28,6 +28,7 @@
 #include <windows.h>
 #include <gdiplus.h>
 #include <cairo-win32.h>
+#include <wx/msw/enhmeta.h>
 #endif /* __WXMSW__ */
 
 #ifdef __WXMAC__
@@ -46,6 +47,11 @@ CAIRO_PRINT_CTX::CAIRO_PRINT_CTX( wxDC* aDC )
         m_gcdc = new wxGCDC( *memoryDC );
     else if( wxWindowDC* windowDC = dynamic_cast<wxWindowDC*>( aDC ) )
         m_gcdc = new wxGCDC( *windowDC );
+#ifdef __WXMSW__
+    else if( wxEnhMetaFileDC* enhMFDC = dynamic_cast<wxEnhMetaFileDC*>( aDC ) )
+        m_gcdc = new wxGCDC( *enhMFDC );
+
+#endif /* __WXMSW__ */
     else
         throw std::runtime_error( "Unhandled wxDC type" );
 

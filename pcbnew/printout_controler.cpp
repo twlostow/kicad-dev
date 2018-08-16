@@ -173,7 +173,8 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
         view->SetLayerTarget( i, KIGFX::TARGET_NONCACHED );
 
     gal.ResizeScreen( dc->GetSize().x, dc->GetSize().y );
-    BOX2I bBox = board->ViewBBox();
+    wxSize pageSizeIU = m_Parent->GetPageSizeIU();
+    BOX2I bBox(VECTOR2I(0, 0), VECTOR2I(pageSizeIU)); // = board->ViewBBox();
     bool rotate = false;
 
     if( IsPreview() )
@@ -198,8 +199,23 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     gal.ComputeWorldScreenMatrix();
     view->SetViewport( BOX2D( bBox.GetPosition(), bBox.GetSize() ) );
     gal.BeginDrawing();
-    if( rotate )
+
+
+    if( !IsPreview() )
+    {
+        gal.Scale( VECTOR2D( 0.24, 0.24 ) );
+    }
+
+    if( rotate )        // TODO handle both CW and CCW
+    {
         gal.Rotate( -M_PI / 2 );
+        gal.Translate( VECTOR2D( -bBox.GetWidth(), 0 ) );
+    }
+    else if( !IsPreview() )
+    {
+        gal.Translate( VECTOR2D( 0, -9.0 * bBox.GetWidth() / 8 ) );
+    }
+
     view->Redraw();
     gal.EndDrawing();
 }

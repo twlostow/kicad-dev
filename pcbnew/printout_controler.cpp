@@ -144,20 +144,6 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     wxDC* dc = GetDC();
     KIGFX::CAIRO_PRINT_CTX printCtx( dc );
 
-    // Print parameters
-    wxPrinterDC* printerDC = dynamic_cast<wxPrinterDC*>( dc );
-
-    wxRect paper;
-    if( printerDC )
-    {
-        paper = printerDC->GetPaperRect();
-    }
-    //bool  printMirror = m_PrintParams.m_PrintMirror;
-
-
-
-
-
     KIGFX::GAL_DISPLAY_OPTIONS options;
     KIGFX::CAIRO_PRINT_GAL gal( options, printCtx.GetContext(), printCtx.GetSurface() );
     KIGFX::PCB_PAINTER painter( &gal );
@@ -175,49 +161,79 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
 
     gal.ResizeScreen( dc->GetSize().x, dc->GetSize().y );
     wxSize pageSizeIU = m_Parent->GetPageSizeIU();
-    BOX2I bBox(VECTOR2I(0, 0), VECTOR2I(pageSizeIU)); // = board->ViewBBox();
+    BOX2I bBox;
 
-    double rotation = 0.0;
-    VECTOR2D translation;
-    double userscale = 1.0;
-
-    if( IsPreview() )
+    if( m_PrintParams.m_Print_Sheet_Ref )
     {
-        MapScreenSizeToPage();
+        bBox = BOX2I( VECTOR2I( 0, 0 ), VECTOR2I( pageSizeIU ) );
+        view->SetLayerVisible( LAYER_WORKSHEET, true );
     }
     else
     {
-        switch( m_PrintParams.m_PageSetupData->GetPrintData().GetOrientation() )
-        {
-            case wxLANDSCAPE:
-                rotation = -M_PI / 2;
-                translation = VECTOR2D( -bBox.GetWidth(), 0 );
-                break;
-
-            case wxPORTRAIT:
-                //translation = VECTOR2D( Millimeter2iu( m_PrintParams.m_XScaleAdjust ),
-                                        //Millimeter2iu( m_PrintParams.m_YScaleAdjust ) );
-                translation = VECTOR2D( 0, -3.0 * pageSizeIU.GetHeight() / 2.0 );
-                break;
-
-                // TODO
-
-            default:
-                break;
-        }
-
-#ifdef __WXGTK__
-        userscale *= 72.0 / dc->GetResolution();
-#endif /* __WXGTK__ */
+        // TODO limit the bBox to pageSizeIU if the board is larger than the sheet?
+        bBox = board->ViewBBox();
+        view->SetLayerVisible( LAYER_WORKSHEET, false );
     }
+
+    double rotation = 0.0;
+    VECTOR2D translation;
+    double userscale = m_PrintParams.m_PrintScale;
+
+    std::cout << "resolution: " << dc->GetResolution() << std::endl;
+    std::cout << "ppi: " << dc->GetPPI().x << std::endl;
+
+    if( wxPrinterDC* printerdc = dynamic_cast<wxPrinterDC*>( dc ) )
+    {
+        std::cout << "paper rect: "
+            << printerdc->GetPaperRect().x << " " << printerdc->GetPaperRect().y << " "
+            << printerdc->GetPaperRect().width << " " << printerdc->GetPaperRect().height << " " << std::endl;
+    }
+
+    //if( userscale == 0.0 )  // fit in page
+    {
+        if( IsPreview() )
+        {
+            MapScreenSizeToPage();
+        }
+        else
+        {
+#ifdef __WXGTK__
+            switch( m_PrintParams.m_PageSetupData->GetPrintData().GetOrientation() )
+            {
+                case wxLANDSCAPE:
+                    rotation = -M_PI / 2;
+                    translation.x += -bBox.GetWidth();
+
+                    if( m_PrintParams.m_PrintMirror )
+                    {
+                    }
+                    break;
+
+                case wxPORTRAIT:
+                    //translation = VECTOR2D( Millimeter2iu( m_PrintParams.m_XScaleAdjust ),
+                                            //Millimeter2iu( m_PrintParams.m_YScaleAdjust ) );
+                    translation = VECTOR2D( 0, -3.0 * pageSizeIU.GetHeight() / 2.0 );
+                    break;
+
+                    // TODO
+
+                default:
+                    break;
+            }
+
+            userscale *= 72.0 / dc->GetResolution();
+#endif /* __WXGTK__ */
+        }
+    }
+    dc->SetUserScale( 2, 2 );
 
     gal.ComputeWorldScreenMatrix();
     view->SetViewport( BOX2D( bBox.GetPosition(), bBox.GetSize() ) );
+    gal.SetFlip( m_PrintParams.m_PrintMirror, false );
     gal.BeginDrawing();
     gal.Scale( VECTOR2D( userscale, userscale ) );
     gal.Rotate( rotation );
     gal.Translate( translation );
-    gal.SetFlip( m_PrintParams.m_PrintMirror, false );
     view->Redraw();
     gal.EndDrawing();
 }

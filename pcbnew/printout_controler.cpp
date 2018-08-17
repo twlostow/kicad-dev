@@ -122,6 +122,16 @@ bool BOARD_PRINTOUT_CONTROLLER::OnPrintPage( int aPage )
 }
 
 
+// TODO remove
+static void print_cairo_mat(cairo_matrix_t& mat)
+{
+    std::cout << "matrix: " << std::endl;
+    std::cout << "\t" << mat.xx << "\t" << mat.yx << std::endl;
+    std::cout << "\t" << mat.xy << "\t" << mat.yy << std::endl;
+    std::cout << "\t" << mat.x0 << "\t" << mat.y0 << std::endl;
+}
+
+
 void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
                                              int* selPageFrom, int* selPageTo )
 {
@@ -140,9 +150,11 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
 {
-    BOARD* board = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
+    BOARD* brd = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
     wxDC* dc = GetDC();
     KIGFX::CAIRO_PRINT_CTX printCtx( dc );
+
+
 
     KIGFX::GAL_DISPLAY_OPTIONS options;
     KIGFX::CAIRO_PRINT_GAL gal( options, printCtx.GetContext(), printCtx.GetSurface() );
@@ -151,6 +163,7 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
 
     wxASSERT( dc->GetPPI().x == dc->GetPPI().y );
     gal.SetScreenDPI( dc->GetPPI().x );
+    //gal.SetScreenDPI( 72.0 );
 
     view->SetScaleLimits( 10e9, 0.0001 );
     view->SetGAL( &gal );
@@ -171,7 +184,8 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     else
     {
         // TODO limit the bBox to pageSizeIU if the board is larger than the sheet?
-        bBox = board->ViewBBox();
+        EDA_RECT boardBbox = brd->ComputeBoundingBox();
+        bBox = BOX2I( boardBbox.GetOrigin(), boardBbox.GetSize() );
         view->SetLayerVisible( LAYER_WORKSHEET, false );
     }
 
@@ -221,20 +235,64 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
                     break;
             }
 
-            userscale *= 72.0 / dc->GetResolution();
+            //userscale *= 72.0 / dc->GetResolution();
 #endif /* __WXGTK__ */
         }
     }
-    dc->SetUserScale( 2, 2 );
+
+    // TODO "accurate scale" that allows the user to specify custom scale
+    // I think it should be renamed to "custom scale", and "approx. scale 1" should be replaced with "Scale 1"
+    if( m_PrintParams.m_PrintScale == 1.0 )
+    {
+        // TODO do not separate X and Y scale adjustments
+        userscale *= m_PrintParams.m_XScaleAdjust;
+    }
 
     gal.ComputeWorldScreenMatrix();
-    view->SetViewport( BOX2D( bBox.GetPosition(), bBox.GetSize() ) );
+    //view->SetViewport( BOX2D( bBox.GetPosition(), bBox.GetSize() ) );
+    VECTOR2D ssize = view->ToWorld( gal.GetScreenPixelSize(), false );
+    VECTOR2D vsize = bBox.GetSize();
+    double zoom  = 1.0 / std::max( fabs( vsize.x / ssize.x ), fabs( vsize.y / ssize.y ) );
+    gal.SetLookAtPoint( bBox.Centre() );
+    gal.SetZoomFactor( m_PrintParams.m_YScaleAdjust * zoom );
+    //gal.SetZoomFactor( gal.GetZoomFactor() * zoom );
+    //gal.SetZoomFactor( zoom );
+    gal.ComputeWorldScreenMatrix();
+
+    std::cout << "bbox pos: " << bBox.GetPosition() << " size: " << bBox.GetSize() << std::endl;
+
     gal.SetFlip( m_PrintParams.m_PrintMirror, false );
     gal.BeginDrawing();
-    gal.Scale( VECTOR2D( userscale, userscale ) );
-    gal.Rotate( rotation );
-    gal.Translate( translation );
-    view->Redraw();
+    //gal.Scale( VECTOR2D( userscale, userscale ) );
+    //gal.Rotate( rotation );
+    //gal.Translate( translation );
+
+    cairo_t* cr = printCtx.GetContext();
+
+    long int dpi = Millimeter2iu( 20 );
+    //long int dpi = dc->GetPPI().x;
+
+    for(int x = -20; x < 20; ++x) {
+        for(int y = -20; y < 20; ++y) {
+
+                //cairo_matrix_t cairoTransformation;
+                //cairo_matrix_init_identity( &cairoTransformation );
+                //cairo_set_matrix( cr, &cairoTransformation );
+
+                cairo_set_source_rgb( cr, 0, 0, 0 );
+                cairo_set_line_width (cr, 5.0);
+                cairo_new_path (cr);
+                cairo_move_to (cr, x * dpi, y * dpi);
+                cairo_rel_line_to (cr, 0, dpi );
+                cairo_rel_line_to (cr, dpi, 0 );
+                cairo_rel_line_to (cr, 0, -dpi );
+                cairo_rel_line_to (cr, -dpi, 0 );
+                cairo_close_path (cr);
+                cairo_stroke (cr);
+        }
+    }
+
+    //view->Redraw();
     gal.EndDrawing();
 }
 

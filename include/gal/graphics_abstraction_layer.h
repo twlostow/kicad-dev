@@ -683,6 +683,7 @@ public:
      */
     inline void SetZoomFactor( double aZoomFactor )
     {
+        std::cout << "set zoom factor = " << aZoomFactor << std::endl;
         zoomFactor = aZoomFactor;
     }
 

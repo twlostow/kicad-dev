@@ -159,7 +159,10 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     KIGFX::GAL_DISPLAY_OPTIONS options;
     KIGFX::CAIRO_PRINT_GAL gal( options, printCtx.GetContext(), printCtx.GetSurface() );
     KIGFX::PCB_PAINTER painter( &gal );
+
+#if 0
     std::unique_ptr<KIGFX::VIEW> view( static_cast<PCB_BASE_FRAME*>( m_Parent )->GetGalCanvas()->GetView()->DataReference() );
+
 
     wxASSERT( dc->GetPPI().x == dc->GetPPI().y );
     gal.SetScreenDPI( dc->GetPPI().x );
@@ -193,6 +196,8 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     VECTOR2D translation;
     double userscale = m_PrintParams.m_PrintScale;
 
+#endif
+
     std::cout << "resolution: " << dc->GetResolution() << std::endl;
     std::cout << "ppi: " << dc->GetPPI().x << std::endl;
 
@@ -203,6 +208,7 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
             << printerdc->GetPaperRect().width << " " << printerdc->GetPaperRect().height << " " << std::endl;
     }
 
+#if 0
     //if( userscale == 0.0 )  // fit in page
     {
         if( IsPreview() )
@@ -262,31 +268,56 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     std::cout << "bbox pos: " << bBox.GetPosition() << " size: " << bBox.GetSize() << std::endl;
 
     gal.SetFlip( m_PrintParams.m_PrintMirror, false );
-    gal.BeginDrawing();
     //gal.Scale( VECTOR2D( userscale, userscale ) );
     //gal.Rotate( rotation );
     //gal.Translate( translation );
 
-    cairo_t* cr = printCtx.GetContext();
-
+    
     long int dpi = Millimeter2iu( 20 );
     //long int dpi = dc->GetPPI().x;
+#endif
 
-    for(int x = -20; x < 20; ++x) {
-        for(int y = -20; y < 20; ++y) {
+    gal.BeginDrawing();
+    
+    cairo_t* cr = printCtx.GetContext();
+    cairo_matrix_t cairoTransformation;
+    cairo_get_matrix( cr, &cairoTransformation );
 
-                //cairo_matrix_t cairoTransformation;
+    cairoTransformation.xx = 1.0;
+    cairoTransformation.yy = 1.0;
+
+    cairo_set_matrix( cr, &cairoTransformation );
+    cairo_get_matrix( cr, &cairoTransformation );
+
+
+    printf("DoPrint\n");
+    printf("Matrix:\n %.10f %.10f %.10f\n", cairoTransformation.xx, cairoTransformation.xy, cairoTransformation.x0 );
+    printf("%.10f %.10f %.10f\n", cairoTransformation.yx, cairoTransformation.yy, cairoTransformation.y0 );
+    //double dpi = 1.0;
+    double ppi = 96.0;
+
+    #define A4_WIDTH_INCH 11.69
+    #define A4_HEIGHT_INCH 8.27
+
+    for(int x = 0; x < 20; ++x) {
+        for(int y = 0; y < 20; ++y) {
+
+                double xx0 = (double) x / 20.0 * A4_WIDTH_INCH * ppi;
+                double yy0 = (double) y / 20.0 * A4_HEIGHT_INCH * ppi;
+                double xx1 = (double) (x+1) / 20.0 * A4_WIDTH_INCH * ppi;
+                double yy1 = (double) (y+1) / 20.0 * A4_HEIGHT_INCH * ppi;
+
                 //cairo_matrix_init_identity( &cairoTransformation );
                 //cairo_set_matrix( cr, &cairoTransformation );
 
                 cairo_set_source_rgb( cr, 0, 0, 0 );
                 cairo_set_line_width (cr, 5.0);
                 cairo_new_path (cr);
-                cairo_move_to (cr, x * dpi, y * dpi);
-                cairo_rel_line_to (cr, 0, dpi );
-                cairo_rel_line_to (cr, dpi, 0 );
-                cairo_rel_line_to (cr, 0, -dpi );
-                cairo_rel_line_to (cr, -dpi, 0 );
+                cairo_move_to (cr, xx0, yy0);
+                cairo_line_to (cr, xx1, yy0 );
+                cairo_line_to (cr, xx1, yy1 );
+                cairo_line_to (cr, xx0, yy1 );
+                cairo_line_to (cr, xx0, yy0 );
                 cairo_close_path (cr);
                 cairo_stroke (cr);
         }

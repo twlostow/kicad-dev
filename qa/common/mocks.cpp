@@ -349,3 +349,22 @@ void PCB_SCREEN::ClearUndoORRedoList( UNDO_REDO_CONTAINER& aList, int aItemCount
 void ROUTER_TOOL::NeighboringSegmentFilter( const VECTOR2I&, GENERAL_COLLECTOR& )
 {
 }
+
+#if 0
+#include <3d_viewer/eda_3d_viewer.h>
+
+void EDA_3D_VIEWER::NewDisplay( bool aForceImmediateRedraw )
+{
+
+}
+
+EDA_3D_VIEWER::EDA_3D_VIEWER( KIWAY *aKiway, PCB_BASE_FRAME *aParent,
+                              const wxString &aTitle, long style ) :
+KIWAY_PLAYER( aKiway, aParent,
+                              FRAME_PCB_DISPLAY3D, aTitle,
+                              wxDefaultPosition, wxDefaultSize,
+                              style, VIEWER3D_FRAMENAME )
+{
+
+}
+#endif

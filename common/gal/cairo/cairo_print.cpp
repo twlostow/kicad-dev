@@ -104,6 +104,20 @@ CAIRO_PRINT_CTX::~CAIRO_PRINT_CTX()
     delete m_gcdc;
 }
 
+double CAIRO_PRINT_CTX::GetNativeDPI() const
+{
+#ifdef __WXGTK__
+    return 72.0;
+#endif /* __WXGTK__ */
+}
+
+bool CAIRO_PRINT_CTX::HasNativeLandscapeRotation() const
+{
+#ifdef __WXGTK__
+    return false;
+#endif /* __WXGTK__ */
+}
+
 
 CAIRO_PRINT_GAL::CAIRO_PRINT_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
         cairo_t* aContext, cairo_surface_t* aSurface )
@@ -115,4 +129,99 @@ CAIRO_PRINT_GAL::CAIRO_PRINT_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
     surface = aSurface;
     m_clearColor = COLOR4D( 1.0, 1.0, 1.0, 1.0 );
     resetContext();
+}
+
+void CAIRO_PRINT_GAL::ComputeWorldScreenMatrix()
+{
+    auto s = m_nativePageSize;
+
+
+//    screenDPI = 72.0;
+
+    //screenDPI * worldUnitLength * zoomFactor;
+//  printf("screen dpi %.10f worldLen %.10f zoom %.10f\n", screenDPI, worldUnitLength, zoomFactor );
+//  printf("CG native size: %.10f %.10f\n\n", m_nativePageSize.x, m_nativePageSize.y );
+
+    
+
+
+    //nativePageSize.x -> inches
+
+    worldUnitLength = 1e-9 /* 1 nm */ / 0.0254 /* 1 inch in meters */;
+
+    // worldUnitLength = inch per integer
+    worldScale = screenDPI * worldUnitLength * zoomFactor;
+
+    printf( "Native page size %.1f %.1f\n",m_nativePageSize.x  , m_nativePageSize.x );
+
+
+
+    if ( m_hasNativeLandscapeRotation )
+    {
+
+        MATRIX3x3D translation;
+        translation.SetIdentity();
+    //    translation.SetTranslation( 0.5 * VECTOR2D( screenSize ) );
+
+        MATRIX3x3D rotate;
+        rotate.SetIdentity();
+        rotate.SetRotation( rotation );
+
+        MATRIX3x3D scale;
+        scale.SetIdentity();
+        scale.SetScale( VECTOR2D( worldScale, worldScale ) );
+
+        MATRIX3x3D flip;
+        flip.SetIdentity();
+        flip.SetScale( VECTOR2D( globalFlipX ? -1.0 : 1.0, globalFlipY ? -1.0 : 1.0 ) );
+
+        MATRIX3x3D lookat;
+        lookat.SetIdentity();
+        lookat.SetTranslation( -lookAtPoint );
+
+        //worldScreenMatrix = translation * rotate * flip * scale * lookat;
+        worldScreenMatrix = translation * flip * scale * rotate * lookat;
+    } else {
+        auto pageSizeIU = VECTOR2D(m_nativePageSize.y, m_nativePageSize.x) /* inches */ * 0.0254 * 1e9 /* 1 inch in nm */;
+        auto pageSizeIUTransposed = VECTOR2D(m_nativePageSize.x, m_nativePageSize.y) /* inches */ * 0.0254 * 1e9 /* 1 inch in nm */;
+
+        MATRIX3x3D scale;
+        scale.SetIdentity();
+        scale.SetScale( VECTOR2D( worldScale, worldScale ) );
+
+        MATRIX3x3D translation;
+        translation.SetIdentity();
+        //printf("pageSizeIU %.1f %.1f\n", pageSizeIU.x, pageSizeIU.y );
+        translation.SetTranslation( -0.5 * pageSizeIUTransposed );
+
+        MATRIX3x3D rotate;
+        rotate.SetIdentity();
+        rotate.SetRotation( 90.0 * M_PI/180.0 );
+
+        MATRIX3x3D flip;
+        flip.SetIdentity();
+        flip.SetScale( VECTOR2D( globalFlipX ? -1.0 : 1.0, globalFlipY ? -1.0 : 1.0 ) );
+
+        MATRIX3x3D translation2;
+        translation2.SetIdentity();
+        translation2.SetTranslation( 0.5 * pageSizeIU );
+
+        MATRIX3x3D lookat;
+        lookat.SetIdentity();
+        lookat.SetTranslation( -lookAtPoint );
+
+        worldScreenMatrix =  scale * translation2 * rotate * flip * translation * lookat;
+    }
+    
+    screenWorldMatrix = worldScreenMatrix.Inverse();
+
+    std::cout << "CG world scale " << worldScale << std::endl;
+}
+
+void CAIRO_PRINT_GAL::SetNativePageSize( VECTOR2D aSize, bool aHasNativeLandscapeRotation )
+{
+    m_nativePageSize = aSize;
+    m_hasNativeLandscapeRotation = aHasNativeLandscapeRotation;
+
+    ComputeWorldScreenMatrix();
 }

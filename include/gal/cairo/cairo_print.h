@@ -46,6 +46,10 @@ public:
         return m_surface;
     }
 
+    double GetNativeDPI() const;
+
+    bool HasNativeLandscapeRotation() const;
+
 private:
     wxGCDC* m_gcdc;
     cairo_t* m_ctx;
@@ -62,6 +66,14 @@ class CAIRO_PRINT_GAL : public CAIRO_GAL_BASE
 public:
     CAIRO_PRINT_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
             cairo_t* aContext, cairo_surface_t* aSurface );
+
+    virtual void ComputeWorldScreenMatrix() override;
+    void SetNativePageSize( VECTOR2D aSize, bool aRotateIfLandscape );
+    
+private:
+    VECTOR2D m_nativePageSize;
+    bool m_hasNativeLandscapeRotation;
+
 };
 } // namespace KIGFX
 

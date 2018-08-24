@@ -72,12 +72,12 @@ PRINT_PARAMETERS::PRINT_PARAMETERS()
 
 
 BOARD_PRINTOUT_CONTROLLER::BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
-                                                      EDA_DRAW_FRAME*         aParent,
+                                                      BOARD*                  aBoard,
                                                       const wxString&         aTitle ) :
     wxPrintout( aTitle )
 {
     m_PrintParams = aParams;   // Make a local copy of the print parameters.
-    m_Parent = aParent;
+    m_board = aBoard;
 }
 
 
@@ -150,7 +150,7 @@ void BOARD_PRINTOUT_CONTROLLER::GetPageInfo( int* minPage, int* maxPage,
 
 void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageNum, int aPageCount )
 {
-    BOARD* brd = ((PCB_BASE_FRAME*) m_Parent)->GetBoard();
+    BOARD* brd = m_board;
     wxDC* dc = GetDC();
     KIGFX::CAIRO_PRINT_CTX printCtx( dc );
 
@@ -160,13 +160,13 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     KIGFX::CAIRO_PRINT_GAL gal( options, printCtx.GetContext(), printCtx.GetSurface() );
     KIGFX::PCB_PAINTER painter( &gal );
 
+    gal.SetScreenDPI( printCtx.GetNativeDPI() );
+
 #if 0
     std::unique_ptr<KIGFX::VIEW> view( static_cast<PCB_BASE_FRAME*>( m_Parent )->GetGalCanvas()->GetView()->DataReference() );
 
 
     wxASSERT( dc->GetPPI().x == dc->GetPPI().y );
-    gal.SetScreenDPI( dc->GetPPI().x );
-    //gal.SetScreenDPI( 72.0 );
 
     view->SetScaleLimits( 10e9, 0.0001 );
     view->SetGAL( &gal );
@@ -207,6 +207,9 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
             << printerdc->GetPaperRect().x << " " << printerdc->GetPaperRect().y << " "
             << printerdc->GetPaperRect().width << " " << printerdc->GetPaperRect().height << " " << std::endl;
     }
+
+    printf("orient %d\n", m_PrintParams.m_PageSetupData->GetPrintData().GetOrientation() );
+
 
 #if 0
     //if( userscale == 0.0 )  // fit in page
@@ -277,28 +280,59 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     //long int dpi = dc->GetPPI().x;
 #endif
 
-    gal.BeginDrawing();
     
     cairo_t* cr = printCtx.GetContext();
     cairo_matrix_t cairoTransformation;
-    cairo_get_matrix( cr, &cairoTransformation );
 
-    cairoTransformation.xx = 1.0;
-    cairoTransformation.yy = 1.0;
+    if( wxPrinterDC* printerdc = dynamic_cast<wxPrinterDC*>( dc ) )
+    {
+        VECTOR2D nps( printerdc->GetPaperRect().width, printerdc->GetPaperRect().height ); 
+        printf("SetNative!\n");
+        gal.SetNativePageSize( VECTOR2D(nps.x / dc->GetPPI().x, nps.y / dc->GetPPI().y) , false );
+    }
 
-    cairo_set_matrix( cr, &cairoTransformation );
-    cairo_get_matrix( cr, &cairoTransformation );
-
-
-    printf("DoPrint\n");
-    printf("Matrix:\n %.10f %.10f %.10f\n", cairoTransformation.xx, cairoTransformation.xy, cairoTransformation.x0 );
-    printf("%.10f %.10f %.10f\n", cairoTransformation.yx, cairoTransformation.yy, cairoTransformation.y0 );
+//    printf("DoPrint\n");
+  //  printf("Matrix:\n %.10f %.10f %.10f\n", cairoTransformation.xx, cairoTransformation.xy, cairoTransformation.x0 );
+    //printf("%.10f %.10f %.10f\n", cairoTransformation.yx, cairoTransformation.yy, cairoTransformation.y0 );
     //double dpi = 1.0;
-    double ppi = 96.0;
+    double ppi = printCtx.GetNativeDPI();
 
+    //printf("PPI %d %d\n", dc->GetPPI().x, dc->GetPPI().y);
+
+// landscape a4
     #define A4_WIDTH_INCH 11.69
     #define A4_HEIGHT_INCH 8.27
 
+    
+    #define INCH_TO_IU(x) (x * 0.0254 * 1e9)
+
+    #define A4_WIDTH_IU INCH_TO_IU(A4_WIDTH_INCH)
+    #define A4_HEIGHT_IU INCH_TO_IU(A4_HEIGHT_INCH)
+
+#if 1
+    //gal.SetScreenDPI( dc->GetPPI().x );
+    gal.BeginDrawing();
+    gal.SetIsStroke( true );
+    gal.SetStrokeColor ( COLOR4D(1.0, 0.0, 0.0, 1.0));
+    
+    //printf("W_IU %.1f H_IU %.1f\n", A4_WIDTH_IU, A4_HEIGHT_IU );
+
+    cairo_set_line_width (cr, 100000.0);
+    
+    
+    gal.DrawLine( VECTOR2D( 0,0 ), VECTOR2D( A4_WIDTH_IU, A4_HEIGHT_IU ));
+    gal.DrawLine( VECTOR2D( A4_WIDTH_IU,0 ), VECTOR2D( 0, A4_HEIGHT_IU ));
+    gal.DrawRectangle( VECTOR2D(0,0), VECTOR2D( A4_WIDTH_IU, A4_HEIGHT_IU ));
+    //cairo_get_matrix( cr, &cairoTransformation );
+
+    //printf("Matrix2:\n %.10f %.10f %.10f\n", cairoTransformation.xx, cairoTransformation.xy, cairoTransformation.x0 );
+    //printf("%.10f %.10f %.10f\n", cairoTransformation.yx, cairoTransformation.yy, cairoTransformation.y0 );
+    
+    gal.EndDrawing();
+    
+
+#endif
+#if 1
     for(int x = 0; x < 20; ++x) {
         for(int y = 0; y < 20; ++y) {
 
@@ -306,6 +340,8 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
                 double yy0 = (double) y / 20.0 * A4_HEIGHT_INCH * ppi;
                 double xx1 = (double) (x+1) / 20.0 * A4_WIDTH_INCH * ppi;
                 double yy1 = (double) (y+1) / 20.0 * A4_HEIGHT_INCH * ppi;
+
+                //printf("xx1 %.10f yy1 %.10f\n", xx1, yy1);
 
                 //cairo_matrix_init_identity( &cairoTransformation );
                 //cairo_set_matrix( cr, &cairoTransformation );
@@ -323,8 +359,9 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
         }
     }
 
+#endif
     //view->Redraw();
-    gal.EndDrawing();
+
 }
 
 

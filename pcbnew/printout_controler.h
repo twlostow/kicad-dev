@@ -103,18 +103,19 @@ public:
 class BOARD_PRINTOUT_CONTROLLER : public wxPrintout
 {
 private:
-    EDA_DRAW_FRAME*     m_Parent;
+    BOARD*     m_board;
     PRINT_PARAMETERS    m_PrintParams;
 
 public:
     BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
-                               EDA_DRAW_FRAME*         aParent,
+                               BOARD*         aBoard,
                                const wxString&         aTitle );
 
     bool OnPrintPage( int aPage ) override;
 
     bool HasPage( int aPage ) override
     {
+        printf("pageCount %d\n",m_PrintParams.m_PageCount );
         if( aPage <= m_PrintParams.m_PageCount )
             return true;
         else

@@ -140,6 +140,8 @@ EDA_3D_VIEWER* PCB_BASE_FRAME::Get3DViewerFrame()
 
 bool PCB_BASE_FRAME::Update3DView( const wxString* aTitle )
 {
+    return false;
+    #if 0
     // Update the 3D view only if the viewer is opened by this frame
     EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
 
@@ -159,6 +161,7 @@ bool PCB_BASE_FRAME::Update3DView( const wxString* aTitle )
     draw3DFrame->NewDisplay( true );
 
     return true;
+    #endif
 }
 
 
@@ -457,6 +460,7 @@ void PCB_BASE_FRAME::Show3D_Frame( wxCommandEvent& event )
 
 bool PCB_BASE_FRAME::CreateAndShow3D_Frame( bool aForceRecreateIfNotOwner )
 {
+    #if 0
     EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
 
     // Ensure the viewer was created by me, and not by another editor:
@@ -492,7 +496,7 @@ bool PCB_BASE_FRAME::CreateAndShow3D_Frame( bool aForceRecreateIfNotOwner )
     // Raising the window does not set the focus on Linux.  This should work on any platform.
     if( wxWindow::FindFocus() != draw3DFrame )
         draw3DFrame->SetFocus();
-
+#endif
     return true;
 }
 

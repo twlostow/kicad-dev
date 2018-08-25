@@ -196,7 +196,7 @@ void CAIRO_PRINT_GAL::ComputeWorldScreenMatrix()
 
         MATRIX3x3D rotate;
         rotate.SetIdentity();
-        rotate.SetRotation( 90.0 * M_PI/180.0 );
+        rotate.SetRotation( -90.0 * M_PI/180.0 );
 
         MATRIX3x3D flip;
         flip.SetIdentity();

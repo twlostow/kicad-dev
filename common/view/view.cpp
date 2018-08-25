@@ -945,9 +945,13 @@ struct VIEW::drawItem
     {
         wxCHECK( aItem->viewPrivData(), false );
 
+        
         // Conditions that have to be fulfilled for an item to be drawn
         bool drawCondition = aItem->viewPrivData()->isRenderable() &&
                              aItem->ViewGetLOD( layer, view ) < view->m_scale;
+        
+        //printf("- draw %p cond %d\n", aItem, drawCondition?1:0);
+
         if( !drawCondition )
             return true;
 
@@ -985,15 +989,23 @@ struct VIEW::drawItem
 
 void VIEW::redrawRect( const BOX2I& aRect )
 {
+    //printf("allItems: %d\n", m_allItems->size() );
+
+    printf("Rect %d %d %d %d\n", aRect.GetOrigin().x, aRect.GetOrigin().y, aRect.GetWidth(), aRect.GetHeight() );
+
+    BOX2I r;
+    r.SetMaximum();
+
     for( VIEW_LAYER* l : m_orderedLayers )
     {
+        //printf("l id %d vis %d dirty %d req %d items %d\n", l->id, !!l->visible, !!IsTargetDirty( l->target ), !!areRequiredLayersEnabled( l->id ), l->items->Count());
         if( l->visible && IsTargetDirty( l->target ) && areRequiredLayersEnabled( l->id ) )
         {
             drawItem drawFunc( this, l->id, m_useDrawPriority, m_reverseDrawOrder );
 
             m_gal->SetTarget( l->target );
             m_gal->SetLayerDepth( l->renderingOrder );
-            l->items->Query( aRect, drawFunc );
+            l->items->Query( r, drawFunc );
 
             if( m_useDrawPriority )
                 drawFunc.deferredDraw();

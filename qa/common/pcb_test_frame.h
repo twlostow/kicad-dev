@@ -71,6 +71,8 @@ public:
     void SetBoard( BOARD * b);
     BOARD* LoadAndDisplayBoard ( const std::string& filename );
 
+    PCB_DRAW_PANEL_GAL* GetGalCanvas() { return m_galPanel.get(); }
+
 protected:
 
     virtual void OnExit(wxCommandEvent& event);

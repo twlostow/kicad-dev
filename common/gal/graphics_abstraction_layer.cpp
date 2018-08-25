@@ -203,7 +203,7 @@ void GAL::ComputeWorldScreenMatrix()
     worldScreenMatrix = translation * flip * scale * rotate * lookat;
     screenWorldMatrix = worldScreenMatrix.Inverse();
 
-    std::cout << "world scale " << worldScale << std::endl;
+    //std::cout << "world scale " << worldScale << std::endl;
 }
 
 

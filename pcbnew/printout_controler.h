@@ -35,6 +35,7 @@
 #include <wx/dcps.h>
 #include <layers_id_colors_and_visibility.h>
 #include <wx/print.h>
+#include <view/view.h>
 
 #define DEFAULT_ORIENTATION_PAPER wxLANDSCAPE   // other option is wxPORTRAIT
 
@@ -104,11 +105,13 @@ class BOARD_PRINTOUT_CONTROLLER : public wxPrintout
 {
 private:
     BOARD*     m_board;
+    KIGFX::VIEW* m_view;
     PRINT_PARAMETERS    m_PrintParams;
 
 public:
     BOARD_PRINTOUT_CONTROLLER( const PRINT_PARAMETERS& aParams,
                                BOARD*         aBoard,
+                               KIGFX::VIEW*            aView,
                                const wxString&         aTitle );
 
     bool OnPrintPage( int aPage ) override;

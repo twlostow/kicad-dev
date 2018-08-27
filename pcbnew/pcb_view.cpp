@@ -31,6 +31,9 @@ using namespace std::placeholders;
 #include <pcb_display_options.h>
 #include <pcb_painter.h>
 
+#include <class_board.h>
+#include <class_marker_pcb.h>
+#include <class_zone.h>
 #include <class_module.h>
 
 namespace KIGFX {
@@ -107,4 +110,41 @@ void PCB_VIEW::UpdateDisplayOptions( PCB_DISPLAY_OPTIONS* aOptions )
 
     settings->LoadDisplayOptions( aOptions, settings->GetShowPageLimits() );
 }
+
+
+
+void PCB_VIEW::SetBoard( BOARD* aBoard )
+{
+    // Load zones
+    for( auto zone : aBoard->Zones() )
+    {
+        zone->CacheTriangulation();
+        Add( zone );
+    }
+
+    // Load drawings
+    for( auto drawing : const_cast<BOARD*>(aBoard)->Drawings() )
+        Add( drawing );
+
+    // Load tracks
+    for( TRACK* track = aBoard->m_Track; track; track = track->Next() )
+        Add( track );
+
+    // Load modules and its additional elements
+    for( MODULE* module = aBoard->m_Modules; module; module = module->Next() )
+        Add( module );
+
+    // Segzones (deprecated, equivalent of ZONE_CONTAINERfilled areas for very old boards)
+    for( SEGZONE* zone = aBoard->m_SegZoneDeprecated; zone; zone = zone->Next() )
+        Add( zone );
+
+    // DRC markers
+    for( int marker_idx = 0; marker_idx < aBoard->GetMARKERCount(); ++marker_idx )
+    {
+        Add( aBoard->GetMARKER( marker_idx ) );
+    }
+
+    // Ratsnest
+}
+
 }

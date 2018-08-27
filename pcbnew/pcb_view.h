@@ -52,6 +52,9 @@ public:
     virtual void Update( VIEW_ITEM* aItem ) override;
 
     void UpdateDisplayOptions( PCB_DISPLAY_OPTIONS* aOptions );
+
+    void SetBoard( BOARD* aBoard );
+
 };
 
 }

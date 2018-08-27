@@ -37,31 +37,9 @@
 #include <class_module.h>
 
 #include <pcb_plot_params.h>
+#include <pcb_view.h>
 #include <printout_controler.h>
 #include <pcb_draw_panel_gal.h>
-
-
-#include <pcb_test_frame.h>
-// #include <tools/outline_editor.h>
-#include <tool/tool_manager.h>
-
-class PRINT_TEST_FRAME : public PCB_TEST_FRAME
-{
-public:
-    PRINT_TEST_FRAME( wxFrame* frame,
-            const wxString& title,
-            const wxPoint& pos  = wxDefaultPosition,
-            const wxSize& size  = wxDefaultSize,
-            long style = wxDEFAULT_FRAME_STYLE ) :
-        PCB_TEST_FRAME( frame, title, pos, size, style )
-    {
-        registerTools();
-    }
-
-    void registerTools();
-
-    virtual ~PRINT_TEST_FRAME() {}
-};
 
 BOARD* loadBoard( const std::string& filename )
 {
@@ -83,8 +61,8 @@ BOARD* loadBoard( const std::string& filename )
 
     return brd;
 }
-    
-int doPrint( PRINT_TEST_FRAME * parent, BOARD* board )
+
+int doPrint(wxWindow* parent, BOARD* board )
 {
     PRINT_PARAMETERS  printParams;
     wxPrintData* printData;
@@ -119,6 +97,7 @@ int doPrint( PRINT_TEST_FRAME * parent, BOARD* board )
 
     printData->SetQuality( wxPRINT_QUALITY_HIGH );      // Default resolution = HIGH;
 
+    
     pageSetupData = new wxPageSetupDialogData( *printData );
     printParams.m_PageSetupData = pageSetupData;
 
@@ -140,21 +119,22 @@ int doPrint( PRINT_TEST_FRAME * parent, BOARD* board )
 
     *printData = pageSetupData->GetPrintData();
 
-    printf("printOrient %s\n", printData->GetOrientation() == wxLANDSCAPE ? "landscape": "portrait");
 
     wxPrintDialogData printDialogData( *printData );
     printDialogData.SetMaxPage( 1 ); //s_Parameters.m_PageCount );
+    printDialogData.SetPrintToFile(true);
 
     wxPrinter printer( &printDialogData );
 
     auto data = printer.GetPrintDialogData().GetPrintData();
-    printf("printOrient2 %s\n", data.GetOrientation() == wxLANDSCAPE ? "landscape": "portrait");
-    
-    printf("view %p\n", parent->GetGalCanvas()->GetView());
-    wxString  title = _( "Print" );
-    BOARD_PRINTOUT_CONTROLLER printout( printParams, board, parent->GetGalCanvas()->GetView(), title );
 
-    printf("Invoke Printer (parent %p)\n", parent );
+    auto view = new KIGFX::PCB_VIEW();
+    view->SetBoard( board );
+
+    printf("view %p\n", view);
+    wxString  title = _( "Print" );
+    BOARD_PRINTOUT_CONTROLLER printout( printParams, board, view, title );
+
     if( !printer.Print( parent, &printout, true ) )
     {
         printf("Error printing!\n");
@@ -166,29 +146,98 @@ int doPrint( PRINT_TEST_FRAME * parent, BOARD* board )
     }
 
     data = printer.GetPrintDialogData().GetPrintData();
-    printf("printOrient3 %s\n", data.GetOrientation() == wxLANDSCAPE ? "landscape": "portrait");
-    
 
     return 0;
 }
-
-
-wxFrame* CreateMainFrame( const std::string& aFileName )
+#if 0
+int main( int argc, char *argv[] )
 {
-    auto frame = new PRINT_TEST_FRAME( nullptr, wxT( "Printing Test" ) );
-
-    if( aFileName != "" )
+    wxInitializer initializer;
+    if ( !initializer )
     {
-        auto board = frame->LoadAndDisplayBoard( aFileName );
-
-        doPrint(frame, board);
+        fprintf(stderr, "Failed to initialize the wxWidgets library, aborting.");
+        return -1;
     }
 
-    return nullptr;
+    //auto app = wxApp::GetInstance ();
+    //auto top = app->GetTopWindow();
+
+    //printf("top window %p\n", top );
+
+    auto brd = loadBoard(argv[1]);
+
+    doPrint(brd);
+
+    return 0;
+}
+#endif
+
+// Define a new frame type: this is going to be our main frame
+class MyFrame : public wxFrame
+{
+public:
+    // ctor(s)
+    MyFrame(const wxString& title);
+
+
+private:
+    // any class wishing to process wxWidgets events must use this macro
+    wxDECLARE_EVENT_TABLE();
+};
+
+MyFrame::MyFrame(const wxString& title)
+       : wxFrame(NULL, wxID_ANY, title)
+{
+
 }
 
-void PRINT_TEST_FRAME::registerTools()
+wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
+wxEND_EVENT_TABLE()
+
+
+class MyApp : public wxApp
 {
-    m_toolManager->InitTools();
-    m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
+public:
+    // override base class virtuals
+    // ----------------------------
+
+    // this one is called on application startup and is a good place for the app
+    // initialization (doing it here and not in the ctor allows to have an error
+    // return: if OnInit() returns false, the application terminates)
+    virtual bool OnInit();
+};
+
+IMPLEMENT_APP(MyApp)
+
+// ============================================================================
+// implementation
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// the application class
+// ----------------------------------------------------------------------------
+
+// 'Main program' equivalent: the program execution "starts" here
+bool MyApp::OnInit()
+{
+    // call the base class initialization method, currently it only parses a
+    // few common command-line options but it could be do more in the future
+    if ( !wxApp::OnInit() )
+        return false;
+
+    // create the main application window
+    MyFrame *frame = new MyFrame("Minimal wxWidgets App");
+
+    // and show it (the frames, unlike simple controls, are not shown when
+    // created initially)
+    //frame->Show(true);
+
+    auto brd = loadBoard("../../../../tests/dp.kicad_pcb");
+
+    doPrint(frame, brd);
+
+    // success: wxApp::OnRun() will be called which will enter the main message
+    // loop and the application will run. If we returned false here, the
+    // application would exit immediately.
+    return false;
 }

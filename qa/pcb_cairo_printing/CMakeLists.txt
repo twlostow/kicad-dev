@@ -35,12 +35,13 @@ add_dependencies( pnsrouter pcbcommon pcad2kicadpcb ${GITHUB_PLUGIN_LIBRARIES} )
 add_executable(test_cairo_print
   ../common/mocks.cpp
   ../../common/base_units.cpp
- ../common/pcb_test_frame.cpp
-  ../../pcbnew/tools/pcb_tool.cpp
-  ../../pcbnew/tools/selection.cpp
-  ../../pcbnew/tools/selection_tool.cpp
-  ../../pcbnew/tools/tool_event_utils.cpp
+ #../common/pcb_test_frame.cpp
+  #../../pcbnew/tools/pcb_tool.cpp
+  .#./../pcbnew/tools/selection.cpp
+#  ../../pcbnew/tools/selection_tool.cpp
+#  ../../pcbnew/tools/tool_event_utils.cpp
   ../../pcbnew/printout_controler.cpp
+  ../../pcbnew/pcb_view.cpp
   test_cairo_print.cpp
 )
 

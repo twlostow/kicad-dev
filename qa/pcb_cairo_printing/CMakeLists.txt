@@ -84,7 +84,12 @@ target_link_libraries( test_cairo_print
     common
     pcbcommon
     bitmaps
+    ${wxWidgets_LIBRARIES}
+    ${wxWidgets_LIBRARIES}
+    ${wxWidgets_LIBRARIES}
     gal
+    ${wxWidgets_LIBRARIES}
+    ${wxWidgets_LIBRARIES}
     pcad2kicadpcb
     common
     pcbcommon
@@ -95,6 +100,7 @@ target_link_libraries( test_cairo_print
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${wxWidgets_LIBRARIES}
+    gdiplus
 )
 
 

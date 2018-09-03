@@ -107,8 +107,11 @@ CAIRO_PRINT_CTX::~CAIRO_PRINT_CTX()
 double CAIRO_PRINT_CTX::GetNativeDPI() const
 {
 #ifdef __WXGTK__
-    return 72.0;
+    return 72.0; // magic value. Apparently for f***king linux, all printers are 72 DPI.
 #endif /* __WXGTK__ */
+#ifdef __WXMSW__
+    return (double) GetDeviceCaps( m_hdc, LOGPIXELSX );
+#endif
 }
 
 bool CAIRO_PRINT_CTX::HasNativeLandscapeRotation() const
@@ -116,6 +119,9 @@ bool CAIRO_PRINT_CTX::HasNativeLandscapeRotation() const
 #ifdef __WXGTK__
     return false;
 #endif /* __WXGTK__ */
+#ifdef __WXMSW__
+    return true;
+#endif
 }
 
 

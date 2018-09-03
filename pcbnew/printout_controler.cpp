@@ -238,6 +238,7 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
     //gal.Translate( translation );
 
     
+    printf("dc-ppi %d\n", dc->GetPPI().x );
 
     if( wxPrinterDC* printerdc = dynamic_cast<wxPrinterDC*>( dc ) )
     {
@@ -248,76 +249,34 @@ void BOARD_PRINTOUT_CONTROLLER::DrawPage( const wxString& aLayerName, int aPageN
 
     gal.BeginDrawing();
     view->Redraw();
-    gal.EndDrawing();
 
-#if 0
     double ppi = printCtx.GetNativeDPI();
 
-    //printf("PPI %d %d\n", dc->GetPPI().x, dc->GetPPI().y);
-
-// landscape a4
+    
     #define A4_WIDTH_INCH 11.69
     #define A4_HEIGHT_INCH 8.27
-
     
     #define INCH_TO_IU(x) (x * 0.0254 * 1e9)
 
     #define A4_WIDTH_IU INCH_TO_IU(A4_WIDTH_INCH)
     #define A4_HEIGHT_IU INCH_TO_IU(A4_HEIGHT_INCH)
 
-#if 1
-    //gal.SetScreenDPI( dc->GetPPI().x );
     gal.BeginDrawing();
     gal.SetIsStroke( true );
+    gal.SetIsFill( false );
     gal.SetStrokeColor ( COLOR4D(1.0, 0.0, 0.0, 1.0));
     
-    //printf("W_IU %.1f H_IU %.1f\n", A4_WIDTH_IU, A4_HEIGHT_IU );
+    printf("W_IU %.1f H_IU %.1f\n", A4_WIDTH_IU, A4_HEIGHT_IU );
 
-    cairo_set_line_width (cr, 100000.0);
     
-    
+    gal.SetLineWidth( 100000.0 );
     gal.DrawLine( VECTOR2D( 0,0 ), VECTOR2D( A4_WIDTH_IU, A4_HEIGHT_IU ));
     gal.DrawLine( VECTOR2D( A4_WIDTH_IU,0 ), VECTOR2D( 0, A4_HEIGHT_IU ));
     gal.DrawRectangle( VECTOR2D(0,0), VECTOR2D( A4_WIDTH_IU, A4_HEIGHT_IU ));
-    //cairo_get_matrix( cr, &cairoTransformation );
 
-    //printf("Matrix2:\n %.10f %.10f %.10f\n", cairoTransformation.xx, cairoTransformation.xy, cairoTransformation.x0 );
-    //printf("%.10f %.10f %.10f\n", cairoTransformation.yx, cairoTransformation.yy, cairoTransformation.y0 );
-    
     gal.EndDrawing();
-    
 
-#endif
-#if 1
-    for(int x = 0; x < 20; ++x) {
-        for(int y = 0; y < 20; ++y) {
 
-                double xx0 = (double) x / 20.0 * A4_WIDTH_INCH * ppi;
-                double yy0 = (double) y / 20.0 * A4_HEIGHT_INCH * ppi;
-                double xx1 = (double) (x+1) / 20.0 * A4_WIDTH_INCH * ppi;
-                double yy1 = (double) (y+1) / 20.0 * A4_HEIGHT_INCH * ppi;
-
-                //printf("xx1 %.10f yy1 %.10f\n", xx1, yy1);
-
-                //cairo_matrix_init_identity( &cairoTransformation );
-                //cairo_set_matrix( cr, &cairoTransformation );
-
-                cairo_set_source_rgb( cr, 0, 0, 0 );
-                cairo_set_line_width (cr, 5.0);
-                cairo_new_path (cr);
-                cairo_move_to (cr, xx0, yy0);
-                cairo_line_to (cr, xx1, yy0 );
-                cairo_line_to (cr, xx1, yy1 );
-                cairo_line_to (cr, xx0, yy1 );
-                cairo_line_to (cr, xx0, yy0 );
-                cairo_close_path (cr);
-                cairo_stroke (cr);
-        }
-    }
-
-#endif
-    //view->Redraw();
-#endif
 
 }
 

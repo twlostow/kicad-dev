@@ -232,7 +232,7 @@ bool MyApp::OnInit()
     // created initially)
     //frame->Show(true);
 
-    auto brd = loadBoard("../../../../tests/dp.kicad_pcb");
+    auto brd = loadBoard("../../demos/pic_programmer/pic_programmer.kicad_pcb");
 
     doPrint(frame, brd);
 

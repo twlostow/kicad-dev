@@ -91,7 +91,7 @@ void CAIRO_GAL_BASE::EndDrawing()
 
 void CAIRO_GAL_BASE::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
-    printf("DrawLine %.1f %.1f - %.1f %.1f\n",aStartPoint.x, aStartPoint.y, aEndPoint.x, aEndPoint.y );
+    //printf("DrawLine %.1f %.1f - %.1f %.1f\n",aStartPoint.x, aStartPoint.y, aEndPoint.x, aEndPoint.y );
     cairo_move_to( currentContext, aStartPoint.x, aStartPoint.y );
     cairo_line_to( currentContext, aEndPoint.x, aEndPoint.y );
     flushPath();

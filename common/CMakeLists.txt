@@ -285,6 +285,7 @@ set( COMMON_SRCS
     confirm.cpp
     convert_basic_shapes_to_polygon.cpp
     cursor_store.cpp
+    debug_report.cpp
     dialog_shim.cpp
     displlst.cpp
     dpi_scaling.cpp

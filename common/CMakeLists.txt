@@ -256,6 +256,7 @@ set( COMMON_SRCS
     confirm.cpp
     convert_basic_shapes_to_polygon.cpp
     copy_to_clipboard.cpp
+    debug_report.cpp
     dialog_shim.cpp
     displlst.cpp
     draw_frame.cpp

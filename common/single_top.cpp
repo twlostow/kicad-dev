@@ -46,6 +46,7 @@
 #include <pgm_base.h>
 #include <kiway_player.h>
 #include <confirm.h>
+#include <debug_report.h>
 
 
 // Only a single KIWAY is supported in this single_top top level component,
@@ -123,9 +124,13 @@ wxIMPLEMENT_DYNAMIC_CLASS(HtmlModule, wxModule);
  */
 struct APP_SINGLE_TOP : public wxApp
 {
-#if defined (__LINUX__)
     APP_SINGLE_TOP(): wxApp()
     {
+#if wxUSE_ON_FATAL_EXCEPTION
+        wxHandleFatalExceptions();
+#endif
+
+#if defined (__LINUX__)
         // Disable proxy menu in Unity window manager. Only usual menubar works with wxWidgets (at least <= 3.1)
         // When the proxy menu menubar is enable, some important things for us do not work: menuitems UI events and shortcuts.
         wxString wm;
@@ -134,8 +139,8 @@ struct APP_SINGLE_TOP : public wxApp
         {
             wxSetEnv ( wxT("UBUNTU_MENUPROXY" ), wxT( "0" ) );
         }
-    }
 #endif
+    }
 
     bool OnInit() override
     {
@@ -240,6 +245,11 @@ struct APP_SINGLE_TOP : public wxApp
         return false;   // continue on. Return false to abort program
     }
 #endif
+
+    void OnFatalException() override
+    {
+        DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);
+    }
 
 #ifdef __WXMAC__
 

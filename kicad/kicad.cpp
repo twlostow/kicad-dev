@@ -39,6 +39,7 @@
 #include <richio.h>
 #include <wildcards_and_files_ext.h>
 #include <systemdirsappend.h>
+#include <debug_report.h>
 
 #include <stdexcept>
 
@@ -217,9 +218,13 @@ KIWAY  Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
  */
 struct APP_KICAD : public wxApp
 {
-#if defined (__LINUX__)
     APP_KICAD(): wxApp()
     {
+#if wxUSE_ON_FATAL_EXCEPTION
+        wxHandleFatalExceptions();
+#endif
+
+#if defined (__LINUX__)
         // Disable proxy menu in Unity window manager. Only usual menubar works with
         // wxWidgets (at least <= 3.1).  When the proxy menu menubar is enable, some
         // important things for us do not work: menuitems UI events and shortcuts.
@@ -229,8 +234,8 @@ struct APP_KICAD : public wxApp
         {
             wxSetEnv ( wxT("UBUNTU_MENUPROXY" ), wxT( "0" ) );
         }
-    }
 #endif
+    }
 
     bool OnInit()           override
     {
@@ -271,6 +276,11 @@ struct APP_KICAD : public wxApp
         }
 
         return -1;
+    }
+
+    void OnFatalException() override
+    {
+        DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);
     }
 
     /**

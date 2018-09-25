@@ -60,6 +60,10 @@ option( BUILD_SMALL_DEBUG_FILES "In debug build: create smaller binaries." OFF )
 # so that build option settings can be included in bug reports.
 #
 
+option( KICAD_CRASH_REPORTER
+    "Enable integrated crash reporter (default ON)"
+    ON )
+
 option( KICAD_SCRIPTING
     "Build the Python scripting support inside KiCad binaries (default ON)."
     ON )
@@ -395,6 +399,10 @@ if( MSVC )
     if( KICAD_BUILD_PARALLEL_CL_MP )
         string( APPEND CMAKE_CXX_FLAGS " /MP" )
     endif()
+endif()
+
+if( KICAD_CRASH_REPORTER )
+    add_definitions( -DKICAD_CRASH_REPORTER )
 endif()
 
 if( KICAD_SCRIPTING )

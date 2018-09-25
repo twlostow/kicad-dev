@@ -520,6 +520,13 @@ void DIALOG_ABOUT::buildVersionInfoData( wxString& aMsg, bool aFormatHtml )
     // Add build settings config (build options):
     aMsg << "Build settings:" << eol;
 
+    aMsg << indent4 << "KICAD_CRASH_REPORTER=";
+#ifdef KICAD_CRASH_REPORTER
+    aMsg << ON;
+#else
+    aMsg << OFF;
+#endif
+
     aMsg << indent4 << "KICAD_SCRIPTING=";
 #ifdef KICAD_SCRIPTING
     aMsg << ON;

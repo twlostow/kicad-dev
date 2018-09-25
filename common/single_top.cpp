@@ -126,7 +126,7 @@ struct APP_SINGLE_TOP : public wxApp
 {
     APP_SINGLE_TOP(): wxApp()
     {
-#if wxUSE_ON_FATAL_EXCEPTION
+#if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
         wxHandleFatalExceptions();
 #endif
 
@@ -256,10 +256,12 @@ struct APP_SINGLE_TOP : public wxApp
     }
 #endif
 
+#if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
     void OnFatalException() override
     {
         DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);
     }
+#endif
 
 #ifdef __WXMAC__
 

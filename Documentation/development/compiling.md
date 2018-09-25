@@ -135,6 +135,11 @@ KiCad has many build options that can be configured to build different options d
 the availability of support for each option on a given platform.  This section documents
 these options and their default values.
 
+## Crash Reporter ## {#crash_reporter}
+
+The KICAD_CRASH_REPORTER option is used to enable a custom crash reporter to catch segfaults.
+This option is enabled by default.
+
 ## Scripting Support ## {#scripting_opt}
 
 The KICAD_SCRIPTING option is used to enable building the Python scripting support into Pcbnew.

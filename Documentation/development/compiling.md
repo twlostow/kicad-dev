@@ -146,6 +146,11 @@ so use at your own risk.
 The USE_WX_OVERLAY option is used to enable the optional wxOverlay class for graphics rendering
 on macOS.  This is enabled on macOS and GTK3 by default and disabled on all other platforms.
 
+## Crash Reporter ## {#crash_reporter}
+
+The KICAD_CRASH_REPORTER option is used to enable a custom crash reporter to catch segfaults.
+This option is enabled by default.
+
 ## Scripting Support ## {#scripting_opt}
 
 The KICAD_SCRIPTING option is used to enable building the Python scripting support into Pcbnew.

@@ -66,6 +66,10 @@ option( USE_WX_GRAPHICS_CONTEXT
 option( USE_WX_OVERLAY
     "Use wxOverlay: Always ON for MAC and GTK3 (default OFF)." )
 
+option( KICAD_CRASH_REPORTER
+    "Enable integrated crash reporter (default ON)"
+    ON )
+
 option( KICAD_SCRIPTING
     "Build the Python scripting support inside KiCad binaries (default ON)."
     ON )
@@ -354,6 +358,10 @@ endif( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
 
 if( USE_WX_OVERLAY OR APPLE )
     add_definitions( -DUSE_WX_OVERLAY )
+endif()
+
+if( KICAD_CRASH_REPORTER )
+    add_definitions( -DKICAD_CRASH_REPORTER )
 endif()
 
 if( KICAD_SCRIPTING )

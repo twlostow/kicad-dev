@@ -220,12 +220,11 @@ struct APP_KICAD : public wxApp
 {
     APP_KICAD(): wxApp()
     {
-#if defined (__LINUX__)
-
 #if wxUSE_ON_FATAL_EXCEPTION
         wxHandleFatalExceptions();
 #endif
 
+#if defined (__LINUX__)
         // Disable proxy menu in Unity window manager. Only usual menubar works with
         // wxWidgets (at least <= 3.1).  When the proxy menu menubar is enable, some
         // important things for us do not work: menuitems UI events and shortcuts.
@@ -279,10 +278,12 @@ struct APP_KICAD : public wxApp
         return -1;
     }
 
+#if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
     void OnFatalException() override
     {
         DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);
     }
+#endif
 
     /**
      * Set MacOS file associations.

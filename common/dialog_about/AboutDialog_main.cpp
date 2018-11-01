@@ -55,16 +55,18 @@ static wxString HtmlNewline( const unsigned int amount = 1 );
  * Initializes the <code>ABOUT_APP_INFO</code> object with application specific information.
  * This is the object which holds all information about the application
  */
-static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInfo )
+void ABOUT_APP_INFO::Build( EDA_BASE_FRAME* aParent )
 {
     // Set application specific icon
-    aInfo.SetAppIcon( aParent->GetIcon() );
+
+    if ( aParent )
+        SetAppIcon( aParent->GetIcon() );
 
     /* Set title */
-    aInfo.SetAppName( Pgm().App().GetAppName() );
+    SetAppName( Pgm().App().GetAppName() );
 
     /* Copyright information */
-    aInfo.SetCopyright( "(C) 1992-2019 KiCad Developers Team" );
+    SetCopyright( "(C) 1992-2018 KiCad Developers Team" );
 
     /* KiCad build version */
     wxString version;
@@ -76,7 +78,7 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
 #endif
             << " build";
 
-    aInfo.SetBuildVersion( version );
+    SetBuildVersion( version );
 
     /* wxWidgets version */
     wxString libVersion;
@@ -101,7 +103,7 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
 
     libVersion << "Platform: " << wxGetOsDescription() << ", " << platformInfo.GetArchName();
 
-    aInfo.SetLibVersion( libVersion );
+    SetLibVersion( libVersion );
 
 
     /* info/description part HTML formatted */
@@ -174,7 +176,7 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
 
     description << "</ul></p>";
 
-    aInfo.SetDescription( description );
+    SetDescription( description );
 
 
     // License information also HTML formatted:
@@ -187,7 +189,10 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
                           _( "GNU Affero General Public License (AGPL) version 3 or any later version" ) )
         << "</div>";
 
-    aInfo.SetLicense( license );
+    SetLicense( license );
+
+    if( !aParent )
+        return;
 
 
     /* A contributor consists of the following information:
@@ -203,168 +208,168 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
      */
 
     // The core developers
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Jean-Pierre Charras" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Dick Hollenbeck" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Wayne Stambaugh" ) );
+    AddDeveloper( new CONTRIBUTOR( "Jean-Pierre Charras" ) );
+    AddDeveloper( new CONTRIBUTOR( "Dick Hollenbeck" ) );
+    AddDeveloper( new CONTRIBUTOR( "Wayne Stambaugh" ) );
 
     // alphabetically by last name after main 3 above:
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Frank Bennett" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Cirilo Bernardo" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Kevin Cozens" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Jonas Diemer" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Jon Evans" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Seth Hillbrand" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( wxT( "Torsten Hüter" ) ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Jerry Jacobs" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Mario Luzeiro" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Daniel Majewski" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Lorenzo Marcantonio" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Marco Mattila" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Russell Oliver" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Alexis Lockwood" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Miguel Angel Ajo Pelayo" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Jacobo Aragunde Perez" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Simon Richter" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Mark Roszko" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Marco Serantoni" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Brian Sidebotham" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( wxT( "Mateusz Skowroński" ) ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Rafael Sokolowski" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Vesa Solonen" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Bernhard Stegmaier" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( wxT( "Orson (Maciej Sumiński)" ) ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Oliver Walters" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Tomasz Wlostowski" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Adam Wolf" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Jeff Young" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Alexander Zakamaldin" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Henner Zeller" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( "Andrew Zonenberg" ) );
-    aInfo.AddDeveloper( new CONTRIBUTOR( wxT( "Nick Østergaard" ) ) );
+    AddDeveloper( new CONTRIBUTOR( "Frank Bennett" ) );
+    AddDeveloper( new CONTRIBUTOR( "Cirilo Bernardo" ) );
+    AddDeveloper( new CONTRIBUTOR( "Kevin Cozens" ) );
+    AddDeveloper( new CONTRIBUTOR( "Jonas Diemer" ) );
+    AddDeveloper( new CONTRIBUTOR( "Jon Evans" ) );
+    AddDeveloper( new CONTRIBUTOR( "Seth Hillbrand" ) );
+    AddDeveloper( new CONTRIBUTOR( wxT( "Torsten Hüter" ) ) );
+    AddDeveloper( new CONTRIBUTOR( "Jerry Jacobs" ) );
+    AddDeveloper( new CONTRIBUTOR( "Mario Luzeiro" ) );
+    AddDeveloper( new CONTRIBUTOR( "Daniel Majewski" ) );
+    AddDeveloper( new CONTRIBUTOR( "Lorenzo Marcantonio" ) );
+    AddDeveloper( new CONTRIBUTOR( "Marco Mattila" ) );
+    AddDeveloper( new CONTRIBUTOR( "Russell Oliver" ) );
+    AddDeveloper( new CONTRIBUTOR( "Alexis Lockwood" ) );
+    AddDeveloper( new CONTRIBUTOR( "Miguel Angel Ajo Pelayo" ) );
+    AddDeveloper( new CONTRIBUTOR( "Jacobo Aragunde Perez" ) );
+    AddDeveloper( new CONTRIBUTOR( "Simon Richter" ) );
+    AddDeveloper( new CONTRIBUTOR( "Mark Roszko" ) );
+    AddDeveloper( new CONTRIBUTOR( "Marco Serantoni" ) );
+    AddDeveloper( new CONTRIBUTOR( "Brian Sidebotham" ) );
+    AddDeveloper( new CONTRIBUTOR( wxT( "Mateusz Skowroński" ) ) );
+    AddDeveloper( new CONTRIBUTOR( "Rafael Sokolowski" ) );
+    AddDeveloper( new CONTRIBUTOR( "Vesa Solonen" ) );
+    AddDeveloper( new CONTRIBUTOR( "Bernhard Stegmaier" ) );
+    AddDeveloper( new CONTRIBUTOR( wxT( "Orson (Maciej Sumiński)" ) ) );
+    AddDeveloper( new CONTRIBUTOR( "Oliver Walters" ) );
+    AddDeveloper( new CONTRIBUTOR( "Tomasz Wlostowski" ) );
+    AddDeveloper( new CONTRIBUTOR( "Adam Wolf" ) );
+    AddDeveloper( new CONTRIBUTOR( "Jeff Young" ) );
+    AddDeveloper( new CONTRIBUTOR( "Alexander Zakamaldin" ) );
+    AddDeveloper( new CONTRIBUTOR( "Henner Zeller" ) );
+    AddDeveloper( new CONTRIBUTOR( "Andrew Zonenberg" ) );
+    AddDeveloper( new CONTRIBUTOR( wxT( "Nick Østergaard" ) ) );
 
     // The document writers
-    aInfo.AddDocWriter( new CONTRIBUTOR( "Jean-Pierre Charras" ) );
-    aInfo.AddDocWriter( new CONTRIBUTOR( "Marco Ciampa" ) );
-    aInfo.AddDocWriter( new CONTRIBUTOR( "Dick Hollenbeck" ) );
-    aInfo.AddDocWriter( new CONTRIBUTOR( "Igor Plyatov" ) );
-    aInfo.AddDocWriter( new CONTRIBUTOR( "Wayne Stambaugh" ) );
-    aInfo.AddDocWriter( new CONTRIBUTOR( "Fabrizio Tappero" ) );
+    AddDocWriter( new CONTRIBUTOR( "Jean-Pierre Charras" ) );
+    AddDocWriter( new CONTRIBUTOR( "Marco Ciampa" ) );
+    AddDocWriter( new CONTRIBUTOR( "Dick Hollenbeck" ) );
+    AddDocWriter( new CONTRIBUTOR( "Igor Plyatov" ) );
+    AddDocWriter( new CONTRIBUTOR( "Wayne Stambaugh" ) );
+    AddDocWriter( new CONTRIBUTOR( "Fabrizio Tappero" ) );
 
     /* The translators
      * As category the language to which the translation was done is used
      * and as icon the national flag of the corresponding country.
      */
-    aInfo.AddTranslator( new CONTRIBUTOR( "Robert Buj",
+    AddTranslator( new CONTRIBUTOR( "Robert Buj",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Catalan (CA)",
-                                          aInfo.CreateKiBitmap( lang_ca_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( wxT( "Martin Kratoška" ),
+                                          CreateKiBitmap( lang_ca_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( wxT( "Martin Kratoška" ),
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Czech (CZ)",
-                                          aInfo.CreateKiBitmap( lang_cs_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Jerry Jacobs",
+                                          CreateKiBitmap( lang_cs_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Jerry Jacobs",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Dutch (NL)",
-                                          aInfo.CreateKiBitmap( lang_nl_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Vesa Solonen",
+                                          CreateKiBitmap( lang_nl_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Vesa Solonen",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Finnish (FI)",
-                                          aInfo.CreateKiBitmap( lang_fi_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Jean-Pierre Charras",
+                                          CreateKiBitmap( lang_fi_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Jean-Pierre Charras",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "French (FR)",
-                                          aInfo.CreateKiBitmap( lang_fr_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( wxT( "Mateusz Skowroński" ),
+                                          CreateKiBitmap( lang_fr_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( wxT( "Mateusz Skowroński" ),
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Polish (PL)",
-                                          aInfo.CreateKiBitmap( lang_pl_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Kerusey Karyu",
+                                          CreateKiBitmap( lang_pl_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Kerusey Karyu",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Polish (PL)",
-                                          aInfo.CreateKiBitmap( lang_pl_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Renie Marquet",
+                                          CreateKiBitmap( lang_pl_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Renie Marquet",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Portuguese (PT)",
-                                          aInfo.CreateKiBitmap( lang_pt_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Igor Plyatov",
+                                          CreateKiBitmap( lang_pt_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Igor Plyatov",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Russian (RU)",
-                                          aInfo.CreateKiBitmap( lang_ru_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Andrey Fedorushkov",
+                                          CreateKiBitmap( lang_ru_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Andrey Fedorushkov",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Russian (RU)",
-                                          aInfo.CreateKiBitmap( lang_ru_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Eldar Khayrullin",
+                                          CreateKiBitmap( lang_ru_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Eldar Khayrullin",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Russian (RU)",
-                                         aInfo.CreateKiBitmap( lang_ru_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Pedro Martin del Valle",
+                                         CreateKiBitmap( lang_ru_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Pedro Martin del Valle",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Spanish (ES)",
-                                          aInfo.CreateKiBitmap( lang_es_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( wxT( "Iñigo Zuluaga" ),
+                                          CreateKiBitmap( lang_es_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( wxT( "Iñigo Zuluaga" ),
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Spanish (ES)",
-                                          aInfo.CreateKiBitmap( lang_es_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( wxT( "Iñigo Figuero" ),
+                                          CreateKiBitmap( lang_es_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( wxT( "Iñigo Figuero" ),
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Spanish (ES)",
-                                          aInfo.CreateKiBitmap( lang_es_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Rafael Sokolowski",
+                                          CreateKiBitmap( lang_es_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Rafael Sokolowski",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "German (DE)",
-                                          aInfo.CreateKiBitmap( lang_de_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Kenta Yonekura",
+                                          CreateKiBitmap( lang_de_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Kenta Yonekura",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Japanese (JA)",
-                                          aInfo.CreateKiBitmap( lang_jp_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Manolis Stefanis",
+                                          CreateKiBitmap( lang_jp_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Manolis Stefanis",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Greek (el_GR)",
-                                          aInfo.CreateKiBitmap( lang_gr_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Athanasios Vlastos",
+                                          CreateKiBitmap( lang_gr_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Athanasios Vlastos",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Greek (el_GR)",
-                                          aInfo.CreateKiBitmap( lang_gr_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Milonas Kostas",
+                                          CreateKiBitmap( lang_gr_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Milonas Kostas",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Greek (el_GR)",
-                                          aInfo.CreateKiBitmap( lang_gr_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Michail Misirlis",
+                                          CreateKiBitmap( lang_gr_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Michail Misirlis",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Greek (el_GR)",
-                                          aInfo.CreateKiBitmap( lang_gr_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Massimo Cioce",
+                                          CreateKiBitmap( lang_gr_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Massimo Cioce",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Italian (IT)",
-                                          aInfo.CreateKiBitmap( lang_it_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Marco Ciampa",
+                                          CreateKiBitmap( lang_it_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Marco Ciampa",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Italian (IT)",
-                                          aInfo.CreateKiBitmap( lang_it_xpm ) ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Evgeniy Ivanov",
+                                          CreateKiBitmap( lang_it_xpm ) ) );
+    AddTranslator( new CONTRIBUTOR( "Evgeniy Ivanov",
                                           wxEmptyString,
                                           wxEmptyString,
                                           "Bulgarian (BG)",
@@ -377,85 +382,85 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
 
     // Maintainer who helper in translations, but not in a specific translation
     #define OTHERS_IN_TRANSLATION _( "Others" )
-    aInfo.AddTranslator( new CONTRIBUTOR( "Remy Halvick",
+    AddTranslator( new CONTRIBUTOR( "Remy Halvick",
                                           wxEmptyString,
                                           wxEmptyString,
                                           OTHERS_IN_TRANSLATION ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "David Briscoe",
+    AddTranslator( new CONTRIBUTOR( "David Briscoe",
                                           wxEmptyString,
                                           wxEmptyString,
                                           OTHERS_IN_TRANSLATION ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Dominique Laigle",
+    AddTranslator( new CONTRIBUTOR( "Dominique Laigle",
                                           wxEmptyString,
                                           wxEmptyString,
                                           OTHERS_IN_TRANSLATION ) );
-    aInfo.AddTranslator( new CONTRIBUTOR( "Paul Burke",
+    AddTranslator( new CONTRIBUTOR( "Paul Burke",
                                           wxEmptyString,
                                           wxEmptyString,
                                           OTHERS_IN_TRANSLATION ) );
 
     // Programm credits for icons
     #define ICON_CONTRIBUTION _( "Icons by" )
-    aInfo.AddArtist( new CONTRIBUTOR( wxT( "Iñigo Zuluaga" ),
+    AddArtist( new CONTRIBUTOR( wxT( "Iñigo Zuluaga" ),
                                       wxEmptyString,
                                       wxEmptyString,
                                       ICON_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( svg_file_xpm ) ) );
-    aInfo.AddArtist( new CONTRIBUTOR( "Konstantin Baranovskiy",
+                                      CreateKiBitmap( svg_file_xpm ) ) );
+    AddArtist( new CONTRIBUTOR( "Konstantin Baranovskiy",
                                       wxEmptyString,
                                       wxEmptyString,
                                       ICON_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( svg_file_xpm ) ) );
-    aInfo.AddArtist( new CONTRIBUTOR( "Fabrizio Tappero",
+                                      CreateKiBitmap( svg_file_xpm ) ) );
+    AddArtist( new CONTRIBUTOR( "Fabrizio Tappero",
                                       wxEmptyString,
                                       wxEmptyString,
                                       ICON_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( svg_file_xpm ) ) );
+                                      CreateKiBitmap( svg_file_xpm ) ) );
 
     // Program credits for 3d models
     #define MODELS_3D_CONTRIBUTION _( "3D models by" )
-    aInfo.AddArtist( new CONTRIBUTOR( "GitHub contributors",
+    AddArtist( new CONTRIBUTOR( "GitHub contributors",
                                       wxEmptyString,
                                       "https://github.com/KiCad/kicad-packages3D/graphs/contributors",
                                       MODELS_3D_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( three_d_xpm ) ) );
-    aInfo.AddArtist( new CONTRIBUTOR( "Christophe Boschat",
+                                      CreateKiBitmap( three_d_xpm ) ) );
+    AddArtist( new CONTRIBUTOR( "Christophe Boschat",
                                       wxEmptyString,
                                       wxEmptyString,
                                       MODELS_3D_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( three_d_xpm ) ) );
-    aInfo.AddArtist( new CONTRIBUTOR( "Renie Marquet",
+                                      CreateKiBitmap( three_d_xpm ) ) );
+    AddArtist( new CONTRIBUTOR( "Renie Marquet",
                                       wxEmptyString,
                                       wxEmptyString,
                                       MODELS_3D_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( three_d_xpm ) ) );
+                                      CreateKiBitmap( three_d_xpm ) ) );
 
     #define SYMBOL_LIB_CONTRIBUTION _( "Symbols by" )
-    aInfo.AddArtist( new CONTRIBUTOR( "GitHub contributors",
+    AddArtist( new CONTRIBUTOR( "GitHub contributors",
                                       wxEmptyString,
                                       "https://github.com/KiCad/kicad-symbols/graphs/contributors",
                                       SYMBOL_LIB_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( new_component_xpm ) ) );
+                                      CreateKiBitmap( new_component_xpm ) ) );
 
     #define FOOTPRINT_LIB_CONTRIBUTION _( "Footprints by" )
-    aInfo.AddArtist( new CONTRIBUTOR( "GitHub contributors",
+    AddArtist( new CONTRIBUTOR( "GitHub contributors",
                                       wxEmptyString,
                                       "https://github.com/KiCad/kicad-footprints/graphs/contributors",
                                       FOOTPRINT_LIB_CONTRIBUTION,
-                                      aInfo.CreateKiBitmap( edit_module_xpm ) ) );
+                                      CreateKiBitmap( edit_module_xpm ) ) );
 
     // Program credits for package developers.
-    aInfo.AddPackager( new CONTRIBUTOR( "Jean-Samuel Reynaud" ) );
-    aInfo.AddPackager( new CONTRIBUTOR( "Bernhard Stegmaier" ) );
-    aInfo.AddPackager( new CONTRIBUTOR( "Adam Wolf" ) );
-    aInfo.AddPackager( new CONTRIBUTOR( wxT( "Nick Østergaard" ) ) );
+    AddPackager( new CONTRIBUTOR( "Jean-Samuel Reynaud" ) );
+    AddPackager( new CONTRIBUTOR( "Bernhard Stegmaier" ) );
+    AddPackager( new CONTRIBUTOR( "Adam Wolf" ) );
+    AddPackager( new CONTRIBUTOR( wxT( "Nick Østergaard" ) ) );
 }
 
 
 void ShowAboutDialog( EDA_BASE_FRAME* aParent )
 {
     ABOUT_APP_INFO info;
-    buildKicadAboutBanner( aParent, info );
+    info.Build( aParent );
 
     DIALOG_ABOUT dlg( aParent, info );
     dlg.ShowModal();

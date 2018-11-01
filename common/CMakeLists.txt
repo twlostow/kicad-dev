@@ -163,6 +163,8 @@ set( COMMON_DLG_SRCS
     dialogs/dialog_color_picker_base.cpp
     dialogs/dialog_configure_paths.cpp
     dialogs/dialog_configure_paths_base.cpp
+    dialogs/dialog_crash_report_base.cpp
+    dialogs/dialog_crash_report_preview_base.cpp
     dialogs/dialog_display_info_HTML_base.cpp
     dialogs/dialog_edit_library_tables.cpp
     dialogs/dialog_file_dir_picker.cpp

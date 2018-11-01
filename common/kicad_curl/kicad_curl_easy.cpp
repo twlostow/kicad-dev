@@ -62,6 +62,7 @@ KICAD_CURL_EASY::KICAD_CURL_EASY() :
 
     curl_easy_setopt( m_CURL, CURLOPT_WRITEFUNCTION, write_callback );
     curl_easy_setopt( m_CURL, CURLOPT_WRITEDATA, (void*) &m_buffer );
+    curl_easy_setopt( m_CURL, CURLOPT_TIMEOUT, 20L);
 }
 
 
@@ -79,6 +80,11 @@ void KICAD_CURL_EASY::Perform()
     if( m_headers )
     {
         curl_easy_setopt( m_CURL, CURLOPT_HTTPHEADER, m_headers );
+    }
+
+    if( m_postData.length() )
+    {
+        curl_easy_setopt( m_CURL, CURLOPT_POSTFIELDS, m_postData.c_str() );
     }
 
     // bonus: retain worst case memory allocation, should re-use occur
@@ -141,4 +147,9 @@ bool KICAD_CURL_EASY::SetFollowRedirects( bool aFollow )
         return true;
     }
     return false;
+}
+
+void KICAD_CURL_EASY::SetPostData( const std::string& aData )
+{
+    m_postData = aData;
 }

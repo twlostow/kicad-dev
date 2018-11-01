@@ -151,12 +151,12 @@ static const wxString formatHex( uint64_t addr )
     return wxString( tmp );
 }
 
-void DEBUG_REPORT::GenerateReport( Context ctx )
+void DEBUG_REPORT::GenerateReport( wxDebugReport::Context ctx )
 {
     DEBUG_REPORT report;
 
     // Add all wx default reports
-    report.AddAll( ctx );
+    report.AddContext( ctx );
 
     DIALOG_CRASH_REPORT crashDialog( &report );
 
@@ -465,7 +465,7 @@ void DEBUG_REPORT::buildExceptionContextInfo ( wxString& aMsg )
 
 
 
-bool DEBUG_REPORT::AddContext( Context ctx )
+bool DEBUG_REPORT::AddContext( wxDebugReport::Context ctx )
 {
     wxString reportText;
 
@@ -484,7 +484,7 @@ bool DEBUG_REPORT::AddContext( Context ctx )
     YAML_STACK_WALKER sw;
 
 #if wxUSE_ON_FATAL_EXCEPTION
-    if( ctx == Context_Exception )
+    if( ctx == wxDebugReport::Context_Exception )
     {
         sw.WalkFromException();
     }

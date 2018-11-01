@@ -49,12 +49,23 @@ public:
      */
     static void GenerateReport( Context ctx );
 
+    void buildVersionInfo( wxString& aMsg );
+    void buildModulesInfo( wxString& aMsg );
+    void buildExceptionContextInfo ( wxString& aMsg );
+
     bool AddTimestamp();
+
+    const wxString& GetReportText() const
+    {
+        return m_reportText;
+    }
 
 #if !wxCHECK_VERSION( 3, 1, 2 ) && wxUSE_STACKWALKER
     // in case of wx <= 3.1.1 important stack information were not saved
     virtual bool AddContext( Context ctx ) override;
 #endif
+private:
+    wxString m_reportText;
 };
 
 #endif

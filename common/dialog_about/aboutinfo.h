@@ -32,6 +32,7 @@
 #include "bitmap_types.h"
 
 class CONTRIBUTOR;
+class EDA_BASE_FRAME;
 
 WX_DECLARE_OBJARRAY( CONTRIBUTOR, CONTRIBUTORS );
 
@@ -47,59 +48,61 @@ public:
     ABOUT_APP_INFO() {};
     virtual ~ABOUT_APP_INFO() {};
 
+    void Build( EDA_BASE_FRAME* aFrame );
+
     void AddDeveloper( const CONTRIBUTOR* developer )
     {
         if( developer != NULL )
-            developers.Add( developer );
+            m_developers.Add( developer );
     }
 
     void AddDocWriter( const CONTRIBUTOR* docwriter )
     {
         if( docwriter != NULL )
-            docwriters.Add( docwriter );
+            m_docwriters.Add( docwriter );
     }
 
     void AddArtist( const CONTRIBUTOR* artist )
     {
         if( artist != NULL )
-            artists.Add( artist );
+            m_artists.Add( artist );
     }
 
     void AddTranslator( const CONTRIBUTOR* translator )
     {
         if( translator != NULL )
-            translators.Add( translator );
+            m_translators.Add( translator );
     }
 
     void AddPackager( const CONTRIBUTOR* packager )
     {
         if( packager   != NULL )
-            packagers.Add( packager );
+            m_packagers.Add( packager );
     }
 
-    CONTRIBUTORS GetDevelopers()  { return developers; }
-    CONTRIBUTORS GetDocWriters()  { return docwriters; }
-    CONTRIBUTORS GetArtists()     { return artists; }
-    CONTRIBUTORS GetTranslators() { return translators; }
-    CONTRIBUTORS GetPackagers()   { return packagers; }
+    CONTRIBUTORS GetDevelopers()  { return m_developers; }
+    CONTRIBUTORS GetDocWriters()  { return m_docwriters; }
+    CONTRIBUTORS GetArtists()     { return m_artists; }
+    CONTRIBUTORS GetTranslators() { return m_translators; }
+    CONTRIBUTORS GetPackagers()   { return m_packagers; }
 
-    void SetDescription( const wxString& text ) { description = text; }
-    wxString& GetDescription() { return description; }
+    void SetDescription( const wxString& text ) { m_description = text; }
+    wxString& GetDescription() { return m_description; }
 
-    void SetLicense( const wxString& text ) { license = text; }
-    wxString& GetLicense() { return license; }
+    void SetLicense( const wxString& text ) { m_license = text; }
+    wxString& GetLicense() { return m_license; }
 
-    void SetCopyright( const wxString& text ) { copyright = text; }
-    wxString GetCopyright() { return copyright; }
+    void SetCopyright( const wxString& text ) { m_copyright = text; }
+    wxString GetCopyright() { return m_copyright; }
 
-    void SetAppName( const wxString& name ) { appName = name; }
-    wxString& GetAppName() { return appName; }
+    void SetAppName( const wxString& name ) { m_appName = name; }
+    wxString& GetAppName() { return m_appName; }
 
-    void SetBuildVersion( const wxString& version ) { buildVersion = version; }
-    wxString& GetBuildVersion() { return buildVersion; }
+    void SetBuildVersion( const wxString& version ) { m_buildVersion = version; }
+    wxString& GetBuildVersion() { return m_buildVersion; }
 
-    void SetLibVersion( const wxString& version ) { libVersion = version; }
-    wxString& GetLibVersion() { return libVersion; }
+    void SetLibVersion( const wxString& version ) { m_libVersion = version; }
+    wxString& GetLibVersion() { return m_libVersion; }
 
     void SetAppIcon( const wxIcon& aIcon ) { m_appIcon = aIcon; }
     wxIcon& GetAppIcon() { return m_appIcon; }
@@ -112,19 +115,19 @@ public:
     }
 
 private:
-    CONTRIBUTORS developers;
-    CONTRIBUTORS docwriters;
-    CONTRIBUTORS artists;
-    CONTRIBUTORS translators;
-    CONTRIBUTORS packagers;
+    CONTRIBUTORS m_developers;
+    CONTRIBUTORS m_docwriters;
+    CONTRIBUTORS m_artists;
+    CONTRIBUTORS m_translators;
+    CONTRIBUTORS m_packagers;
 
-    wxString     description;
-    wxString     license;
+    wxString     m_description;
+    wxString     m_license;
 
-    wxString     copyright;
-    wxString     appName;
-    wxString     buildVersion;
-    wxString     libVersion;
+    wxString     m_copyright;
+    wxString     m_appName;
+    wxString     m_buildVersion;
+    wxString     m_libVersion;
 
     wxIcon       m_appIcon;
 

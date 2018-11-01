@@ -70,6 +70,12 @@ bool GAL_TEST_APP::OnInit()
     if( !wxApp::OnInit() )
         return false;
 
+    #if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
+        printf("Enabling exception handler\n");
+        wxHandleFatalExceptions();
+    #endif
+
+
     // Create the main frame window
     auto frame = CreateMainFrame( (const char*) m_filename.c_str() );
 
@@ -227,4 +233,9 @@ void PCB_TEST_FRAME::OnExit( wxCommandEvent& WXUNUSED( event ) )
 {
     // true is to force the frame to close
     Close( true );
+}
+
+void GAL_TEST_APP::OnFatalException()
+{
+    DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);
 }

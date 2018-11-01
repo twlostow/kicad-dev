@@ -29,6 +29,7 @@
 #include <wx/app.h>
 
 #include <memory>
+#include <debug_report.h>
 
 using std::unique_ptr;
 
@@ -52,6 +53,11 @@ public:
 
     virtual void OnInitCmdLine( wxCmdLineParser& parser ) override;
     virtual bool OnCmdLineParsed( wxCmdLineParser& parser ) override;
+
+    #if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
+    virtual void OnFatalException() override;
+    #endif
+
 
 private:
     wxString m_filename;

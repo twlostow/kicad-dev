@@ -62,6 +62,12 @@ static void set_wxMenuIcon( wxMenuItem* aMenu, const BITMAP_OPAQUE* aIcon )
 {
     // Retrieve the global applicaton show icon option:
     bool useImagesInMenus;
+
+    auto settings = Pgm().CommonSettings();
+
+    if( !settings )
+        return;
+
     Pgm().CommonSettings()->Read( USE_ICONS_IN_MENUS_KEY, &useImagesInMenus );
 
     if( aIcon && useImagesInMenus )

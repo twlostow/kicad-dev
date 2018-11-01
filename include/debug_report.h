@@ -33,7 +33,7 @@
  * saver which gives us useful stack-traces. Furthermore it include
  * additional information which are helpful for debugging a crash.
  */
-class DEBUG_REPORT : public wxDebugReportCompress
+class DEBUG_REPORT
 {
 public:
     DEBUG_REPORT()
@@ -47,7 +47,7 @@ public:
      *
      * @param ctx Context for which the report should be generated
      */
-    static void GenerateReport( Context ctx );
+    static void GenerateReport( wxDebugReport::Context ctx );
 
     void buildVersionInfo( wxString& aMsg );
     void buildModulesInfo( wxString& aMsg );
@@ -60,10 +60,8 @@ public:
         return m_reportText;
     }
 
-#if !wxCHECK_VERSION( 3, 1, 2 ) && wxUSE_STACKWALKER
-    // in case of wx <= 3.1.1 important stack information were not saved
-    virtual bool AddContext( Context ctx ) override;
-#endif
+    bool AddContext( wxDebugReport::Context ctx );
+
 private:
     wxString m_reportText;
 };

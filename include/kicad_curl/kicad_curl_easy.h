@@ -126,6 +126,8 @@ public:
         return m_buffer;
     }
 
+    void SetPostData( const std::string& aData );
+
 private:
     /**
      * Function setOption
@@ -141,6 +143,7 @@ private:
     CURL*           m_CURL;
     curl_slist*     m_headers;
     std::string     m_buffer;
+    std::string     m_postData;
 };
 
 #endif // KICAD_CURL_EASY_H_

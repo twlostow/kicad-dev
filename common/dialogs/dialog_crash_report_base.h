@@ -10,7 +10,6 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
-#include "dialog_shim.h"
 #include <wx/string.h>
 #include <wx/stattext.h>
 #include <wx/gdicmn.h>
@@ -33,7 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// Class DIALOG_CRASH_REPORT_BASE
 ///////////////////////////////////////////////////////////////////////////////
-class DIALOG_CRASH_REPORT_BASE : public DIALOG_SHIM
+class DIALOG_CRASH_REPORT_BASE : public wxDialog 
 {
 	private:
 	

@@ -126,8 +126,13 @@ struct APP_SINGLE_TOP : public wxApp
 {
     APP_SINGLE_TOP(): wxApp()
     {
-#if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
+#if defined( KICAD_CRASH_REPORTER )
+
+    #if defined(_WIN32) || defined(_WIN64)
+        InstallWindowsExceptionHandler();
+    #elif defined(wxUSE_ON_FATAL_EXCEPTION)
         wxHandleFatalExceptions();
+    #endif
 #endif
 
         // Disable proxy menu in Unity window manager. Only usual menubar works with wxWidgets (at least <= 3.1)
@@ -281,6 +286,43 @@ struct APP_SINGLE_TOP : public wxApp
 
 IMPLEMENT_APP( APP_SINGLE_TOP )
 
+
+
+#if defined(_WIN32) || defined(_WIN64)
+
+// implement Windows exception handler, as wx doesn't have one...
+
+#include <windows.h>
+#include <winbase.h>
+
+static ::LONG CALLBACK vectoredExceptionHandler( ::PEXCEPTION_POINTERS ep )
+{
+    switch( ep->ExceptionRecord->ExceptionCode )
+    {
+        case EXCEPTION_ACCESS_VIOLATION:
+        // fixme implement other stuff here
+            break;
+
+        default:
+            return EXCEPTION_CONTINUE_EXECUTION;
+    }
+
+    auto app = wxApp::GetInstance ();
+
+    static_cast<APP_SINGLE_TOP*>(app)->OnFatalException();
+
+    ExitProcess(0);
+
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+
+static void InstallWindowsExceptionHandler()
+{
+    ::AddVectoredExceptionHandler( 1, vectoredExceptionHandler );
+}
+
+#endif
 
 bool PGM_SINGLE_TOP::OnPgmInit()
 {

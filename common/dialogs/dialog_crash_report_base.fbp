@@ -47,7 +47,7 @@
             <property name="pos"></property>
             <property name="size">730,649</property>
             <property name="style">wxDEFAULT_DIALOG_STYLE</property>
-            <property name="subclass">DIALOG_SHIM; dialog_shim.h; forward_declare</property>
+            <property name="subclass">; ; forward_declare</property>
             <property name="title">Kicad Crash Reporter</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>

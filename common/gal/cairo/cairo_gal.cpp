@@ -54,6 +54,8 @@ CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
 
     // Initialise Cairo state
     cairo_matrix_init_identity( &cairoWorldScreenMatrix );
+    cairo_matrix_init_identity( &currentXform );
+
     currentContext      = nullptr;
     context             = nullptr;
     surface             = nullptr;
@@ -88,31 +90,107 @@ void CAIRO_GAL_BASE::endDrawing()
     Flush();
 }
 
+void CAIRO_GAL_BASE::updateWorldScreenMatrix()
+{
+    cairo_matrix_multiply( &currentWorld2Screen, &currentXform, &cairoWorldScreenMatrix );
+}
+
+const VECTOR2D CAIRO_GAL_BASE::xform( double x, double y )
+{
+    VECTOR2D rv;
+    //printf("xform        %.5f %.5f %.5f  [%.5f %.5f]\n", cairoWorldScreenMatrix.xx, cairoWorldScreenMatrix.xy, cairoWorldScreenMatrix.x0, x, y );
+    //printf("             %.5f %.5f %.5f\n", cairoWorldScreenMatrix.yx, cairoWorldScreenMatrix.yy, cairoWorldScreenMatrix.y0 );
+
+    rv.x = currentWorld2Screen.xx * x + currentWorld2Screen.xy * y + currentWorld2Screen.x0;
+    rv.y = currentWorld2Screen.yx * x + currentWorld2Screen.yy * y + currentWorld2Screen.y0;
+    return rv;
+}
+
+const VECTOR2D CAIRO_GAL_BASE::xform( const VECTOR2D& aP )
+{
+    return xform(aP.x, aP.y);
+}
+
+const double CAIRO_GAL_BASE::xform( double x )
+{
+    return cairoWorldScreenMatrix.xx * x;
+}
+
+
+static double roundp( double x )
+{
+    return floor( x + 0.5 ) + 0.5;
+}
+
+static const VECTOR2D roundp( const VECTOR2D& v )
+{
+    return VECTOR2D( roundp( v.x ), roundp( v.y) );
+}
+
+static const VECTOR2D floorp( const VECTOR2D& v )
+{
+    return VECTOR2D( floor( v.x ), floor( v.y) );
+}
 
 void CAIRO_GAL_BASE::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
-    cairo_move_to( currentContext, aStartPoint.x, aStartPoint.y );
-    cairo_line_to( currentContext, aEndPoint.x, aEndPoint.y );
+    auto p0 = roundp( xform( aStartPoint ) );
+    auto p1 = roundp( xform( aEndPoint ) );
+
+    syncLineWidth();
+
+    cairo_move_to( currentContext, p0.x, p0.y );
+    cairo_line_to( currentContext, p1.x, p1.y );
     flushPath();
     isElementAdded = true;
 }
 
+
+void CAIRO_GAL_BASE::syncLineWidth()
+{
+    auto w =  floor( xform( lineWidth ) + 0.5 );
+
+    //printf("w %.2f\n", w);
+
+    if (w <= 1.0)
+    {
+        w = 1.0;
+        cairo_set_line_join( currentContext, CAIRO_LINE_JOIN_MITER );
+        cairo_set_line_cap( currentContext, CAIRO_LINE_CAP_BUTT );
+        cairo_set_line_width( currentContext, 1.0 );
+    }
+    else 
+    {
+        cairo_set_line_join( currentContext, CAIRO_LINE_JOIN_ROUND );
+        cairo_set_line_cap( currentContext, CAIRO_LINE_CAP_ROUND );
+        cairo_set_line_width( currentContext, xform(lineWidth) );
+    }
+
+
+
+}
 
 void CAIRO_GAL_BASE::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
                              double aWidth )
 {
     if( isFillEnabled )
     {
-        // Filled tracks mode
-        SetLineWidth( aWidth );
+        auto p0 = roundp( xform( aStartPoint ) );
+        auto p1 = roundp( xform( aEndPoint ) );
+        auto w =  roundp( xform( aWidth ) );
+      
+        //printf("pixelW %.5f p0 %.1f %.1f p1 %.1f %.1f\n", w, p0.x, p0.y, p1.x, p1.y );
 
-        cairo_move_to( currentContext, (double) aStartPoint.x, (double) aStartPoint.y );
-        cairo_line_to( currentContext, (double) aEndPoint.x, (double) aEndPoint.y );
+        cairo_set_line_width( currentContext, w );
+        cairo_move_to( currentContext, p0.x, p0.y );
+        cairo_line_to( currentContext, p1.x, p1.y );
         cairo_set_source_rgba( currentContext, fillColor.r, fillColor.g, fillColor.b, fillColor.a );
         cairo_stroke( currentContext );
+        
     }
     else
     {
+        #if 0
         // Outline mode for tracks
         VECTOR2D startEndVector = aEndPoint - aStartPoint;
         double   lineAngle      = atan2( startEndVector.y, startEndVector.x );
@@ -136,6 +214,7 @@ void CAIRO_GAL_BASE::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& a
 
         cairo_restore( currentContext );
         flushPath();
+        #endif
     }
 
     isElementAdded = true;
@@ -144,8 +223,13 @@ void CAIRO_GAL_BASE::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& a
 
 void CAIRO_GAL_BASE::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
 {
+    auto c = roundp( xform( aCenterPoint ) );
+    auto r = roundp( xform( aRadius ) );
+
+    syncLineWidth();
+
     cairo_new_sub_path( currentContext );
-    cairo_arc( currentContext, aCenterPoint.x, aCenterPoint.y, aRadius, 0.0, 2 * M_PI );
+    cairo_arc( currentContext, c.x, c.y, r, 0.0, 2 * M_PI );
     flushPath();
     isElementAdded = true;
 }
@@ -182,7 +266,6 @@ void CAIRO_GAL_BASE::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, doub
     cairo_new_sub_path( currentContext );
     cairo_arc( currentContext, aCenterPoint.x, aCenterPoint.y, aRadius, aStartAngle, aEndAngle );
     flushPath();
-
     isElementAdded = true;
 }
 
@@ -237,14 +320,16 @@ void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadiu
 void CAIRO_GAL_BASE::DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
     // Calculate the diagonal points
-    VECTOR2D diagonalPointA( aEndPoint.x,  aStartPoint.y );
-    VECTOR2D diagonalPointB( aStartPoint.x, aEndPoint.y );
+    const auto p0 = roundp( xform( aStartPoint ) );
+    const auto p1 = roundp( xform( aEndPoint ) );
+    
+    syncLineWidth();
 
     // The path is composed from 4 segments
-    cairo_move_to( currentContext, aStartPoint.x, aStartPoint.y );
-    cairo_line_to( currentContext, diagonalPointA.x, diagonalPointA.y );
-    cairo_line_to( currentContext, aEndPoint.x, aEndPoint.y );
-    cairo_line_to( currentContext, diagonalPointB.x, diagonalPointB.y );
+    cairo_move_to( currentContext, p0.x, p0.y );
+    cairo_line_to( currentContext, p1.x, p0.y );
+    cairo_line_to( currentContext, p1.x, p1.y );
+    cairo_line_to( currentContext, p0.x, p1.y );
     cairo_close_path( currentContext );
     flushPath();
 
@@ -431,11 +516,12 @@ void CAIRO_GAL_BASE::SetLineWidth( float aLineWidth )
     }
     else
     {
-        // Make lines appear at least 1 pixel wide, no matter of zoom
+        /*// Make lines appear at least 1 pixel wide, no matter of zoom
         double x = 1.0, y = 1.0;
         cairo_device_to_user_distance( currentContext, &x, &y );
         float minWidth = std::min( fabs( x ), fabs( y ) );
-        cairo_set_line_width( currentContext, std::fmax( aLineWidth, minWidth ) );
+        cairo_set_line_width( currentContext, std::fmax( aLineWidth, minWidth ) );*/
+        lineWidth = aLineWidth;
     }
 }
 
@@ -449,7 +535,7 @@ void CAIRO_GAL_BASE::SetLayerDepth( double aLayerDepth )
 
 void CAIRO_GAL_BASE::Transform( const MATRIX3x3D& aTransformation )
 {
-    cairo_matrix_t cairoTransformation;
+    cairo_matrix_t cairoTransformation, newXform;
 
     cairo_matrix_init( &cairoTransformation,
                        aTransformation.m_data[0][0],
@@ -459,7 +545,9 @@ void CAIRO_GAL_BASE::Transform( const MATRIX3x3D& aTransformation )
                        aTransformation.m_data[0][2],
                        aTransformation.m_data[1][2] );
 
-    cairo_transform( currentContext, &cairoTransformation );
+    cairo_matrix_multiply( &newXform, &currentXform, &cairoTransformation );
+    currentXform = newXform;
+    updateWorldScreenMatrix();
 }
 
 
@@ -476,7 +564,8 @@ void CAIRO_GAL_BASE::Rotate( double aAngle )
     }
     else
     {
-        cairo_rotate( currentContext, aAngle );
+        cairo_matrix_rotate( &currentXform, aAngle );
+        updateWorldScreenMatrix();
     }
 }
 
@@ -495,7 +584,8 @@ void CAIRO_GAL_BASE::Translate( const VECTOR2D& aTranslation )
     }
     else
     {
-        cairo_translate( currentContext, aTranslation.x, aTranslation.y );
+        cairo_matrix_translate ( &currentXform, aTranslation.x, aTranslation.y );
+        updateWorldScreenMatrix();
     }
 }
 
@@ -514,7 +604,8 @@ void CAIRO_GAL_BASE::Scale( const VECTOR2D& aScale )
     }
     else
     {
-        cairo_scale( currentContext, aScale.x, aScale.y );
+        cairo_matrix_scale( &currentXform, aScale.x, aScale.y );
+        updateWorldScreenMatrix();
     }
 }
 
@@ -531,7 +622,8 @@ void CAIRO_GAL_BASE::Save()
     }
     else
     {
-        cairo_save( currentContext );
+        xformStack.push_back( currentXform );
+        updateWorldScreenMatrix();
     }
 }
 
@@ -548,7 +640,12 @@ void CAIRO_GAL_BASE::Restore()
     }
     else
     {
-        cairo_restore( currentContext );
+        if( !xformStack.empty() )
+        {
+            currentXform = xformStack.back();
+            xformStack.pop_back();
+            updateWorldScreenMatrix();
+        }
     }
 }
 
@@ -739,7 +836,7 @@ void CAIRO_GAL_BASE::EnableDepthTest( bool aEnabled )
 
 void CAIRO_GAL_BASE::resetContext()
 {
-    cairo_set_antialias( context, CAIRO_ANTIALIAS_NONE );
+    //cairo_set_antialias( context, CAIRO_ANTIALIAS_GOOD );
 
     ClearScreen();
 
@@ -751,14 +848,23 @@ void CAIRO_GAL_BASE::resetContext()
                        worldScreenMatrix.m_data[1][1], worldScreenMatrix.m_data[0][2],
                        worldScreenMatrix.m_data[1][2] );
 
-    cairo_set_matrix( context, &cairoWorldScreenMatrix );
+    //printf("resetContext %.5f %.5f %.5f\n", cairoWorldScreenMatrix.xx, cairoWorldScreenMatrix.xy, cairoWorldScreenMatrix.x0 );
+    //printf("             %.5f %.5f %.5f\n", cairoWorldScreenMatrix.yx, cairoWorldScreenMatrix.yy, cairoWorldScreenMatrix.y0 );
+
+    //cairo_set_matrix( context, &cairoWorldScreenMatrix );
+
+    // we work in screen-space coordinates and do the transforms outside.
+    cairo_identity_matrix( context );
+
+    cairo_matrix_init_identity( &currentXform );
 
     // Start drawing with a new path
     cairo_new_path( context );
     isElementAdded = true;
 
-    cairo_set_line_join( context, CAIRO_LINE_JOIN_ROUND );
-    cairo_set_line_cap( context, CAIRO_LINE_CAP_ROUND );
+    cairo_set_antialias( context, CAIRO_ANTIALIAS_DEFAULT ); //SUBPIXEL );
+
+    updateWorldScreenMatrix();
 
     lineWidth = 0;
 }
@@ -766,12 +872,44 @@ void CAIRO_GAL_BASE::resetContext()
 
 void CAIRO_GAL_BASE::drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
-    cairo_move_to( currentContext, aStartPoint.x, aStartPoint.y );
-    cairo_line_to( currentContext, aEndPoint.x, aEndPoint.y );
+    auto p0 = roundp( xform( aStartPoint ) );
+    auto p1 = roundp( xform( aEndPoint ) );
+
+    syncLineWidth();
+
+    cairo_move_to( currentContext, p0.x, p0.y );
+    cairo_line_to( currentContext, p1.x, p1.y );
     cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
     cairo_stroke( currentContext );
 }
 
+void CAIRO_GAL_BASE::drawGridPoint( const VECTOR2D& aPoint, double aSize )
+{
+    auto p = roundp( xform( aPoint ) );
+    auto s = aSize / 2.0;
+
+    if( (((int)aSize) % 2) == 0 ) // s even
+    {
+        p += VECTOR2D( 0.5, 0.5 );
+    }
+
+    //printf("lineSize: %.1f\n", aSize );
+
+    cairo_set_line_join( currentContext, CAIRO_LINE_JOIN_MITER );
+    cairo_set_line_cap( currentContext, CAIRO_LINE_CAP_BUTT );
+    cairo_set_line_width( currentContext, 1.0 ); //floor( aSize + 0.5 ) - 0.5 );
+
+
+
+    // The path is composed from 4 segments
+    cairo_move_to( currentContext, p.x - s, p.y - s);
+    cairo_line_to( currentContext, p.x + s, p.y - s);
+    cairo_line_to( currentContext, p.x + s, p.y + s);
+    cairo_line_to( currentContext, p.x - s, p.y + s);
+    cairo_close_path( currentContext );
+
+    cairo_fill( currentContext );
+}
 
 void CAIRO_GAL_BASE::flushPath()
 {
@@ -866,11 +1004,17 @@ void CAIRO_GAL_BASE::drawPoly( const std::deque<VECTOR2D>& aPointList )
     // Iterate over the point list and draw the segments
     std::deque<VECTOR2D>::const_iterator it = aPointList.begin();
 
-    cairo_move_to( currentContext, it->x, it->y );
+    syncLineWidth();
+
+    const auto p = roundp( xform( it->x, it->y ) );
+
+    cairo_move_to( currentContext, p.x, p.y );
 
     for( ++it; it != aPointList.end(); ++it )
     {
-        cairo_line_to( currentContext, it->x, it->y );
+        const auto p2 = roundp( xform( it->x, it->y ) );
+
+        cairo_line_to( currentContext, p2.x, p2.y );
     }
 
     flushPath();

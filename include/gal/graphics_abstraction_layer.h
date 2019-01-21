@@ -944,7 +944,7 @@ public:
     }
 
     ///> @brief Draw the grid
-    virtual void DrawGrid();
+    virtual void DrawGrid() {};
 
     /**
      * Function GetGridPoint()
@@ -1138,6 +1138,7 @@ protected:
      * @param aEndPoint is the end point of the line.
      */
     virtual void drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
+    virtual void drawGridPoint( const VECTOR2D& aPoint, double aSize ) {};
 
     /// Possible depth range
     static const int MIN_DEPTH;

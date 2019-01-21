@@ -50,8 +50,8 @@ class GAL_TEST_APP : public wxApp
 public:
     virtual bool OnInit() override;
 
-    virtual void OnInitCmdLine( wxCmdLineParser& parser ) override;
-    virtual bool OnCmdLineParsed( wxCmdLineParser& parser ) override;
+//    virtual void OnInitCmdLine( wxCmdLineParser& parser ) override;
+//    virtual bool OnCmdLineParsed( wxCmdLineParser& parser ) override;
 
 private:
     wxString m_filename;
@@ -88,6 +88,6 @@ protected:
     unique_ptr < ACTIONS > m_pcbActions;
 };
 
-wxFrame* CreateMainFrame( const std::string& aFileName );
+wxFrame* CreateMainFrame( wxCmdLineParser& aCmdLine );
 
 #endif

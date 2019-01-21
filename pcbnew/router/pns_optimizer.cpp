@@ -21,7 +21,7 @@
 
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_rect.h>
-#include <geometry/shape_convex.h>
+#include <geometry/shape_simple.h>
 #include <geometry/shape_file_io.h>
 
 #include <cmath>
@@ -32,7 +32,6 @@
 #include "pns_solid.h"
 #include "pns_optimizer.h"
 
-#include "../../include/geometry/shape_simple.h"
 #include "pns_utils.h"
 #include "pns_router.h"
 #include "pns_debug_decorator.h"
@@ -124,125 +123,58 @@ bool COST_ESTIMATOR::IsBetter( COST_ESTIMATOR& aOther,
     return false;
 }
 
-
-/**
- *  Optimizer
- **/
-OPTIMIZER::OPTIMIZER( NODE* aWorld ) :
-    m_world( aWorld ),
-    m_collisionKindMask( ITEM::ANY_T ),
-    m_effortLevel( MERGE_SEGMENTS ),
-    m_keepPostures( false ),
-    m_restrictAreaActive( false )
+class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
 {
-}
+public:
+    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_entryDirectionMask( aEntryDirectionMask ),
+        m_cornerAngleMask( aCornerAngleMask )
+        {
 
+        }
 
-OPTIMIZER::~OPTIMIZER()
+    virtual ~ANGLE_CONSTRAINT_45() {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
+
+private:
+    int m_entryDirectionMask;
+    int m_cornerAngleMask;
+};
+
+class AREA_CONSTRAINT : public OPT_CONSTRAINT
 {
-}
+public:
+    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_allowedArea ( aAllowedArea ) {};
 
+        virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
 
-struct OPTIMIZER::CACHE_VISITOR
+private:
+    BOX2I m_allowedArea;
+
+};
+
+class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
 {
-    CACHE_VISITOR( const ITEM* aOurItem, NODE* aNode, int aMask ) :
-        m_ourItem( aOurItem ),
-        m_collidingItem( NULL ),
-        m_node( aNode ),
-        m_mask( aMask )
-    {}
+public:
+    FOLLOW_CONSTRAINT( NODE* aWorld ) :
+        OPT_CONSTRAINT( aWorld )
+        {};
 
-    bool operator()( ITEM* aOtherItem )
-    {
-        if( !( m_mask & aOtherItem->Kind() ) )
-            return true;
-
-        int clearance = m_node->GetClearance( aOtherItem, m_ourItem );
-
-        if( !aOtherItem->Collide( m_ourItem, clearance ) )
-            return true;
-
-        m_collidingItem = aOtherItem;
-        return false;
-    }
-
-    const ITEM* m_ourItem;
-    ITEM* m_collidingItem;
-    NODE* m_node;
-    int m_mask;
+    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
 };
 
 
-void OPTIMIZER::cacheAdd( ITEM* aItem, bool aIsStatic = false )
-{
-    if( m_cacheTags.find( aItem ) != m_cacheTags.end() )
-        return;
-
-    m_cache.Add( aItem );
-    m_cacheTags[aItem].m_hits = 1;
-    m_cacheTags[aItem].m_isStatic = aIsStatic;
-}
-
-
-void OPTIMIZER::removeCachedSegments( LINE* aLine, int aStartVertex, int aEndVertex )
-{
-    if( !aLine->IsLinked() ) return;
-
-    LINE::SEGMENT_REFS& segs = aLine->LinkedSegments();
-
-    if( aEndVertex < 0 )
-        aEndVertex += aLine->PointCount();
-
-    for( int i = aStartVertex; i < aEndVertex - 1; i++ )
-    {
-        SEGMENT* s = segs[i];
-        m_cacheTags.erase( s );
-        m_cache.Remove( s );
-    }
-}
-
-
-void OPTIMIZER::CacheRemove( ITEM* aItem )
-{
-    if( aItem->Kind() == ITEM::LINE_T )
-        removeCachedSegments( static_cast<LINE*>( aItem ) );
-}
-
-
-void OPTIMIZER::CacheStaticItem( ITEM* aItem )
-{
-    cacheAdd( aItem, true );
-}
-
-
-void OPTIMIZER::ClearCache( bool aStaticOnly  )
-{
-    if( !aStaticOnly )
-    {
-        m_cacheTags.clear();
-        m_cache.Clear();
-        return;
-    }
-
-    for( CachedItemTags::iterator i = m_cacheTags.begin(); i!= m_cacheTags.end(); ++i )
-    {
-        if( i->second.m_isStatic )
-        {
-            m_cache.Remove( i->first );
-            m_cacheTags.erase( i->first );
-        }
-    }
-}
-
-
 bool ANGLE_CONSTRAINT_45::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
-    {
-        auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
-        auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
+{
+    auto dir_orig0 = DIRECTION_45( aOriginLine->CSegment( aVertex1 ) );
+    auto dir_orig1 = DIRECTION_45( aOriginLine->CSegment( aVertex2 - 1) );
 
-        printf("Check45\n");
-
-        if( aVertex1 == 0 )
+    //printf("v1 %d v2 %d sc %d\n", aVertex1, aVertex2, aOriginLine->CLine().SegmentCount() );
+    if( aVertex1 == 0 )
         {
             if( ( dir_orig0.Mask() & m_entryDirectionMask ) == 0 )
                 return false; // disallowed entry angle
@@ -253,7 +185,7 @@ bool ANGLE_CONSTRAINT_45::Check ( int aVertex1, int aVertex2, LINE* aOriginLine,
 
 
         return true;
-    }
+ }
 
 bool AREA_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement )
         {
@@ -485,7 +417,7 @@ bool LINE_RESTRICTIONS::Check( int aVertex1, int aVertex2, const SHAPE_LINE_CHAI
 
 bool OPTIMIZER::checkColliding( ITEM* aItem, bool aUpdateCache )
 {
-    CACHE_VISITOR v( aItem, m_world, m_collisionKindMask );
+//    CACHE_VISITOR v( aItem, m_world, m_collisionKindMask );
 
     return static_cast<bool>( m_world->CheckColliding( aItem ) );
 
@@ -515,10 +447,122 @@ bool OPTIMIZER::checkColliding( ITEM* aItem, bool aUpdateCache )
 #endif
 }
 
+/**
+ *  Optimizer
+ **/
+OPTIMIZER::OPTIMIZER( NODE* aWorld ) :
+    m_world( aWorld ),
+    m_collisionKindMask( ITEM::ANY_T ),
+    m_effortLevel( MERGE_SEGMENTS ),
+    m_keepPostures( false ),
+    m_restrictAreaActive( false )
+{
+}
+
+
+OPTIMIZER::~OPTIMIZER()
+{
+    ClearConstraints();
+}
+
+
+struct OPTIMIZER::CACHE_VISITOR
+{
+    CACHE_VISITOR( const ITEM* aOurItem, NODE* aNode, int aMask ) :
+        m_ourItem( aOurItem ),
+        m_collidingItem( NULL ),
+        m_node( aNode ),
+        m_mask( aMask )
+    {}
+
+    bool operator()( ITEM* aOtherItem )
+    {
+        if( !( m_mask & aOtherItem->Kind() ) )
+            return true;
+
+        int clearance = m_node->GetClearance( aOtherItem, m_ourItem );
+
+        if( !aOtherItem->Collide( m_ourItem, clearance ) )
+            return true;
+
+        m_collidingItem = aOtherItem;
+        return false;
+    }
+
+    const ITEM* m_ourItem;
+    ITEM* m_collidingItem;
+    NODE* m_node;
+    int m_mask;
+};
+
+
+void OPTIMIZER::cacheAdd( ITEM* aItem, bool aIsStatic = false )
+{
+    if( m_cacheTags.find( aItem ) != m_cacheTags.end() )
+        return;
+
+    m_cache.Add( aItem );
+    m_cacheTags[aItem].m_hits = 1;
+    m_cacheTags[aItem].m_isStatic = aIsStatic;
+}
+
+
+void OPTIMIZER::removeCachedSegments( LINE* aLine, int aStartVertex, int aEndVertex )
+{
+    if( !aLine->IsLinked() ) return;
+
+    LINE::SEGMENT_REFS& segs = aLine->LinkedSegments();
+
+    if( aEndVertex < 0 )
+        aEndVertex += aLine->PointCount();
+
+    for( int i = aStartVertex; i < aEndVertex - 1; i++ )
+    {
+        SEGMENT* s = segs[i];
+        m_cacheTags.erase( s );
+        m_cache.Remove( s );
+    }
+}
+
+
+void OPTIMIZER::CacheRemove( ITEM* aItem )
+{
+    if( aItem->Kind() == ITEM::LINE_T )
+        removeCachedSegments( static_cast<LINE*>( aItem ) );
+}
+
+
+void OPTIMIZER::CacheStaticItem( ITEM* aItem )
+{
+    cacheAdd( aItem, true );
+}
+
+
+void OPTIMIZER::ClearCache( bool aStaticOnly  )
+{
+    if( !aStaticOnly )
+    {
+        m_cacheTags.clear();
+        m_cache.Clear();
+        return;
+    }
+
+    for( CachedItemTags::iterator i = m_cacheTags.begin(); i!= m_cacheTags.end(); ++i )
+    {
+        if( i->second.m_isStatic )
+        {
+            m_cache.Remove( i->first );
+            m_cacheTags.erase( i->first );
+        }
+    }
+}
+
+
 void OPTIMIZER::ClearConstraints()
 {
     for (auto c : m_constraints)
         delete c;
+
     m_constraints.clear();
 }
 
@@ -655,7 +699,7 @@ bool OPTIMIZER::mergeFull( LINE* aLine )
         int n_segs = current_path.SegmentCount();
         int max_step = n_segs - 1;
 
-//        printf("-> opt segs %d max_step %d step %d\n", n_segs, max_step, step );
+        //printf("-> opt segs %d max_step %d step %d\n", n_segs, max_step, step );
 
         if( step > max_step )
             step = max_step;
@@ -690,17 +734,19 @@ bool OPTIMIZER::Optimize( LINE* aLine, LINE* aResult )
 
     bool rv = false;
 
+    //printf("run optimize %x\n", m_effortLevel);
+
     if( m_effortLevel & MERGE_SEGMENTS )
         rv |= mergeFull( aResult );
 
     if( m_effortLevel & MERGE_OBTUSE )
         rv |= mergeObtuse( aResult );
 
-    if( m_effortLevel & SMART_PADS )
-        rv |= runSmartPads( aResult );
+    //if( m_effortLevel & SMART_PADS )
+      //  rv |= runSmartPads( aResult );
 
-    if( m_effortLevel & FANOUT_CLEANUP )
-        rv |= fanoutCleanup( aResult );
+    //if( m_//effortLevel & FANOUT_CLEANUP )
+        //rv |= fanoutCleanup( aResult );
 
     return rv;
 }
@@ -1088,17 +1134,32 @@ bool OPTIMIZER::runSmartPads( LINE* aLine )
     return true;
 }
 
+void OPTIMIZER::SetOptimizationProfile( OptimizationProfile aProfile, bool aStartDiagonal )
+{
+    ClearConstraints();
 
-bool OPTIMIZER::Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld )
+    switch( aProfile )
+    {
+        case PROFILE_ROUTE_HEAD:
+            //printf("sd %d\n", aStartDiagonal );
+            AddConstraint( new ANGLE_CONSTRAINT_45( m_world, -1, aStartDiagonal ? DIRECTION_45::MASK_STRAIGHT : DIRECTION_45::MASK_DIAGONAL ) );
+            AddConstraint( new FOLLOW_CONSTRAINT( m_world ) );
+
+            SetEffortLevel ( MERGE_SEGMENTS );
+            SetCollisionMask( -1 );
+            break;
+        default:
+            break;
+    }
+}
+
+
+bool OPTIMIZER::Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld, OptimizationProfile aProfile, bool aStartDiagonal )
 {
     OPTIMIZER opt( aWorld );
 
-    opt.AddConstraint( new FOLLOW_CONSTRAINT( aWorld ) );
-
-    opt.SetEffortLevel( aEffortLevel );
-    opt.SetCollisionMask( -1 );
+    opt.SetOptimizationProfile( aProfile, aStartDiagonal );
     bool rv = opt.Optimize( aLine );
-    opt.ClearConstraints();
 
     return rv;
 }

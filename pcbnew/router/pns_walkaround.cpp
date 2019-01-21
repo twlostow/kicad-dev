@@ -70,17 +70,17 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::singleStep( LINE& aPath,
     if( ( current_obs->m_hull ).PointInside( last ) || ( current_obs->m_hull ).PointOnEdge( last ) )
     {
         m_recursiveBlockageCount++;
-        printf("RecBlk [%d]\n", m_recursiveBlockageCount);
+        //printf("RecBlk [%d]\n", m_recursiveBlockageCount);
 
         if( m_recursiveBlockageCount < 3 )
         {
             aPath.Line().Append( current_obs->m_hull.NearestPoint( last ) );
-            Dbg()->AddLine( aPath.CLine(), 5, 400000 );
+            //Dbg()->AddLine( aPath.CLine(), 5, 400000 );
         }
         else
         {
             aPath = aPath.ClipToNearestObstacle( m_world );
-            printf("ClipToNarest [%d]!\n", aPath.PointCount() );
+            //printf("ClipToNarest [%d]!\n", aPath.PointCount() );
 
             return DONE;
         }
@@ -94,7 +94,7 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::singleStep( LINE& aPath,
                       path_post[1], !aWindingDirection ) )
         return STUCK;
 
-    Dbg()->AddLine(path_walk[0],1,50000);
+    //Dbg()->AddLine(path_walk[0],1,50000);
 
 #ifdef DEBUG
     m_logger.NewGroup( aWindingDirection ? "walk-cw" : "walk-ccw", m_iteration );
@@ -194,7 +194,7 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
         if( s_ccw != STUCK )
             s_ccw = singleStep( path_ccw, false );
 
-        printf("iter %d s_cw %d s_ccw %d\n", m_iteration, s_cw, s_ccw );
+        //printf("iter %d s_cw %d s_ccw %d\n", m_iteration, s_cw, s_ccw );
 
         if( ( s_cw == DONE && s_ccw == DONE ) || ( s_cw == STUCK && s_ccw == STUCK ) )
         {
@@ -271,17 +271,17 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
 
     if( aWalkPath.SegmentCount() < 1 )
     {
-        printf("Stuck1\n");
+        //printf("Stuck1\n");
         return STUCK;
     }
     if( aWalkPath.CPoint( -1 ) != aInitialPath.CPoint( -1 ) )
     {
-        printf("Stuck2\n");
+    //    printf("Stuck2\n");
         return STUCK;
     }
     if( aWalkPath.CPoint( 0 ) != aInitialPath.CPoint( 0 ) )
     {
-        printf("Stuck3\n");
+      //  printf("Stuck3\n");
         return STUCK;
     }
 
@@ -290,7 +290,7 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
     if( st == DONE )
     {
         if( aOptimize )
-            OPTIMIZER::Optimize( &aWalkPath, OPTIMIZER::MERGE_OBTUSE, m_world );
+            OPTIMIZER::Optimize( &aWalkPath, OPTIMIZER::MERGE_SEGMENTS, m_world );
     }
 
     return st;

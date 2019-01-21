@@ -110,8 +110,27 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP )
 
     viaOk = buildInitialLine( aP, t0 );
 
+    if (t0.SegmentCount() < 1)
+        return true;
+
+
     initTrack = m_head;
     initTrack.Line().Append( t0.CLine() );
+
+    printf("initTrack: \n" );
+    for(int i = 0 ; i < initTrack.CLine().PointCount() ; i++)
+    {
+        auto p = initTrack.CPoint(i);
+        printf(" -> i %d %d\n", p.x, p.y );
+    }
+
+    printf("t0: \n" );
+    for(int i = 0 ; i < t0.CLine().PointCount() ; i++)
+    {
+        auto p = t0.CPoint(i);
+        printf(" -> t0 %d %d\n", p.x, p.y );
+    }
+
 
     WALKAROUND walkaround( m_currentNode, Router() );
 
@@ -121,9 +140,52 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP )
 
     WALKAROUND::WALKAROUND_STATUS wf = walkaround.Route( initTrack, walkFull, false );
 
-    Dbg()->AddLine( initTrack.CLine(), 2, 20000 );
-    Dbg()->AddLine( walkFull.CLine(), 3, 10000 );
+    printf("walkFull: %d segs\n", walkFull.CLine().SegmentCount() );
 
+    printf("MT A pstart %d %d\n", m_p_start.x, m_p_start.y );
+
+    if( t0.CPoint(0) == m_currentStart )
+    {
+        m_mouseTrail.Clear();
+        m_mouseTrail.Append(m_currentStart);
+        m_mouseTrail.Append( aP );
+    }
+
+    if( wf == WALKAROUND::DONE )
+    {
+        /*for(int i = 0; i < t0.PointCount(); i++ )
+        {
+            auto p = t0.CPoint(i);
+            printf("MT Append %d %d %d\n", i, p.x, p.y );
+            if(p == VECTOR2I(0, 0))
+            {
+                printf("MT App ERR %d %d %d %d\n", aP.x, aP.y, m_p_start.x, m_p_start.y );
+            }
+
+        }
+        */
+        m_mouseTrail.Append( aP );
+        m_mouseTrail.Simplify();
+    }
+
+    //printf("iniit %d\n", initTrack.CLine().SegmentCount() );
+
+    if( t0.SegmentCount() >= 1)
+    {
+        auto s = t0.CPoint(0);
+        auto e = t0.CPoint(-1);
+        //printf("s %-10d %-10d e %-10d %-10d\n", s.x, s.y, e.x, e.y );
+    } else {
+        //printf("s0p\n");
+    }
+
+    
+    printf("----- mt %d\n", m_mouseTrail.PointCount() );
+    //Dbg()->AddLine( m_mouseTrail, 2, 10000 );
+    //Dbg()->AddLine( initTrack.CLine(), 3, 20000 );
+    //Dbg()->AddLine( walkFull.CLine(), 4, 30000 );
+    
+    
   /*  printf("stat %d\n", wf);
 
 
@@ -166,7 +228,7 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP )
 }
 
 
-bool LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP, LINE& aNewHead )
+bool LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP )
 {
     LINE newHead( m_head ), bestHead( m_head );
     bool hasBest = false;
@@ -201,7 +263,7 @@ bool LINE_PLACER::rhMarkObstacles( const VECTOR2I& aP, LINE& aNewHead )
     else
         m_head = newHead;
 
-    aNewHead = m_head;
+//    aNewHead = m_head;
 
     return static_cast<bool>( m_currentNode->CheckColliding( &m_head ) );
 }
@@ -415,41 +477,62 @@ bool LINE_PLACER::routeHead( const VECTOR2I& aP )
     return false;
 }
 
-bool LINE_PLACER::handleSelfIntersections()
+
+int clipSelfIntersectingLine( const SHAPE_LINE_CHAIN& aLine, SHAPE_LINE_CHAIN& aResult )
 {
-    SHAPE_LINE_CHAIN::INTERSECTIONS ips;
-    SHAPE_LINE_CHAIN& head = m_head.Line();
-
-
-    auto ip = head.SelfIntersecting();
+    auto ip = aLine.SelfIntersecting();
 
     if( !ip )
-        return false;
+        return -1;
 
     int n = std::min(ip->ourIndex, ip->theirIndex);
 
-    // Intersection point is on the first or the second segment: just start routing
-    // from the beginning
     if( n < 2 )
     {
-        m_p_start = head.CPoint( 0 );
-        m_direction = m_initial_direction;
-        head.Clear();
-
-        return true;
+        aResult.Clear();
     }
     else
     {
-        // Clip till the last tail segment before intersection.
-        // Set the direction to the one of this segment.
-        const SEG last = head.CSegment( n - 1 );
-        m_p_start = last.A;
-        m_direction = DIRECTION_45( last );
-        head.Remove( n, -1 );
-        return true;
+        aResult = aLine;
+        const SEG last = aLine.CSegment( n - 1 );
+        aResult.Remove( n, -1 );
     }
 
-    return false;
+    return n;
+}
+
+bool LINE_PLACER::handleSelfIntersections()
+{
+    SHAPE_LINE_CHAIN clipped;
+
+    int n = clipSelfIntersectingLine( m_head.CLine(), clipped );
+
+    if( n < 0 )
+        return false;
+
+    // Intersection point is on the first or the second segment: just start routing
+    // from the beginning
+    if( n == 0 || n == 1 )
+    {
+        m_p_start = m_currentStart;
+        m_direction = m_initial_direction;
+    }
+    else
+    {
+        m_p_start = clipped.CPoint(-1);
+        m_direction = DIRECTION_45( clipped.CSegment(-1) );
+    }
+
+    m_head.SetShape( clipped );
+
+    n = clipSelfIntersectingLine( m_mouseTrail, clipped );
+
+    if( n >= 0 )
+    {
+        m_mouseTrail = clipped;
+    }
+
+    return true;
 }
 
 bool LINE_PLACER::route( const VECTOR2I& aP )
@@ -457,6 +540,8 @@ bool LINE_PLACER::route( const VECTOR2I& aP )
     bool go_again = false;
 
     m_p_start = m_head.PointCount() == 0 ? m_currentStart : m_head.CPoint( -1 );
+
+    printf("MT A ddd %d %d\n", m_p_start.x, m_p_start.y );
 
     //printf("p_start %d %d\n", m_p_start.x, m_p_start.y );
 
@@ -471,8 +556,38 @@ bool LINE_PLACER::route( const VECTOR2I& aP )
 
     } while ( go_again );
 
+    auto oldHead = m_head;
 
-    OPTIMIZER::Optimize( &m_head, OPTIMIZER::MERGE_SEGMENTS, m_currentNode );
+                for(int i =0; i < oldHead.PointCount(); i++) 
+                {
+                    printf(" -> o %d %d\n", oldHead.CPoint(i).x,  oldHead.CPoint(i).y );
+                }
+
+
+    OPTIMIZER::Optimize( &m_head, OPTIMIZER::MERGE_SEGMENTS, m_currentNode, OPTIMIZER::PROFILE_ROUTE_HEAD, m_direction.IsDiagonal() );
+#if 1
+    if (m_head.SegmentCount() > 1)
+        {
+            DIRECTION_45 d( m_head.CLine().CSegment(-1) );
+
+            if ( d == DIRECTION_45::SE )
+            {
+                printf( "wf post %s\n\n\n*****************************\n\n\n", d.Format().c_str() );
+                
+                for(int i =0; i < m_head.PointCount(); i++) 
+                {
+                    printf(" -> s %d %d\n", m_head.CPoint(i).x,  m_head.CPoint(i).y );
+                }
+
+            }
+        }
+
+#endif
+
+    //Dbg()->AddLine( oldHead.CLine(), 5, 100000 );
+
+    Dbg()->AddLine( m_mouseTrail, 2, 10000 );
+    
 
     return CurrentEnd() == aP;
 }
@@ -574,6 +689,7 @@ bool LINE_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
     m_startItem = aStartItem;
     m_placingVia = false;
     m_chainedPlacement = false;
+    m_mouseTrail.Clear();
 
     setInitialDirection( Settings().InitialDirection() );
 
@@ -693,6 +809,7 @@ bool LINE_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinis
         // Collisions still prevent fixing unless "Allow DRC violations" is checked
         if( !Settings().CanViolateDRC() && m_world->CheckColliding( &pl ) )
             return false;
+    }
 
     const SHAPE_LINE_CHAIN& l = pl.CLine();
 
@@ -875,9 +992,13 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aInver
 {
     SHAPE_LINE_CHAIN l;
 
+    //printf("buildInit %d %d - %d %d\n", m_p_start.x, m_p_start.y, aP.x, aP.y );
+
     if( m_p_start == aP )
     {
         l.Clear();
+        aHead.Line().Clear();
+        //printf("null?\n");
     }
     else
     {
@@ -896,10 +1017,16 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aInver
         if( l.SegmentCount() > 1 && m_orthoMode )
         {
             VECTOR2I newLast = l.CSegment( 0 ).LineProject( l.CPoint( -1 ) );
-
+            //printf("ortho\n");
             l.Remove( -1, -1 );
             l.Point( 1 ) = newLast;
         }
+    }
+
+    if(  l.SegmentCount() )
+    {
+        DIRECTION_45 d  ( l.CSegment(0) );
+        printf( "wf init %s\n", d.Format().c_str() );
     }
 
     aHead.SetShape( l );
@@ -923,6 +1050,7 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aInver
 
     if( v.PushoutForce( m_currentNode, lead, force, solidsOnly, 40 ) )
     {
+        //printf("force\n");
         SHAPE_LINE_CHAIN line = m_direction.BuildInitialTrace( m_p_start, aP + force );
         aHead = LINE( aHead, line );
 

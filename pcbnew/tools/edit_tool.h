@@ -46,6 +46,7 @@ class CONNECTIVITY_DATA;
 #define EXCLUDE_LOCKED      0x0001
 #define EXCLUDE_LOCKED_PADS 0x0002
 #define EXCLUDE_TRANSIENTS  0x0004
+#define CONFIRM_LOCK        0x0008
 
 void EditToolSelectionFilter( GENERAL_COLLECTOR& aCollector, int aFlags );
 

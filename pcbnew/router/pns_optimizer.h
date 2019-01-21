@@ -102,15 +102,21 @@ public:
         FANOUT_CLEANUP    = 0x08
     };
 
+    enum OptimizationProfile {
+        PROFILE_ROUTE_HEAD = 0x1,
+        PROFILE_DEFAULT = 0x2
+    };
+
     OPTIMIZER( NODE* aWorld );
     ~OPTIMIZER();
 
     ///> a quick shortcut to optmize a line without creating and setting up an optimizer
-    static bool Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld);
+    static bool Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld, OptimizationProfile aProfile = PROFILE_DEFAULT, bool aStartDiagonal = true );
 
     bool Optimize( LINE* aLine, LINE* aResult = NULL );
     bool Optimize( DIFF_PAIR* aPair );
 
+    void SetOptimizationProfile( OptimizationProfile aProfile, bool aStartDiagonal );
 
     void SetWorld( NODE* aNode ) { m_world = aNode; }
     void CacheStaticItem( ITEM* aItem );
@@ -222,50 +228,6 @@ public:
 protected:
     NODE* m_world;
     int m_priority;
-};
-
-class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
-{
-public:
-    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aCornerAngleMask = -1 ) :
-        OPT_CONSTRAINT( aWorld ),
-        m_entryDirectionMask( aEntryDirectionMask ),
-        m_cornerAngleMask( aCornerAngleMask )
-        {
-
-        }
-
-    virtual ~ANGLE_CONSTRAINT_45() {};
-
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
-
-private:
-    int m_entryDirectionMask;
-    int m_cornerAngleMask;
-};
-
-class AREA_CONSTRAINT : public OPT_CONSTRAINT
-{
-public:
-    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
-        OPT_CONSTRAINT( aWorld ),
-        m_allowedArea ( aAllowedArea ) {};
-
-        virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
-
-private:
-    BOX2I m_allowedArea;
-
-};
-
-class FOLLOW_CONSTRAINT: public OPT_CONSTRAINT
-{
-public:
-    FOLLOW_CONSTRAINT( NODE* aWorld ) :
-        OPT_CONSTRAINT( aWorld )
-        {};
-
-    virtual bool Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aReplacement ) override;
 };
 
 };

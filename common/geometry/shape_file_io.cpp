@@ -285,7 +285,7 @@ std::vector<SHAPE*> SHAPE_FILE_IO::ReadGroup()
 
 
 
-void SHAPE_FILE_IO::BeginGroup( const std::string aName )
+void SHAPE_FILE_IO::BeginGroup( const std::string& aName )
 {
     assert( m_mode != IOM_READ );
 

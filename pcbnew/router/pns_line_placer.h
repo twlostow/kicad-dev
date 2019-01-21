@@ -354,6 +354,8 @@ private:
     VECTOR2I m_currentEnd, m_currentStart;
     LINE m_currentTrace;
 
+    SHAPE_LINE_CHAIN m_mouseTrail;
+
     PNS_MODE m_currentMode;
     ITEM* m_startItem;
 

@@ -55,6 +55,10 @@ public:
         UNDEFINED   = -1
     };
 
+    static const int MASK_STRAIGHT = N | E | S | W;
+    static const int MASK_DIAGONAL = NE | SE | SW | NW;
+    static const int MASK_ALL = -1;
+
     /**
      * Enum AngleType
      * Represents kind of angle formed by vectors heading in two DIRECTION_45s.

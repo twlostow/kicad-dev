@@ -63,6 +63,9 @@ include_directories(
 )
 
 target_link_libraries( test_window
+    qa_utils
+    legacy_wx
+    legacy_gal
     polygon
     pnsrouter
     common
@@ -88,6 +91,9 @@ target_link_libraries( test_window
     pcad2kicadpcb
     common
     pcbcommon
+    qa_utils
+    legacy_wx
+    legacy_gal
     ${GITHUB_PLUGIN_LIBRARIES}
     common
     pcbcommon

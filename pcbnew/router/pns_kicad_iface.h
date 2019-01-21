@@ -35,6 +35,7 @@ class PCB_DISPLAY_OPTIONS;
 class PCB_TOOL;
 class ZONE_CONTAINER;
 class DRAWSEGMENT;
+class EDA_TEXT;
 
 namespace KIGFX
 {

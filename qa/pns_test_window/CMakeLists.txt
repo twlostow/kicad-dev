@@ -31,18 +31,17 @@ if( BUILD_GITHUB_PLUGIN )
     set( GITHUB_PLUGIN_LIBRARIES github_plugin )
 endif()
 
-add_dependencies( pnsrouter pcbcommon pcad2kicadpcb ${GITHUB_PLUGIN_LIBRARIES} )
+add_dependencies( pnsrouter pcbcommon pcad2kicadpcb qa_utils legacy_gal legacy_wx common bitmaps polygon ${GITHUB_PLUGIN_LIBRARIES} )
 
-add_executable( pns_test_window
-  test.cpp
-  ../common/pcb_test_frame.cpp
-  ../common/mocks.cpp
+add_executable(pns_test_window WIN32
+  test_window.cpp
+  ../qa_utils/pcb_test_frame.cpp
+  ../qa_utils/mocks.cpp
   ../../common/base_units.cpp
   ../../pcbnew/tools/pcb_tool.cpp
   ../../pcbnew/tools/selection.cpp
   ../../pcbnew/tools/selection_tool.cpp
   ../../pcbnew/tools/tool_event_utils.cpp
-  #../../pcbnew/tools/outline_editor.cpp
 )
 
 include_directories( BEFORE ${INC_BEFORE} )
@@ -57,12 +56,15 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/pcbnew/dialogs
     ${CMAKE_SOURCE_DIR}/polygon
     ${CMAKE_SOURCE_DIR}/common/geometry
-    ${CMAKE_SOURCE_DIR}/qa/common
+    ${CMAKE_SOURCE_DIR}/qa/qa_utils
     ${Boost_INCLUDE_DIR}
     ${INC_AFTER}
 )
 
 target_link_libraries( pns_test_window
+    qa_utils
+    legacy_wx
+    legacy_gal
     polygon
     pnsrouter
     common
@@ -82,14 +84,16 @@ target_link_libraries( pns_test_window
     pnsrouter
     common
     pcbcommon
+    3d-viewer
     bitmaps
     gal
     pcad2kicadpcb
     common
     pcbcommon
+    qa_utils
+    legacy_wx
+    legacy_gal
     ${GITHUB_PLUGIN_LIBRARIES}
-    common
-    pcbcommon
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}

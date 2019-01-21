@@ -70,32 +70,13 @@ bool GAL_TEST_APP::OnInit()
     if( !wxApp::OnInit() )
         return false;
 
+    wxCmdLineParser cmdLineParser( argc, argv );
+
     // Create the main frame window
-    auto frame = CreateMainFrame( (const char*) m_filename.c_str() );
+    auto frame = CreateMainFrame( cmdLineParser );
 
     return frame != nullptr;
 }
-
-
-void GAL_TEST_APP::OnInitCmdLine( wxCmdLineParser& parser )
-{
-    parser.AddOption( "f", wxEmptyString, "Open board file" );
-    wxApp::OnInitCmdLine( parser );
-}
-
-
-bool GAL_TEST_APP::OnCmdLineParsed( wxCmdLineParser& parser )
-{
-    wxString filename;
-
-    if( parser.Found( "f", &filename ) )
-    {
-        m_filename = filename;
-    }
-
-    return true;
-}
-
 
 class TEST_ACTIONS : public ACTIONS
 {

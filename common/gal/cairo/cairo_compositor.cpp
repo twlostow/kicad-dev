@@ -110,8 +110,6 @@ unsigned int CAIRO_COMPOSITOR::CreateBuffer()
 
     // Set default settings for the buffer
     cairo_set_antialias( context, m_currentAntialiasingMode );
-    cairo_set_line_join( context, CAIRO_LINE_JOIN_ROUND );
-    cairo_set_line_cap( context, CAIRO_LINE_CAP_ROUND );
 
     // Use the same transformation matrix as the main context
     cairo_get_matrix( m_mainContext, &m_matrix );

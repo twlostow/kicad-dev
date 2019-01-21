@@ -387,11 +387,10 @@ void GAL::DrawGrid()
 
                 if( tickX || tickY || gridScreenSizeDense > gridThreshold )
                 {
-                    double radius = ( ( tickX && tickY ) ? doubleMarker : marker ) / 2.0;
-                    DrawRectangle( VECTOR2D( i * gridSize.x - radius + gridOrigin.x,
-                                                j * gridSize.y - radius + gridOrigin.y ),
-                                    VECTOR2D( i * gridSize.x + radius + gridOrigin.x,
-                                                j * gridSize.y + radius + gridOrigin.y ) );
+                    double radius = ( ( tickX && tickY ) ? 2.0 : 1.0 );
+                    drawGridPoint( VECTOR2D( i * gridSize.x + gridOrigin.x,
+                                                j * gridSize.y + gridOrigin.y ), radius );
+
                 }
             }
         }

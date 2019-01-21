@@ -744,9 +744,6 @@ void CAIRO_GAL_BASE::EnableDepthTest( bool aEnabled )
 
 void CAIRO_GAL_BASE::resetContext()
 {
-
-    cairo_set_antialias( context, CAIRO_ANTIALIAS_NONE );
-
     ClearScreen();
 
     // Compute the world <-> screen transformations
@@ -1233,7 +1230,6 @@ void CAIRO_GAL::setCompositor()
     // Recreate the compositor with the new Cairo context
     compositor.reset( new CAIRO_COMPOSITOR( &currentContext ) );
     compositor->Resize( screenSize.x, screenSize.y );
-    compositor->SetAntialiasingMode( options.cairo_antialiasing_mode );
 
     // Prepare buffers
     mainBuffer = compositor->CreateBuffer();

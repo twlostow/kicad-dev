@@ -214,6 +214,10 @@ public:
 
     virtual void EnableDepthTest( bool aEnabled = false ) override;
 
+    ///> @copydoc GAL::DrawGrid()
+    virtual void DrawGrid() override;
+
+
 protected:
     const double xform( double x );
     const VECTOR2D xform( double x, double y );
@@ -277,7 +281,8 @@ protected:
 
     double lineWidth;
     double linePixelWidth;
-    bool lineWidthInPixels;
+    double lineWidthInPixels;
+    bool lineWidthIsOdd;
 
     cairo_matrix_t      cairoWorldScreenMatrix; ///< Cairo world to screen transformation matrix
     cairo_matrix_t      currentXform;
@@ -308,8 +313,10 @@ protected:
      */
     unsigned int getNewGroupNumber();
 
-    void syncLineWidth();
+    void syncLineWidth( bool aForceWidth = false, double aWidth = 0.0);
     void updateWorldScreenMatrix();
+    const VECTOR2D roundp( const VECTOR2D& v );
+
 
     /// Format used to store pixels
     static constexpr cairo_format_t GAL_FORMAT = CAIRO_FORMAT_RGB24;

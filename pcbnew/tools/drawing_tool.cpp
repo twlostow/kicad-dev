@@ -73,7 +73,7 @@ using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
 // Drawing tool actions
 TOOL_ACTION PCB_ACTIONS::drawOutline( "pcbnew.InteractiveDrawing.outline",
         AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_ADD_LINE ),
-        _( "Draw Line" ), _( "Draw a line" ), NULL, AF_ACTIVATE );
+        _( "Draw Outline" ), _( "Draw a complex outline" ), NULL, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::drawPolygon( "pcbnew.InteractiveDrawing.graphicPolygon",
         AS_GLOBAL, TOOL_ACTION::LegacyHotKey( HK_ADD_POLYGON ),
@@ -161,6 +161,29 @@ static TOOL_ACTION closeZoneOutline( "pcbnew.InteractiveDrawing.closeZoneOutline
         _( "Close Zone Outline" ), _( "Close the outline of a zone in progress" ),
         checked_ok_xpm );
 
+static TOOL_ACTION switchOutlinePosture( "pcbnew.InteractiveDrawing.outlinePosture",
+                AS_CONTEXT, TOOL_ACTION::LegacyHotKey( HK_SWITCH_TRACK_POSTURE ),
+                _( "Switch Outline Posture" ), _( "Switch the outline posture" ) );
+
+static TOOL_ACTION switchOutlineShape( "pcbnew.InteractiveDrawing.switchOutlineShape",
+                AS_CONTEXT, ' ',
+                _( "Switch Outline Shape" ), _( "Switch the outline shape (line, corner, arc)" ) );
+
+static TOOL_ACTION changeCornerRadius( "pcbnew.InteractiveDrawing.changeCornerRadius",
+                AS_CONTEXT, 0,
+                _( "Change Corner Radius" ), _( "Change the outline's corner radius" ) );
+
+static bool AskForValue( wxWindow* aParent,
+        const wxString& aTitle,
+        const wxString& aMessage,
+        int minValue,
+        int maxValue,
+        int& rval )
+{
+    DIALOG_ASK_FOR_VALUE dlg( aParent, aTitle, aMessage, minValue, maxValue, rval );
+
+    return dlg.ShowModal() ? true : false;
+}
 
 DRAWING_TOOL::DRAWING_TOOL() :
     PCB_TOOL_BASE( "pcbnew.InteractiveDrawing" ),
@@ -197,7 +220,7 @@ bool DRAWING_TOOL::Init()
 
     auto drawingOutline = [this ] ( const SELECTION& aSel ) {
                               return m_mode == MODE::LINE;
-                             };
+                          };
 
     auto& ctxMenu = m_menu.GetMenu();
 
@@ -321,13 +344,16 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
     bool started = false;
     bool needRefresh = true;
 
-    grid.SetSnapMode( GRID_HELPER::SM_DRAW );
 
     // Main loop: keep receiving events
     while( OPT_TOOL_EVENT evt = Wait() )
     {
-        grid.Update( );
-        auto cursorPos = grid.Snap();
+        grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
+        grid.SetUseGrid( !evt->Modifier( MD_ALT ) );
+    
+        //grid.Update( );
+        auto cursorPos = grid.Align( getViewControls()->GetCursorPosition() );
+
 
         printf("setautopan %d\n", !!started);
         m_controls->SetAutoPan( started );
@@ -345,8 +371,8 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
             printf("cancel\n");
             dsegs.clear();
             outlineShape.Clear();
-            grid.ClearAuxItems();
-            grid.Update();
+  //          grid.ClearAuxItems();
+//            grid.Update();
 
             
             if ( !started )
@@ -398,8 +424,8 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
             outlineBuilder.SetStart( p );
             outlineBuilder.SetEnd( cursorPos );
             outlineBuilder.ConstructAndAppend ( outlineShape );
-            grid.ClearAuxItems();
-            grid.Update();
+    //        grid.ClearAuxItems();
+      //      grid.Update();
             needRefresh = true;
         }
         else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) )
@@ -432,8 +458,8 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
                         commit.Push( _( "Draw an outline" ) );
                         
                         dsegs.clear();
-                        grid.ClearAuxItems();
-                        grid.Update();
+        //                grid.ClearAuxItems();
+          //              grid.Update();
                         preview.Clear();
                         outlineShape.Clear();
                         m_view->Update( &preview );
@@ -506,7 +532,7 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
                 items.push_back(ds);
             }
 
-            grid.AddAuxItems( items );
+         //   grid.AddAuxItems( items );
                         
             m_view->Update( &preview );
             needRefresh = false;
@@ -1057,9 +1083,13 @@ int DRAWING_TOOL::PlaceImportedGraphics( const TOOL_EVENT& aEvent )
         EDA_ITEM* item = ptr.get();
 
         if( m_editModules )
+        {
             wxASSERT( item->Type() == PCB_MODULE_EDGE_T || item->Type() == PCB_MODULE_TEXT_T );
+        }
         else
+        {
             wxASSERT( item->Type() == PCB_LINE_T || item->Type() == PCB_TEXT_T );
+        }
 
         if( dlg.IsPlacementInteractive() )
             preview.Add( item );
@@ -2054,7 +2084,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
 void DRAWING_TOOL::setTransitions()
 {
-    Go( &DRAWING_TOOL::DrawLine, PCB_ACTIONS::drawLine.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawOutline, PCB_ACTIONS::drawOutline.MakeEvent() );
     Go( &DRAWING_TOOL::DrawGraphicPolygon, PCB_ACTIONS::drawPolygon.MakeEvent() );
     Go( &DRAWING_TOOL::DrawCircle, PCB_ACTIONS::drawCircle.MakeEvent() );
     Go( &DRAWING_TOOL::DrawArc, PCB_ACTIONS::drawArc.MakeEvent() );

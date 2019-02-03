@@ -410,13 +410,13 @@ TRACKS BOARD::TracksInNetBetweenPoints( const wxPoint& aStartPos, const wxPoint&
         return in_between_pts;
     }
 
-    wxString m = wxString::Format(
+    /*wxString m = wxString::Format(
             "no clean path connecting start:(xy %s) with goal:(xy %s)",
-            FormatInternalUnits( aStartPos ).c_str(),
-            FormatInternalUnits( aGoalPos ).c_str()
-            );
+            (const char *) FormatInternalUnits( aStartPos ).c_str(),
+            (const char *) FormatInternalUnits( aGoalPos ).c_str()
+            );*/
 
-    THROW_IO_ERROR( m + per_path_problem_text );
+    //THROW_IO_ERROR( m + per_path_problem_text );
 }
 
 

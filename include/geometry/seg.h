@@ -243,26 +243,6 @@ public:
         return ( d1 <= 1 && d2 <= 1 );
     }
 
-    /**
-     * Function Collinear()
-     *
-     * Checks if point aP lies on the same line as (this).
-     * @param aP the point to check collinearity with.
-     * @return true, when point is on the same line as the segment.
-     */
-    bool Collinear( const VECTOR2I& aP ) const
-    {
-        ecoord qa, qb, qc;
-        CanonicalCoefs( qa, qb, qc );
-
-        if( this->A == this->B )
-            return ( aP == this->A );
-
-        ecoord d = std::abs( aP.x * qa + aP.y * qb + qc );
-
-        return ( d <= 1 );
-    }
-
     bool ApproxCollinear( const SEG& aSeg ) const
     {
         ecoord p, q, r;

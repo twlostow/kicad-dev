@@ -337,7 +337,6 @@ public:
                                                int aCircleToSegmentsCount,
                                                double aCorrectionFactor,
                                                bool ignoreLineWidth = false ) const;
-                                               double aCorrectionFactor ) const;
 
    /**
      * Function GetAnchors()

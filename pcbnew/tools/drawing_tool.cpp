@@ -337,13 +337,16 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
     bool started = false;
     bool needRefresh = true;
 
-    grid.SetSnapMode( GRID_HELPER::SM_DRAW );
-
+        
     // Main loop: keep receiving events
     while( OPT_TOOL_EVENT evt = Wait() )
     {
-        grid.Update( );
-        auto cursorPos = grid.Snap();
+        grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
+        grid.SetUseGrid( !evt->Modifier( MD_ALT ) );
+    
+        //grid.Update( );
+        auto cursorPos = grid.Align( getViewControls()->GetCursorPosition() );
+
 
         printf("setautopan %d\n", !!started);
         m_controls->SetAutoPan( started );
@@ -361,8 +364,8 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
             printf("cancel\n");
             dsegs.clear();
             outlineShape.Clear();
-            grid.ClearAuxItems();
-            grid.Update();
+  //          grid.ClearAuxItems();
+//            grid.Update();
 
             
             if ( !started )
@@ -414,8 +417,8 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
             outlineBuilder.SetStart( p );
             outlineBuilder.SetEnd( cursorPos );
             outlineBuilder.ConstructAndAppend ( outlineShape );
-            grid.ClearAuxItems();
-            grid.Update();
+    //        grid.ClearAuxItems();
+      //      grid.Update();
             needRefresh = true;
         }
         else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) )
@@ -448,8 +451,8 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
                         commit.Push( _( "Draw an outline" ) );
                         
                         dsegs.clear();
-                        grid.ClearAuxItems();
-                        grid.Update();
+        //                grid.ClearAuxItems();
+          //              grid.Update();
                         preview.Clear();
                         outlineShape.Clear();
                         m_view->Update( &preview );
@@ -522,7 +525,7 @@ int DRAWING_TOOL::DrawOutline( const TOOL_EVENT& aEvent )
                 items.push_back(ds);
             }
 
-            grid.AddAuxItems( items );
+         //   grid.AddAuxItems( items );
                         
             m_view->Update( &preview );
             needRefresh = false;
@@ -2067,7 +2070,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
 void DRAWING_TOOL::setTransitions()
 {
-    Go( &DRAWING_TOOL::DrawLine, PCB_ACTIONS::drawLine.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawOutline, PCB_ACTIONS::drawOutline.MakeEvent() );
     Go( &DRAWING_TOOL::DrawGraphicPolygon, PCB_ACTIONS::drawGraphicPolygon.MakeEvent() );
     Go( &DRAWING_TOOL::DrawCircle, PCB_ACTIONS::drawCircle.MakeEvent() );
     Go( &DRAWING_TOOL::DrawArc, PCB_ACTIONS::drawArc.MakeEvent() );

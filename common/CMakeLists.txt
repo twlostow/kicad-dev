@@ -417,7 +417,9 @@ set( COMMON_SRCS
     geometry/shape_arc.cpp
     geometry/shape_file_io.cpp
     geometry/shape_line_chain.cpp
+    geometry/shape_segment.cpp
     geometry/shape_poly_set.cpp
+    geometry/outline_shape_builder.cpp
     geometry/trigo.cpp
 
     libeval/numeric_evaluator.cpp
@@ -436,6 +438,8 @@ target_link_libraries( common
 
 
 set( PCB_COMMON_SRCS
+    dialogs/dialog_ask_for_value_base.cpp
+    dialogs/dialog_ask_for_value.cpp
     base_screen.cpp
     eda_text.cpp
     fp_lib_table.cpp

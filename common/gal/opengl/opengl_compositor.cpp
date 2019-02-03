@@ -155,6 +155,8 @@ unsigned int OPENGL_COMPOSITOR::CreateBuffer( VECTOR2U aDimensions )
 
     int maxBuffers, maxTextureSize;
 
+    printf("createBuffer [%dx%d]\n", aDimensions.x, aDimensions.y );
+
     // Get the maximum number of buffers
     glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, (GLint*) &maxBuffers );
 
@@ -403,4 +405,17 @@ void OPENGL_COMPOSITOR::clean()
     glDeleteRenderbuffersEXT( 1, &m_depthBuffer );
 
     m_initialized = false;
+}
+
+int OPENGL_COMPOSITOR::GetAntialiasSupersamplingFactor() const
+{
+    switch( m_currentAntialiasingMode )
+    {
+        case OPENGL_ANTIALIASING_MODE::SUPERSAMPLING_X2:
+            return 2;
+        case OPENGL_ANTIALIASING_MODE::SUPERSAMPLING_X4:
+            return 4;
+        default:
+            return 1;
+    }
 }

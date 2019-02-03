@@ -955,6 +955,8 @@ public:
      */
     VECTOR2D GetGridPoint( const VECTOR2D& aPoint ) const;
 
+    virtual void ScreenSpaceQuad( const VECTOR2D& p0, const VECTOR2D& size, double w ) {};
+
     /**
      * @brief Compute the point position in world coordinates from given screen coordinates.
      *

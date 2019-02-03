@@ -129,7 +129,8 @@ int SHADER::AddParameter( const std::string& aParameterName )
     if( location >= 0 )
         parameterLocation.push_back( location );
     else
-        throw std::runtime_error( "Could not find shader uniform: " + aParameterName );
+        return -1;
+        //throw std::runtime_error( "Could not find shader uniform: " + aParameterName );
 
     return parameterLocation.size() - 1;
 }
@@ -137,6 +138,8 @@ int SHADER::AddParameter( const std::string& aParameterName )
 
 void SHADER::SetParameter( int parameterNumber, float value ) const
 {
+    if (parameterNumber< 0)
+        return;
     assert( (unsigned) parameterNumber < parameterLocation.size() );
 
     glUniform1f( parameterLocation[parameterNumber], value );
@@ -145,6 +148,8 @@ void SHADER::SetParameter( int parameterNumber, float value ) const
 
 void SHADER::SetParameter( int parameterNumber, int value ) const
 {
+    if (parameterNumber< 0)
+        return;
     assert( (unsigned) parameterNumber < parameterLocation.size() );
 
     glUniform1i( parameterLocation[parameterNumber], value );
@@ -152,9 +157,19 @@ void SHADER::SetParameter( int parameterNumber, int value ) const
 
 void SHADER::SetParameter( int parameterNumber, float f0, float f1, float f2, float f3 ) const
 {
-    assert( (unsigned)parameterNumber < parameterLocation.size() );
+        if (parameterNumber< 0)
+        return;
+assert( (unsigned)parameterNumber < parameterLocation.size() );
     float arr[4] = { f0, f1, f2, f3 };
     glUniform4fv( parameterLocation[parameterNumber], 1, arr );
+}
+
+void SHADER::SetParameter( int aParameterNumber, const VECTOR2D& aValue ) const
+{
+      if (aParameterNumber< 0)
+        return;
+  assert( (unsigned)aParameterNumber < parameterLocation.size() );
+    glUniform2f( parameterLocation[aParameterNumber], aValue.x, aValue.y );
 }
 
 

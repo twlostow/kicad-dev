@@ -349,8 +349,17 @@ bool OPENGL_GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 double OPENGL_GAL::getWorldPixelSize() const
 {
     auto matrix = GetScreenWorldMatrix();
-    return std::min( std::abs( matrix.GetScale().x ), std::abs( matrix.GetScale().y ) );
+    auto rv = std::min( std::abs( matrix.GetScale().x ), std::abs( matrix.GetScale().y ) );
+    printf("wps %.10f\n", rv);
+    return rv;
 }
+
+VECTOR2D OPENGL_GAL::getScreenPixelSize() const
+{
+    printf("spx %d %d\n", screenSize.x, screenSize.y );
+    return VECTOR2D( 2.0 / (double) (screenSize.x), 2.0 / (double) (screenSize.y) );
+}
+
 
 void OPENGL_GAL::beginDrawing()
 {
@@ -460,6 +469,8 @@ void OPENGL_GAL::beginDrawing()
         GLint ufm_fontTexture       = shader->AddParameter( "fontTexture" );
         GLint ufm_fontTextureWidth  = shader->AddParameter( "fontTextureWidth" );
         ufm_worldPixelSize          = shader->AddParameter( "worldPixelSize" );
+        ufm_screenPixelSize         = shader->AddParameter( "screenPixelSize" );
+        ufm_pixelSizeMultiplier     = shader->AddParameter( "pixelSizeMultiplier" );
 
         shader->Use();
         shader->SetParameter( ufm_fontTexture,       (int) FONT_TEXTURE_UNIT  );
@@ -472,6 +483,9 @@ void OPENGL_GAL::beginDrawing()
 
     shader->Use();
     shader->SetParameter( ufm_worldPixelSize, (float) getWorldPixelSize() );
+    shader->SetParameter( ufm_screenPixelSize, getScreenPixelSize() );
+    double pixelSizeMultiplier = compositor->GetAntialiasSupersamplingFactor();
+    shader->SetParameter( ufm_pixelSizeMultiplier, (float) pixelSizeMultiplier );
     shader->Deactivate();
 
     // Something betreen BeginDrawing and EndDrawing seems to depend on
@@ -1639,36 +1653,39 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     VECTOR2D vs ( startEndVector );
     float aspect;
 
-    if ( lineWidth == 0.0 ) // pixel-width line
+    //lineWidth = 2000000.0;
+
+/*    if ( lineWidth == 0.0 ) // pixel-wide line
     {
-        vs = vs.Resize( 0.5 );
-        aspect = ( lineLength + 1.0 );
+        vs = vs.Resize( 1.0 );
+        aspect = lineLength;
     }
     else
     {
-        vs = vs.Resize( 0.5 * lineWidth );
+        vs = vs.Resize( lineWidth );
         aspect = ( lineLength + lineWidth ) / lineWidth;
     }
+*/
 
     currentManager->Reserve( 6 );
 
     // Line width is maintained by the vertex shader
-    currentManager->Shader( SHADER_LINE_A, aspect, vs.x, vs.y );
+    currentManager->Shader( SHADER_LINE_A, lineWidth, vs.x, vs.y );
     currentManager->Vertex( aStartPoint, layerDepth );
 
-    currentManager->Shader( SHADER_LINE_B, aspect, vs.x, vs.y );
+    currentManager->Shader( SHADER_LINE_B, lineWidth, vs.x, vs.y );
     currentManager->Vertex( aStartPoint, layerDepth );
 
-    currentManager->Shader( SHADER_LINE_C, aspect, vs.x, vs.y );
+    currentManager->Shader( SHADER_LINE_C, lineWidth, vs.x, vs.y );
     currentManager->Vertex( aEndPoint, layerDepth );
 
-    currentManager->Shader( SHADER_LINE_D, aspect, vs.x, vs.y );
+    currentManager->Shader( SHADER_LINE_D, lineWidth, vs.x, vs.y );
     currentManager->Vertex( aEndPoint, layerDepth );
 
-    currentManager->Shader( SHADER_LINE_E, aspect, vs.x, vs.y );
+    currentManager->Shader( SHADER_LINE_E, lineWidth, vs.x, vs.y );
     currentManager->Vertex( aEndPoint, layerDepth );
 
-    currentManager->Shader( SHADER_LINE_F, aspect, vs.x, vs.y );
+    currentManager->Shader( SHADER_LINE_F, lineWidth, vs.x, vs.y );
     currentManager->Vertex( aStartPoint, layerDepth );
 }
 
@@ -2123,4 +2140,60 @@ void OPENGL_GAL::EnableDepthTest( bool aEnabled )
     cachedManager->EnableDepthTest( aEnabled );
     nonCachedManager->EnableDepthTest( aEnabled );
     overlayManager->EnableDepthTest( aEnabled );
+}
+
+const VECTOR2D xform2( const MATRIX3x3D& minv, const VECTOR2D& p )
+{
+    auto t = minv * p;
+    return VECTOR2D((float)t.x, (float)t.y);
+}
+
+void OPENGL_GAL::ScreenSpaceQuad( const VECTOR2D& p0, const VECTOR2D& size, double w )
+{
+    
+    auto minv = screenWorldMatrix;
+
+    auto pa = xform2 ( minv, p0 );
+
+    auto pb = xform2 ( minv, p0 + VECTOR2D(size.x, 0 ));
+    auto pc = xform2 ( minv, p0 + VECTOR2D(size.x, size.y ));
+    auto pd = xform2 ( minv, p0 + VECTOR2D(0, size.y ));
+#if 0
+    //shader->Deactivate();
+        
+    currentManager->Reserve( 6 );
+    currentManager->Shader( SHADER_NONE );
+    currentManager->Color( strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+
+    currentManager->Shader( SHADER_NONE ); currentManager->Vertex( pa.x, pa.y, layerDepth );
+    currentManager->Shader( SHADER_NONE ); currentManager->Vertex( pb.x, pb.y, layerDepth );
+    currentManager->Shader( SHADER_NONE ); currentManager->Vertex( pc.x, pc.y, layerDepth );
+    currentManager->Shader( SHADER_NONE ); currentManager->Vertex( pa.x, pa.y, layerDepth );
+    currentManager->Shader( SHADER_NONE ); currentManager->Vertex( pc.x, pc.y, layerDepth );
+    currentManager->Shader( SHADER_NONE ); currentManager->Vertex( pd.x, pd.y, layerDepth );
+    shader->Use();
+#endif
+    SetLineWidth( w * getWorldPixelSize() );
+    drawLineQuad( pa, pc );
+
+    
+}
+
+double roundr( double f, double r )
+{
+    return floor(f / r + 0.5) * r;
+}
+
+void OPENGL_GAL::ComputeWorldScreenMatrix()
+{
+    auto pixelSize = worldScale;
+
+    printf("OVER worldPixelSize: %.10f\n", pixelSize );
+
+    lookAtPoint.x = roundr( lookAtPoint.x, pixelSize );
+    lookAtPoint.y = roundr( lookAtPoint.y, pixelSize );
+
+    GAL::ComputeWorldScreenMatrix();
+
+
 }

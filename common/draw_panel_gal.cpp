@@ -220,6 +220,8 @@ void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
     {
         constexpr auto GAL_FALLBACK = GAL_TYPE_CAIRO;
 
+        printf("Exception occured: %s\n", err.what());
+
         if( m_edaFrame )
         {
             bool use_gal = m_edaFrame->SwitchCanvas( GAL_FALLBACK );

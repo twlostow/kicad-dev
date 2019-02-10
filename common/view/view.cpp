@@ -586,8 +586,6 @@ void VIEW::SetScale( double aScale, const VECTOR2D& aAnchor )
     else
         m_scale = aScale;
 
-    printf("setscale %.10f %.10f %.10f\n", aScale, aAnchor.x, aAnchor.y );
-
     m_gal->SetZoomFactor( m_scale );
     m_gal->ComputeWorldScreenMatrix();
 

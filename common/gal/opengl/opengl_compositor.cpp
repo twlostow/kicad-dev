@@ -155,8 +155,6 @@ unsigned int OPENGL_COMPOSITOR::CreateBuffer( VECTOR2U aDimensions )
 
     int maxBuffers, maxTextureSize;
 
-    printf("createBuffer [%dx%d]\n", aDimensions.x, aDimensions.y );
-
     // Get the maximum number of buffers
     glGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, (GLint*) &maxBuffers );
 

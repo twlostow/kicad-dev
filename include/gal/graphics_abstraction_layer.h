@@ -955,8 +955,6 @@ public:
      */
     VECTOR2D GetGridPoint( const VECTOR2D& aPoint ) const;
 
-    virtual void ScreenSpaceQuad( const VECTOR2D& p0, const VECTOR2D& size, double w ) {};
-
     /**
      * @brief Compute the point position in world coordinates from given screen coordinates.
      *
@@ -1140,7 +1138,6 @@ protected:
      * @param aEndPoint is the end point of the line.
      */
     virtual void drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) {};
-    virtual void drawGridPoint( const VECTOR2D& aPoint, double aSize ) {};
 
     /// Possible depth range
     static const int MIN_DEPTH;

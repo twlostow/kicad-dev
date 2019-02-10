@@ -232,7 +232,7 @@ protected:
     void resetContext();
 
     virtual void drawGridLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
-    virtual void drawGridPoint( const VECTOR2D& aPoint, double aSize ) override;
+    virtual void drawGridPoint( const VECTOR2D& aPoint, double aSize );
 
     /// Super class definition
     typedef GAL super;

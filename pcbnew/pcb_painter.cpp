@@ -1148,13 +1148,12 @@ void PCB_PAINTER::draw( const ZONE_CONTAINER* aZone, int aLayer )
 
         // Set up drawing options
         m_gal->SetFillColor( color );
-        m_gal->SetStrokeColor( color );
         m_gal->SetLineWidth( aZone->GetMinThickness() );
 
         if( displayMode == PCB_RENDER_SETTINGS::DZ_SHOW_FILLED )
         {
             m_gal->SetIsFill( true );
-            m_gal->SetIsStroke( false );
+            m_gal->SetIsStroke( true );
         }
         else if( displayMode == PCB_RENDER_SETTINGS::DZ_SHOW_OUTLINED )
         {

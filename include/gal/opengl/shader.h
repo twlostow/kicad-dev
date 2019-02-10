@@ -185,7 +185,6 @@ public:
     void SetParameter( int aParameterNumber, float aValue ) const;
     void SetParameter( int aParameterNumber, int aValue ) const;
     void SetParameter( int aParameterNumber, const VECTOR2D& aValue ) const;
-    //void SetParameter( int aParameterNumber, const MATRIX3x3D& aValue ) const;
     void SetParameter( int aParameterNumber, float f0, float f1, float f2, float f3 ) const;
 
     /**

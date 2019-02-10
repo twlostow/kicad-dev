@@ -109,7 +109,6 @@ unsigned int CAIRO_COMPOSITOR::CreateBuffer()
 #endif /* __WXDEBUG__ */
 
     // Set default settings for the buffer
-    printf("setAntialias: %d\n", m_currentAntialiasingMode );
     cairo_set_antialias( context,  m_currentAntialiasingMode );
 
     // Use the same transformation matrix as the main context

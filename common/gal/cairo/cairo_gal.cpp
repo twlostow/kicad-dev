@@ -130,11 +130,6 @@ const VECTOR2D CAIRO_GAL_BASE::roundp( const VECTOR2D& v )
 }
 
 
-//static const VECTOR2D floorp( const VECTOR2D& v )
-//{
-    //return VECTOR2D( floor( v.x ), floor( v.y) );
-//}
-
 void CAIRO_GAL_BASE::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
     syncLineWidth();
@@ -232,7 +227,6 @@ void CAIRO_GAL_BASE::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
     cairo_new_sub_path( currentContext );
     cairo_arc( currentContext, c.x, c.y, r, 0.0, 2 * M_PI- 0.1 );
     cairo_close_path( currentContext );
-    printf("circle fill: %.1f %.1f %.1f %.10f %.10f %10f %.10f %d stroke : %d %.1f %.1f %.1f %.1f\n", c.x, c.y, r, aRadius, xform( aRadius ), currentWorld2Screen.xx, currentWorld2Screen.yy, !!isFillEnabled, !!isStrokeEnabled, fillColor.r, fillColor.g, fillColor.b, fillColor.a );
     flushPath();
     isElementAdded = true;
 }
@@ -258,7 +252,6 @@ void CAIRO_GAL_BASE::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, doub
 
     if( isFillEnabled )     // Draw the filled area of the shape, before drawing the outline itself
     {
-        //double pen_size = GetLineWidth();
         auto fgcolor = GetStrokeColor();
         SetStrokeColor( GetFillColor() );
 
@@ -271,7 +264,6 @@ void CAIRO_GAL_BASE::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, doub
         cairo_line_to( currentContext, endPointS.x, endPointS.y );
         cairo_close_path( currentContext );
         flushPath();
-       // SetLineWidth( pen_size );
         SetStrokeColor( fgcolor );
     }
 
@@ -883,11 +875,6 @@ void CAIRO_GAL_BASE::resetContext()
                        worldScreenMatrix.m_data[1][0], worldScreenMatrix.m_data[0][1],
                        worldScreenMatrix.m_data[1][1], worldScreenMatrix.m_data[0][2],
                        worldScreenMatrix.m_data[1][2] );
-
-    //printf("resetContext %.5f %.5f %.5f\n", cairoWorldScreenMatrix.xx, cairoWorldScreenMatrix.xy, cairoWorldScreenMatrix.x0 );
-    //printf("             %.5f %.5f %.5f\n", cairoWorldScreenMatrix.yx, cairoWorldScreenMatrix.yy, cairoWorldScreenMatrix.y0 );
-
-    //cairo_set_matrix( context, &cairoWorldScreenMatrix );
 
     // we work in screen-space coordinates and do the transforms outside.
     cairo_identity_matrix( context );

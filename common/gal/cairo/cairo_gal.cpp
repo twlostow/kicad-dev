@@ -1389,6 +1389,8 @@ void CAIRO_GAL::setCompositor()
     // Recreate the compositor with the new Cairo context
     compositor.reset( new CAIRO_COMPOSITOR( &currentContext ) );
     compositor->Resize( screenSize.x, screenSize.y );
+    compositor->SetAntialiasingMode( options.cairo_antialiasing_mode );
+
 
     // Prepare buffers
     mainBuffer = compositor->CreateBuffer();

@@ -132,6 +132,20 @@ void computeLineCoords( bool posture, vec2 vs, vec2 vp, vec2 texcoord, vec2 dir,
     gl_FrontColor = gl_Color;
 }
 
+void computeFilledCircleCoords( float vertexIndex, float radius )
+{
+    // Compute relative circle coordinates basing on indices
+    // Circle
+    if( vertexIndex == 1.0 )
+        circleCoords = vec2( -sqrt( 3.0 ), -1.0 );
+    else if( vertexIndex == 2.0 )
+        circleCoords = vec2( sqrt( 3.0 ), -1.0 );
+    else if( vertexIndex == 3.0 )
+        circleCoords = vec2( 0.0, 2.0 );
+
+//    float r = radius()
+
+}
 
 void main()
 {
@@ -157,20 +171,12 @@ void main()
         computeLineCoords( posture,  vs, vp, vec2( -1,  1 ), vec2( -1, 0 ), lineWidth );
     else if( mode == SHADER_LINE_F )
         computeLineCoords( posture,  -vs, vp, vec2(  1,  1 ), vec2( -1, 0 ), lineWidth );
-    else if( mode == SHADER_STROKED_CIRCLE ||
-             mode == SHADER_FILLED_CIRCLE )
+    else if( mode == SHADER_FILLED_CIRCLE )
+        computeFilledCircleCoords( shaderParams.z, shaderParams.w );
+    else if ( mode == SHADER_STROKED_CIRCLE )
     {
-        // Compute relative circle coordinates basing on indices
-        // Circle
-        if( shaderParams[1] == 1.0 )
-            circleCoords = vec2( -sqrt( 3.0 ), -1.0 );
-        else if( shaderParams[1] == 2.0 )
-            circleCoords = vec2( sqrt( 3.0 ), -1.0 );
-        else if( shaderParams[1] == 3.0 )
-            circleCoords = vec2( 0.0, 2.0 );
-
         // Semicircle
-        else if( shaderParams[1] == 4.0 )
+        if( shaderParams[1] == 4.0 )
             circleCoords = vec2( -3.0 / sqrt( 3.0 ), 0.0 );
         else if( shaderParams[1] == 5.0 )
             circleCoords = vec2( 3.0 / sqrt( 3.0 ), 0.0 );

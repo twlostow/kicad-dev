@@ -648,22 +648,20 @@ void OPENGL_GAL::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
          *  Parameters given to Shader() are indices of the triangle's vertices
          *  (if you want to understand more, check the vertex shader source [shader.vert]).
          *  Shader uses this coordinates to determine if fragments are inside the circle or not.
+         *  Does the calculations in the vertex shader now (pixel alignment)
          *       v2
          *       /\
          *      //\\
          *  v0 /_\/_\ v1
          */
-        currentManager->Shader( SHADER_FILLED_CIRCLE, 1.0 );
-        currentManager->Vertex( aCenterPoint.x - aRadius * sqrt( 3.0f ),            // v0
-                                aCenterPoint.y - aRadius, layerDepth );
+        currentManager->Shader( SHADER_FILLED_CIRCLE, 1.0, aRadius );
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
 
-        currentManager->Shader( SHADER_FILLED_CIRCLE, 2.0 );
-        currentManager->Vertex( aCenterPoint.x + aRadius * sqrt( 3.0f),             // v1
-                                aCenterPoint.y - aRadius, layerDepth );
+        currentManager->Shader( SHADER_FILLED_CIRCLE, 2.0, aRadius );
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
 
-        currentManager->Shader( SHADER_FILLED_CIRCLE, 3.0 );
-        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y + aRadius * 2.0f,    // v2
-                                layerDepth );
+        currentManager->Shader( SHADER_FILLED_CIRCLE, 3.0, aRadius );
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
     }
 
     if( isStrokeEnabled )

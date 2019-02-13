@@ -326,6 +326,7 @@ private:
     GLint                   ufm_worldPixelSize;
     GLint                   ufm_screenPixelSize;
     GLint                   ufm_pixelSizeMultiplier;
+    GLint                   ufm_backingScaleFactor;
 
     std::unique_ptr<GL_BITMAP_CACHE>         bitmapCache;
 
@@ -450,6 +451,7 @@ private:
      * @param aEvent is the OnPaint event.
      */
     void onPaint( wxPaintEvent& aEvent );
+    void onResize( wxSizeEvent& aEvent );
 
     /**
      * @brief Skip the mouse event to the parent.

@@ -96,8 +96,6 @@ void CAIRO_GAL_BASE::updateWorldScreenMatrix()
 const VECTOR2D CAIRO_GAL_BASE::xform( double x, double y )
 {
     VECTOR2D rv;
-    //printf("xform        %.5f %.5f %.5f  [%.5f %.5f]\n", cairoWorldScreenMatrix.xx, cairoWorldScreenMatrix.xy, cairoWorldScreenMatrix.x0, x, y );
-    //printf("             %.5f %.5f %.5f\n", cairoWorldScreenMatrix.yx, cairoWorldScreenMatrix.yy, cairoWorldScreenMatrix.y0 );
 
     rv.x = currentWorld2Screen.xx * x + currentWorld2Screen.xy * y + currentWorld2Screen.x0;
     rv.y = currentWorld2Screen.yx * x + currentWorld2Screen.yy * y + currentWorld2Screen.y0;
@@ -225,7 +223,7 @@ void CAIRO_GAL_BASE::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
     auto r = ::roundp( xform( aRadius ) );
 
     cairo_new_sub_path( currentContext );
-    cairo_arc( currentContext, c.x, c.y, r, 0.0, 2 * M_PI- 0.1 );
+    cairo_arc( currentContext, c.x, c.y, r, 0.0, 2 * M_PI);
     cairo_close_path( currentContext );
     flushPath();
     isElementAdded = true;
@@ -379,10 +377,6 @@ void CAIRO_GAL_BASE::DrawCurve( const VECTOR2D& aStartPoint, const VECTOR2D& aCo
 
 void CAIRO_GAL_BASE::DrawBitmap( const BITMAP_BASE& aBitmap )
 {
-    SetIsStroke( true );
-    SetLineWidth( 1.0 );
-    SetStrokeColor( COLOR4D(0.0, 0.0, 1.0, 1.0));
-    DrawCircle( VECTOR2D(0, 0), 100.0 );
     cairo_save( currentContext );
 
     // We have to calculate the pixel size in users units to draw the image.

@@ -241,6 +241,8 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
 
     // Connecting the event handlers
     Connect( wxEVT_PAINT,           wxPaintEventHandler( OPENGL_GAL::onPaint ) );
+    Connect( wxEVT_SIZE,           wxSizeEventHandler( OPENGL_GAL::onResize ) );
+
 
     // Mouse events are skipped to the parent
     Connect( wxEVT_MOTION,          wxMouseEventHandler( OPENGL_GAL::skipMouseEvent ) );
@@ -262,7 +264,7 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
 #endif
 
     SetSize( aParent->GetClientSize() );
-    screenSize = VECTOR2I( aParent->GetClientSize() );
+    screenSize = VECTOR2I( GetNativePixelSize() );
 
     // Grid color settings are different in Cairo and OpenGL
     SetGridColor( COLOR4D( 0.8, 0.8, 0.8, 0.1 ) );
@@ -355,7 +357,8 @@ double OPENGL_GAL::getWorldPixelSize() const
 
 VECTOR2D OPENGL_GAL::getScreenPixelSize() const
 {
-    return VECTOR2D( 2.0 / (double) (screenSize.x), 2.0 / (double) (screenSize.y) );
+    auto sf = GetBackingScaleFactor();
+    return VECTOR2D( 2.0 / (double) (screenSize.x * sf), 2.0 / (double) (screenSize.y * sf) );
 }
 
 
@@ -469,6 +472,7 @@ void OPENGL_GAL::beginDrawing()
         ufm_worldPixelSize          = shader->AddParameter( "worldPixelSize" );
         ufm_screenPixelSize         = shader->AddParameter( "screenPixelSize" );
         ufm_pixelSizeMultiplier     = shader->AddParameter( "pixelSizeMultiplier" );
+        ufm_backingScaleFactor     = shader->AddParameter( "backingScaleFactor" );
 
         shader->Use();
         shader->SetParameter( ufm_fontTexture,       (int) FONT_TEXTURE_UNIT  );
@@ -480,10 +484,11 @@ void OPENGL_GAL::beginDrawing()
     }
 
     shader->Use();
-    shader->SetParameter( ufm_worldPixelSize, (float) getWorldPixelSize() );
+    shader->SetParameter( ufm_worldPixelSize, (float) getWorldPixelSize() / GetBackingScaleFactor() );
     shader->SetParameter( ufm_screenPixelSize, getScreenPixelSize() );
     double pixelSizeMultiplier = compositor->GetAntialiasSupersamplingFactor();
     shader->SetParameter( ufm_pixelSizeMultiplier, (float) pixelSizeMultiplier );
+    shader->SetParameter( ufm_backingScaleFactor, (float) GetBackingScaleFactor() );
     shader->Deactivate();
 
     // Something betreen BeginDrawing and EndDrawing seems to depend on
@@ -648,24 +653,21 @@ void OPENGL_GAL::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
          *  Parameters given to Shader() are indices of the triangle's vertices
          *  (if you want to understand more, check the vertex shader source [shader.vert]).
          *  Shader uses this coordinates to determine if fragments are inside the circle or not.
+         *  Does the calculations in the vertex shader now (pixel alignment)
          *       v2
          *       /\
          *      //\\
          *  v0 /_\/_\ v1
          */
-        currentManager->Shader( SHADER_FILLED_CIRCLE, 1.0 );
-        currentManager->Vertex( aCenterPoint.x - aRadius * sqrt( 3.0f ),            // v0
-                                aCenterPoint.y - aRadius, layerDepth );
+        currentManager->Shader( SHADER_FILLED_CIRCLE, 1.0, aRadius );
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
 
-        currentManager->Shader( SHADER_FILLED_CIRCLE, 2.0 );
-        currentManager->Vertex( aCenterPoint.x + aRadius * sqrt( 3.0f),             // v1
-                                aCenterPoint.y - aRadius, layerDepth );
+        currentManager->Shader( SHADER_FILLED_CIRCLE, 2.0, aRadius );
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
 
-        currentManager->Shader( SHADER_FILLED_CIRCLE, 3.0 );
-        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y + aRadius * 2.0f,    // v2
-                                layerDepth );
+        currentManager->Shader( SHADER_FILLED_CIRCLE, 3.0, aRadius );
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
     }
-
     if( isStrokeEnabled )
     {
         currentManager->Reserve( 3 );
@@ -681,17 +683,16 @@ void OPENGL_GAL::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
          *      //\\
          *  v0 /_\/_\ v1
          */
-        double outerRadius = aRadius + ( lineWidth / 2 );
         currentManager->Shader( SHADER_STROKED_CIRCLE, 1.0, aRadius, lineWidth );
-        currentManager->Vertex( aCenterPoint.x - outerRadius * sqrt( 3.0f ),            // v0
-                                aCenterPoint.y - outerRadius, layerDepth );
+        currentManager->Vertex( aCenterPoint.x,            // v0
+                                aCenterPoint.y, layerDepth );
 
         currentManager->Shader( SHADER_STROKED_CIRCLE, 2.0, aRadius, lineWidth );
-        currentManager->Vertex( aCenterPoint.x + outerRadius * sqrt( 3.0f ),            // v1
-                                aCenterPoint.y - outerRadius, layerDepth );
+        currentManager->Vertex( aCenterPoint.x,            // v1
+                                aCenterPoint.y, layerDepth );
 
         currentManager->Shader( SHADER_STROKED_CIRCLE, 3.0, aRadius, lineWidth );
-        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y + outerRadius * 2.0f,    // v2
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y,    // v2
                                 layerDepth );
     }
 }
@@ -1644,12 +1645,7 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     auto v1  = currentManager->GetTransformation() * glm::vec4( aStartPoint.x, aStartPoint.y, 0.0, 0.0 );
     auto v2  = currentManager->GetTransformation() * glm::vec4( aEndPoint.x, aEndPoint.y, 0.0, 0.0 );
 
-    VECTOR2D startEndVector( v2.x - v1.x, v2.y - v1.y );
-
-    double lineLength     = startEndVector.EuclideanNorm();
-
-    VECTOR2D vs ( startEndVector );
-    float aspect;
+    VECTOR2D vs( v2.x - v1.x, v2.y - v1.y );
 
     currentManager->Reserve( 6 );
 
@@ -1949,6 +1945,12 @@ std::pair<VECTOR2D, float> OPENGL_GAL::computeBitmapTextSize( const UTF8& aText 
 void OPENGL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
     PostPaint();
+}
+
+void OPENGL_GAL::onResize( wxSizeEvent& aEvent )
+{
+    printf("res w %d h %d\n", aEvent.GetSize().x, aEvent.GetSize().y );
+    aEvent.Skip();
 }
 
 

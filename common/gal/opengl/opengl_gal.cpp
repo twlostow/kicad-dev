@@ -241,6 +241,8 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
 
     // Connecting the event handlers
     Connect( wxEVT_PAINT,           wxPaintEventHandler( OPENGL_GAL::onPaint ) );
+    Connect( wxEVT_SIZE,           wxSizeEventHandler( OPENGL_GAL::onResize ) );
+
 
     // Mouse events are skipped to the parent
     Connect( wxEVT_MOTION,          wxMouseEventHandler( OPENGL_GAL::skipMouseEvent ) );
@@ -663,7 +665,6 @@ void OPENGL_GAL::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
         currentManager->Shader( SHADER_FILLED_CIRCLE, 3.0, aRadius );
         currentManager->Vertex( aCenterPoint.x, aCenterPoint.y, layerDepth );
     }
-
     if( isStrokeEnabled )
     {
         currentManager->Reserve( 3 );
@@ -679,17 +680,16 @@ void OPENGL_GAL::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
          *      //\\
          *  v0 /_\/_\ v1
          */
-        double outerRadius = aRadius + ( lineWidth / 2 );
         currentManager->Shader( SHADER_STROKED_CIRCLE, 1.0, aRadius, lineWidth );
-        currentManager->Vertex( aCenterPoint.x - outerRadius * sqrt( 3.0f ),            // v0
-                                aCenterPoint.y - outerRadius, layerDepth );
+        currentManager->Vertex( aCenterPoint.x,            // v0
+                                aCenterPoint.y, layerDepth );
 
         currentManager->Shader( SHADER_STROKED_CIRCLE, 2.0, aRadius, lineWidth );
-        currentManager->Vertex( aCenterPoint.x + outerRadius * sqrt( 3.0f ),            // v1
-                                aCenterPoint.y - outerRadius, layerDepth );
+        currentManager->Vertex( aCenterPoint.x,            // v1
+                                aCenterPoint.y, layerDepth );
 
         currentManager->Shader( SHADER_STROKED_CIRCLE, 3.0, aRadius, lineWidth );
-        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y + outerRadius * 2.0f,    // v2
+        currentManager->Vertex( aCenterPoint.x, aCenterPoint.y,    // v2
                                 layerDepth );
     }
 }
@@ -1947,6 +1947,12 @@ std::pair<VECTOR2D, float> OPENGL_GAL::computeBitmapTextSize( const UTF8& aText 
 void OPENGL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
     PostPaint();
+}
+
+void OPENGL_GAL::onResize( wxSizeEvent& aEvent )
+{
+    printf("res w %d h %d\n", aEvent.GetSize().x, aEvent.GetSize().y );
+    aEvent.Skip();
 }
 
 

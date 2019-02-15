@@ -43,6 +43,17 @@ void screenSpaceLine( KIGFX::GAL* gal, const VECTOR2D& p0, const VECTOR2D& p1, d
     
 }
 
+void screenSpaceCircle( KIGFX::GAL* gal, const VECTOR2D& p0, double r, double w )
+{
+    auto minv = gal->GetScreenWorldMatrix();
+
+    auto pa = xform2 ( minv, p0 );
+
+    gal->SetLineWidth( w * minv.GetScale().x );
+    gal->DrawCircle( pa, r * minv.GetScale().x );
+
+}
+
 
 class MY_DRAWING : public EDA_ITEM
 {
@@ -74,7 +85,7 @@ public:
         gal->SetIsStroke( true );
         gal->SetStrokeColor( COLOR4D::WHITE );
 
-        for(i=0;i < 100; i++)
+       /* for(i=0;i < 100; i++)
         {
             gal->SetLineWidth( 10000 );
             gal->DrawLine( VECTOR2I(0, i * 30000), VECTOR2I(1000000, i * 30000) );
@@ -124,11 +135,6 @@ public:
         for(i=0;i < 1000; i++)
         {
             int k = 0;
-            /*for(double d=0; d<=3.0; d++, k += 50)
-            {
-                gal->ScreenSpaceQuad( VECTOR2D( k, i*step + d ), VECTOR2D( 50, 0 ) );
-                gal->ScreenSpaceQuad( VECTOR2D( i*step + d, k ), VECTOR2D( 0, 50 ) );
-            }*/
 
             for(double w=1.0; w<=8.0; w+=1.0, k += 50)
             {
@@ -141,6 +147,19 @@ public:
             //gal->ScreenSpaceQuad( VECTOR2D( 400, 100 + i*4 + 0.5 ), VECTOR2D( 100, 1 ) );
             //gal->ScreenSpaceQuad( VECTOR2D( 550, 100 + i*8 + 0.5 ), VECTOR2D( 100, 2 ) );
             
+        }*/
+
+        for(int i = 1; i < 16; i+=1)
+        {
+            for(int j = 1; j < 16; j+=1)
+            {
+                gal->SetIsStroke( true );
+                gal->SetIsFill( false );
+                screenSpaceCircle(gal, VECTOR2D(100 + i * 25, 100 + j * 25), (float)i/2.0, 1);
+                gal->SetIsStroke( false );
+                gal->SetIsFill( true );
+                screenSpaceCircle(gal, VECTOR2D(100 + i * 25, 500 + 100 + j * 25), (float)i/2.0, 1);
+            }
         }
     }
 
@@ -157,7 +176,7 @@ public:
     MY_PCB_TEST_FRAME( wxFrame* frame, const wxString& title,
             const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize,
             long style = wxDEFAULT_FRAME_STYLE )
-            : PCB_TEST_FRAME( frame, title, pos, size, style )
+            : PCB_TEST_FRAME( frame, title, pos, size, style, PCB_DRAW_PANEL_GAL::GAL_TYPE_OPENGL )
     {
         registerTools();
         m_galPanel->GetView()->Add( new MY_DRAWING );

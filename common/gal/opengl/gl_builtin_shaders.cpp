@@ -127,20 +127,17 @@ void computeLineCoords( bool posture, vec2 vs, vec2 vp, vec2 texcoord, vec2 dir,
         vec4 pos0 = screenPos;
         pos0.xy += ( posture ? dir.xy : dir.yx ) * screenPixelSize / 2.0;
 
-        //if(endV)
+        if(posture)
         {
-            if(posture)
-            {
-                pos0.y -= screenPixelSize.y * sign(vs.y) * 0.5;
-            }
-            else
-            {
-                pos0.x += screenPixelSize.x * sign(vs.x) * 0.5;
-            }
+            pos0.y -= screenPixelSize.y * sign(vs.y) * 0.5;
         }
+        else
+        {
+            pos0.x += screenPixelSize.x * sign(vs.x) * 0.5;
+        }
+
         gl_Position = pos0 - vec4(1, 1, 0, 0);
         shaderParams[0] = SHADER_LINE_B;
-        gl_Position = pos0 - vec4(1, 1, 0, 0);
     }
 
     shaderParams[1] = aspect;
@@ -181,7 +178,7 @@ void computeCircleCoords( float vertexIndex, float radius, float lineWidth )
 
 
     shaderParams[2] = pixelR;
-    shaderParams[3] = pixelWidth    ;
+    shaderParams[3] = pixelWidth;
 
     delta.x *= screenPixelSize.x;
     delta.y *= screenPixelSize.y;
@@ -280,8 +277,6 @@ uniform int fontTextureWidth;
 
 void filledCircle( vec2 aCoord )
 {
-    //gl_FragColor=vec4(1,1,1,1);
-    //return;
     if( dot( aCoord, aCoord ) < 1.0 )
         gl_FragColor = gl_Color;
     else

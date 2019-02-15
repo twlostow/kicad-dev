@@ -241,8 +241,6 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
 
     // Connecting the event handlers
     Connect( wxEVT_PAINT,           wxPaintEventHandler( OPENGL_GAL::onPaint ) );
-    Connect( wxEVT_SIZE,           wxSizeEventHandler( OPENGL_GAL::onResize ) );
-
 
     // Mouse events are skipped to the parent
     Connect( wxEVT_MOTION,          wxMouseEventHandler( OPENGL_GAL::skipMouseEvent ) );
@@ -351,14 +349,13 @@ bool OPENGL_GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 double OPENGL_GAL::getWorldPixelSize() const
 {
     auto matrix = GetScreenWorldMatrix();
-    auto rv = std::min( std::abs( matrix.GetScale().x ), std::abs( matrix.GetScale().y ) );
-    return rv;
+    return std::min( std::abs( matrix.GetScale().x ), std::abs( matrix.GetScale().y ) );
 }
 
 VECTOR2D OPENGL_GAL::getScreenPixelSize() const
 {
     auto sf = GetBackingScaleFactor();
-    return VECTOR2D( 2.0 / (double) (screenSize.x * sf), 2.0 / (double) (screenSize.y * sf) );
+    return VECTOR2D( 2.0 / (double) ( screenSize.x * sf ), 2.0 / (double) ( screenSize.y * sf ) );
 }
 
 
@@ -472,7 +469,7 @@ void OPENGL_GAL::beginDrawing()
         ufm_worldPixelSize          = shader->AddParameter( "worldPixelSize" );
         ufm_screenPixelSize         = shader->AddParameter( "screenPixelSize" );
         ufm_pixelSizeMultiplier     = shader->AddParameter( "pixelSizeMultiplier" );
-        ufm_backingScaleFactor     = shader->AddParameter( "backingScaleFactor" );
+        ufm_backingScaleFactor      = shader->AddParameter( "backingScaleFactor" );
 
         shader->Use();
         shader->SetParameter( ufm_fontTexture,       (int) FONT_TEXTURE_UNIT  );
@@ -1945,12 +1942,6 @@ std::pair<VECTOR2D, float> OPENGL_GAL::computeBitmapTextSize( const UTF8& aText 
 void OPENGL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
     PostPaint();
-}
-
-void OPENGL_GAL::onResize( wxSizeEvent& aEvent )
-{
-    printf("res w %d h %d\n", aEvent.GetSize().x, aEvent.GetSize().y );
-    aEvent.Skip();
 }
 
 

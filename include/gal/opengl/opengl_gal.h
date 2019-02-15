@@ -451,7 +451,6 @@ private:
      * @param aEvent is the OnPaint event.
      */
     void onPaint( wxPaintEvent& aEvent );
-    void onResize( wxSizeEvent& aEvent );
 
     /**
      * @brief Skip the mouse event to the parent.

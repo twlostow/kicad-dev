@@ -82,6 +82,7 @@ varying vec2 circleCoords;
 uniform float worldPixelSize;
 uniform vec2 screenPixelSize;
 uniform float pixelSizeMultiplier;
+uniform float minLinePixelWidth;
 
 float roundr( float f, float r )
 {
@@ -93,12 +94,14 @@ vec4 roundv( vec4 x, vec2 t)
     return vec4( roundr(x.x, t.x), roundr(x.y, t.y), x.z, x.w );
 }
 
-void computeLineCoords( bool posture, vec2 vs, vec2 vp, vec2 texcoord, vec2 dir, float lineWidth )
+void computeLineCoords( bool posture, vec2 vs, vec2 vp, vec2 texcoord, vec2 dir, float lineWidth, bool endV )
 {
     float lineLength = length(vs);
-    float pixelWidth = roundr( lineWidth / worldPixelSize, 1.0 );
     vec4 screenPos = gl_ModelViewProjectionMatrix * gl_Vertex + vec4(1, 1, 0, 0);
-    float aspect = lineWidth != 0.0 ? ( lineLength + lineWidth ) / lineWidth : 0.0;
+    float w = (lineWidth == 0.0) ? worldPixelSize : lineWidth;
+    float pixelWidth = roundr( w / worldPixelSize, 1.0 );
+    float aspect = ( lineLength + w ) / w;
+    vec4 color = gl_Color;
 
     if( pixelWidth < 1.0 )
         pixelWidth = 1.0;
@@ -119,15 +122,28 @@ void computeLineCoords( bool posture, vec2 vs, vec2 vp, vec2 texcoord, vec2 dir,
         shaderParams[0] = SHADER_LINE_A;
     }
     else {
-        screenPos.xy += ( posture ? dir.xy : dir.yx ) * screenPixelSize / 2.0;
-        gl_Position = screenPos - vec4(1, 1, 0, 0);
+        vec4 pos0 = roundv(screenPos, screenPixelSize);// + vec4(screenPixelSize.x /2.0, screenPixelSize.y / 2.0, 0, 0);
+        pos0.xy += ( posture ? dir.xy : dir.yx ) * screenPixelSize / 2.0;
+
+        //if(endV)
+        {
+            if(posture)
+            {
+                pos0.y -= screenPixelSize.y * sign(vs.y) * 0.5;
+            }
+            else
+            {
+                pos0.x += screenPixelSize.x * sign(vs.x) * 0.5;
+            }
+        }
+        gl_Position = pos0 - vec4(1, 1, 0, 0);
         shaderParams[0] = SHADER_LINE_B;
     }
 
     shaderParams[1] = aspect;
 
     gl_TexCoord[0].st = vec2(aspect * texcoord.x, texcoord.y);
-    gl_FrontColor = gl_Color;
+    gl_FrontColor = color;
 }
 
 
@@ -135,54 +151,40 @@ void computeCircleCoords( float vertexIndex, float radius, float lineWidth )
 {
     vec4 delta;
     vec4 center = roundv(gl_ModelViewProjectionMatrix * gl_Vertex + vec4(1, 1, 0, 0), screenPixelSize);
-    float pixelWidth = roundr( lineWidth / worldPixelSize, 1.0 );
-    float pixelR =  (radius / worldPixelSize);
+    float pixelWidth = roundr(lineWidth / worldPixelSize, 1.0);
+    float pixelR =  roundr(radius / worldPixelSize, 1.0);
     //float pixelWidth = lineWidth / worldPixelSize;
 
     vec4 adjust = vec4(-1, -1, 0, 0);
-    float adj2 = 0.0;
-    if( mod(pixelR, 2.0) > 0.9 )
-    {
-        //pixelR -= 1.0;
-       // adj2 += 0.5;
-        //adjust += vec4( screenPixelSize.x, screenPixelSize.y, 0, 0) * 0.5;
-    }
 
     if( pixelWidth < 1.0 )
         pixelWidth = 1.0;
 
-//    pixelR += 0.5;
-
     if( vertexIndex == 1.0 )
     {
         circleCoords = vec2( -sqrt( 3.0 ), -1.0 );
-        delta = vec4(- pixelR * sqrt(3.0) - adj2, -pixelR - adj2, 0, 0);
+        delta = vec4(- pixelR * sqrt(3.0), -pixelR, 0, 0);
     }
     else if( vertexIndex == 2.0 )
     {
         circleCoords = vec2( sqrt( 3.0 ), -1.0 );
-        delta = vec4( pixelR * sqrt(3.0) + adj2, -pixelR - adj2, 0, 0);
+        delta = vec4( pixelR * sqrt(3.0), -pixelR, 0, 0);
     }
     else if( vertexIndex == 3.0 )
     {
         circleCoords = vec2( 0.0, 2.0 );
-        delta = vec4(0, 2*pixelR + adj2, 0, 0);
+        delta = vec4(0, 2*pixelR, 0, 0);
     }
 
 
     shaderParams[2] = pixelR;
-    shaderParams[3] = pixelWidth;
+    shaderParams[3] = pixelWidth    ;
 
     delta.x *= screenPixelSize.x;
     delta.y *= screenPixelSize.y;
 
     gl_Position = center + delta + adjust;
-    
-    //vec4(delta.x * screenPixelSize.x, delta.y * screenPixelSize.y, 0, 0)
-    
-    gl_FrontColor = vec4(1,1,1,1); //gl_Color;
-
-
+    gl_FrontColor = gl_Color;
 }
 
 
@@ -199,17 +201,17 @@ void main()
     bool posture = abs( vs.x ) < abs(vs.y);
 
     if( mode == SHADER_LINE_A )
-        computeLineCoords( posture,  -vs, vp, vec2( -1, -1 ), vec2( -1, 0 ), lineWidth );
+        computeLineCoords( posture,  -vs, vp,  vec2( -1, -1 ), vec2( -1, 0 ), lineWidth, false );
     else if( mode == SHADER_LINE_B )
-        computeLineCoords( posture,  -vs, -vp, vec2( -1,  1 ), vec2(  1, 0 ), lineWidth );
+        computeLineCoords( posture,  -vs, -vp, vec2( -1,  1 ), vec2(  1, 0 ), lineWidth, false );
     else if( mode == SHADER_LINE_C )
-        computeLineCoords( posture, vs, -vp, vec2(  1,  1 ), vec2(  1, 0 ), lineWidth );
+        computeLineCoords( posture,  vs, -vp,  vec2(  1,  1 ), vec2(  1, 0 ), lineWidth, true );
     else if( mode == SHADER_LINE_D )
-        computeLineCoords( posture, vs, -vp, vec2( -1, -1 ), vec2(  1, 0 ), lineWidth );
+        computeLineCoords( posture,  vs, -vp,  vec2( -1, -1 ), vec2(  1, 0 ), lineWidth, true );
     else if( mode == SHADER_LINE_E )
-        computeLineCoords( posture,  vs, vp, vec2( -1,  1 ), vec2( -1, 0 ), lineWidth );
+        computeLineCoords( posture,  vs, vp,   vec2( -1,  1 ), vec2( -1, 0 ), lineWidth, true );
     else if( mode == SHADER_LINE_F )
-        computeLineCoords( posture,  -vs, vp, vec2(  1,  1 ), vec2( -1, 0 ), lineWidth );
+        computeLineCoords( posture,  -vs, vp,  vec2(  1,  1 ), vec2( -1, 0 ), lineWidth, false );
     else if( mode == SHADER_FILLED_CIRCLE || mode == SHADER_STROKED_CIRCLE)
         computeCircleCoords( shaderParams.y, shaderParams.z, shaderParams.w );
     else
@@ -275,8 +277,8 @@ uniform int fontTextureWidth;
 
 void filledCircle( vec2 aCoord )
 {
-    gl_FragColor=vec4(1,1,1,1);
-    return;
+    //gl_FragColor=vec4(1,1,1,1);
+    //return;
     if( dot( aCoord, aCoord ) < 1.0 )
         gl_FragColor = gl_Color;
     else

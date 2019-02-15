@@ -1649,6 +1649,8 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     VECTOR2D vs ( startEndVector );
     float aspect;
 
+    printf("lineW %.10f\n", lineWidth );
+
     currentManager->Reserve( 6 );
 
     // Line width is maintained by the vertex shader

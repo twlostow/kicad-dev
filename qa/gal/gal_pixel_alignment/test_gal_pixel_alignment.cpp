@@ -100,22 +100,42 @@ public:
             float r = 800000.0;
             gal->DrawLine( p0, p0 + VECTOR2I( r*ca, r*sa));
         }
+        */
 
-        int step = 16;
         int k = 0;
-        for(double w=1.0; w<=8.0; w+=1.0, k += 50)
+        double w = 0.0;
+        //gal->Rotate( 1.0 / 3.0 * M_PI );
+        for(int step = 10; step < 80; step += 11, k+=100)
         {
 
         for (int i = 0; i < 100; i++)
         {
+            /*auto p0  = VECTOR2D( k + 100, 100 + i * step );
+            auto p1  = VECTOR2D( k + 100 + step/2, 100 + i * step );
+            auto p2  = VECTOR2D( k + 100 + step/2, 100 + i * step + step/2 );
+            auto p3  = VECTOR2D( k + 100, 100 + i * step + step/2 );
+            auto p4  = VECTOR2D( k + 100, 100 + i * step + step );*/
+
             auto p0  = VECTOR2D( k + 100, 100 + i * step );
             auto p1  = VECTOR2D( k + 100 + step/2, 100 + i * step );
             auto p2  = VECTOR2D( k + 100 + step/2, 100 + i * step + step/2 );
             auto p3  = VECTOR2D( k + 100, 100 + i * step + step/2 );
             auto p4  = VECTOR2D( k + 100, 100 + i * step + step );
 
-            screenSpaceLine( gal, p0, p1 , w); 
+
+            screenSpaceLine( gal, p0, p1 , w);
+            screenSpaceLine( gal, p3, p2 , w);
+            
+            p0 += VECTOR2D(50, 0);
+            p1 += VECTOR2D(50, 0);
+            p2 += VECTOR2D(50, 0);
+            p3 += VECTOR2D(50, 0);
+
+            screenSpaceLine( gal, p0, p3 , w);
             screenSpaceLine( gal, p1, p2 , w);
+            
+
+          /*  screenSpaceLine( gal, p1, p2 , w);
             screenSpaceLine( gal, p2, p3 , w);
             screenSpaceLine( gal, p3, p4 , w);
 
@@ -128,10 +148,11 @@ public:
             screenSpaceLine( gal, p0, p1 , w); 
             screenSpaceLine( gal, p1, p2 , w);
             screenSpaceLine( gal, p2, p3 , w);
-            screenSpaceLine( gal, p3, p4 , w);
+            screenSpaceLine( gal, p3, p4 , w);*/
         }
         }
 
+        /*
         for(i=0;i < 1000; i++)
         {
             int k = 0;
@@ -155,10 +176,10 @@ public:
             {
                 gal->SetIsStroke( true );
                 gal->SetIsFill( false );
-                screenSpaceCircle(gal, VECTOR2D(100 + i * 25, 100 + j * 25), (float)i/2.0, 1);
+                //screenSpaceCircle(gal, VECTOR2D(100 + i * 25, 100 + j * 25), (float)i/2.0, 1);
                 gal->SetIsStroke( false );
                 gal->SetIsFill( true );
-                screenSpaceCircle(gal, VECTOR2D(100 + i * 25, 500 + 100 + j * 25), (float)i/2.0, 1);
+                //screenSpaceCircle(gal, VECTOR2D(100 + i * 25, 500 + 100 + j * 25), (float)i/2.0, 1);
             }
         }
     }

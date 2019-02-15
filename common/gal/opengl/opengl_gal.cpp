@@ -357,7 +357,8 @@ double OPENGL_GAL::getWorldPixelSize() const
 
 VECTOR2D OPENGL_GAL::getScreenPixelSize() const
 {
-    return VECTOR2D( 2.0 / (double) (screenSize.x), 2.0 / (double) (screenSize.y) );
+    auto sf = GetBackingScaleFactor();
+    return VECTOR2D( 2.0 / (double) (screenSize.x * sf), 2.0 / (double) (screenSize.y * sf) );
 }
 
 
@@ -471,6 +472,7 @@ void OPENGL_GAL::beginDrawing()
         ufm_worldPixelSize          = shader->AddParameter( "worldPixelSize" );
         ufm_screenPixelSize         = shader->AddParameter( "screenPixelSize" );
         ufm_pixelSizeMultiplier     = shader->AddParameter( "pixelSizeMultiplier" );
+        ufm_backingScaleFactor     = shader->AddParameter( "backingScaleFactor" );
 
         shader->Use();
         shader->SetParameter( ufm_fontTexture,       (int) FONT_TEXTURE_UNIT  );
@@ -482,10 +484,11 @@ void OPENGL_GAL::beginDrawing()
     }
 
     shader->Use();
-    shader->SetParameter( ufm_worldPixelSize, (float) getWorldPixelSize() );
+    shader->SetParameter( ufm_worldPixelSize, (float) getWorldPixelSize() / GetBackingScaleFactor());
     shader->SetParameter( ufm_screenPixelSize, getScreenPixelSize() );
     double pixelSizeMultiplier = compositor->GetAntialiasSupersamplingFactor();
     shader->SetParameter( ufm_pixelSizeMultiplier, (float) pixelSizeMultiplier );
+    shader->SetParameter( ufm_backingScaleFactor, (float) GetBackingScaleFactor() );
     shader->Deactivate();
 
     // Something betreen BeginDrawing and EndDrawing seems to depend on
@@ -1642,14 +1645,7 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
     auto v1  = currentManager->GetTransformation() * glm::vec4( aStartPoint.x, aStartPoint.y, 0.0, 0.0 );
     auto v2  = currentManager->GetTransformation() * glm::vec4( aEndPoint.x, aEndPoint.y, 0.0, 0.0 );
 
-    VECTOR2D startEndVector( v2.x - v1.x, v2.y - v1.y );
-
-    double lineLength     = startEndVector.EuclideanNorm();
-
-    VECTOR2D vs ( startEndVector );
-    float aspect;
-
-    printf("lineW %.10f\n", lineWidth );
+    VECTOR2D vs( v2.x - v1.x, v2.y - v1.y );
 
     currentManager->Reserve( 6 );
 

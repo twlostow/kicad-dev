@@ -83,6 +83,8 @@ uniform float worldPixelSize;
 uniform vec2 screenPixelSize;
 uniform float pixelSizeMultiplier;
 uniform float minLinePixelWidth;
+uniform float backingScaleFactor;
+
 
 float roundr( float f, float r )
 {
@@ -98,7 +100,7 @@ void computeLineCoords( bool posture, vec2 vs, vec2 vp, vec2 texcoord, vec2 dir,
 {
     float lineLength = length(vs);
     vec4 screenPos = gl_ModelViewProjectionMatrix * gl_Vertex + vec4(1, 1, 0, 0);
-    float w = (lineWidth == 0.0) ? worldPixelSize : lineWidth;
+    float w = ((lineWidth == 0.0) ? worldPixelSize : lineWidth) / backingScaleFactor;
     float pixelWidth = roundr( w / worldPixelSize, 1.0 );
     float aspect = ( lineLength + w ) / w;
     vec4 color = gl_Color;

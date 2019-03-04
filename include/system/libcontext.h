@@ -26,7 +26,7 @@
 
     #define LIBCONTEXT_COMPILER_gcc
 
-    #if defined(__linux__) || defined(__FreeBSD__)
+	#if defined(__linux__) || defined(__FreeBSD__)
     #if defined(__x86_64__) || defined(__amd64__)
         #define LIBCONTEXT_PLATFORM_linux_x86_64
         #define LIBCONTEXT_CALL_CONVENTION
@@ -73,6 +73,16 @@
         #define LIBCONTEXT_CALL_CONVENTION
     #endif
     #endif
+#elif defined (_MSC_VER)
+
+#define LIBCONTEXT_CALL_CONVENTION __cdecl
+
+#if defined(_WIN64)
+	#define LIBCONTEXT_PLATFORM_msvc_x86_64
+#elif defined(_WIN32)
+	#define LIBCONTEXT_PLATFORM_msvc_i386
+
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -83,12 +93,12 @@ namespace libcontext {
 typedef int intptr_t;
 #endif
 
+
 typedef void* fcontext_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext( fcontext_t* ofc, fcontext_t nfc,
         intptr_t vp, bool preserve_fpu = true );

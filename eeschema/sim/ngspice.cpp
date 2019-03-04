@@ -465,9 +465,9 @@ int NGSPICE::cbSendChar( char* what, int id, void* user )
     if( sim->m_reporter )
     {
         // strip stdout/stderr from the line
-        if( ( strncasecmp( what, "stdout ", 7 ) == 0 )
-                || ( strncasecmp( what, "stderr ", 7 ) == 0 ) )
-            what += 7;
+        //if( ( strncasecmp( what, "stdout ", 7 ) == 0 )
+          //      || ( strncasecmp( what, "stderr ", 7 ) == 0 ) )
+            //what += 7;
 
         sim->m_reporter->Report( what );
     }

@@ -378,11 +378,10 @@ endif( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
 
 if( MSVC )
     set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "/external:I ")
-    string( APPEND CMAKE_CXX_FLAGS " /experimental:external /external:W0" )
 
     add_definitions( -DBOOST_ALL_NO_LIB -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES -DNOMINMAX )
     # C4290: throw() is interpreted as declspec(nothrow)
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4290" )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4290 /MP" )
     # C4800: non-bool is explicitly cast to bool, forcing value of 0 or 1
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4800" )
     # /Zi: create PDB

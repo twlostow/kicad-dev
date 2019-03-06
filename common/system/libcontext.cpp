@@ -1272,417 +1272,8 @@ __asm (
 #endif
 
 #if defined(LIBCONTEXT_PLATFORM_msvc_x86_64)
-#if 1
-static const uint8_t code_jump[] = { 0x55,
-0x53,
-0x56,
-0x57,
-0x41,
-0x57,
-0x41,
-0x56,
-0x41,
-0x55,
-0x41,
-0x54,
-0x65,
-0x4c,
-0x8b,
-0x14,
-0x25,
-0x30,
-0x00,
-0x00,
-0x00,
-0x49,
-0x8b,
-0x42,
-0x08,
-0x50,
-0x49,
-0x8b,
-0x42,
-0x10,
-0x50,
-0x49,
-0x8b,
-0x82,
-0x78,
-0x14,
-0x00,
-0x00,
-0x50,
-0x49,
-0x8b,
-0x42,
-0x18,
-0x50,
-0x48,
-0x8d,
-0xa4,
-0x24,
-0x58,
-0xff,
-0xff,
-0xff,
-0x4d,
-0x85,
-0xc9,
-0x74,
-0x4e,
-0x0f,
-0xae,
-0x9c,
-0x24,
-0xa0,
-0x00,
-0x00,
-0x00,
-0xd9,
-0xbc,
-0x24,
-0xa4,
-0x00,
-0x00,
-0x00,
-0x0f,
-0x29,
-0x34,
-0x24,
-0x0f,
-0x29,
-0x7c,
-0x24,
-0x10,
-0x44,
-0x0f,
-0x29,
-0x44,
-0x24,
-0x20,
-0x44,
-0x0f,
-0x29,
-0x4c,
-0x24,
-0x30,
-0x44,
-0x0f,
-0x29,
-0x54,
-0x24,
-0x40,
-0x44,
-0x0f,
-0x29,
-0x5c,
-0x24,
-0x50,
-0x44,
-0x0f,
-0x29,
-0x64,
-0x24,
-0x60,
-0x44,
-0x0f,
-0x29,
-0x6c,
-0x24,
-0x70,
-0x44,
-0x0f,
-0x29,
-0xb4,
-0x24,
-0x80,
-0x00,
-0x00,
-0x00,
-0x44,
-0x0f,
-0x29,
-0xbc,
-0x24,
-0x90,
-0x00,
-0x00,
-0x00,
-0x4d,
-0x31,
-0xd2,
-0x41,
-0x52,
-0x48,
-0x89,
-0x21,
-0x48,
-0x89,
-0xd4,
-0x41,
-0x5a,
-0x4d,
-0x85,
-0xc9,
-0x74,
-0x4e,
-0x0f,
-0xae,
-0x94,
-0x24,
-0xa0,
-0x00,
-0x00,
-0x00,
-0xd9,
-0xac,
-0x24,
-0xa4,
-0x00,
-0x00,
-0x00,
-0x0f,
-0x28,
-0x34,
-0x24,
-0x0f,
-0x28,
-0x7c,
-0x24,
-0x10,
-0x44,
-0x0f,
-0x28,
-0x44,
-0x24,
-0x20,
-0x44,
-0x0f,
-0x28,
-0x4c,
-0x24,
-0x30,
-0x44,
-0x0f,
-0x28,
-0x54,
-0x24,
-0x40,
-0x44,
-0x0f,
-0x28,
-0x5c,
-0x24,
-0x50,
-0x44,
-0x0f,
-0x28,
-0x64,
-0x24,
-0x60,
-0x44,
-0x0f,
-0x28,
-0x6c,
-0x24,
-0x70,
-0x44,
-0x0f,
-0x28,
-0xb4,
-0x24,
-0x80,
-0x00,
-0x00,
-0x00,
-0x44,
-0x0f,
-0x28,
-0xbc,
-0x24,
-0x90,
-0x00,
-0x00,
-0x00,
-0x48,
-0xc7,
-0xc1,
-0xa8,
-0x00,
-0x00,
-0x00,
-0x4d,
-0x85,
-0xd2,
-0x74,
-0x04,
-0x48,
-0x83,
-0xc1,
-0x08,
-0x48,
-0x8d,
-0x24,
-0x0c,
-0x65,
-0x4c,
-0x8b,
-0x14,
-0x25,
-0x30,
-0x00,
-0x00,
-0x00,
-0x58,
-0x49,
-0x89,
-0x42,
-0x18,
-0x58,
-0x49,
-0x89,
-0x82,
-0x78,
-0x14,
-0x00,
-0x00,
-0x58,
-0x49,
-0x89,
-0x42,
-0x10,
-0x58,
-0x49,
-0x89,
-0x42,
-0x08,
-0x41,
-0x5c,
-0x41,
-0x5d,
-0x41,
-0x5e,
-0x41,
-0x5f,
-0x5f,
-0x5e,
-0x5b,
-0x5d,
-0x41,
-0x5a,
-0x4c,
-0x89,
-0xc0,
-0x4c,
-0x89,
-0xc1,
-0x41,
-0xff,
-0xe2
-};
 
-static const uint8_t code_make[] = {
-	0x48,
-	0x89,
-	0xc8,
-	0x48,
-	0x83,
-	0xe8,
-	0x28,
-	0x48,
-	0x83,
-	0xe0,
-	0xf0,
-	0x48,
-	0x2d,
-	0x28,
-	0x01,
-	0x00,
-	0x00,
-	0x4c,
-	0x89,
-	0x80,
-	0x18,
-	0x01,
-	0x00,
-	0x00,
-	0x48,
-	0x89,
-	0x88,
-	0xd0,
-	0x00,
-	0x00,
-	0x00,
-	0x48,
-	0xf7,
-	0xda,
-	0x48,
-	0x8d,
-	0x0c,
-	0x11,
-	0x48,
-	0x89,
-	0x88,
-	0xc8,
-	0x00,
-	0x00,
-	0x00,
-	0x48,
-	0x89,
-	0x88,
-	0xc0,
-	0x00,
-	0x00,
-	0x00,
-	0x0f,
-	0xae,
-	0x98,
-	0xa8,
-	0x00,
-	0x00,
-	0x00,
-	0xd9,
-	0xb8,
-	0xac,
-	0x00,
-	0x00,
-	0x00,
-	0x48,
-	0x8d,
-	0x0d,
-	0x12,
-	0x00,
-	0x00,
-	0x00,
-	0x48,
-	0x89,
-	0x88,
-	0x20,
-	0x01,
-	0x00,
-	0x00,
-	0x48,
-	0xc7,
-	0xc1,
-	0x01,
-	0x00,
-	0x00,
-	0x00,
-	0x48,
-	0x89,
-	0x08,
-	0xc3,
-	0x48,
-	0x31,
-	0xc9,
-	0xe8,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0xf4
-};
-
+#include <map>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1690,201 +1281,58 @@ extern "C" {
 
 	#include <windows.h>
 
-	static void libcontext_init();
+	static int threadHasFibers = 0;
+ 
+	struct FiberData {
+		intptr_t inValue;
+		intptr_t outValue;
+		void(*entry)(intptr_t);
+	};
 
-	static uint64_t getPageSize()
+	static std::map<libcontext::fcontext_t, FiberData> fiberParams;
+
+	static void fiberEntry(LPVOID params)
 	{
-		SYSTEM_INFO sysInfo;
-
-		GetSystemInfo(&sysInfo);
-
-		printf("GetPageSize: %ld\n", sysInfo.dwPageSize);
-		return sysInfo.dwPageSize;
+		auto ctx = (libcontext::fcontext_t) GetCurrentFiber();
+		printf("Entry: args %p\n", ctx);
+		auto& d = fiberParams[ctx];
+		printf("Real entry %p\n", d.entry);
+		d.entry(d.inValue);
 	}
 
-	static int protectMemoryRange(void *start, size_t size, DWORD newProtectFlags, DWORD* oldProtectFlags)
+libcontext::fcontext_t LIBCONTEXT_CALL_CONVENTION make_fcontext(void* sp, size_t size, void(*fn)(intptr_t))
+{
+	if (!threadHasFibers)
 	{
-		printf("Call PMR\n");
+		printf("Converting current thread to fiber\n");
+		ConvertThreadToFiber(nullptr);
+		printf("Fiber done\n");
 		fflush(stdout);
-		size_t pageSize = getPageSize();
-		
-		size_t startAddr = (size_t)start & (~(pageSize - 1));
-		size_t endAddr = (size_t)start + size;
-		
-		size_t adjustedSize = 0;
-		while ((startAddr + adjustedSize) < endAddr)
-			adjustedSize += pageSize;
-
-		printf("protect %p %d %p %d\n", start, size, startAddr, adjustedSize);
-		fflush(stdout);
-		DWORD dummy;
-
-		VirtualProtect( (LPVOID) startAddr, (SIZE_T) adjustedSize, newProtectFlags, oldProtectFlags ? oldProtectFlags : &dummy );
-
-		return 0;
+		threadHasFibers = 1;
 	}
 
+	libcontext::fcontext_t  ctx = CreateFiber(1048576, (LPFIBER_START_ROUTINE) fiberEntry, nullptr );
 	
-	libcontext::fcontext_t LIBCONTEXT_CALL_CONVENTION make_fcontext(void* sp, size_t size,
-		void(*fn)(intptr_t))
-	{
-		int dummy = 0;
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		(void)dummy;
+	fiberParams[ctx].entry = fn;
 
-		libcontext_init();
-		return make_fcontext(sp, size, fn);
+	return ctx;
 }
 
-	void make_fcontext_finish() {};
+intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(libcontext::fcontext_t* ofc, libcontext::fcontext_t nfc,
+	intptr_t vp, bool preserve_fpu = true)
+{
+	auto current = (void*)GetCurrentFiber();
+	fiberParams[current].outValue = vp;
+	*ofc = GetCurrentFiber();
+	fiberParams[nfc].inValue = vp;
+	SwitchToFiber(nfc);
+	return fiberParams[*ofc].outValue;
+}
 
-	intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(libcontext::fcontext_t* ofc, libcontext::fcontext_t nfc,
-		intptr_t vp, bool preserve_fpu )
-	{
-		int dummy = 0;
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
-		for (int i = 0; i < rand() % 10; i++)
-			dummy ^= rand();
 
-		(void)dummy;
 
-		libcontext_init();
-		return jump_fcontext(ofc, nfc, vp, preserve_fpu);
-	}
-
-	static void* plt_get_address( void *plt_entry )
-	{
-		volatile uint8_t *code = (volatile uint8_t*)plt_entry;
-	
-		if (code[0] != 0xe9)
-		{
-			exit(-1);
-		}
-
-		int64_t offset = ((int64_t)code[1] << 0) | ((int64_t)code[2] << 8) | ((int64_t)code[3] << 16) | ((int64_t)code[4] << 24);
-		if (offset & (1 << 31))
-			offset |= 0xffffffff00000000LL;
-
-		uint64_t realAddr = (uint64_t)plt_entry + offset + 5;
-
-	//	printf("%02x %02x %02x %02x %02x offset %llx real %llx\n", code[0], code[1], code[2], code[3], code[4], offset, realAddr );
-		
-		return (void *) realAddr;
-	}
-
-	static void libcontext_init()
-	{
-		DWORD oldFlags;
-
-		void* addr_make_fcontext = plt_get_address(make_fcontext);
-		void* addr_jump_fcontext = plt_get_address(jump_fcontext);
-
-		protectMemoryRange(addr_make_fcontext, getPageSize(), PAGE_EXECUTE_READWRITE, &oldFlags);
-		memcpy(addr_make_fcontext, (uint8_t *) code_make, sizeof(code_make));
-		protectMemoryRange(addr_make_fcontext, getPageSize(), oldFlags, nullptr);
-		protectMemoryRange(addr_jump_fcontext, getPageSize(), PAGE_EXECUTE_READWRITE, &oldFlags);
-		memcpy(addr_jump_fcontext, code_jump, sizeof(code_jump));
-		protectMemoryRange(addr_jump_fcontext, getPageSize(), oldFlags, nullptr);
-	}
-
- 
 #ifdef __cplusplus
 };
 #endif
 
-#endif
 #endif

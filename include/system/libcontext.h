@@ -46,7 +46,8 @@
         #ifdef _ARCH_PPC64
             #define LIBCONTEXT_PLATFORM_linux_ppc64
             #define LIBCONTEXT_CALL_CONVENTION
-        #elif defined _ARCH_PPC
+        #endif
+        #ifdef _ARCH_PPC
             #define LIBCONTEXT_PLATFORM_linux_ppc32
             #define LIBCONTEXT_CALL_CONVENTION
         #endif

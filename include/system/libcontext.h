@@ -24,6 +24,8 @@
 
 #if defined(__GNUC__) || defined(__APPLE__) || defined(__FreeBSD__)
 
+    #undef LIBCONTEXT_HAS_OWN_STACK
+
     #define LIBCONTEXT_COMPILER_gcc
 
 	#if defined(__linux__) || defined(__FreeBSD__)
@@ -76,13 +78,14 @@
     #endif
 #elif defined (_MSC_VER)
 
+#define LIBCONTEXT_HAS_OWN_STACK
+
 #define LIBCONTEXT_CALL_CONVENTION __cdecl
 
 #if defined(_WIN64)
 	#define LIBCONTEXT_PLATFORM_msvc_x86_64
 #elif defined(_WIN32)
 	#define LIBCONTEXT_PLATFORM_msvc_i386
-
 #endif
 #endif
 

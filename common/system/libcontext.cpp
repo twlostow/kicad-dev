@@ -1271,7 +1271,7 @@ __asm (
 
 #endif
 
-#if defined(LIBCONTEXT_PLATFORM_msvc_x86_64)
+#if defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386)
 
 #include <map>
 
@@ -1279,47 +1279,45 @@ __asm (
 extern "C" {
 #endif
 
-	#include <windows.h>
+#include <windows.h>
 
-	static int threadHasFibers = 0;
+namespace libcontext
+{
+	
+static int threadHasFibers = 0;
  
-	struct FiberData {
-		intptr_t inValue;
-		intptr_t outValue;
-		void(*entry)(intptr_t);
-	};
+struct FiberData 
+{
+	intptr_t inValue;
+	intptr_t outValue;
+	void(*entry)(intptr_t);
+};
 
-	static std::map<libcontext::fcontext_t, FiberData> fiberParams;
+static std::map<fcontext_t, FiberData> fiberParams;
 
-	static void fiberEntry(LPVOID params)
-	{
-		auto ctx = (libcontext::fcontext_t) GetCurrentFiber();
-		printf("Entry: args %p\n", ctx);
-		auto& d = fiberParams[ctx];
-		printf("Real entry %p\n", d.entry);
-		d.entry(d.inValue);
-	}
+static void fiberEntry(LPVOID params)
+{
+	auto ctx = (fcontext_t) GetCurrentFiber();
+	auto& d = fiberParams[ctx];
+	d.entry(d.inValue);
+}
 
-libcontext::fcontext_t LIBCONTEXT_CALL_CONVENTION make_fcontext(void* sp, size_t size, void(*fn)(intptr_t))
+fcontext_t LIBCONTEXT_CALL_CONVENTION make_fcontext(void* sp, size_t size, void(*fn)(intptr_t))
 {
 	if (!threadHasFibers)
 	{
-		printf("Converting current thread to fiber\n");
 		ConvertThreadToFiber(nullptr);
-		printf("Fiber done\n");
-		fflush(stdout);
 		threadHasFibers = 1;
 	}
 
-	libcontext::fcontext_t  ctx = CreateFiber(1048576, (LPFIBER_START_ROUTINE) fiberEntry, nullptr );
-	
+	fcontext_t ctx = CreateFiber(size, (LPFIBER_START_ROUTINE) fiberEntry, nullptr );
 	fiberParams[ctx].entry = fn;
 
 	return ctx;
 }
 
-intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(libcontext::fcontext_t* ofc, libcontext::fcontext_t nfc,
-	intptr_t vp, bool preserve_fpu = true)
+intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(fcontext_t* ofc, fcontext_t nfc,
+	intptr_t vp, bool preserve_fpu)
 {
 	auto current = (void*)GetCurrentFiber();
 	fiberParams[current].outValue = vp;
@@ -1329,7 +1327,7 @@ intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(libcontext::fcontext_t* ofc, l
 	return fiberParams[*ofc].outValue;
 }
 
-
+}; // namespace libcontext
 
 #ifdef __cplusplus
 };

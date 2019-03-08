@@ -54,6 +54,7 @@
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
+#include <tool/common_tools.h>
 #include <tools/pcb_tool.h>
 #include <tools/pcb_actions.h>
 #include <tools/selection_tool.h>
@@ -213,6 +214,7 @@ PCB_TEST_FRAME::PCB_TEST_FRAME( wxFrame* frame, const wxString& title, const wxP
     m_toolDispatcher.reset( new TOOL_DISPATCHER( m_toolManager.get(), m_pcbActions.get() ) );
 
     m_toolManager->RegisterTool( new SELECTION_TOOL );
+    m_toolManager->RegisterTool( new COMMON_TOOLS );
 
     m_toolManager->InitTools();
     m_galPanel->SetEventDispatcher( m_toolDispatcher.get() );

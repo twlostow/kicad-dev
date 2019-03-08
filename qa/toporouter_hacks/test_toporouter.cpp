@@ -20,7 +20,7 @@ public:
             : PCB_TEST_FRAME( frame, title, pos, size, style, PCB_DRAW_PANEL_GAL::GAL_TYPE_OPENGL )
     {
         registerTools();
-        printf("Create2?\n");
+        //printf("Create2?\n");
     }
 
     void registerTools();
@@ -33,7 +33,7 @@ public:
     {
         auto bBox = m_board->ViewBBox();
 
-        printf("bb %d %d %d %d\n", bBox.GetOrigin().x, bBox.GetOrigin().y, bBox.GetSize().x, bBox.GetSize().y );
+        //printf("bb %d %d %d %d\n", bBox.GetOrigin().x, bBox.GetOrigin().y, bBox.GetSize().x, bBox.GetSize().y );
 
         if( bBox.GetWidth() == 0 || bBox.GetHeight() == 0 )
         {
@@ -43,7 +43,7 @@ public:
         auto view = m_galPanel->GetView();
 
         auto size = m_galPanel->GetClientSize();
-        printf("sz %d %d\n", size.x, size.y );
+        //printf("sz %d %d\n", size.x, size.y );
         auto screenSize = view->ToWorld( m_galPanel->GetClientSize(), false );
 
 

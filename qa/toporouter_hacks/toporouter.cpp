@@ -60,25 +60,6 @@ namespace toporouter {
 
 #define Message printf
 
-#if 0
-PCBType PCBStruct = {0};
-PCBType *PCB = &PCBStruct;
-SettingsType Settings;
-
-void TopoSetSettings(gdouble Keepaway, gdouble LineThickness)
-{
-	Settings.Keepaway = Keepaway;
-	Settings.LineThickness = LineThickness;
-}
-
-void TopoSetPCBSettings(int MaxWidth, int MaxHeight, int NumLayers)
-{
-	PCBStruct.MaxHeight = MaxHeight;
-	PCBStruct.MaxWidth = MaxWidth;
-	PCBStruct.NumLayers = NumLayers;
-}
-#endif
-
 static void
 toporouter_edge_init(toporouter_edge_t *edge)
 {
@@ -251,58 +232,6 @@ toporouter_arc_class(void)
 	return klass;
 }
 
-#define MARGIN 10.0f
-
-drawing_context_t *
-toporouter_output_init(int w, int h, char *filename)
-{
-#if 0
-	drawing_context_t *dc;
-
-	dc = (drawing_context_t *)malloc(sizeof(drawing_context_t));
-
-	dc->iw = w;
-	dc->ih = h;
-	dc->filename = filename;
-
-	/* Calculate scaling to maintain aspect ratio */
-	if (PCB->MaxWidth > PCB->MaxHeight)
-	{
-		/* Scale board width to match image width minus 2xMARGIN */
-		dc->s = ((double)dc->iw - (2 * MARGIN)) / (double)PCB->MaxWidth;
-		dc->ih = (double)PCB->MaxHeight * dc->s + (2 * MARGIN);
-	}
-	else
-	{
-		/* Scale board height to match image height minus 2xMARGIN */
-		dc->s = ((double)dc->ih - (2 * MARGIN)) / (double)PCB->MaxHeight;
-		dc->iw = (double)PCB->MaxWidth * dc->s + (2 * MARGIN);
-	}
-
-#if TOPO_OUTPUT_ENABLED
-	dc->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dc->iw, dc->ih);
-	dc->cr = cairo_create(dc->surface);
-
-	cairo_rectangle(dc->cr, 0, 0, dc->iw, dc->ih);
-	cairo_set_source_rgb(dc->cr, 0, 0, 0);
-	cairo_fill(dc->cr);
-
-#endif
-
-	return dc;
-#endif
-	return nullptr;
-}
-
-void toporouter_output_close(drawing_context_t *dc)
-{
-#if TOPO_OUTPUT_ENABLED
-	cairo_surface_write_to_png(dc->surface, dc->filename);
-	cairo_destroy(dc->cr);
-	cairo_surface_destroy(dc->surface);
-#endif
-}
-
 gdouble
 lookup_keepaway(char *name)
 {
@@ -335,244 +264,13 @@ cluster_thickness(toporouter_cluster_t *cluster)
 	return lookup_thickness(NULL);
 }
 
-gint toporouter_draw_vertex(gpointer item, gpointer data)
-{
-#if TOPO_OUTPUT_ENABLED
-	drawing_context_t *dc = (drawing_context_t *)data;
-	toporouter_vertex_t *tv;
-	PinType *pin;
-	PadType *pad;
-	gdouble blue;
-
-	if (TOPOROUTER_IS_VERTEX((GtsObject *)item))
-	{
-		tv = TOPOROUTER_VERTEX((GtsObject *)item);
-
-		if (tv->flags & VERTEX_FLAG_RED)
-		{
-			cairo_set_source_rgba(dc->cr, 1., 0., 0., 0.8f);
-			cairo_arc(dc->cr,
-								tv->v.p.x * dc->s + MARGIN,
-								tv->v.p.y * dc->s + MARGIN,
-								500. * dc->s, 0, 2 * M_PI);
-			cairo_fill(dc->cr);
-		}
-		else if (tv->flags & VERTEX_FLAG_GREEN)
-		{
-			cairo_set_source_rgba(dc->cr, 0., 1., 0., 0.8f);
-			cairo_arc(dc->cr,
-								tv->v.p.x * dc->s + MARGIN,
-								tv->v.p.y * dc->s + MARGIN,
-								500. * dc->s, 0, 2 * M_PI);
-			cairo_fill(dc->cr);
-		}
-		else if (tv->flags & VERTEX_FLAG_BLUE)
-		{
-			cairo_set_source_rgba(dc->cr, 0., 0., 1., 0.8f);
-			cairo_arc(dc->cr,
-								tv->v.p.x * dc->s + MARGIN,
-								tv->v.p.y * dc->s + MARGIN,
-								500. * dc->s, 0, 2 * M_PI);
-			cairo_fill(dc->cr);
-		}
-		//printf("tv->type = %d\n", tv->type);
-		if (!dc->mode)
-		{
-			if (tv->bbox)
-			{
-				pin = (PinType *)tv->bbox->data;
-				pad = (PadType *)tv->bbox->data;
-
-				blue = 0.0f;
-				switch (tv->bbox->type)
-				{
-				case PIN:
-					cairo_set_source_rgba(dc->cr, 1.0f, 0., 0.0f, 0.2f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										(((gdouble)pin->Thickness / 2.0f) + (gdouble)lookup_keepaway(pin->Name)) * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-
-					cairo_set_source_rgba(dc->cr, 1.0f, 0., 0., 0.4f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										(gdouble)(pin->Thickness) / 2.0f * dc->s,
-										0, 2 * M_PI);
-					cairo_fill(dc->cr);
-
-					break;
-				case VIA:
-					cairo_set_source_rgba(dc->cr, 0.0f, 0., 1., 0.2f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										(((gdouble)pin->Thickness / 2.0f) + (gdouble)lookup_keepaway(pin->Name)) * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-
-					cairo_set_source_rgba(dc->cr, 0.0f, 0., 1., 0.4f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										(gdouble)(pin->Thickness) / 2.0f * dc->s,
-										0, 2 * M_PI);
-					cairo_fill(dc->cr);
-
-					break;
-				case PAD:
-					cairo_set_source_rgba(dc->cr, 0.0f, 1., 0., 0.5f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										400. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-
-					break;
-				default:
-					break;
-				}
-			}
-		}
-		else
-		{
-			if (tv->flags & VERTEX_FLAG_BLUE)
-			{
-				cairo_set_source_rgba(dc->cr, 0., 0., 1., 0.8f);
-				cairo_arc(dc->cr,
-									tv->v.p.x * dc->s + MARGIN,
-									tv->v.p.y * dc->s + MARGIN,
-									500. * dc->s, 0, 2 * M_PI);
-				cairo_fill(dc->cr);
-			}
-			else if (tv->flags & VERTEX_FLAG_RED)
-			{
-				cairo_set_source_rgba(dc->cr, 1., 0., 0., 0.8f);
-				cairo_arc(dc->cr,
-									tv->v.p.x * dc->s + MARGIN,
-									tv->v.p.y * dc->s + MARGIN,
-									500. * dc->s, 0, 2 * M_PI);
-				cairo_fill(dc->cr);
-			}
-			else if (tv->flags & VERTEX_FLAG_GREEN)
-			{
-				cairo_set_source_rgba(dc->cr, 0., 1., 0., 0.8f);
-				cairo_arc(dc->cr,
-									tv->v.p.x * dc->s + MARGIN,
-									tv->v.p.y * dc->s + MARGIN,
-									500. * dc->s, 0, 2 * M_PI);
-				cairo_fill(dc->cr);
-			}
-		}
-	}
-	else
-	{
-		fprintf(stderr, "Unknown data passed to toporouter_draw_vertex, aborting foreach\n");
-		return -1;
-	}
-	return 0;
-#else
-	return -1;
-#endif
-}
-
-gint toporouter_draw_edge(gpointer item, gpointer data)
-{
-#if TOPO_OUTPUT_ENABLED
-	drawing_context_t *dc = (drawing_context_t *)data;
-	toporouter_edge_t *te;
-	toporouter_constraint_t *tc;
-
-	if (TOPOROUTER_IS_EDGE((GtsObject *)item))
-	{
-		te = TOPOROUTER_EDGE((GtsObject *)item);
-		cairo_set_source_rgba(dc->cr, 1.0f, 1.0f, 1.0f, 0.5f);
-		cairo_move_to(dc->cr,
-									te->e.segment.v1->p.x * dc->s + MARGIN,
-									te->e.segment.v1->p.y * dc->s + MARGIN);
-		cairo_line_to(dc->cr,
-									te->e.segment.v2->p.x * dc->s + MARGIN,
-									te->e.segment.v2->p.y * dc->s + MARGIN);
-		cairo_stroke(dc->cr);
-	}
-	else if (TOPOROUTER_IS_CONSTRAINT((GtsObject *)item))
-	{
-		tc = TOPOROUTER_CONSTRAINT((GtsObject *)item);
-		if (tc->box)
-		{
-			switch (tc->box->type)
-			{
-			case T_BOARD:
-				cairo_set_source_rgba(dc->cr, 1.0f, 0.0f, 1.0f, 0.9f);
-				cairo_move_to(dc->cr,
-											tc->c.edge.segment.v1->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v1->p.y * dc->s + MARGIN);
-				cairo_line_to(dc->cr,
-											tc->c.edge.segment.v2->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v2->p.y * dc->s + MARGIN);
-				cairo_stroke(dc->cr);
-				break;
-			case PIN:
-			case PAD:
-				cairo_set_source_rgba(dc->cr, 1.0f, 0.0f, 0.0f, 0.9f);
-				cairo_move_to(dc->cr,
-											tc->c.edge.segment.v1->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v1->p.y * dc->s + MARGIN);
-				cairo_line_to(dc->cr,
-											tc->c.edge.segment.v2->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v2->p.y * dc->s + MARGIN);
-				cairo_stroke(dc->cr);
-				break;
-			case LINE:
-				cairo_set_source_rgba(dc->cr, 0.0f, 1.0f, 0.0f, 0.9f);
-				cairo_move_to(dc->cr,
-											tc->c.edge.segment.v1->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v1->p.y * dc->s + MARGIN);
-				cairo_line_to(dc->cr,
-											tc->c.edge.segment.v2->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v2->p.y * dc->s + MARGIN);
-				cairo_stroke(dc->cr);
-				break;
-
-			default:
-				cairo_set_source_rgba(dc->cr, 1.0f, 1.0f, 0.0f, 0.9f);
-				cairo_move_to(dc->cr,
-											tc->c.edge.segment.v1->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v1->p.y * dc->s + MARGIN);
-				cairo_line_to(dc->cr,
-											tc->c.edge.segment.v2->p.x * dc->s + MARGIN,
-											tc->c.edge.segment.v2->p.y * dc->s + MARGIN);
-				cairo_stroke(dc->cr);
-				break;
-			}
-		}
-		else
-		{
-			printf("CONSTRAINT without box\n");
-		}
-	}
-	else
-	{
-		fprintf(stderr, "Unknown data passed to toporouter_draw_edge, aborting foreach\n");
-		return -1;
-	}
-
-	return 0;
-#else
-	return -1;
-#endif
-}
-
-//#define vertex_bbox(v) (v->bbox)
-///*
 toporouter_bbox_t *
 vertex_bbox(toporouter_vertex_t *v)
 {
 	return v ? v->bbox : NULL;
 }
-//*/
-char *
-vertex_netlist(toporouter_vertex_t *v)
+
+char *vertex_netlist(toporouter_vertex_t *v)
 {
 	toporouter_bbox_t *box = vertex_bbox(v);
 
@@ -1124,224 +822,6 @@ min_net_net_spacing(toporouter_vertex_t *v1, toporouter_vertex_t *v2)
 	return ms;
 }
 
-void toporouter_draw_cluster(toporouter_t *r, drawing_context_t *dc, toporouter_cluster_t *cluster, gdouble red, gdouble green, gdouble blue, guint layer)
-{
-#if TOPO_OUTPUT_ENABLED
-//GList *i = cluster->i;
-
-//while(i) {
-//  toporouter_bbox_t *box = TOPOROUTER_BBOX(i->data);
-
-//  if(box->point && vz(box->point) == layer) {
-//    cairo_set_source_rgba(dc->cr, red, green, blue, 0.8f);
-//    cairo_arc(dc->cr, vx(box->point) * dc->s + MARGIN, vy(box->point) * dc->s + MARGIN, 500. * dc->s, 0, 2 * M_PI);
-//    cairo_fill(dc->cr);
-//  }
-
-//  i = i->next;
-//}
-#endif
-}
-
-void toporouter_draw_surface(toporouter_t *r, GtsSurface *s, char *filename, int w, int h, int mode, GList *datas, int layer, GList *candidatepoints)
-{
-#if TOPO_OUTPUT_ENABLED
-	drawing_context_t *dc;
-	GList *i;
-	toporouter_vertex_t *tv, *tv2 = NULL;
-
-	dc = toporouter_output_init(w, h, filename);
-	dc->mode = mode;
-	dc->data = NULL;
-
-	gts_surface_foreach_edge(s, toporouter_draw_edge, dc);
-	gts_surface_foreach_vertex(s, toporouter_draw_vertex, dc);
-
-	i = r->routednets;
-	while (i)
-	{
-		GList *j = TOPOROUTER_ROUTE(i->data)->path;
-		tv2 = NULL;
-		while (j)
-		{
-			tv = TOPOROUTER_VERTEX(j->data);
-			if (GTS_POINT(tv)->z == layer)
-			{
-				if (tv && tv2)
-				{
-					cairo_set_source_rgba(dc->cr, 0.0f, 1.0f, 0.0f, 0.8f);
-					cairo_move_to(dc->cr,
-												GTS_POINT(tv)->x * dc->s + MARGIN,
-												GTS_POINT(tv)->y * dc->s + MARGIN);
-					cairo_line_to(dc->cr,
-												GTS_POINT(tv2)->x * dc->s + MARGIN,
-												GTS_POINT(tv2)->y * dc->s + MARGIN);
-					cairo_stroke(dc->cr);
-				}
-
-				if (tv->flags & VERTEX_FLAG_RED)
-				{
-					cairo_set_source_rgba(dc->cr, 1., 0., 0., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				else if (tv->flags & VERTEX_FLAG_GREEN)
-				{
-					cairo_set_source_rgba(dc->cr, 0., 1., 0., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				else if (tv->flags & VERTEX_FLAG_BLUE)
-				{
-					cairo_set_source_rgba(dc->cr, 0., 0., 1., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				else
-				{
-
-					cairo_set_source_rgba(dc->cr, 1., 1., 1., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-
-				if (tv->routingedge && !TOPOROUTER_IS_CONSTRAINT(tv->routingedge))
-				{
-					gdouble tempx, tempy, nms, pms;
-					GList *i = g_list_find(edge_routing(tv->routingedge), tv);
-					toporouter_vertex_t *nextv, *prevv;
-
-					nextv = edge_routing_next(tv->routingedge, i);
-					prevv = edge_routing_prev(tv->routingedge, i);
-
-					nms = min_spacing(tv, nextv);
-					pms = min_spacing(tv, prevv);
-
-					g_assert(isfinite(nms));
-					g_assert(isfinite(pms));
-
-					point_from_point_to_point(tv, nextv, nms, &tempx, &tempy);
-
-					cairo_set_source_rgba(dc->cr, 0.0f, 1.0f, 1.0f, 0.8f);
-					cairo_move_to(dc->cr, vx(tv) * dc->s + MARGIN, vy(tv) * dc->s + MARGIN);
-					cairo_line_to(dc->cr, tempx * dc->s + MARGIN, tempy * dc->s + MARGIN);
-					cairo_stroke(dc->cr);
-
-					point_from_point_to_point(tv, prevv, pms, &tempx, &tempy);
-
-					cairo_move_to(dc->cr, vx(tv) * dc->s + MARGIN, vy(tv) * dc->s + MARGIN);
-					cairo_line_to(dc->cr, tempx * dc->s + MARGIN, tempy * dc->s + MARGIN);
-					cairo_stroke(dc->cr);
-				}
-			}
-			tv2 = tv;
-			j = j->next;
-		}
-		i = i->next;
-	}
-
-	while (datas)
-	{
-		toporouter_route_t *routedata = (toporouter_route_t *)datas->data;
-
-		GList *i; //, *k;
-
-		toporouter_draw_cluster(r, dc, routedata->src, 1., 0., 0., layer);
-		toporouter_draw_cluster(r, dc, routedata->dest, 0., 0., 1., layer);
-
-		tv2 = NULL;
-		i = routedata->path;
-		while (i)
-		{
-			tv = TOPOROUTER_VERTEX(i->data);
-			if (GTS_POINT(tv)->z == layer)
-			{
-				if (tv && tv2)
-				{
-					cairo_set_source_rgba(dc->cr, 0.0f, 1.0f, 0.0f, 0.8f);
-					cairo_move_to(dc->cr,
-												GTS_POINT(tv)->x * dc->s + MARGIN,
-												GTS_POINT(tv)->y * dc->s + MARGIN);
-					cairo_line_to(dc->cr,
-												GTS_POINT(tv2)->x * dc->s + MARGIN,
-												GTS_POINT(tv2)->y * dc->s + MARGIN);
-					cairo_stroke(dc->cr);
-				}
-			}
-			tv2 = tv;
-			i = i->next;
-		}
-
-		if (routedata->alltemppoints)
-		{
-			GList *i, *j;
-			i = j = g_hash_table_get_keys(routedata->alltemppoints);
-			while (i)
-			{
-				toporouter_vertex_t *tv = TOPOROUTER_VERTEX(i->data);
-
-				if (GTS_POINT(tv)->z != layer)
-				{
-					i = i->next;
-					continue;
-				}
-				if (tv->flags & VERTEX_FLAG_BLUE)
-				{
-					cairo_set_source_rgba(dc->cr, 0., 0., 1., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				else if (tv->flags & VERTEX_FLAG_RED)
-				{
-					cairo_set_source_rgba(dc->cr, 1., 0., 0., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				else if (tv->flags & VERTEX_FLAG_GREEN)
-				{
-					cairo_set_source_rgba(dc->cr, 0., 1., 0., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				else
-				{
-					cairo_set_source_rgba(dc->cr, 1., 1., 1., 0.8f);
-					cairo_arc(dc->cr,
-										tv->v.p.x * dc->s + MARGIN,
-										tv->v.p.y * dc->s + MARGIN,
-										500. * dc->s, 0, 2 * M_PI);
-					cairo_fill(dc->cr);
-				}
-				i = i->next;
-			}
-			g_list_free(j);
-		}
-		datas = datas->next;
-	}
-	toporouter_output_close(dc);
-#endif
-}
 
 void toporouter_layer_free(toporouter_layer_t *l)
 {
@@ -2011,352 +1491,6 @@ rect_with_attachments(gdouble rad,
 
 #define VERTEX_CENTRE(x) TOPOROUTER_VERTEX(vertex_bbox(x)->point)
 
-#ifdef GEDA
-/*
- * Read pad data from layer into toporouter_layer_t struct
- *
- * Inserts points and constraints into GLists
- */
-int read_pads(toporouter_t *r, toporouter_layer_t *l, guint layer)
-{
-	toporouter_spoint_t p[2], rv[5];
-	gdouble x[2], y[2], t, m;
-	GList *objectconstraints;
-
-	GList *vlist = NULL;
-	toporouter_bbox_t *bbox = NULL;
-
-	guint front = GetLayerGroupNumberByNumber(component_silk_layer);
-	guint back = GetLayerGroupNumberByNumber(solder_silk_layer);
-
-	//  printf("read_pads: front = %d back = %d layer = %d\n",
-	//     front, back, layer);
-
-	/* If its not the top or bottom layer, there are no pads to read */
-	if (l - r->layers != front && l - r->layers != back)
-		return 0;
-
-	ELEMENT_LOOP(PCB->Data);
-	{
-		PAD_LOOP(element);
-		{
-			if ((l - r->layers == back && TEST_FLAG(ONSOLDERFLAG, pad)) ||
-					(l - r->layers == front && !TEST_FLAG(ONSOLDERFLAG, pad)))
-			{
-
-				objectconstraints = NULL;
-				t = (gdouble)pad->Thickness / 2.0f;
-				x[0] = pad->Point1.X;
-				x[1] = pad->Point2.X;
-				y[0] = pad->Point1.Y;
-				y[1] = pad->Point2.Y;
-
-				if (TEST_FLAG(SQUAREFLAG, pad))
-				{
-					/* Square or oblong pad. Four points and four constraint edges are
-		   * used */
-
-					if (x[0] == x[1] && y[0] == y[1])
-					{
-						/* Pad is square */
-
-						//            vlist = g_list_prepend(NULL, gts_vertex_new (vertex_class, x[0]-t, y[0]-t, 0.));
-						//            vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, x[0]-t, y[0]+t, 0.));
-						//            vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, x[0]+t, y[0]+t, 0.));
-						//            vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, x[0]+t, y[0]-t, 0.));
-						vlist = rect_with_attachments(pad_rad(pad),
-																					x[0] - t, y[0] - t,
-																					x[0] - t, y[0] + t,
-																					x[0] + t, y[0] + t,
-																					x[0] + t, y[0] - t,
-																					l - r->layers);
-						bbox = toporouter_bbox_create(l - r->layers, vlist, PAD, pad);
-						r->bboxes = g_slist_prepend(r->bboxes, bbox);
-						insert_constraints_from_list(r, l, vlist, bbox);
-						g_list_free(vlist);
-
-						//bbox->point = GTS_POINT( gts_vertex_new(vertex_class, x[0], y[0], 0.) );
-						bbox->point = GTS_POINT(insert_vertex(r, l, x[0], y[0], bbox));
-						g_assert(TOPOROUTER_VERTEX(bbox->point)->bbox == bbox);
-					}
-					else
-					{
-						/* Pad is diagonal oblong or othogonal oblong */
-
-						m = cartesian_gradient(x[0], y[0], x[1], y[1]);
-
-						p[0].x = x[0];
-						p[0].y = y[0];
-						p[1].x = x[1];
-						p[1].y = y[1];
-
-						vertex_outside_segment(&p[0], &p[1], t, &rv[0]);
-						vertices_on_line(&rv[0], perpendicular_gradient(m), t, &rv[1], &rv[2]);
-
-						vertex_outside_segment(&p[1], &p[0], t, &rv[0]);
-						vertices_on_line(&rv[0], perpendicular_gradient(m), t, &rv[3], &rv[4]);
-
-						if (wind(&rv[1], &rv[2], &rv[3]) != wind(&rv[2], &rv[3], &rv[4]))
-						{
-							rv[0].x = rv[3].x;
-							rv[0].y = rv[3].y;
-							rv[3].x = rv[4].x;
-							rv[3].y = rv[4].y;
-							rv[4].x = rv[0].x;
-							rv[4].y = rv[0].y;
-						}
-
-						//            vlist = g_list_prepend(NULL,  gts_vertex_new (vertex_class, rv[1].x, rv[1].y, 0.));
-						//            vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, rv[2].x, rv[2].y, 0.));
-						//            vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, rv[3].x, rv[3].y, 0.));
-						//            vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, rv[4].x, rv[4].y, 0.));
-						vlist = rect_with_attachments(pad_rad(pad),
-																					rv[1].x, rv[1].y,
-																					rv[2].x, rv[2].y,
-																					rv[3].x, rv[3].y,
-																					rv[4].x, rv[4].y,
-																					l - r->layers);
-						bbox = toporouter_bbox_create(l - r->layers, vlist, PAD, pad);
-						r->bboxes = g_slist_prepend(r->bboxes, bbox);
-						insert_constraints_from_list(r, l, vlist, bbox);
-						g_list_free(vlist);
-
-						//bbox->point = GTS_POINT( gts_vertex_new(vertex_class, (x[0] + x[1]) / 2., (y[0] + y[1]) / 2., 0.) );
-						bbox->point = GTS_POINT(insert_vertex(r, l, (x[0] + x[1]) / 2., (y[0] + y[1]) / 2., bbox));
-						g_assert(TOPOROUTER_VERTEX(bbox->point)->bbox == bbox);
-					}
-				}
-				else
-				{
-					/* Either round pad or pad with curved edges */
-
-					if (x[0] == x[1] && y[0] == y[1])
-					{
-						/* One point */
-
-						/* bounding box same as square pad */
-						vlist = rect_with_attachments(pad_rad(pad),
-																					x[0] - t, y[0] - t,
-																					x[0] - t, y[0] + t,
-																					x[0] + t, y[0] + t,
-																					x[0] + t, y[0] - t,
-																					l - r->layers);
-						bbox = toporouter_bbox_create(l - r->layers, vlist, PAD, pad);
-						r->bboxes = g_slist_prepend(r->bboxes, bbox);
-						g_list_free(vlist);
-
-						//bbox->point = GTS_POINT( insert_vertex(r, l, x[0], y[0], bbox) );
-						bbox->point = GTS_POINT(insert_vertex(r, l, x[0], y[0], bbox));
-					}
-					else
-					{
-						/* Two points and one constraint edge */
-
-						/* the rest is just for bounding box */
-						m = cartesian_gradient(x[0], y[0], x[1], y[1]);
-
-						p[0].x = x[0];
-						p[0].y = y[0];
-						p[1].x = x[1];
-						p[1].y = y[1];
-
-						vertex_outside_segment(&p[0], &p[1], t, &rv[0]);
-						vertices_on_line(&rv[0], perpendicular_gradient(m), t, &rv[1], &rv[2]);
-
-						vertex_outside_segment(&p[1], &p[0], t, &rv[0]);
-						vertices_on_line(&rv[0], perpendicular_gradient(m), t, &rv[3], &rv[4]);
-
-						if (wind(&rv[1], &rv[2], &rv[3]) != wind(&rv[2], &rv[3], &rv[4]))
-						{
-							rv[0].x = rv[3].x;
-							rv[0].y = rv[3].y;
-							rv[3].x = rv[4].x;
-							rv[3].y = rv[4].y;
-							rv[4].x = rv[0].x;
-							rv[4].y = rv[0].y;
-						}
-
-						vlist = rect_with_attachments(pad_rad(pad),
-																					rv[1].x, rv[1].y,
-																					rv[2].x, rv[2].y,
-																					rv[3].x, rv[3].y,
-																					rv[4].x, rv[4].y,
-																					l - r->layers);
-						bbox = toporouter_bbox_create(l - r->layers, vlist, PAD, pad);
-						r->bboxes = g_slist_prepend(r->bboxes, bbox);
-						insert_constraints_from_list(r, l, vlist, bbox);
-						g_list_free(vlist);
-
-						//bbox->point = GTS_POINT( gts_vertex_new(vertex_class, (x[0] + x[1]) / 2., (y[0] + y[1]) / 2., 0.) );
-						bbox->point = GTS_POINT(insert_vertex(r, l, (x[0] + x[1]) / 2., (y[0] + y[1]) / 2., bbox));
-
-						//bbox->constraints = g_list_concat(bbox->constraints, insert_constraint_edge(r, l, x[0], y[0], x[1], y[1], bbox));
-					}
-				}
-			}
-		}
-		END_LOOP;
-	}
-	END_LOOP;
-
-	return 0;
-}
-
-/*
- * Read points data (all layers) into GList
- *
- * Inserts pin and via points
- */
-int read_points(toporouter_t *r, toporouter_layer_t *l, int layer)
-{
-	gdouble x, y, t;
-
-	GList *vlist = NULL;
-	toporouter_bbox_t *bbox = NULL;
-
-	ELEMENT_LOOP(PCB->Data);
-	{
-		PIN_LOOP(element);
-		{
-
-			t = (gdouble)pin->Thickness / 2.0f;
-			x = pin->X;
-			y = pin->Y;
-
-			if (TEST_FLAG(SQUAREFLAG, pin))
-			{
-
-				vlist = rect_with_attachments(pin_rad(pin),
-																			x - t, y - t,
-																			x - t, y + t,
-																			x + t, y + t,
-																			x + t, y - t,
-																			l - r->layers);
-				bbox = toporouter_bbox_create(l - r->layers, vlist, PIN, pin);
-				r->bboxes = g_slist_prepend(r->bboxes, bbox);
-				insert_constraints_from_list(r, l, vlist, bbox);
-				g_list_free(vlist);
-				bbox->point = GTS_POINT(insert_vertex(r, l, x, y, bbox));
-			}
-			else if (TEST_FLAG(OCTAGONFLAG, pin))
-			{
-				/* TODO: Handle octagon pins */
-				fprintf(stderr, "No support for octagon pins yet\n");
-			}
-			else
-			{
-				vlist = rect_with_attachments(pin_rad(pin),
-																			x - t, y - t,
-																			x - t, y + t,
-																			x + t, y + t,
-																			x + t, y - t,
-																			l - r->layers);
-				bbox = toporouter_bbox_create(l - r->layers, vlist, PIN, pin);
-				r->bboxes = g_slist_prepend(r->bboxes, bbox);
-				g_list_free(vlist);
-				bbox->point = GTS_POINT(insert_vertex(r, l, x, y, bbox));
-			}
-		}
-		END_LOOP;
-	}
-	END_LOOP;
-
-	VIA_LOOP(PCB->Data);
-	{
-
-		t = (gdouble)via->Thickness / 2.0f;
-		x = via->X;
-		y = via->Y;
-
-		if (TEST_FLAG(SQUAREFLAG, via))
-		{
-
-			vlist = rect_with_attachments(pin_rad((PinType *)via),
-																		x - t, y - t,
-																		x - t, y + t,
-																		x + t, y + t,
-																		x + t, y - t,
-																		l - r->layers);
-			bbox = toporouter_bbox_create(l - r->layers, vlist, VIA, via);
-			r->bboxes = g_slist_prepend(r->bboxes, bbox);
-			insert_constraints_from_list(r, l, vlist, bbox);
-			g_list_free(vlist);
-			bbox->point = GTS_POINT(insert_vertex(r, l, x, y, bbox));
-		}
-		else if (TEST_FLAG(OCTAGONFLAG, via))
-		{
-			/* TODO: Handle octagon vias */
-			fprintf(stderr, "No support for octagon vias yet\n");
-		}
-		else
-		{
-
-			vlist = rect_with_attachments(pin_rad((PinType *)via),
-																		x - t, y - t,
-																		x - t, y + t,
-																		x + t, y + t,
-																		x + t, y - t,
-																		l - r->layers);
-			bbox = toporouter_bbox_create(l - r->layers, vlist, VIA, via);
-			r->bboxes = g_slist_prepend(r->bboxes, bbox);
-			g_list_free(vlist);
-
-			bbox->point = GTS_POINT(insert_vertex(r, l, x, y, bbox));
-		}
-	}
-	END_LOOP;
-	return 0;
-}
-
-/*
- * Read line data from layer into toporouter_layer_t struct
- *
- * Inserts points and constraints into GLists
- */
-int read_lines(toporouter_t *r, toporouter_layer_t *l, LayerType *layer, int ln)
-{
-	gdouble xs[2], ys[2];
-
-	GList *vlist = NULL;
-	toporouter_bbox_t *bbox = NULL;
-
-	GtsVertexClass *vertex_class = GTS_VERTEX_CLASS(toporouter_vertex_class());
-
-	LINE_LOOP(layer);
-	{
-		xs[0] = line->Point1.X;
-		xs[1] = line->Point2.X;
-		ys[0] = line->Point1.Y;
-		ys[1] = line->Point2.Y;
-		printf("Line: %2.2f,%2.2fx%2.2f,%2.2f\n", line->Point1.X, line->Point1.Y, line->Point2.X, line->Point2.Y);
-		if (!(xs[0] == xs[1] && ys[0] == ys[1]))
-		{
-			vlist = g_list_prepend(NULL, gts_vertex_new(vertex_class, xs[0], ys[0], l - r->layers));
-			vlist = g_list_prepend(vlist, gts_vertex_new(vertex_class, xs[1], ys[1], l - r->layers));
-			// TODO: replace this with surface version
-			bbox = toporouter_bbox_create_from_points(GetLayerGroupNumberByNumber(ln), vlist, LINE, line);
-			r->bboxes = g_slist_prepend(r->bboxes, bbox);
-			//new;;
-			//insert_constraints_from_list(r, l, vlist, bbox);
-			g_list_free(vlist);
-			//      bbox->point = GTS_POINT( insert_vertex(r, l, (xs[0]+xs[1])/2., (ys[0]+ys[1])/2., bbox) );
-
-			bbox->constraints = g_list_concat(bbox->constraints, insert_constraint_edge(r, l, xs[0], ys[0], 0, xs[1], ys[1], 0, bbox));
-		}
-	}
-	END_LOOP;
-
-	return 0;
-}
-#else
-
-int read_pads(toporouter_t *r, toporouter_layer_t *l, guint layer)
-{
-	return -1;
-}
-
-
-#endif
 
 void create_board_edge(gdouble x0, gdouble y0, gdouble x1, gdouble y1, gdouble max, gint layer, GList **vlist)
 {
@@ -2380,32 +1514,6 @@ void create_board_edge(gdouble x0, gdouble y0, gdouble x1, gdouble y1, gdouble m
 	}
 }
 
-#if 0
-int read_board_constraints(toporouter_t *r, toporouter_layer_t *l, int layer)
-{
-	//  GtsVertexClass *vertex_class = GTS_VERTEX_CLASS (toporouter_vertex_class ());
-	GList *vlist = NULL;
-	toporouter_bbox_t *bbox = NULL;
-
-	/* Add points for corners of board, and constrain those edges */
-	//  vlist = g_list_prepend(NULL, gts_vertex_new (vertex_class, 0., 0., layer));
-	//  vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, PCB->MaxWidth, 0., layer));
-	//  vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, PCB->MaxWidth, PCB->MaxHeight, layer));
-	//  vlist = g_list_prepend(vlist, gts_vertex_new (vertex_class, 0., PCB->MaxHeight, layer));
-
-	create_board_edge(0., 0., PCB->MaxWidth, 0., 10000., layer, &vlist);
-	create_board_edge(PCB->MaxWidth, 0., PCB->MaxWidth, PCB->MaxHeight, 10000., layer, &vlist);
-	create_board_edge(PCB->MaxWidth, PCB->MaxHeight, 0., PCB->MaxHeight, 10000., layer, &vlist);
-	create_board_edge(0., PCB->MaxHeight, 0., 0., 10000., layer, &vlist);
-
-	bbox = toporouter_bbox_create(layer, vlist, T_BOARD, NULL);
-	r->bboxes = g_slist_prepend(r->bboxes, bbox);
-	insert_constraints_from_list(r, l, vlist, bbox);
-	g_list_free(vlist);
-
-	return 0;
-}
-#endif
 
 gdouble
 triangle_cost(GtsTriangle *t, gpointer *data)
@@ -3002,213 +2110,6 @@ netlist_create(toporouter_t *r, char *netlist, char *style)
 	return nl;
 }
 
-#ifdef GEDA
-void import_clusters(toporouter_t *r)
-{
-	NetListListType nets;
-	ResetConnections(false);
-	nets = CollectSubnets(false);
-	NETLIST_LOOP(&nets);
-	{
-		if (netlist->NetN > 0)
-		{
-			toporouter_netlist_t *nl = netlist_create(r, netlist->Net->Connection->menu->Name, netlist->Net->Connection->menu->Style);
-
-			NET_LOOP(netlist);
-			{
-
-				toporouter_cluster_t *cluster = cluster_create(r, nl);
-#ifdef DEBUG_MERGING
-				printf("NET:\n");
-#endif
-				CONNECTION_LOOP(net);
-				{
-
-					if (connection->type == LINE_TYPE)
-					{
-						LineType *line = (LineType *)connection->ptr2;
-						toporouter_bbox_t *box = toporouter_bbox_locate(r, LINE, line, connection->X, connection->Y, connection->group);
-						cluster_join_bbox(cluster, box);
-
-#ifdef DEBUG_MERGING
-						printf("\tLINE %d,%d\n", connection->X, connection->Y);
-#endif
-					}
-					else if (connection->type == PAD_TYPE)
-					{
-						PadType *pad = (PadType *)connection->ptr2;
-						toporouter_bbox_t *box = toporouter_bbox_locate(r, PAD, pad, connection->X, connection->Y, connection->group);
-						cluster_join_bbox(cluster, box);
-
-#ifdef DEBUG_MERGING
-						printf("\tPAD %d,%d\n", connection->X, connection->Y);
-#endif
-					}
-					else if (connection->type == PIN_TYPE)
-					{
-
-						for (guint m = 0; m < groupcount(); m++)
-						{
-							PinType *pin = (PinType *)connection->ptr2;
-							toporouter_bbox_t *box = toporouter_bbox_locate(r, PIN, pin, connection->X, connection->Y, m);
-							cluster_join_bbox(cluster, box);
-						}
-
-#ifdef DEBUG_MERGING
-						printf("\tPIN %d,%d\n", connection->X, connection->Y);
-#endif
-					}
-					else if (connection->type == VIA_TYPE)
-					{
-
-						for (guint m = 0; m < groupcount(); m++)
-						{
-							PinType *pin = (PinType *)connection->ptr2;
-							toporouter_bbox_t *box = toporouter_bbox_locate(r, VIA, pin, connection->X, connection->Y, m);
-							cluster_join_bbox(cluster, box);
-						}
-
-#ifdef DEBUG_MERGING
-						printf("\tVIA %d,%d\n", connection->X, connection->Y);
-#endif
-					}
-					else if (connection->type == POLYGON_TYPE)
-					{
-						PolygonType *polygon = (PolygonType *)connection->ptr2;
-						toporouter_bbox_t *box = toporouter_bbox_locate(r, POLYGON, polygon, connection->X, connection->Y, connection->group);
-						cluster_join_bbox(cluster, box);
-
-#ifdef DEBUG_MERGING
-						printf("\tPOLYGON %d,%d\n", connection->X, connection->Y);
-#endif
-					}
-				}
-				END_LOOP;
-#ifdef DEBUG_MERGING
-				printf("\n");
-#endif
-			}
-			END_LOOP;
-		}
-	}
-	END_LOOP;
-	FreeNetListListMemory(&nets);
-}
-#endif
-
-#if 0
-void AllocateLayers(toporouter_t *r, int NumLayers)
-{
-	unsigned int i;
-	r->layers = (toporouter_layer_t *)g_malloc(NumLayers * sizeof(toporouter_layer_t));
-//#warning Memory never freed
-	if (!r->layers)
-	{
-		printf("Cannot allocate space for layers, exiting..\n");
-		exit(1);
-	}
-	else
-	{
-		for (i = 0; i < NumLayers; i++)
-		{
-			r->layers[i].vertices = NULL;
-			r->layers[i].constraints = NULL;
-			r->layers[i].surface = NULL;
-			gdouble *layer = (gdouble *)malloc(sizeof(gdouble));
-			*layer = (double)i;
-			r->keepoutlayers = g_list_prepend(r->keepoutlayers, layer);
-
-			read_board_constraints(r, &(r->layers[i]), i);
-		}
-	}
-}
-#endif
-
-#if 0
-void import_geometry(toporouter_t *r)
-{
-	toporouter_layer_t *cur_layer;
-
-	int group;
-
-#ifdef DEBUG_IMPORT
-	for (group = 0; group < max_group; group++)
-	{
-		printf("Group %d: Number %d:\n", group, PCB->LayerGroups.Number[group]);
-
-		for (int entry = 0; entry < PCB->LayerGroups.Number[group]; entry++)
-		{
-			printf("\tEntry %d\n", PCB->LayerGroups.Entries[group][entry]);
-		}
-	}
-#endif
-	/* Allocate space for per layer struct */
-	cur_layer = r->layers = (toporouter_layer_t *)malloc(groupcount() * sizeof(toporouter_layer_t));
-#ifdef GEDA
-	/* Foreach layer, read in pad vertices and constraints, and build CDT */
-	for (group = 0; group < max_group; group++)
-	{
-#ifdef DEBUG_IMPORT
-		printf("*** LAYER GROUP %d ***\n", group);
-#endif
-
-		if (PCB->LayerGroups.Number[group] > 0)
-		{
-			cur_layer->vertices = NULL;
-			cur_layer->constraints = NULL;
-#ifdef DEBUG_IMPORT
-			printf("reading board constraints from layer %d into group %d\n", PCB->LayerGroups.Entries[group][0], group);
-#endif
-			read_board_constraints(r, cur_layer, PCB->LayerGroups.Entries[group][0]);
-#ifdef DEBUG_IMPORT
-			printf("reading points from layer %d into group %d \n", PCB->LayerGroups.Entries[group][0], group);
-#endif
-			read_points(r, cur_layer, PCB->LayerGroups.Entries[group][0]);
-
-			//#ifdef DEBUG_IMPORT
-			//      printf("reading pads from layer %d into group %d\n", number, group);
-			//#endif
-			read_pads(r, cur_layer, group);
-
-			GROUP_LOOP(PCB->Data, group)
-			{
-
-#ifdef DEBUG_IMPORT
-				printf("reading lines from layer %d into group %d\n", number, group);
-#endif
-				read_lines(r, cur_layer, layer, number);
-			}
-			END_LOOP;
-
-#ifdef DEBUG_IMPORT
-			printf("building CDT\n");
-#endif
-			build_cdt(r, cur_layer);
-			printf("finished\n");
-/*      {
-	int i;
-	for(i=0;i<groupcount();i++) {
-	  char buffer[256];
-	  sprintf(buffer, "build%d.png", i);
-	  toporouter_draw_surface(r, r->layers[i].surface, buffer, 2048, 2048, 2, NULL, i, NULL);
-	}
-  }*/
-#ifdef DEBUG_IMPORT
-			printf("finished building CDT\n");
-#endif
-			cur_layer++;
-		}
-	}
-#endif
-	r->bboxtree = gts_bb_tree_new(r->bboxes);
-
-	import_clusters(r);
-
-#ifdef DEBUG_IMPORT
-	printf("finished import!\n");
-#endif
-}
-#endif
 
 gint compare_points(gconstpointer a, gconstpointer b)
 {
@@ -3577,7 +2478,7 @@ new_temp_toporoutervertex_in_segment(toporouter_edge_t *e, toporouter_vertex_t *
 gint vertex_keepout_test(toporouter_t *r, toporouter_vertex_t *v)
 {
 	GList *i = r->keepoutlayers;
-	printf("keepoutlayers : %d\n", g_list_length(i));
+	//printf("keepoutlayers : %d\n", g_list_length(i));
 	while (i)
 	{
 		gdouble keepout = *((double *)i->data);
@@ -5400,7 +4301,7 @@ route_find_path(toporouter_t *r, toporouter_route_t *data, guint debug)
 	curpoint->gn = 0;
 	curpoint->hcost = simple_h_cost(r, curpoint, destv);
 
-	printf("netlist %p netlist-pair %p\n", data->netlist, data->netlist->pair);
+	//printf("netlist %p netlist-pair %p\n", data->netlist, data->netlist->pair);
 
 	if (data->netlist && data->netlist->pair)
 	{
@@ -5419,7 +4320,7 @@ route_find_path(toporouter_t *r, toporouter_route_t *data, guint debug)
 
 	gts_eheap_insert(openlist, curpoint);
 
-	printf("eheap size %d\n", gts_eheap_size(openlist));
+//	printf("eheap size %d\n", gts_eheap_size(openlist));
 
 	while (gts_eheap_size(openlist) > 0)
 	{
@@ -5427,7 +4328,7 @@ route_find_path(toporouter_t *r, toporouter_route_t *data, guint debug)
 		data->curpoint = curpoint;
 		//draw_route_status(r, closelist, openlist, curpoint, data, count++);
 
-		printf("-> scan CurP %p [%.0f %.0f] parent %p zc %.0f zd %.0f\n", curpoint, vx(curpoint), vy(curpoint), curpoint->parent, vz(curpoint), vz(destv));
+		//printf("-> scan CurP %p [%.0f %.0f] parent %p zc %.0f zd %.0f\n", curpoint, vx(curpoint), vy(curpoint), curpoint->parent, vz(curpoint), vz(destv));
 
 		curpoint = TOPOROUTER_VERTEX(gts_eheap_remove_top(openlist, NULL));
 		if (curpoint->parent && !(curpoint->flags & VERTEX_FLAG_TEMP))
@@ -5489,11 +4390,11 @@ route_find_path(toporouter_t *r, toporouter_route_t *data, guint debug)
 		
 		closelist_insert(curpoint);
 #ifdef DEBUG_ROUTE
-		printf("\noute itrations %d, closelist: %d pts\n", count, g_list_length(closelist));
+		//printf("\noute itrations %d, closelist: %d pts\n", count, g_list_length(closelist));
 #endif
 		candidatepoints = compute_candidate_points(r, cur_layer, curpoint, data, &destv);
 
-		printf("new candidates : %d\n", g_list_length( candidatepoints));
+		//printf("new candidates : %d\n", g_list_length( candidatepoints));
 
 		count++;
 		i = candidatepoints;
@@ -5501,7 +4402,7 @@ route_find_path(toporouter_t *r, toporouter_route_t *data, guint debug)
 		{
 			toporouter_vertex_t *temppoint = TOPOROUTER_VERTEX(i->data);
 
-			printf("----> cand %p %.1f %.1f inclosed %d isavail %d\n", temppoint, vx(temppoint), vy(temppoint), g_list_find(closelist, temppoint) ? 1:0,candidate_is_available(curpoint, temppoint)?1:0 );
+		//	printf("----> cand %p %.1f %.1f inclosed %d isavail %d\n", temppoint, vx(temppoint), vy(temppoint), g_list_find(closelist, temppoint) ? 1:0,candidate_is_available(curpoint, temppoint)?1:0 );
 			if (!g_list_find(closelist, temppoint) && candidate_is_available(curpoint, temppoint))
 			{ //&& temppoint != curpoint) {
 				toporouter_heap_search_data_t heap_search_data = {temppoint, NULL};
@@ -5512,7 +4413,7 @@ route_find_path(toporouter_t *r, toporouter_route_t *data, guint debug)
 				
 				gts_eheap_foreach(openlist, toporouter_heap_search, &heap_search_data);
 
-				printf("----> cost: %.1f heap-result %p\n", temp_g_cost, heap_search_data.result );
+//				printf("----> cost: %.1f heap-result %p\n", temp_g_cost, heap_search_data.result );
 
 
 				if (heap_search_data.result)
@@ -8298,7 +7199,7 @@ void route_restore(toporouter_route_t *route)
 		i = i->next;
 	}
 
-	printf("**** restore %p\n", route);
+	//printf("**** restore %p\n", route);
 	route->score = route->pscore;
 	route->src = route->psrc;
 	route->dest = route->pdest;
@@ -8641,7 +7542,7 @@ void detour_router(toporouter_t *r)
 	while (i)
 	{
 		toporouter_route_t *curroute = TOPOROUTER_ROUTE(i->data);
-		printf("*** Detour score %p\n", curroute);
+		//printf("*** Detour score %p\n", curroute);
 		curroute->score = path_score(r, curroute->path);
 		g_ptr_array_add(scores, i->data);
 		i = i->next;
@@ -8736,34 +7637,7 @@ guint hybrid_router(toporouter_t *r)
 	return failcount;
 }
 
-#ifdef GEDA
-void parse_arguments(toporouter_t *r, int argc, char **argv)
-{
-	int i, tempint;
-	for (i = 0; i < argc; i++)
-	{
-		if (sscanf(argv[i], "viacost=%d", &tempint))
-		{
-			r->viacost = (double)tempint;
-		}
-		else if (sscanf(argv[i], "l%d", &tempint))
-		{
-			gdouble *layer = (gdouble *)malloc(sizeof(gdouble));
-			*layer = (double)tempint;
-			r->keepoutlayers = g_list_prepend(r->keepoutlayers, layer);
-		}
-	}
 
-	for (guint group = 0; group < max_group; group++)
-		for (i = 0; i < PCB->LayerGroups.Number[group]; i++)
-			if ((PCB->LayerGroups.Entries[group][i] < max_copper_layer) && !(PCB->Data->Layer[PCB->LayerGroups.Entries[group][i]].On))
-			{
-				gdouble *layer = (gdouble *)malloc(sizeof(gdouble));
-				*layer = (double)group;
-				r->keepoutlayers = g_list_prepend(r->keepoutlayers, layer);
-			}
-}
-#endif
 toporouter_t *
 toporouter_new(void)
 {
@@ -8810,25 +7684,6 @@ toporouter_new(void)
 	return r;
 }
 
-void acquire_twonets(toporouter_t *r)
-{
-#ifdef GEDA
-	RAT_LOOP(PCB->Data);
-	if (TEST_FLAG(SELECTEDFLAG, line))
-		import_route(r, line);
-	END_LOOP;
-	//  /*
-	if (!r->routes->len)
-	{
-		RAT_LOOP(PCB->Data);
-		import_route(r, line);
-		END_LOOP;
-	}
-//     */
-#else
-//#warning Import routes
-#endif
-}
 
 toporouter_netlist_t *
 find_netlist_by_name(toporouter_t *r, char *name)
@@ -8851,160 +7706,5 @@ gint toporouter_set_pair(toporouter_t *r, toporouter_netlist_t *n1, toporouter_n
 	return 1;
 }
 
-int toporoute(toporouter_t *r)
-{
-	//import_geometry(r);
-	//acquire_twonets(r);
-	r->bboxtree = gts_bb_tree_new(r->bboxes);
-
-	hybrid_router(r);
-	/*
-  for(gint i=0;i<groupcount();i++) {
-   gts_surface_foreach_edge(r->layers[i].surface, space_edge, NULL);
-  }
-  {
-        int i;
-        for(i=0;i<groupcount();i++) {
-          char buffer[256];
-          sprintf(buffer, "route%d.png", i);
-          toporouter_draw_surface(r, r->layers[i].surface, buffer, 1024, 1024, 2, NULL, i, NULL);
-        }
-  }
-*/
-	toporouter_export(r);
-
-	return 0;
-}
-
-int toporouter(int argc, char **argv, int x, int y)
-{
-	toporouter_t *r = toporouter_new();
-#ifdef GEDA
-	parse_arguments(r, argc, argv);
-#endif
-	//import_geometry(r);
-	acquire_twonets(r);
-
-	//if(!toporouter_set_pair(r, find_netlist_by_name(r, "  DRAM_DQS_N"), find_netlist_by_name(r, "  DRAM_DQS"))) {
-	//  printf("Couldn't associate pair\n");
-	//}
-
-	hybrid_router(r);
-	/*
-  for(gint i=0;i<groupcount();i++) {
-   gts_surface_foreach_edge(r->layers[i].surface, space_edge, NULL);
-  }
-  {
-	int i;
-	for(i=0;i<groupcount();i++) {
-	  char buffer[256];
-	  sprintf(buffer, "route%d.png", i);
-	  toporouter_draw_surface(r, r->layers[i].surface, buffer, 1024, 1024, 2, NULL, i, NULL);
-	}
-  }
-*/
-	toporouter_export(r);
-	toporouter_free(r);
-
-	return 0;
-}
-
-#ifdef GEDA
-static int
-escape(int argc, char **argv, int x, int y)
-{
-	guint dir, viax, viay;
-	gdouble pitch, length, dx, dy;
-
-	if (argc != 1)
-		return 0;
-
-	dir = atoi(argv[0]);
-
-	ALLPAD_LOOP(PCB->Data);
-	{
-		if (TEST_FLAG(SELECTEDFLAG, pad))
-		{
-			PinTypePtr via;
-			LineTypePtr line;
-
-			PadType *pad0 = element->Pad->data;
-			PadType *pad1 = g_list_next(element->Pad)->data;
-
-			pitch = sqrt(pow(abs(pad0->Point1.X - pad1->Point1.X), 2) +
-									 pow(abs(pad0->Point1.Y - pad1->Point1.Y), 2));
-			length = sqrt(pow(pitch, 2) + pow(pitch, 2)) / 2.;
-
-			dx = length * sin(M_PI / 4.);
-			dy = length * cos(M_PI / 4.);
-
-			switch (dir)
-			{
-			case 1:
-				viax = pad->Point1.X - dx;
-				viay = pad->Point1.Y + dy;
-				break;
-			case 3:
-				viax = pad->Point1.X + dx;
-				viay = pad->Point1.Y + dy;
-				break;
-			case 9:
-				viax = pad->Point1.X + dx;
-				viay = pad->Point1.Y - dy;
-				break;
-			case 7:
-				viax = pad->Point1.X - dx;
-				viay = pad->Point1.Y - dy;
-				break;
-			case 2:
-				viax = pad->Point1.X;
-				viay = pad->Point1.Y + (pitch / 2);
-				break;
-			case 8:
-				viax = pad->Point1.X;
-				viay = pad->Point1.Y - (pitch / 2);
-				break;
-			case 4:
-				viax = pad->Point1.X - (pitch / 2);
-				viay = pad->Point1.Y;
-				break;
-			case 6:
-				viax = pad->Point1.X + (pitch / 2);
-				viay = pad->Point1.Y;
-				break;
-			default:
-				printf("ERROR: escape() with bad direction (%d)\n", dir);
-				return 1;
-			}
-
-			if ((via = CreateNewVia(PCB->Data, viax, viay,
-															Settings.ViaThickness, 2 * Settings.Keepaway,
-															0, Settings.ViaDrillingHole, NULL,
-															NoFlags())) != NULL)
-			{
-				AddObjectToCreateUndoList(VIA_TYPE, via, via, via);
-				//        if (gui->shift_is_pressed ())
-				//          ChangeObjectThermal (VIA_TYPE, via, via, via, PCB->ThermStyle);
-				DrawVia(via);
-				if ((line = CreateDrawnLineOnLayer(CURRENT, pad->Point1.X + 1., pad->Point1.Y + 1., viax + 1., viay + 1.,
-																					 Settings.LineThickness, 2 * Settings.Keepaway,
-																					 NoFlags())))
-				{
-
-					AddObjectToCreateUndoList(LINE_TYPE, CURRENT, line, line);
-					DrawLine(CURRENT, line);
-				}
-			}
-		}
-	}
-	END_LOOP;
-	END_LOOP;
-
-	IncrementUndoSerialNumber();
-	Draw();
-	return 0;
-}
-
-#endif
 
 }; // namespace toporouter

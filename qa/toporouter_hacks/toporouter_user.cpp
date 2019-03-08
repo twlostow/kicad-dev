@@ -141,7 +141,7 @@ void TOPOROUTER_ENGINE::syncPads( toporouter_layer_t* layer, int layerId )
                 GList*             vlist = NULL;
                 toporouter_bbox_t* bbox = NULL;
 
-                printf( "sync pad %d %d r %d\n", c.x, c.y, t );
+                //printf( "sync pad %d %d r %d\n", c.x, c.y, t );
 
                 vlist = rect_with_attachments( t /* add clearance */, c.x - t, c.y - t, c.x - t,
                         c.y + t, c.x + t, c.y + t, c.x + t, c.y - t, layerId );
@@ -175,12 +175,12 @@ void TOPOROUTER_ENGINE::syncConnectivity()
 
         toporouter_cluster_t* cluster = cluster_create( m_router, nl );
 
-        printf("process CNcluster %p\n", cnCluster.get());
+        //printf("process CNcluster %p\n", cnCluster.get());
         for( auto item : *cnCluster )
         {
             auto parent = item->Parent();
 
-            printf("process item %p\n", item);
+          //  printf("process item %p\n", item);
             
             switch(parent->Type())
             {
@@ -218,11 +218,11 @@ void TOPOROUTER_ENGINE::syncConnectivity()
                 continue;
 
             toporouter_route_t *routedata = routedata_create();
-            printf("- NEW route %p\n", routedata );
+            //printf("- NEW route %p\n", routedata );
         	routedata->src = cluster_find(m_router, sourceNode->Pos().x, sourceNode->Pos().y, 0);
 	        routedata->dest = cluster_find(m_router, targetNode->Pos().x, targetNode->Pos().y, 0);
 
-            printf("import rat %p %p\n", routedata->src, routedata->dest );
+            //printf("import rat %p %p\n", routedata->src, routedata->dest );
         	routedata->netlist = routedata->src->netlist;
 
 	        //g_assert(routedata->src->netlist == routedata->dest->netlist);
@@ -232,7 +232,7 @@ void TOPOROUTER_ENGINE::syncConnectivity()
 
 	        m_router->failednets = g_list_prepend(m_router->failednets, routedata);
 
-            printf("RAT score %.1f failednets %d\n", routedata->score, g_list_length( m_router->failednets ) );
+            //printf("RAT score %.1f failednets %d\n", routedata->score, g_list_length( m_router->failednets ) );
 
         }
     }
@@ -350,7 +350,7 @@ void TOPOROUTER_PREVIEW::drawSurface( GAL* gal, toporouter_t* router, GtsSurface
 
     gal->SetIsStroke( true );
     gal->SetIsFill( false );
-    gal->SetStrokeColor( COLOR4D( 0.5, 0.5, 1.0, 1.0 ) );
+    gal->SetStrokeColor( COLOR4D( 0.1, 0.1, 0.3, 1.0 ) );
     gal->SetLineWidth( 10000.0 );
     gal->SetLayerDepth( gal->GetMinDepth() );
 
@@ -393,16 +393,36 @@ void TOPOROUTER_ENGINE::ImportRoutes()
 
 	while (iter)
 	{
+        printf("Process RtNet %p\n", iter);
 		toporouter_route_t *routedata = TOPOROUTER_ROUTE(iter->data);
-		toporouter_oproute_t *oproute = oproute_rubberband(m_router, routedata->path);
-		oproutes.push_back(oproute);
+		//toporouter_oproute_t *oproute = oproute_rubberband(m_router, routedata->path);
+//*		oproutes.push_back(oproute);
+
+   	    GList *vtxIter = routedata->path;
+        VECTOR2D prev;
+
+        for(int i = 0; vtxIter; i++, vtxIter=vtxIter->next)
+        {
+            auto v1 = TOPOROUTER_VERTEX(vtxIter->data);
+            VECTOR2D v ( vx(v1), vy(v1) );
+
+            if(i>0)
+                m_preview->AddRouted( prev.x, prev.y, v.x, v.y );
+            prev= v;
+        }
+
+
 		iter = iter->next;
 	}
 
     for( auto oproute : oproutes )
     {
+
+
+#if 0
         GList *arcs = oproute->arcs;
 
+        
     	if (!arcs)
 	    {
             m_preview->AddRouted( vx(oproute->term1), vy(oproute->term1), vx(oproute->term2), vy(oproute->term2) ) ;
@@ -429,6 +449,7 @@ void TOPOROUTER_ENGINE::ImportRoutes()
             m_preview->AddRouted( arc->x1, arc->y1, vx(oproute->term2), vy(oproute->term2) );
 
         }
+#endif
     }
 
 

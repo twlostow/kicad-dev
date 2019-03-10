@@ -1,6 +1,9 @@
 #ifndef __TOPOROUTER_PRIVATE_h
 #define __TOPOROUTER_PRIVATE_h
 
+#include <cstdint>
+#include <functional>
+
 #include <assert.h>
 
 #include <math.h>
@@ -14,90 +17,44 @@
 
 namespace toporouter
 {
-#if 0
 
-typedef enum
+struct BBOX;
+struct EDGE;
+struct OPROUTE;
+struct ARC;
+struct ROUTE;
+
+struct VERTEX
 {
-    SQUAREFLAG,
-    OCTAGONFLAG,
-} ShapeType;
+    VERTEX();
+    ~VERTEX();
 
-typedef enum
-{
-    GROUP_1,
-    GROUP_2
-} GroupType;
+    GtsVertex m_v;
+    BBOX*     m_bbox;
+    VERTEX*   m_parent;
+    VERTEX*   m_child;
+    EDGE*     m_routingedge;
+    uint32_t  m_flags;
+    double    m_gcost, m_hcost;
+    uint32_t  m_gn;
+    ARC*      m_arc;
+    OPROUTE*  m_oproute;
+    ROUTE*    m_route;
+    double    m_thickness;
 
-typedef struct
-{
-    int X;
-    int Y;
-} Point;
-
-typedef struct
-{
-    char *Name;
-    gdouble Thickness;
-    ShapeType Type;
-} PinType;
-
-typedef struct
-{
-    char *Name;
-    Point Point1;
-    Point Point2;
-    gdouble Thickness;
-    ShapeType Type;
-    Point Origin;
-    unsigned int Group;
-} PadType;
-
-typedef struct
-{
-    Point Point1;
-    Point Point2;
-    gdouble Thickness;
-} LineType, *LineTypePtr;
-
-typedef struct
-{
-    Point Point1;
-    Point Point2;
-    gdouble Thickness;
-    GroupType group1;
-    GroupType group2;
-} RatType;
-
-typedef struct
-{
-    gdouble Theta;
-} ArcType, *ArcTypePtr;
-
-typedef struct
-{
-    gdouble SomethingHere;
-} LayerType;
-
-typedef struct
-{
-    int MaxWidth;
-    int MaxHeight;
-    int NumLayers;
-
-} PCBType;
-
-typedef struct
-{
-    gdouble LineThickness;
-    gdouble Keepaway;
-} SettingsType;
-
-typedef struct
-{
-    PadType *Pad1;
-    PadType *Pad2;
-} RatLineType;
-#endif
+    double x() const
+    {
+        return GTS_POINT( &m_v )->x;
+    };
+    double y() const
+    {
+        return GTS_POINT( &m_v )->y;
+    };
+    double z() const
+    {
+        return GTS_POINT( &m_v )->z;
+    };
+};
 
 #define TEST_FLAG(x, y) (x == y->Type)
 
@@ -159,7 +116,7 @@ typedef enum
     PAD,
     PIN,
     VIA,
-    ARC,
+    T_ARC,
     VIA_SHADOW,
     LINE,
     OTHER,
@@ -467,6 +424,8 @@ struct _toporouter_t
     GSList *bboxes;
     GNode *bboxtree;
 
+    std::function<bool()> updateCallback;
+
     toporouter_layer_t *layers;
 
     GList *paths;
@@ -589,6 +548,7 @@ guint hybrid_router(toporouter_t *r);
 toporouter_route_t *routedata_create(void);
 toporouter_cluster_t *cluster_find(toporouter_t *r, gdouble x, gdouble y, gdouble z);
 toporouter_oproute_t *oproute_rubberband(toporouter_t *r, GList *path);
+gint coord_wind(gdouble ax, gdouble ay, gdouble bx, gdouble by, gdouble cx, gdouble cy);
 
 
 }; // namespace toporouter

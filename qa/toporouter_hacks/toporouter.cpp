@@ -235,17 +235,17 @@ toporouter_arc_class(void)
 gdouble
 lookup_keepaway(char *name)
 {
-	return 100000.0;
-	auto router = TOPOROUTER_ENGINE::GetInstance();
-	return router->rules()->GetClearance( name );
+	return 200000.0;
+	//auto router = TOPOROUTER_ENGINE::GetInstance();
+	//return router->rules()->GetClearance( name );
 }
 
 gdouble
 lookup_thickness(char *name)
 {
-	return 100000.0;
-	auto router = TOPOROUTER_ENGINE::GetInstance();
-	return router->rules()->GetLineWidth( name );
+	return 200000.0;
+	//auto router = TOPOROUTER_ENGINE::GetInstance();
+	//return router->rules()->GetLineWidth( name );
 }
 
 static inline gdouble
@@ -474,7 +474,7 @@ vertex_net_keepaway(toporouter_vertex_t *v)
 	//  if(!box || !box->cluster) return Settings.Keepaway + 1.;
 	if (!box || !box->cluster)
 		//return Settings.Keepaway;
-		return 100000.0; //fixmeg
+		return 200000.0; //fixmeg
 	return cluster_keepaway(box->cluster);
 }
 /*
@@ -551,8 +551,7 @@ void point_from_point_to_point(toporouter_vertex_t *a, toporouter_vertex_t *b, g
 	}
 }
 
-static inline gint
-coord_wind(gdouble ax, gdouble ay, gdouble bx, gdouble by, gdouble cx, gdouble cy)
+gint coord_wind(gdouble ax, gdouble ay, gdouble bx, gdouble by, gdouble cx, gdouble cy)
 {
 	gdouble rval, dx1, dx2, dy1, dy2;
 	dx1 = bx - ax;
@@ -7409,6 +7408,7 @@ gint roar_router(toporouter_t *r, gint failcount, gint threshold)
 		k = failed;
 		while (k)
 		{
+			if (r->updateCallback ) r->updateCallback();
 			failcount += roar_route(r, TOPOROUTER_ROUTE(k->data), threshold);
 			k = k->next;
 		}
@@ -7565,6 +7565,7 @@ void detour_router(toporouter_t *r)
 			if (curroute->score - curroute->detourscore > 1000.)
 			{
 				roar_detour_route(r, curroute);
+				if (r->updateCallback ) r->updateCallback();
 			}
 			else
 				break;
@@ -7592,6 +7593,7 @@ gint rubix_router(toporouter_t *r, gint failcount)
 		{
 			INSERT_ROUTING(data);
 			cluster_merge(data);
+			if (r->updateCallback ) r->updateCallback();
 			failcount--;
 		}
 
@@ -7647,7 +7649,7 @@ toporouter_new(void)
 	gettimeofday(&r->starttime, NULL);
 
 	r->netsort = netscore_pairwise_compare;
-
+	r->updateCallback = nullptr;
 	r->destboxes = NULL;
 	r->consumeddestboxes = NULL;
 

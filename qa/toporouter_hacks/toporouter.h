@@ -42,11 +42,12 @@ namespace toporouter {
 
 #undef DEBUG
 #include "toporouter-private.h"
-#define DEBUG
 
 #include <view/view.h>
 #include <view/view_item.h>
 #include <class_board.h>
+
+class PCB_DRAW_PANEL_GAL;
 
 class RULE_RESOLVER
 {
@@ -69,12 +70,19 @@ class TOPOROUTER_PREVIEW : public EDA_ITEM
 {
     private:
     TOPOROUTER_ENGINE *m_router;
+    struct ROUTE {
+        SEG s;
+        int layer;
+    };
 public:
     TOPOROUTER_PREVIEW( TOPOROUTER_ENGINE *engine );
     virtual ~TOPOROUTER_PREVIEW();
 
     wxString GetClass() const override { return "MyItem"; };
+
+#ifdef DEBUG
     virtual void Show( int nestLevel, std::ostream& os ) const override {};
+#endif
 
     const BOX2I ViewBBox() const override
     {
@@ -91,31 +99,43 @@ public:
         aCount = 1;
     }
 
-    void AddRouted( double x0, double y0, double x1, double y1)
+    void ClearRouted()
     {
-                    printf("AddRouted: [%.0f %.0f] - [%.0f %.0f]\n",  x0,y0,x1,y1 );
+        m_routed.clear();
+    }
 
-        m_routed.push_back(SEG(VECTOR2I(x0, y0), VECTOR2I(x1, y1 )));
+    void AddRoutedArc( toporouter::toporouter_arc_t *arc, int layer );
+
+    void AddRouted( double x0, double y0, double x1, double y1, int l)
+    {
+        ROUTE r;
+        r.s = SEG(VECTOR2I(x0, y0), VECTOR2I(x1, y1 ));
+        r.layer = l;
+        //printf("AddRouted: [%.0f %.0f] - [%.0f %.0f] grp %d\n",  x0,y0,x1,y1, l );
+
+        m_routed.push_back(r);
     }
 
 
   private:
-    std::vector<SEG> m_routed;
+    std::vector<ROUTE> m_routed;
     void drawSurface( KIGFX::GAL* gal, toporouter::toporouter_t *router, GtsSurface* surf ) const;
     void drawRouted( KIGFX::GAL* gal ) const;
 };
 
+
+
 class TOPOROUTER_ENGINE
 {
 public:
-    TOPOROUTER_ENGINE();
+    TOPOROUTER_ENGINE( PCB_DRAW_PANEL_GAL *panel );
     ~TOPOROUTER_ENGINE();
 
     void SetBoard( BOARD* aBoard );
     void ClearWorld();
     void SyncWorld();
 
-    static TOPOROUTER_ENGINE* GetInstance();
+    //static TOPOROUTER_ENGINE* GetInstance();
 
     void Run();
 
@@ -135,6 +155,8 @@ public:
 
     toporouter::toporouter_t *GetRouter() const { return m_router; }
 
+
+
 private:
     BOARD* board();
 
@@ -143,6 +165,7 @@ private:
 
 
 private:
+    PCB_DRAW_PANEL_GAL *m_panel;
     TOPOROUTER_PREVIEW *m_preview;
     RULE_RESOLVER             *m_ruleResolver;
     BOARD*                    m_board;

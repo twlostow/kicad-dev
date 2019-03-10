@@ -61,7 +61,7 @@ public:
 
     void SetupRouter()
     {
-        m_router = TOPOROUTER_ENGINE::GetInstance();
+        m_router = new TOPOROUTER_ENGINE( m_galPanel.get() ); //::GetInstance();
         m_router->SetBoard( m_board.get() );
 
         zoomToFit();

@@ -14,12 +14,13 @@
 
 #include <connectivity/connectivity_data.h>
 #include <ratsnest_data.h>
-
+#include <pcb_draw_panel_gal.h>
 
 using namespace toporouter;
 
-TOPOROUTER_ENGINE::TOPOROUTER_ENGINE()
+TOPOROUTER_ENGINE::TOPOROUTER_ENGINE( PCB_DRAW_PANEL_GAL *panel )
 {
+    m_panel = panel;
     m_router = toporouter::toporouter_new();
     m_preview = new TOPOROUTER_PREVIEW( this );
 }
@@ -101,6 +102,8 @@ void TOPOROUTER_ENGINE::SyncWorld()
     for( int layerId = 0; layerId < rules()->GetGroupCount(); layerId++ )
     {
         auto cur_layer = &m_router->layers[layerId];
+
+        printf("SyncLayer %d\n", layerId );
 
         cur_layer->vertices = nullptr;
         cur_layer->constraints = nullptr;
@@ -186,8 +189,11 @@ void TOPOROUTER_ENGINE::syncConnectivity()
             {
                 case PCB_PAD_T:
                 {
-                    toporouter_bbox_t *box = toporouter_bbox_locate(m_router, PAD, parent, item->Anchors()[0]->Pos().x, item->Anchors()[0]->Pos().y, 0 );
-                    cluster_join_bbox(cluster, box);
+                    for(int i = 0; i < rules()->GetGroupCount(); i++ )
+                    {
+                        toporouter_bbox_t *box = toporouter_bbox_locate(m_router, PAD, parent, item->Anchors()[0]->Pos().x, item->Anchors()[0]->Pos().y, i );
+                        cluster_join_bbox(cluster, box);
+                    }
                 }
                 break;
                 default:
@@ -240,17 +246,28 @@ void TOPOROUTER_ENGINE::syncConnectivity()
 }
 
 
+#if 0
 TOPOROUTER_ENGINE* TOPOROUTER_ENGINE::GetInstance()
 {
     static TOPOROUTER_ENGINE* p = nullptr;
     if( !p )
-        p = new TOPOROUTER_ENGINE();
+        p = new TOPOROUTER_ENGINE( nullptr );
 
     return p;
 }
+#endif
 
 void TOPOROUTER_ENGINE::Run()
 {
+    m_router->updateCallback = [&] () -> bool
+    {
+        printf("UpdateCB\n");
+        ImportRoutes();
+        m_panel->Refresh();
+        wxYield();
+        return true;
+    };
+
    	hybrid_router(m_router);
 }
 
@@ -271,17 +288,17 @@ RULE_RESOLVER::~RULE_RESOLVER()
 
 double RULE_RESOLVER::GetClearance( const std::string name )
 {
-    return 0.1e9;
+    return 0.2e9;
 }
 
 double RULE_RESOLVER::GetLineWidth( const std::string name )
 {
-    return 0.1e9;
+    return 0.2e9;
 }
 
 int RULE_RESOLVER::GetGroupCount()
 {
-    return 1; // m_board->GetDesignSettings().GetCopperLayerCount(); fixme NB layers
+    return m_board->GetDesignSettings().GetCopperLayerCount();
 }
 
 std::pair<int, PCB_LAYER_ID> RULE_RESOLVER::GetLayerGroup( int l )
@@ -375,13 +392,22 @@ void TOPOROUTER_PREVIEW::drawRouted( KIGFX::GAL* gal ) const
 {
     gal->SetIsStroke( true );
     gal->SetIsFill( false );
-    gal->SetStrokeColor( COLOR4D( 0.5, 1.0, 0.5, 1.0 ) );
     gal->SetLineWidth( 100000.0 );
     gal->SetLayerDepth( gal->GetMinDepth() );
 
     for( auto r : m_routed )
     {
-        gal->DrawLine( r.A, r.B );
+        switch( r.layer )
+        {
+            case 0:
+                gal->SetStrokeColor( COLOR4D( 0.5, 1.0, 0.5, 1.0 ) );
+                break;
+            case 1:
+                gal->SetStrokeColor( COLOR4D( 1.0, 0.5, 0.5, 1.0 ) );
+                break;
+        }
+
+        gal->DrawLine( r.s.A, r.s.B );
     }
 }
 
@@ -391,26 +417,14 @@ void TOPOROUTER_ENGINE::ImportRoutes()
     std::vector<toporouter_oproute_t*> oproutes;
 	toporouter_arc_t *arc, *parc = NULL;
 
+    m_preview->ClearRouted();
+
 	while (iter)
 	{
-        printf("Process RtNet %p\n", iter);
+        //printf("Process RtNet %p\n", iter);
 		toporouter_route_t *routedata = TOPOROUTER_ROUTE(iter->data);
-		//toporouter_oproute_t *oproute = oproute_rubberband(m_router, routedata->path);
-//*		oproutes.push_back(oproute);
-
-   	    GList *vtxIter = routedata->path;
-        VECTOR2D prev;
-
-        for(int i = 0; vtxIter; i++, vtxIter=vtxIter->next)
-        {
-            auto v1 = TOPOROUTER_VERTEX(vtxIter->data);
-            VECTOR2D v ( vx(v1), vy(v1) );
-
-            if(i>0)
-                m_preview->AddRouted( prev.x, prev.y, v.x, v.y );
-            prev= v;
-        }
-
+		toporouter_oproute_t *oproute = oproute_rubberband(m_router, routedata->path);
+		oproutes.push_back(oproute);
 
 		iter = iter->next;
 	}
@@ -419,14 +433,33 @@ void TOPOROUTER_ENGINE::ImportRoutes()
     {
 
 
-#if 0
+#if 1
         GList *arcs = oproute->arcs;
 
-        
+#if 0
+        printf("oproute %p arcs %d path %d\n", oproute, g_list_length( arcs ), g_list_length( oproute->path ) );
+
+
+        GList *vtxIter = oproute->path;
+        VECTOR2D prev;
+
+        for(int i = 0; vtxIter; i++, vtxIter=vtxIter->next)
+        {
+            auto v1 = TOPOROUTER_VERTEX(vtxIter->data);
+            VECTOR2D v ( vx(v1), vy(v1) );
+
+            //  if(i>0)
+              //  m_preview->AddRouted( prev.x, prev.y, v.x, v.y, (int)vz(v1) );
+            prev= v;
+        }
+
+
+#endif
+
     	if (!arcs)
 	    {
-            m_preview->AddRouted( vx(oproute->term1), vy(oproute->term1), vx(oproute->term2), vy(oproute->term2) ) ;
-		    return;
+            m_preview->AddRouted( vx(oproute->term1), vy(oproute->term1), vx(oproute->term2), vy(oproute->term2), oproute->layergroup ) ;
+		    //return;
 	    } else {
             while (arcs)
             {
@@ -434,24 +467,88 @@ void TOPOROUTER_ENGINE::ImportRoutes()
 
                 if (parc && arc)
                 {
-                    //ar->wiring_score += export_pcb_drawarc(layer, parc, thickness, keepaway);
-                    m_preview->AddRouted( parc->x1, parc->y1, arc->x0, arc->y0 );
+                    m_preview->AddRoutedArc( parc, oproute->layergroup );
+                    m_preview->AddRouted( parc->x1, parc->y1, arc->x0, arc->y0, oproute->layergroup  );
                 }
                 else if (!parc)
                 {
-                    m_preview->AddRouted( vx(oproute->term1), vy(oproute->term1), arc->x0, arc->y0 );
+                    m_preview->AddRouted( vx(oproute->term1), vy(oproute->term1), arc->x0, arc->y0, oproute->layergroup  );
                 }
 
                 parc = arc;
                 arcs = arcs->next;
             }
-            //ar->wiring_score += export_pcb_drawarc(layer, arc, thickness, keepaway);
-            m_preview->AddRouted( arc->x1, arc->y1, vx(oproute->term2), vy(oproute->term2) );
+            m_preview->AddRoutedArc( arc, oproute->layergroup );
+            m_preview->AddRouted( arc->x1, arc->y1, vx(oproute->term2), vy(oproute->term2), oproute->layergroup  );
 
         }
 #endif
     }
 
+
+
+}
+
+static double
+coord_angle (double ax, double ay, double bx, double by)
+{
+  return atan2 (by - ay, bx - ax);
+}
+gdouble
+arc_angle(toporouter_arc_t *arc) 
+{
+  gdouble x0, x1, y0, y1;
+
+  x0 = arc->x0 - vx(arc->centre);
+  x1 = arc->x1 - vx(arc->centre);
+  y0 = arc->y0 - vy(arc->centre);
+  y1 = arc->y1 - vy(arc->centre);
+
+  return fabs(acos(((x0*x1)+(y0*y1))/(hypot(x0,y0)*hypot(x1,y1))));
+}
+
+void TOPOROUTER_PREVIEW::AddRoutedArc( toporouter_arc_t *a, int layer )
+{
+  double sa, da, theta;
+  double d = 0.;
+  int wind;
+
+  wind = coord_wind(a->x0, a->y0, a->x1, a->y1, vx(a->centre), vy(a->centre));
+
+  /* NB: PCB's arcs have a funny coorindate system, with 0 degrees as the -ve X axis (left),
+   *     continuing clockwise, with +90 degrees being along the +ve Y axis (bottom). Because
+   *     Y+ points down, our internal angles increase clockwise from the +ve X axis.
+   */
+  sa = (M_PI - coord_angle (vx (a->centre), vy (a->centre), a->x0, a->y0)) * 180. / M_PI;
+
+  theta = arc_angle(a);
+
+  if(!a->dir || !wind) return;
+  
+  if(a->dir != wind) theta = 2. * M_PI - theta;
+  
+  da = -a->dir * theta * 180. / M_PI;
+
+  if(da < 1. && da > -1.) return;
+  if(da > 359. || da < -359.) return;
+
+  if( da < sa )
+    da += 360.0;
+
+ const int arc_steps = 20;
+
+    VECTOR2D prev;
+  for(int i = 0; i <= arc_steps; i++)
+  {
+      double angle = sa + (da-sa) / (double) arc_steps * (double) i;
+      VECTOR2D cur ( vx (a->centre) + a->r * cos(angle * M_PI/180.0), 
+                     vy (a->centre) + a->r * sin(angle * M_PI/180.0) ); 
+      
+        if( i > 0)  AddRouted( prev.x, prev.y, cur.x, cur.y, layer );
+
+
+      prev = cur;
+  }
 
 
 }

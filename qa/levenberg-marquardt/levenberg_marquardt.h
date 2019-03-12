@@ -24,8 +24,8 @@ class LM_SOLVABLE
     public:
         //virtual int LmGetParameterCount() = 0;
         virtual int LmGetEquationCount() = 0;
-        virtual void LmFunc( LM_PARAMETER *params, double *x ) = 0;
-        virtual void LmDFunc( LM_PARAMETER *params, double *dx ) = 0;
+        virtual void LmFunc( /*double *params,*/ double *x ) = 0;
+        virtual void LmDFunc( /*double *params,*/ double *dx, int equationIndex ) = 0;
 
     protected:
         int m_eqnIndex;
@@ -49,16 +49,16 @@ public:
     void AddParameter ( LM_PARAMETER *aParam )
     {
         m_params.push_back( aParam );
-        printf("mm %d\n", m_m);
+        //printf("mm %d\n", m_m);
         aParam->m_paramIndex = m_m;
-        printf("param %p dx %d\n", aParam, aParam->m_paramIndex);
+        //printf("param %p dx %d\n", aParam, aParam->m_paramIndex);
         m_m += aParam->LmGetDimension();
     }
 
     void AddSolvable( LM_SOLVABLE* aSolvable )
     {
         aSolvable->m_eqnIndex = m_n;
-        printf("solv %p eqnidx %d\n", aSolvable, aSolvable->m_eqnIndex);
+        //printf("solv %p eqnidx %d\n", aSolvable, aSolvable->m_eqnIndex);
         m_n += aSolvable->LmGetEquationCount();
         m_equations.push_back( aSolvable );
     }

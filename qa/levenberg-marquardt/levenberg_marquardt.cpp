@@ -11,47 +11,82 @@ void LM_SOLVER::init()
 
 }
 
-void LM_SOLVER::evaluateFunc( double *p, double *hx, int m, int n, void *adata)
+void LM_SOLVER::evaluateFunc( double *params, double *x, int m, int n, void *adata)
 {
     auto self = reinterpret_cast<LM_SOLVER*> ( adata );
-    printf("evalf: %p %p %d %d %p\n", p,hx, m, n, adata);
+
     int pindex = 0;
 
     for( auto param : self->m_params )
     {
         for( int i = 0; i < param->LmGetDimension(); i++ )
         {
-            param->LmSetValue(i, p[pindex++]);
+            param->LmSetValue( i, params[pindex] );
+           // printf("Param %d: %.10f\n", pindex, param->LmGetValue( i ) );
+            pindex++;
         }
     }
 
+
     for( auto eqn : self->m_equations )
     {
-        eqn->LmFunc( *self->m_params.data() , hx + eqn->m_eqnIndex );
+        eqn->LmFunc( /*params + eqn->m_eqnIndex,*/ x + eqn->m_eqnIndex );
     }
 }
 
-void LM_SOLVER::evaluateJacobian( double *p, double *jac, int m, int n, void *adata)
+void LM_SOLVER::evaluateJacobian( double *params, double *jac, int m, int n, void *adata)
 {
     auto self = reinterpret_cast<LM_SOLVER*> ( adata );
+
+    for( int i = 0; i < m * n; i++ ) 
+        jac [ i ] = 0.0;
+
     int pindex = 0;
 
     for( auto param : self->m_params )
     {
         for( int i = 0; i < param->LmGetDimension(); i++ )
         {
-            param->LmSetValue(i, p[pindex++]);
+            param->LmSetValue( i, params[pindex] );
+          // printf("Param %d: %.10f\n", pindex, param->LmGetValue( i ) );
+            pindex++;
         }
     }
 
-    
+
     for( auto eqn : self->m_equations )
     {
-        for( int i = 0; i < n; i++ ) 
-            jac [ m * eqn->m_eqnIndex + i ] = 0.0;
+        printf("** Do eqn %p [%d]\n", eqn, eqn->LmGetEquationCount() );
 
-        eqn->LmDFunc( *self->m_params.data() , jac + m * eqn->m_eqnIndex );
+        for(int p = 0; p < eqn->LmGetEquationCount(); p++)
+        {
+
+            printf("Subeqn %d\n", p);
+            int jac_index = m * (eqn->m_eqnIndex+p) + eqn->m_eqnIndex;
+            eqn->LmDFunc( params + eqn->m_eqnIndex , &jac [ m * (eqn->m_eqnIndex+p) + eqn->m_eqnIndex ], p );
+
+            printf("jacobian: \n");
+            for( int j = 0; j < m; j++ ) 
+            {
+                for( int i = 0; i < n; i++ ) 
+                {
+                    printf( "%-10.3f", jac[ j * m + i ] );
+                }
+                printf("\n");
+            }
+        }
     }
+
+    for( int j = 0; j < m; j++ ) 
+    {
+        for( int i = 0; i < n; i++ ) 
+        {
+            printf( "%-10.3f", jac[ j * m + i ] );
+        }
+        printf("\n");
+    }
+        
+
 }
 
 bool LM_SOLVER::Solve()
@@ -63,13 +98,17 @@ bool LM_SOLVER::Solve()
     double *x_vec = new double[ m_n ];
     int pindex = 0;
 
+    
     for( auto param : m_params )
     {
         for( int i = 0; i < param->LmGetDimension(); i++ )
         {
+            printf("Param %d: %.1f\n", pindex, param->LmGetValue( i ) );
             p_vec[pindex++] = param->LmGetValue( i );
         }
     }
+
+    printf("Solve: params %d meas %d\n", m_m, m_n );
 
     for ( int i = 0; i < m_n; i++ )
         x_vec[i] = 0.0;
@@ -94,6 +133,24 @@ bool LM_SOLVER::Solve()
     delete p_vec;
     delete x_vec;
     delete m_workmem;
+
+    if (rv < 0)
+    {
+        printf("Solve failed.\n");
+        return false;
+    }
+
+    pindex = 0;
+
+    for( auto param : m_params )
+    {
+        for( int i = 0; i < param->LmGetDimension(); i++ )
+        {
+            param->LmSetValue( i, p_vec[pindex] );
+            printf("Param %d: %.10f\n", pindex, param->LmGetValue( i ) );
+            pindex++;
+        }
+    }
 
     return true;
 }

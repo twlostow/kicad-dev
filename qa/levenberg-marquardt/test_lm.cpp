@@ -11,7 +11,6 @@
 #include <geometry/seg.h>
 #include <math/vector2d.h>
 
-#if 1
 #include "levenberg_marquardt.h"
 
 enum GS_CONSTRAINT_TYPE {
@@ -56,48 +55,11 @@ double my_func( double* p, int index, void* udata )
 
 
 
-class GS_CONSTRAINT : public LM_SOLVABLE {
-
-    public:
-        GS_CONSTRAINT( GS_ITEM* aParent ) : m_parent ( aParent ) {};
-        virtual ~GS_CONSTRAINT() {};
-
-    protected:
-
-        GS_ITEM *m_parent;
-};
-
-class GS_CONSTRAINT_FIXED_POS : public GS_CONSTRAINT {
-
-
-    public:
-        GS_CONSTRAINT_FIXED_POS( GS_REFERENCE_ANCHOR* aParent ) : m_parent ( aParent ) {};
-
-
-    virtual void LmFunc( LM_PARAMETER *params, double *x )
-    {
-        auto p = m_parent->GetPos();
-        auto orig = m_parent->GetOriginPos();
-
-        x[0] = p.x - orig.x;
-        x[1] = p.y - orig.y;
-
-        printf("Ref (%.10f %.10f) err (%.10f %.10f)\n", orig.x, orig.y, x[0], x[1] );
-    }
-
-    virtual void LmDFunc( LM_PARAMETER *params, double *dx ) override
-    {
-        dx[ 0 ] = 1.0;
-        dx[ 1 ] = 1.0;
-    }
-  
-    private:
-        GS_REFERENCE_ANCHOR *m_parent;
-
-};
 
 class GS_ITEM;
 class GS_SOLVER;
+
+
 
 class GS_ANCHOR : public LM_PARAMETER
 {
@@ -111,7 +73,6 @@ public:
 
     virtual void LmSetValue( int index, double value ) override
     {
-        printf("lmSetV %p %d %.10f\n", this, index, value );
         if( index == 0 )
             m_pos.x = value;
         else
@@ -122,7 +83,6 @@ public:
     {
         return (index == 0 ? m_pos.x : m_pos.y );
     }
-
 
     GS_ANCHOR( VECTOR2D aPos, bool aIsSolvable )
             : m_pos( aPos ),
@@ -201,64 +161,110 @@ private:
     int                   m_index;
 };
 
+class GS_CONSTRAINT;
+
 class GS_ITEM 
 {
 public:
     GS_ITEM( int aAnchorCount )
     {
+        printf("Create item [%p, %d anchors]\n", this, aAnchorCount );
         m_anchors.resize( aAnchorCount );
     }
 
-    virtual void SetConstraint( GS_CONSTRAINT aConstraint )
+    virtual void AddConstraint( GS_CONSTRAINT *aConstraint )
     {
-      m_constrain = aConstraint;
+      m_constraints.push_back( aConstraint );
     }
+
+    int GetConstraintCount() const { return m_constraints.size(); }
 
     virtual void CreateAnchors( GS_SOLVER* aSolver ) = 0;
     virtual void UpdateAnchors(){};
     GS_ANCHOR*   Anchor( int index )
     {
+        printf("GetAnchor [%p] %d cnt %d\n", this, index, m_anchors.size() );
         return m_anchors[index];
     }
 
 protected:
     uint32_t m_constrain;
     std::vector<GS_ANCHOR*> m_anchors;
+    std::vector<GS_CONSTRAINT*> m_constraints;
 };
+
+
+class GS_CONSTRAINT : public LM_SOLVABLE {
+
+    public:
+        GS_CONSTRAINT( GS_ITEM* aParent ) : m_parent ( aParent ) {};
+        virtual ~GS_CONSTRAINT() {};
+
+    protected:
+
+        GS_ITEM *m_parent;
+};
+
 
 class GS_REFERENCE_ANCHOR : public GS_ITEM
 {
 public:
-    GS_REFERENCE_ANCHOR( GS_ANCHOR* aParent ) : GS_ITEM( 0 ), m_anchor( aParent )
+    GS_REFERENCE_ANCHOR( GS_ANCHOR* aParent ) : GS_ITEM( 1 ), m_anchor( aParent )
     {
     }
 
     virtual void CreateAnchors( GS_SOLVER* aSolver ) override
-    {}
-    
-
-    /* segment equation for slope-constrained segments: 
-    
-    // v = anchor[1] - anchor[0]
-       v' = anchor'[1] - anchor'[0]
-       vd = anchor[2] - anchor'[0]
-    
-    slope: v x v' = 0
-    drag: v' x vd = 0
-    
-    */
-
-    virtual int LmGetEquationCount() override
     {
-        return 2;
+        m_anchors[0] = m_anchor;
+        m_originPos = m_anchor->GetPos();
     }
-    
-  
 
 private:
     GS_ANCHOR* m_anchor;
+    VECTOR2D m_originPos;
 
 };
+
+#if 0
+
+class GS_CONSTRAINT_FIXED_POS : public GS_CONSTRAINT {
+
+
+    public:
+        GS_CONSTRAINT_FIXED_POS( GS_REFERENCE_ANCHOR* aParent, VECTOR2D fixedPos ) : GS_CONSTRAINT( aParent ), m_fixedPos (fixedPos) {};
+
+
+    virtual void LmFunc( LM_PARAMETER *params, double *x )
+    {
+        auto a0 = parent()->Anchor(0);
+        auto p = a0->GetPos();
+        auto orig = a0->GetOriginPos();
+
+        x[0] = p.x - m_fixedPos.x;
+        x[1] = p.y - m_fixedPos.y;
+
+        printf("Ref (%.10f %.10f) err (%.10f %.10f)\n", orig.x, orig.y, x[0], x[1] );
+    }
+
+    virtual void LmDFunc( LM_PARAMETER *params, double *dx, int equationIndex ) override
+    {
+        dx[ 0 ] = 1.0;
+        dx[ 1 ] = 1.0;
+    }
+
+    virtual int LmGetEquationCount()
+    {
+        return 2;
+    }
+
+
+    protected:
+
+        GS_REFERENCE_ANCHOR* parent() const { return static_cast<GS_REFERENCE_ANCHOR*> (m_parent ); }
+        VECTOR2D m_fixedPos;
+
+};
+#endif
 
 
 class GS_SOLVER
@@ -275,10 +281,11 @@ public:
     void Add( GS_ITEM* aItem );
     bool Run();
 
-    void SetReferenceAnchor( GS_ITEM *aItem, int aAnchor )
+    void SetReferenceAnchor( GS_ITEM *aItem, int aAnchor, VECTOR2D aPos )
     {
-        auto ref = new GS_REFERENCE_ANCHOR( aItem->Anchor( aAnchor ) );
-        Add( ref );
+        //auto ref = new GS_REFERENCE_ANCHOR( aItem->Anchor( aAnchor ) );
+        //AddConstraint( new GS_CONSTRAINT_FIXED_POS ( ref, aPos ) );
+        //Add( ref );
     }
 
     GS_ANCHOR* CreateAnchor( const VECTOR2D& aPos, bool aSolvable )
@@ -311,6 +318,11 @@ public:
         parent->Anchor( index )->SetDisplacement( aDisp );
     }
 
+    void AddConstraint( GS_CONSTRAINT* constraint )
+    {
+        m_constraints.push_back( constraint );
+    }
+
 private:
     struct COMPARE_ANCHORS
     {
@@ -337,9 +349,62 @@ private:
     GS_ANCHOR **m_anchorMap;
     std::unique_ptr<LM_SOLVER> m_solver;
     std::vector<GS_ITEM*>      m_items;
+    std::vector<GS_CONSTRAINT*> m_constraints;
     ANCHOR_SET                 m_anchors;
 };
 
+#if 0
+class GS_CONSTRAINT_SEGMENT_FIXED_LENGTH : public GS_ITEM
+{
+
+    virtual int LmGetEquationCount() 
+    {
+            return 2;
+    }
+
+
+    virtual void LmFunc( LM_PARAMETER *params, double *x )  {};
+    virtual void LmDFunc( LM_PARAMETER *params, double *dx )  {};
+
+};
+#endif
+
+
+class GS_NULL_CONSTRAINT : public GS_CONSTRAINT
+{
+    public:
+           GS_NULL_CONSTRAINT( GS_ANCHOR* aAnchor ) : GS_CONSTRAINT( nullptr ) { m_anchor = aAnchor; };
+
+
+    virtual int LmGetEquationCount()
+    {
+        return 2;
+    }
+
+    virtual void LmFunc(double *x )  {
+        //printf("anchor %p p0 %.1f p1 %.1f\n", m_anchor, params[0], params[1]);
+        auto newpos = m_anchor->GetOriginPos() + m_anchor->GetDisplacement();
+        x[0] = newpos.x - m_anchor->GetPos().x;
+        x[1] = newpos.y - m_anchor->GetPos().y;
+        printf("error %.1f %.1f\n", x[0], x[1]);
+    };
+
+    virtual void LmDFunc( double *dx, int equationIndex )  
+    {
+        printf("LMDFunc [eqn %d]\n", equationIndex );
+        // x[0] = x coordinate, y[0] = y coordinate
+        if( equationIndex == 0)
+        {
+            dx[0] = -1.0; // d (x coordinate) over dx
+            dx[1] = 0.0; // d (y coordinate) over dy
+        } else {
+            dx[0] = 0.0; // d (x coordinate) over dx
+            dx[1] = -1.0; // d (y coordinate) over dy
+        }
+    };
+
+    GS_ANCHOR* m_anchor;
+};
 
 class GS_SEGMENT : public GS_ITEM
 {
@@ -359,31 +424,6 @@ public:
         m_anchors[2] = aSolver->CreateAnchor( ( m_seg.B + m_seg.A ) / 2, false );
     }
 
-
-    /* segment equation for slope-constrained segments: 
-    
-    // v = anchor[1] - anchor[0]
-       v' = anchor'[1] - anchor'[0]
-       vd = anchor[2] - anchor'[0]
-    
-    slope: v x v' = 0
-    drag: v' x vd = 0
-    
-    */
-
-    virtual int LmGetEquationCount() override
-    {
-//        if ( m_anchors[0]->IsFixed() || m_anchors[1]->IsFixed() )
-  //          return 4;
-    //    else
-            return 2;
-    }
-
-
-    virtual void LmFunc( LM_PARAMETER *params, double *x ) override {};
-    virtual void LmDFunc( LM_PARAMETER *params, double *dx ) override {};
-
-
 private:
     SEG m_seg;
 };
@@ -401,9 +441,9 @@ bool GS_SOLVER::Run()
 
     LM_SOLVER solver( 1000 );
 
-    for( auto item : m_items )
+    for( auto constraint : m_constraints )
     {
-        solver.AddSolvable( item );
+        solver.AddSolvable( constraint );
     }
 
     for ( auto anchor : m_anchors )
@@ -424,26 +464,45 @@ void solve_parallel()
     GS_SEGMENT segC( VECTOR2I( 100, 10 ), VECTOR2I( 110, 20 ) );
     GS_SOLVER  solver;
 
+    //solver.AddConstraint( new GS_NULL_CONSTRAINT( &segA ) );
+    //solver.AddConstraint( new GS_NULL_CONSTRAINT( &segB ) );
+    //solver.AddConstraint( new GS_NULL_CONSTRAINT( &segC ) );
+
     solver.Add( &segA );
-    //solver.Add( &segB );
-    //solver.Add( &segC );
-    solver.SetReferenceAnchor ( &segA, 0 );
+    solver.Add( &segB );
+    solver.Add( &segC );
+    //solver.SetReferenceAnchor ( &segA, 0, VECTOR2D(100, 200));
 
     solver.MoveAnchor( &segA, 0, VECTOR2D( 0, 10 ) );
 
     for( auto a : solver.GetAnchors() )
     {
-        printf( "solvable %d, pos: (%d, %d), disp: (%d, %d)\n", !!a->IsSolvable(),
-                (int) a->GetPos().x, (int) a->GetPos().y, (int) a->GetDisplacement().x,
-                (int) a->GetDisplacement().y );
+        if( a->IsSolvable() )
+        {
+            solver.AddConstraint( new GS_NULL_CONSTRAINT( a ) );
+            printf( "solvable %d, pos: (%d, %d), disp: (%d, %d)\n", !!a->IsSolvable(),
+                    (int) a->GetPos().x, (int) a->GetPos().y, (int) a->GetDisplacement().x,
+                    (int) a->GetDisplacement().y );
+        }
     }
 
     solver.Run();
 
+    for( auto a : solver.GetAnchors() )
+    {
+        if( a->IsSolvable() )
+        {
+            printf( "solvable %d, pos: (%d, %d), disp: (%d, %d)\n", !!a->IsSolvable(),
+                (int) a->GetPos().x, (int) a->GetPos().y, (int) a->GetDisplacement().x,
+                (int) a->GetDisplacement().y );
+        }
+    }
+
+
 
 }
 
-
+#if 1
 int main()
 {
     solve_parallel();
@@ -500,4 +559,5 @@ int main()
     printf("x %.10f y %.10f p0 %.10f p1 %.10f\n", x[0], x[1], p[0], p[1]);
   return 0;
 }
+
 #endif

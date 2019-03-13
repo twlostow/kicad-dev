@@ -149,10 +149,14 @@ bool ACTION_MANAGER::RunHotKey( int aHotKey ) const
             continue;
         }
 
+        printf("Scanned action %p\n", action );
+
         TOOL_BASE* tool = m_toolMgr->FindTool( action->GetToolName() );
 
         if( tool )
         {
+            printf("Tool %p [%s]\n", tool, tool->GetName().c_str() );
+        
             // Choose the action that goes to the tool with highest priority
             // (i.e. is on the top of active tools stack)
             priority = m_toolMgr->GetPriority( tool->GetId() );

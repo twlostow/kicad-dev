@@ -13,6 +13,8 @@ class LM_PARAMETER
         virtual void LmSetValue( int index, double value ) = 0;
         virtual double LmGetValue( int index ) = 0;
 
+        int LmGetIndex() const { return m_paramIndex; };
+
     protected:
         int m_paramIndex;
 };

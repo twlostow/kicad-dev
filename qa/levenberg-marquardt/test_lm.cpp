@@ -126,9 +126,13 @@ public:
 
     void SetDisplacement( const VECTOR2D& aV )
     {
+        //printf("SetDisplace %p %.1f %.1f\n", this, aV.x, aV.y );
         m_displacement = aV;
+        m_hasDisplacement = true;
     }
     
+    bool HasDisplacement() const { return m_hasDisplacement; }
+
     void Link( GS_ITEM *aItem )
     {
         m_linkedItems.push_back(aItem);
@@ -151,6 +155,7 @@ private:
         return ( currentIndex++ );
     }
 
+    bool m_hasDisplacement = false;
     int m_parameterIndex;
     bool m_fixed;
     bool                  m_solvable;
@@ -168,7 +173,7 @@ class GS_ITEM
 public:
     GS_ITEM( int aAnchorCount )
     {
-        printf("Create item [%p, %d anchors]\n", this, aAnchorCount );
+        //printf("Create item [%p, %d anchors]\n", this, aAnchorCount );
         m_anchors.resize( aAnchorCount );
     }
 
@@ -183,7 +188,7 @@ public:
     virtual void UpdateAnchors(){};
     GS_ANCHOR*   Anchor( int index )
     {
-        printf("GetAnchor [%p] %d cnt %d\n", this, index, m_anchors.size() );
+        //printf("GetAnchor [%p] %d cnt %d\n", this, index, m_anchors.size() );
         return m_anchors[index];
     }
 
@@ -353,21 +358,6 @@ private:
     ANCHOR_SET                 m_anchors;
 };
 
-#if 0
-class GS_CONSTRAINT_SEGMENT_FIXED_LENGTH : public GS_ITEM
-{
-
-    virtual int LmGetEquationCount() 
-    {
-            return 2;
-    }
-
-
-    virtual void LmFunc( LM_PARAMETER *params, double *x )  {};
-    virtual void LmDFunc( LM_PARAMETER *params, double *dx )  {};
-
-};
-#endif
 
 
 class GS_NULL_CONSTRAINT : public GS_CONSTRAINT
@@ -382,24 +372,38 @@ class GS_NULL_CONSTRAINT : public GS_CONSTRAINT
     }
 
     virtual void LmFunc(double *x )  {
-        //printf("anchor %p p0 %.1f p1 %.1f\n", m_anchor, params[0], params[1]);
+        if ( !m_anchor->HasDisplacement() )
+        {
+//            printf("NullC no Disp\n");
+            x[0] = x[1] = 0.0;
+            return;
+        }
         auto newpos = m_anchor->GetOriginPos() + m_anchor->GetDisplacement();
+        //printf("****** anchor %p \n", m_anchor );
+
         x[0] = newpos.x - m_anchor->GetPos().x;
         x[1] = newpos.y - m_anchor->GetPos().y;
-        printf("error %.1f %.1f\n", x[0], x[1]);
+        //printf("error %.1f %.1f\n", x[0], x[1]);
     };
 
     virtual void LmDFunc( double *dx, int equationIndex )  
     {
-        printf("LMDFunc [eqn %d]\n", equationIndex );
+        int idx = m_anchor->LmGetIndex();
+        if ( !m_anchor->HasDisplacement() )
+        {
+            dx[idx] = 0.0;
+            dx[idx + 1] = 0.0;
+            return;
+        }
+        //printf("LMDFunc [eqn %d, idx %d]\n", equationIndex, idx );
         // x[0] = x coordinate, y[0] = y coordinate
         if( equationIndex == 0)
         {
-            dx[0] = -1.0; // d (x coordinate) over dx
-            dx[1] = 0.0; // d (y coordinate) over dy
+            dx[idx] = -1.0; // d (x coordinate) over dx
+            dx[idx + 1] = 0.0; // d (y coordinate) over dy
         } else {
-            dx[0] = 0.0; // d (x coordinate) over dx
-            dx[1] = -1.0; // d (y coordinate) over dy
+            dx[idx] = 0.0; // d (x coordinate) over dx
+            dx[idx + 1] = -1.0; // d (y coordinate) over dy
         }
     };
 
@@ -429,10 +433,118 @@ private:
 };
 
 
+class GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION : public GS_CONSTRAINT
+{
+public:
+    GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION( GS_SEGMENT* aSeg ) : GS_CONSTRAINT( aSeg ) { };
+
+    virtual int LmGetEquationCount()
+    {
+        return 1;
+    }
+
+    virtual void LmFunc( double *x )  
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+
+        auto d_new = (a1->GetPos() - a0->GetPos()).Resize( 1 );
+        auto d_old = (a1->GetOriginPos() - a0->GetOriginPos()).Resize( 1 );
+
+        //printf("a0 : %.2f %.2f a1 %.2f %.2f\n", a0->GetPos().x, a0->GetPos().y, a1->GetPos().x, a1->GetPos().y );
+
+        double error = d_new.Cross(d_old);
+        //printf("----------- d_new %.10f %.10f d_old %.10f %.10f err %.10f\n", d_new.x, d_new.y, d_old.x, d_old.y, error);
+        x[0] = error;
+    };
+
+    virtual void LmDFunc( double *dx, int equationIndex )
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+        auto d_new = (a1->GetPos() - a0->GetPos() ).Resize( 1 );
+        auto d_old = (a1->GetOriginPos() - a0->GetOriginPos()).Resize( 1 );
+
+        // 4 parameters involved
+        // d_new.x = a1.x - a0.x
+        // d_new.y = a1.y - a0.y
+        // cross : x0 * y1 - y0 * x1
+        // error = d_new.x * d_old.y - d_new.y * d_old.x
+        // error = (a1.x - a0.x) * (d_old.y) - (a1.y - a0.y) * d_old.x
+        
+        dx [ a0->LmGetIndex() ] =  -d_old.y; // derr / d(a0.x)
+        dx [ a0->LmGetIndex() + 1 ] =  d_old.x; // derr / d(a0.y)
+        dx [ a1->LmGetIndex() ] =  d_old.y; // derr / d(a1.x)
+        dx [ a1->LmGetIndex() + 1 ] =  -d_old.x; // derr / d(a1.y)
+    };
+
+};
+
+class GS_CONSTRAINT_SEGMENT_FIXED_LENGTH : public GS_CONSTRAINT
+{
+public:
+    GS_CONSTRAINT_SEGMENT_FIXED_LENGTH( GS_SEGMENT* aSeg ) : GS_CONSTRAINT( aSeg ) { };
+
+    virtual int LmGetEquationCount()
+    {
+        return 1;
+    }
+
+    virtual void LmFunc( double *x )  
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+
+        auto d_new = (a1->GetPos() - a0->GetPos()).EuclideanNorm();
+        auto d_old = (a1->GetOriginPos() - a0->GetOriginPos()).EuclideanNorm();
+
+        printf("a0 : %.2f %.2f a1 %.2f %.2f\n", a0->GetPos().x, a0->GetPos().y, a1->GetPos().x, a1->GetPos().y );
+
+        double error = d_old - d_new;
+        //printf("----------- d_new %.10f %.10f d_old %.10f %.10f err %.10f\n", d_new.x, d_new.y, d_old.x, d_old.y, error);
+        x[0] = error;
+    };
+
+    virtual void LmDFunc( double *dx, int equationIndex )
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+        auto d_new = (a1->GetPos() - a0->GetPos());
+        auto d_old = (a1->GetOriginPos() - a0->GetOriginPos());
+
+        // 4 parameters involved
+        // d_new.x = a1.x - a0.x
+        // d_new.y = a1.y - a0.y
+        // l_old = const
+        // l_new = sqrt( d_new.x^2 + d_new.y ^ 2 )
+        // err = l_old - l_new
+        // derr/d(a0.x) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (-2*a0.x)
+        // derr/d(a0.y) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (-2*a0.y)
+        // derr/d(a1.x) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (2*a1.x)
+        // derr/d(a1.y) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (2*a1.y)
+
+        //d(b - a)^2 / db = 2(b-a)
+
+        double s = sqrt( d_new.x * d_new.x + d_new.y * d_new.y );
+
+        dx [ a0->LmGetIndex() ] =  1.0 * s * a0->GetPos().x; // derr / d(a0.x)
+        dx [ a0->LmGetIndex() + 1 ] =  1.0 * s * a0->GetPos().y; // derr / d(a0.y)
+        dx [ a1->LmGetIndex() ] =  -1.0 * s * a1->GetPos().y; // derr / d(a1.x)
+        dx [ a1->LmGetIndex() + 1 ] =  -1.0 * s * a1->GetPos().y; // derr / d(a1.y)
+    };
+
+};
+
+
 void GS_SOLVER::Add( GS_ITEM* aItem )
 {
     m_items.push_back( aItem );
     aItem->CreateAnchors( this );
+}
+
+static int mround( double x )
+{
+    return (int)floor(x+0.5);
 }
 
 bool GS_SOLVER::Run()
@@ -459,21 +571,24 @@ bool GS_SOLVER::Run()
 
 void solve_parallel()
 {
-    GS_SEGMENT segA( VECTOR2I( 10, 20 ), VECTOR2I( 10, 10 ) );
-    GS_SEGMENT segB( VECTOR2I( 10, 10 ), VECTOR2I( 100, 10 ) );
-    GS_SEGMENT segC( VECTOR2I( 100, 10 ), VECTOR2I( 110, 20 ) );
+    GS_SEGMENT segA( VECTOR2I( 10, 10 ), VECTOR2I( 10, 20 ) );
+    GS_SEGMENT segB( VECTOR2I( 10, 20 ), VECTOR2I( 100, 20 ) );
+    GS_SEGMENT segC( VECTOR2I( 100, 20 ), VECTOR2I( 110, 10 ) );
     GS_SOLVER  solver;
 
     //solver.AddConstraint( new GS_NULL_CONSTRAINT( &segA ) );
     //solver.AddConstraint( new GS_NULL_CONSTRAINT( &segB ) );
-    //solver.AddConstraint( new GS_NULL_CONSTRAINT( &segC ) );
+  
 
     solver.Add( &segA );
     solver.Add( &segB );
     solver.Add( &segC );
     //solver.SetReferenceAnchor ( &segA, 0, VECTOR2D(100, 200));
 
-    solver.MoveAnchor( &segA, 0, VECTOR2D( 0, 10 ) );
+    solver.AddConstraint( new GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION( &segA ) );
+    solver.AddConstraint( new GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION( &segB ) );
+
+    solver.MoveAnchor( &segA, 1, VECTOR2D( -5, -5 ) );
 
     for( auto a : solver.GetAnchors() )
     {
@@ -481,7 +596,7 @@ void solve_parallel()
         {
             solver.AddConstraint( new GS_NULL_CONSTRAINT( a ) );
             printf( "solvable %d, pos: (%d, %d), disp: (%d, %d)\n", !!a->IsSolvable(),
-                    (int) a->GetPos().x, (int) a->GetPos().y, (int) a->GetDisplacement().x,
+                    mround(a->GetPos().x), mround( a->GetPos().y ), (int) a->GetDisplacement().x,
                     (int) a->GetDisplacement().y );
         }
     }
@@ -493,8 +608,8 @@ void solve_parallel()
         if( a->IsSolvable() )
         {
             printf( "solvable %d, pos: (%d, %d), disp: (%d, %d)\n", !!a->IsSolvable(),
-                (int) a->GetPos().x, (int) a->GetPos().y, (int) a->GetDisplacement().x,
-                (int) a->GetDisplacement().y );
+                mround ( a->GetPos().x ), mround ( a->GetPos().y ), mround( - a->GetOriginPos().x + a->GetPos().x ),
+                mround( - a->GetOriginPos().y + a->GetPos().y  ) );
         }
     }
 

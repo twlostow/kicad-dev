@@ -391,6 +391,15 @@ set( COMMON_SRCS
     view/view_group.cpp
 
     math/math_util.cpp
+    math/levenberg_marquardt.cpp
+
+    math/levmar-2.6/lm.c
+    math/levmar-2.6/Axb.c
+    math/levmar-2.6/misc.c
+    math/levmar-2.6/lmlec.c
+    math/levmar-2.6/lmbc.c
+    math/levmar-2.6/lmblec.c
+    math/levmar-2.6/lmbleic.c
 
     tool/action_manager.cpp
     tool/actions.cpp
@@ -421,6 +430,7 @@ set( COMMON_SRCS
     geometry/shape_poly_set.cpp
     geometry/outline_shape_builder.cpp
     geometry/trigo.cpp
+    geometry/geom_solver.cpp
 
     libeval/numeric_evaluator.cpp
     )

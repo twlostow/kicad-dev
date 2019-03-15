@@ -251,9 +251,11 @@ bool ZONE_CREATE_HELPER::OnFirstPoint( POLYGON_GEOM_MANAGER& aMgr )
 
             m_parentView.SetVisible( &m_previewItem, true );
 
-            aMgr.SetLeaderMode( m_zone.get()->GetHV45()
+            // fixme
+            /*aMgr.SetLeaderMode( m_zone.get()->GetHV45()
+
                                 ? POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45
-                                : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
+                                : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );*/
         }
     }
 

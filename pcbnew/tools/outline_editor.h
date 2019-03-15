@@ -1,8 +1,9 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2013-2017 CERN
+ * Copyright (C) 2018-2019 CERN
  * @author Maciej Suminski <maciej.suminski@cern.ch>
+ * @author Tomasz Włostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,6 +38,7 @@ class SELECTION_TOOL;
 class ANCHOR;
 
 class GS_ANCHOR;
+class GS_ITEM;
 class GS_SOLVER;
 class GEOM_PREVIEW;
 
@@ -74,7 +76,7 @@ private:
     ///> Updates which point is being edited.
     void updateEditedAnchor( const TOOL_EVENT& aEvent );
     void updateOutline();
-    void addToSolver( BOARD_ITEM* aItem, bool aPrimary );
+    GS_ITEM* addToSolver( BOARD_ITEM* aItem, bool aPrimary );
 
     ///> Sets the current point being edited. NULL means none.
     void setEditedAnchor( GS_ANCHOR* aAnchor );

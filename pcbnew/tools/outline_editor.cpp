@@ -242,7 +242,7 @@ bool OUTLINE_EDITOR::Init()
 }
 
 
-void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
+GS_ITEM* OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
 {
     switch( aItem->Type() )
     {
@@ -265,6 +265,7 @@ void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
                 s->Constrain( CS_DIRECTION, true );*/
 
             m_solver->Add( s );
+            return s;
             break;
             }
             case S_ARC:
@@ -291,7 +292,7 @@ void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
             }
         }
 
-        return;
+        return nullptr;
     }
 
 /*
@@ -308,6 +309,8 @@ void OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
     default:
         break;
     }
+
+    return nullptr;
 }
 
 
@@ -331,14 +334,25 @@ void OUTLINE_EDITOR::updateOutline()
         }
     }
 
+    GS_ITEM* rootItem = nullptr;
+
     for( auto item : selection )
     {
-        addToSolver( static_cast<BOARD_ITEM*> ( item ), true );
-        n++;
+        auto ri = addToSolver( static_cast<BOARD_ITEM*> ( item ), true );
+        
+        if(ri)
+        {
+            rootItem = ri;
+            n++;
+        }
     }
 
-    printf("added %d items\n", n);
-    m_solver->FindOutlines();
+    if(rootItem)
+    {
+        
+        m_solver->FindOutlines( rootItem );
+        printf("added %d items\n", n);
+    }
 }
 
 int OUTLINE_EDITOR::ChamferCorner( const TOOL_EVENT& aEvent )

@@ -25,7 +25,7 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_line_chain.h>
 
-/*const SHAPE_LINE_CHAIN SHAPE_SEGMENT::ConvertToPolyline( bool aWire, int aOffset, double aApproximationAccuracy )
+const SHAPE_LINE_CHAIN SHAPE_SEGMENT::ConvertToPolyline( bool aWire, int aOffset, double aApproximationAccuracy )
 {
     assert( aWire );
 
@@ -36,7 +36,6 @@
 
     return rv;
 }
-*/
 
 const std::string SHAPE_SEGMENT::Format() const
 {

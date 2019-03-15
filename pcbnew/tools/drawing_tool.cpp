@@ -162,7 +162,7 @@ static TOOL_ACTION closeZoneOutline( "pcbnew.InteractiveDrawing.closeZoneOutline
         checked_ok_xpm );
 
 static TOOL_ACTION switchOutlinePosture( "pcbnew.InteractiveDrawing.outlinePosture",
-                AS_CONTEXT, TOOL_ACTION::LegacyHotKey( HK_SWITCH_TRACK_POSTURE ),
+            AS_CONTEXT, TOOL_ACTION::LegacyHotKey( HK_SWITCH_TRACK_POSTURE ),
                 _( "Switch Outline Posture" ), _( "Switch the outline posture" ) );
 
 static TOOL_ACTION switchOutlineShape( "pcbnew.InteractiveDrawing.switchOutlineShape",
@@ -1671,6 +1671,18 @@ int DRAWING_TOOL::drawZone( bool aKeepout, ZONE_MODE aMode )
     // hands the calculated points over to the zone creator tool
     POLYGON_GEOM_MANAGER polyGeomMgr( zoneTool );
 
+    auto outlineBuilder = polyGeomMgr.GetOutlineBuilder();
+
+    outlineBuilder->SetAllowedShapeTypes ( { SHT_LINE, SHT_CORNER_90, SHT_CORNER_45 } );
+
+    if( outlineBuilder->IsShapeTypeAllowed( m_outlineShapeType ) )
+    {
+        m_outlineShapeType = SHT_LINE;
+    }
+
+    outlineBuilder->SetShapeType( m_outlineShapeType );
+    outlineBuilder->SetDiagonal( m_outlineShapePosture );
+
     Activate();    // register for events
 
     m_controls->ShowCursor( true );
@@ -1768,9 +1780,9 @@ int DRAWING_TOOL::drawZone( bool aKeepout, ZONE_MODE aMode )
         else if( polyGeomMgr.IsPolygonInProgress()
                  && ( evt->IsMotion() || evt->IsDrag( BUT_LEFT ) ) )
         {
-            polyGeomMgr.SetCursorPosition( cursorPos, evt->Modifier( MD_CTRL )
+            /*polyGeomMgr.SetCursorPosition( cursorPos, evt->Modifier( MD_CTRL )
                                                       ? POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45
-                                                      : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
+                                                      : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );*/
 
             if( polyGeomMgr.IsSelfIntersecting( true ) )
             {
@@ -1783,6 +1795,19 @@ int DRAWING_TOOL::drawZone( bool aKeepout, ZONE_MODE aMode )
                 status.Hide();
             }
         }
+        else if( evt->IsAction( &switchOutlineShape ) )
+        {
+            outlineBuilder->NextShapeType();
+            m_outlineShapeType = outlineBuilder->GetShapeType();
+            polyGeomMgr.SetCursorPosition( cursorPos );
+        }
+        else if( evt->IsAction( &switchOutlinePosture ) )
+        {
+            outlineBuilder->FlipPosture();
+            m_outlineShapePosture = outlineBuilder->IsDiagonal();
+            polyGeomMgr.SetCursorPosition( cursorPos );
+        }
+
     }    // end while
 
     m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );

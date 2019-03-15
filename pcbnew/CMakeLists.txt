@@ -333,7 +333,7 @@ set( PCBNEW_CLASS_SRCS
     tools/pcbnew_control.cpp
     tools/picker_tool.cpp
     tools/placement_tool.cpp
-    tools/point_editor.cpp
+    tools/outline_editor.cpp
     tools/position_relative_tool.cpp
     tools/selection.cpp
     tools/selection_tool.cpp

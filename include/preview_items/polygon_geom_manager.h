@@ -24,7 +24,11 @@
 #ifndef PREVIEW_POLYGON_GEOM_MANAGER__H_
 #define PREVIEW_POLYGON_GEOM_MANAGER__H_
 
+#include <memory>
 #include <geometry/shape_line_chain.h>
+
+class OUTLINE_SHAPE_BUILDER;
+
 
 /**
  * Class that handles the drawing of a polygon, including
@@ -60,15 +64,7 @@ public:
         virtual void OnComplete( const POLYGON_GEOM_MANAGER& aMgr ) = 0;
     };
 
-    /**
-     * The kind of the leader line
-     */
-    enum class LEADER_MODE
-    {
-        DIRECT,     ///> Unconstrained point-to-point
-        DEG45,      ///> 45 Degree only
-    };
-
+    
     /**
      * @param aClient is the client to pass the results onto
      */
@@ -88,12 +84,6 @@ public:
      * Clear the manager state and start again
      */
     void Reset();
-
-    /**
-     * Set the leader mode to use when calculating the leader/returner
-     * lines
-     */
-    void SetLeaderMode( LEADER_MODE aMode );
 
     /**
      * Enables/disables self-intersecting polygons.
@@ -123,7 +113,7 @@ public:
     /**
      * Set the current cursor position
      */
-    void SetCursorPosition( const VECTOR2I& aPos, LEADER_MODE aModifier );
+    void SetCursorPosition( const VECTOR2I& aPos );
 
     /**
      * @return true if the polygon in "in progress", i.e. it has at least
@@ -157,13 +147,13 @@ public:
     /**
      * Get the points comprising the leader line (the line from the
      * last locked-in point to the current cursor position
-     *
-     * How this is drawn will depend on the LEADER_MODE
      */
     const SHAPE_LINE_CHAIN& GetLeaderLinePoints() const
     {
         return m_leaderPts;
     }
+
+    OUTLINE_SHAPE_BUILDER* GetOutlineBuilder() const;
 
 private:
 
@@ -171,14 +161,13 @@ private:
      * Update the leader line points based on a new endpoint (probably
      * a cursor position)
      */
-    void updateLeaderPoints( const VECTOR2I& aEndPoint,
-                             LEADER_MODE aModifier = LEADER_MODE::DIRECT );
+    void updateLeaderPoints( const VECTOR2I& aEndPoint );
 
     ///> The "user" of the polygon data that is informed when the geometry changes
     CLIENT& m_client;
 
-    ///> The current mode of the leader line
-    LEADER_MODE m_leaderMode;
+    ///> Shape builder object
+    std::unique_ptr<OUTLINE_SHAPE_BUILDER> m_shapeBuilder;
 
     ///> Flag enabling self-intersecting polygons
     bool m_intersectionsAllowed;

@@ -39,3 +39,8 @@ const std::string SHAPE::Format() const
     return std::string( "" );
 }
 
+
+    const SHAPE_LINE_CHAIN SHAPE::ConvertToPolyline( bool aWire , int aOffset , double aApproximationAccuracy )
+    {
+        assert(false);
+    }

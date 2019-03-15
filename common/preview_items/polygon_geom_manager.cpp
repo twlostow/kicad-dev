@@ -23,15 +23,16 @@
 
 #include <preview_items/polygon_geom_manager.h>
 
+#include <geometry/outline_shape_builder.h>
 #include <geometry/geometry_utils.h>
-
 
 POLYGON_GEOM_MANAGER::POLYGON_GEOM_MANAGER( CLIENT& aClient ):
     m_client( aClient ),
-    m_leaderMode( LEADER_MODE::DIRECT ),
     m_intersectionsAllowed( true )
-{}
-
+{
+    m_shapeBuilder.reset ( new OUTLINE_SHAPE_BUILDER );
+    m_shapeBuilder->SetShapeType ( SHT_CORNER_45 );
+}
 
 bool POLYGON_GEOM_MANAGER::AddPoint( const VECTOR2I& aPt )
 {
@@ -40,25 +41,30 @@ bool POLYGON_GEOM_MANAGER::AddPoint( const VECTOR2I& aPt )
     if( !IsPolygonInProgress() && !m_client.OnFirstPoint( *this ) )
         return false;
 
-    if( m_leaderPts.PointCount() > 1 )
+    if ( m_lockedPoints.PointCount() == 0 )
     {
-        // there are enough leader points - the next
-        // locked-in point is the end of the first leader
-        // segment
-        m_lockedPoints.Append( m_leaderPts.CPoint( 1 ) );
+        m_lockedPoints.Append ( aPt );
     }
     else
     {
         // no leader lines, directly add the cursor
-        m_lockedPoints.Append( aPt );
-    }
+        updateLeaderPoints( aPt );
 
-    // check for self-intersections
+        if( m_leaderPts.PointCount() > 1 )
+        {
+            // there are enough leader points - the next
+            // locked-in point is the end of the first leader
+            // segment
+            m_lockedPoints.Append( m_leaderPts );
+        }
+    }
+	// fixme
     if( !m_intersectionsAllowed && IsSelfIntersecting( false ) )
     {
         m_lockedPoints.Remove( m_lockedPoints.PointCount() - 1 );
         return false;
     }
+
 
     m_client.OnGeometryChange( *this );
     return true;
@@ -71,12 +77,6 @@ void POLYGON_GEOM_MANAGER::SetFinished()
 }
 
 
-void POLYGON_GEOM_MANAGER::SetLeaderMode( LEADER_MODE aMode )
-{
-    m_leaderMode = aMode;
-}
-
-
 bool POLYGON_GEOM_MANAGER::IsSelfIntersecting( bool aIncludeLeaderPts ) const
 {
     auto pts( m_lockedPoints );
@@ -86,18 +86,18 @@ bool POLYGON_GEOM_MANAGER::IsSelfIntersecting( bool aIncludeLeaderPts ) const
         for( int i = 0; i < m_leaderPts.PointCount(); ++i )
             if( m_leaderPts.CPoint( i ) != pts.CPoint( 0 ) )
                 pts.Append( m_leaderPts.CPoint( i ) );
-    }
+}
 
-    // line chain needs to be set as closed for proper checks
+
     pts.SetClosed( true );
 
     return !!pts.SelfIntersecting();
 }
 
 
-void POLYGON_GEOM_MANAGER::SetCursorPosition( const VECTOR2I& aPos, LEADER_MODE aModifier )
+void POLYGON_GEOM_MANAGER::SetCursorPosition( const VECTOR2I& aPos )
 {
-    updateLeaderPoints( aPos, aModifier );
+    updateLeaderPoints( aPos );
 }
 
 
@@ -117,7 +117,7 @@ void POLYGON_GEOM_MANAGER::DeleteLastCorner()
 {
     if( m_lockedPoints.PointCount() > 0 )
     {
-        m_lockedPoints.Remove( m_lockedPoints.PointCount() - 1 );
+        m_lockedPoints.Remove( -1 );
     }
 
     // update the new last segment (was previously
@@ -140,20 +140,25 @@ void POLYGON_GEOM_MANAGER::Reset()
 }
 
 
-void POLYGON_GEOM_MANAGER::updateLeaderPoints( const VECTOR2I& aEndPoint, LEADER_MODE aModifier )
+void POLYGON_GEOM_MANAGER::updateLeaderPoints( const VECTOR2I& aEndPoint )
 {
-    wxCHECK( m_lockedPoints.PointCount() > 0, /*void*/ );
-    const VECTOR2I& lastPt = m_lockedPoints.CLastPoint();
-    auto newEnd = VECTOR2I( aEndPoint );
+    SHAPE_LINE_CHAIN newChain;
 
-    if( m_leaderMode == LEADER_MODE::DEG45 || aModifier == LEADER_MODE::DEG45 )
+    if ( m_lockedPoints.PointCount() > 0 )
     {
-        const VECTOR2I lineVector( aEndPoint - lastPt );
-        // get a restricted 45/H/V line from the last fixed point to the cursor
-        newEnd = lastPt + GetVectorSnapped45( lineVector );
+        m_shapeBuilder->SetStart( m_lockedPoints.CPoint( -1 ) );
+        m_shapeBuilder->SetEnd( aEndPoint );
+        m_shapeBuilder->Construct( m_leaderPts );
+    }
+    else
+    {
+        m_leaderPts.Append ( aEndPoint );
     }
 
-    // direct segment
-    m_leaderPts = SHAPE_LINE_CHAIN( lastPt, newEnd );
     m_client.OnGeometryChange( *this );
+}
+
+OUTLINE_SHAPE_BUILDER* POLYGON_GEOM_MANAGER::GetOutlineBuilder() const
+{
+    return m_shapeBuilder.get();
 }

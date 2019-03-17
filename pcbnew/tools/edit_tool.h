@@ -220,6 +220,8 @@ private:
     bool changeTrackWidthOnClick( const SELECTION& selection );
     bool pickCopyReferencePoint( VECTOR2I& aP );
 
+    int invokePropertiesDialog( const SELECTION& aSelection );
+
     std::unique_ptr<BOARD_COMMIT> m_commit;
 };
 

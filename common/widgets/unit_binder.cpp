@@ -171,6 +171,29 @@ void UNIT_BINDER::SetValue( int aValue )
     SetValue( StringFromValue( m_units, aValue, false, m_useMils ) );
 }
 
+void UNIT_BINDER::SetValue( boost::optional<int> aValue )
+{
+    if( !aValue )
+    {
+        SetValue( INDETERMINATE );
+        return;
+    }
+
+    SetValue( StringFromValue( m_units, *aValue, false, m_useMils ) );
+}
+
+void UNIT_BINDER::SetValue( boost::optional<double> aValue )
+{
+    if( !aValue )
+    {
+        SetValue( INDETERMINATE );
+        return;
+    }
+
+    SetValue( StringFromValue( m_units, *aValue, false, m_useMils ) );
+}
+
+
 
 void UNIT_BINDER::SetValue( wxString aValue )
 {
@@ -231,6 +254,27 @@ int UNIT_BINDER::GetValue()
         return 0;
 
     return ValueFromString( m_units, value, m_useMils );
+}
+
+double UNIT_BINDER::GetValueDbl()
+{
+    auto textEntry = dynamic_cast<wxTextEntry*>( m_value );
+    auto staticText = dynamic_cast<wxStaticText*>( m_value );
+    wxString value;
+
+    if( textEntry )
+    {
+        if( m_needsEval && m_eval.Process( textEntry->GetValue() ) )
+            value = m_eval.Result();
+        else
+            value = textEntry->GetValue();
+    }
+    else if( staticText )
+        value = staticText->GetLabel();
+    else
+        return 0;
+
+    return DoubleValueFromString( m_units, value, m_useMils );
 }
 
 

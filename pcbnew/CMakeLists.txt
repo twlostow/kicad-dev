@@ -104,6 +104,10 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_push_pad_properties_base.cpp
     dialogs/dialog_graphic_item_properties.cpp
     dialogs/dialog_graphic_item_properties_base.cpp
+    dialogs/dialog_graphic_arc_properties.cpp
+    dialogs/dialog_graphic_arc_properties_base.cpp
+    dialogs/dialog_graphic_segment_properties.cpp
+    dialogs/dialog_graphic_segment_properties_base.cpp
     dialogs/dialog_import_settings.cpp
     dialogs/dialog_import_settings_base.cpp
     dialogs/dialog_keepout_area_properties.cpp

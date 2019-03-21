@@ -78,7 +78,23 @@ bool SHAPE_ARC::Collide( const SEG& aSeg, int aClearance ) const
     return true;
 }
 
+bool SHAPE_ARC::ConstructFromCenterAndCorners( VECTOR2I aP0, VECTOR2I aP1, VECTOR2D aCenter )
+{
+    m_pc = aCenter;
+    m_p0 = aP0;
 
+    VECTOR2D d0 = m_p0 - m_pc;
+    VECTOR2D d1 = aP1 - m_pc;
+
+    auto a0 = atan2( d0.y, d0.x );
+    auto a1 = atan2( d1.y, d1.x );
+
+    m_centralAngle = (a1 - a0) * 180.0 / M_PI;
+    if( m_centralAngle < 0.0 )
+        m_centralAngle += 360.0;
+
+    return true;
+}
 
 bool SHAPE_ARC::ConstructFromCorners( VECTOR2I aP0, VECTOR2I aP1, double aCenterAngle )
 {

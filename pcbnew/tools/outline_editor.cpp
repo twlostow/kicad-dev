@@ -256,25 +256,29 @@ GS_ITEM* OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
             {
             auto s = new GS_SEGMENT( ds->GetStart(), ds->GetEnd() );
             s->SetParent( aItem );
-            //s->SetPrimary( aPrimary );
+            s->SetPrimary( aPrimary );
 
             /*if( ds->GetUserFlags() & DSF_CONSTRAIN_LENGTH )
-                s->Constrain( CS_LENGTH, true );
+                s->Constrain( CS_LENGTH, true );*/
 
             if( ds->GetUserFlags() & DSF_CONSTRAIN_DIRECTION )
-                s->Constrain( CS_DIRECTION, true );*/
+            {
+                printf("Fixed Direction!\n");
+                s->AddConstraint( new GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION ( s ) );
+            }
 
             m_solver->Add( s );
             return s;
             break;
             }
+
             case S_ARC:
             {
-                //auto s = new GS_ARC( ds->GetArcStart(), ds->GetArcEnd(), ds->GetCenter() );
-                //s->SetParent( aItem );
-                //s->SetPrimary( aPrimary );
+                auto s = new GS_ARC( ds->GetArcStart(), ds->GetArcEnd(), ds->GetCenter() );
+                s->SetParent( aItem );
+                s->SetPrimary( aPrimary );
 
-                /*if( ds->GetUserFlags() & DSF_CONSTRAIN_START_ANGLE )
+            /*    if( ds->GetUserFlags() & DSF_CONSTRAIN_START_ANGLE )
                     s->Constrain( CS_START_ANGLE, true );
 
                 if( ds->GetUserFlags() & DSF_CONSTRAIN_CENTRAL_ANGLE )
@@ -283,10 +287,11 @@ GS_ITEM* OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
                 if( ds->GetUserFlags() & DSF_CONSTRAIN_RADIUS )
                     s->Constrain( CS_RADIUS, true );*/
 
-                //printf("Add ARC!\n");
 
-                //m_solver->Add( s );
 
+                m_solver->Add( s );
+
+                return s;
                 break;
 
             }
@@ -401,13 +406,15 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
     updateOutline();
 
-
     view()->Hide( &selection );
+    //view()->Hide( m_geomPreview.get() );
 
     for( auto item : m_solver->Items() )
+    {
+        printf("VHide %p %d\n", item, item->IsPrimary()? 1 : 0 );
         if( item->IsPrimary() )
            view()->Hide( item->GetParent() );
-
+    }
 
 
     bool modified = false;
@@ -431,7 +438,8 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
             }
 
 
-            printf("MOVE!\n");
+            printf("MOVE [%p]!\n", m_editedAnchor );
+            //m_solver->Revert();
             m_solver->MoveAnchor( m_editedAnchor, controls()->GetCursorPosition() );
             m_solver->Run();
 
@@ -483,7 +491,7 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
     }
 
     for( auto item : m_solver->Items() )
-        //if( item->IsPrimary() )
+        if( item->IsPrimary() )
             view()->Hide( item->GetParent(), false );
 
     view()->Remove( m_geomPreview.get() );

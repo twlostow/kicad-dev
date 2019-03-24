@@ -284,10 +284,10 @@ class PCB_PARSER : public PCB_LEXER
         return parseInt();
     }
 
-    inline long parseHex()
+    inline uint64_t parseHex()
     {
         NextTok();
-        return strtol( CurText(), NULL, 16 );
+        return strtoull( CurText(), NULL, 16 );
     }
 
     bool parseBool();

@@ -104,7 +104,7 @@ public:
 
     void SetDisplacement( const VECTOR2D& aV )
     {
-        printf("SetDisplace %p %.1f %.1f\n", this, aV.x, aV.y );
+        //printf("SetDisplace %p %.1f %.1f\n", this, aV.x, aV.y );
         m_displacement = aV;
         m_hasDisplacement = true;
     }
@@ -116,7 +116,7 @@ public:
 
     void Link( GS_ITEM *aItem )
     {
-        printf("anchor %p link %p\n", this, aItem );
+        //printf("anchor %p link %p\n", this, aItem );
         m_linkedItems.push_back(aItem);
     }
 
@@ -215,6 +215,8 @@ class GS_CONSTRAINT : public LM_SOLVABLE {
         GS_CONSTRAINT( GS_ITEM* aParent ) : m_parent ( aParent ) {};
         virtual ~GS_CONSTRAINT() {};
 
+        GS_ITEM *GetParent() const { return m_parent; }
+
     protected:
 
         GS_ITEM *m_parent;
@@ -240,12 +242,28 @@ private:
 
 };
 
+static inline bool anchorsEqual( const GS_ANCHOR *a, const GS_ANCHOR *b )
+{
+    const double epsilon = 10.0;
+
+    if( a->IsSolvable() != b->IsSolvable() )
+        return false;
+
+    if (fabs( a->GetPos().x - b->GetPos().x ) > epsilon)
+        return false;
+    if (fabs( a->GetPos().y - b->GetPos().y ) > epsilon)
+        return false;
+
+    return true;
+}
+
+
 class GS_SOLVER
 {
     struct COMPARE_ANCHORS;
 
 public:
-    typedef std::set<GS_ANCHOR*, COMPARE_ANCHORS> ANCHOR_SET;
+    typedef std::vector<GS_ANCHOR*> ANCHOR_SET;
 
     GS_SOLVER(){};
     ~GS_SOLVER(){};
@@ -266,14 +284,17 @@ public:
         auto a = new GS_ANCHOR( aPos, aSolvable );
 
 
-        auto it = m_anchors.insert( a );
-        //printf( "createAnchor %d %d %d %p %d\n", (int) aPos.x, (int) aPos.y, !!aSolvable,
-        //            &( *it.first ), !!it.second );
-
-        if( *it.first != a )
-            delete a;
-
-        return ( *it.first );
+        for (auto a2 : m_anchors)
+        {
+            if( anchorsEqual( a, a2 ) )
+            {
+                delete a;
+                return a2;
+            }
+        }
+        
+        m_anchors.push_back(a);
+        return a;
     }
 
     int GetAnchorCount() const
@@ -293,7 +314,7 @@ public:
 
     void MoveAnchor( GS_ANCHOR* aAnchor, const VECTOR2D& aNewPos )
     {
-        printf("movea %p %.0f %.0f\n", aAnchor, aNewPos.x, aNewPos.y );
+        //printf("movea %p %.0f %.0f\n", aAnchor, aNewPos.x, aNewPos.y );
         aAnchor->SetDisplacement( aNewPos - aAnchor->GetOriginPos() );
     }
     
@@ -311,18 +332,21 @@ public:
 
     std::vector<GS_ITEM*>& Items() { return m_items; }
 private:
+    #if 0
     struct COMPARE_ANCHORS
     {
         bool operator()( const GS_ANCHOR* a, const GS_ANCHOR* b ) const
         {
+            bool equal = anchorsEqual( a, b);
+
             auto c = LexicographicalCompare( a->m_pos, b->m_pos );
             //printf("comp %p %p %d %d %d %d %d %d -> %d\n", a, b, (int)a->m_pos.x, (int)a->m_pos.y, (int)b->m_pos.x, (int)b->m_pos.y, !!a->m_solvable, !!b->m_solvable, c  );
             if( a->m_solvable && b->m_solvable )
             {
-                if( !c )
+                if( !c || equal )
                     return false;
 
-                return c < 0;
+            return c < 0;
             }
             else
             {
@@ -332,6 +356,7 @@ private:
             }
         }
     };
+    #endif
 
     //GS_ANCHOR **m_anchorMap;
     std::unique_ptr<LM_SOLVER> m_solver;
@@ -359,7 +384,7 @@ class GS_NULL_CONSTRAINT : public GS_CONSTRAINT
         
         if ( !m_anchor->HasDisplacement() )
         {
-            printf("NullC [%p] no Disp\n", this );
+            //printf("NullC [%p] no Disp\n", this );
             x[0] = x[1] = 0.0;
             return;
         }
@@ -367,7 +392,7 @@ class GS_NULL_CONSTRAINT : public GS_CONSTRAINT
         auto newpos = m_anchor->GetOriginPos() + m_anchor->GetDisplacement();
         //printf("****** anchor %p \n", m_anchor );
 
-        printf("NullC [%p] func %.0f %.0f curpos %.0f %.0f\n", this, newpos.x, newpos.y, m_anchor->GetPos().x, m_anchor->GetPos().y);
+        //printf("NullC [%p] func %.0f %.0f curpos %.0f %.0f\n", this, newpos.x, newpos.y, m_anchor->GetPos().x, m_anchor->GetPos().y);
         
 
         x[0] = newpos.x - m_anchor->GetPos().x;
@@ -379,7 +404,7 @@ class GS_NULL_CONSTRAINT : public GS_CONSTRAINT
     {
         int idx = m_anchor->LmGetIndex();
 
-        printf("%p LMDFunc [eqn %d, idx %d]\n", this, equationIndex, idx );
+        //printf("%p LMDFunc [eqn %d, idx %d]\n", this, equationIndex, idx );
 
         if ( !m_anchor->HasDisplacement() )
         {
@@ -533,7 +558,7 @@ public:
         auto d_new = (a1->GetPos() - a0->GetPos()).EuclideanNorm();
         auto d_old = (a1->GetOriginPos() - a0->GetOriginPos()).EuclideanNorm();
 
-        printf("a0 : %.2f %.2f a1 %.2f %.2f\n", a0->GetPos().x, a0->GetPos().y, a1->GetPos().x, a1->GetPos().y );
+        //printf("a0 : %.2f %.2f a1 %.2f %.2f\n", a0->GetPos().x, a0->GetPos().y, a1->GetPos().x, a1->GetPos().y );
 
         double error = d_old - d_new;
         //printf("----------- d_new %.10f %.10f d_old %.10f %.10f err %.10f\n", d_new.x, d_new.y, d_old.x, d_old.y, error);
@@ -572,15 +597,13 @@ public:
 
 class GS_CONSTRAINT_ARC_FIXED_ANGLES : public GS_CONSTRAINT
 {
-  GS_CONSTRAINT_ARC_FIXED_ANGLES( GS_ARC* aArc ) : GS_CONSTRAINT( aArc ) { 
+    GS_CONSTRAINT_ARC_FIXED_ANGLES( GS_ARC* aArc ) : GS_CONSTRAINT( aArc ) {
+    };
 
-
-  };
-
-  virtual int LmGetEquationCount()
-  {
-    return 2;
-  }
+    virtual int LmGetEquationCount()
+    {
+        return 2;
+    }
 
   virtual void LmFunc( double *x )
   {

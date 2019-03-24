@@ -51,7 +51,7 @@ const LAYER_NUM GAL_LAYER_ORDER[] =
     LAYER_DRC,
     LAYER_SELECT_OVERLAY,
     LAYER_PADS_NETNAMES, LAYER_VIAS_NETNAMES,
-    Dwgs_User, Cmts_User, Eco1_User, Eco2_User, Edge_Cuts,
+    Dwgs_User, Cmts_User, Eco1_User, Eco2_User, Edge_Cuts, 
 
     LAYER_MOD_TEXT_FR,
     LAYER_MOD_REFERENCES, LAYER_MOD_VALUES,
@@ -62,7 +62,7 @@ const LAYER_NUM GAL_LAYER_ORDER[] =
     LAYER_VIA_MICROVIA, LAYER_PADS_TH,
 
     LAYER_PAD_FR_NETNAMES, LAYER_PAD_FR,
-    NETNAMES_LAYER_INDEX( F_Cu ), F_Cu, F_Mask, F_SilkS, F_Paste, F_Adhes,
+    NETNAMES_LAYER_INDEX( F_Cu ), F_Cu, F_Mask, F_SilkS, F_Paste, F_Adhes, F_CrtYd, F_Fab,
 
     NETNAMES_LAYER_INDEX( In1_Cu ),   In1_Cu,
     NETNAMES_LAYER_INDEX( In2_Cu ),   In2_Cu,
@@ -96,7 +96,7 @@ const LAYER_NUM GAL_LAYER_ORDER[] =
     NETNAMES_LAYER_INDEX( In30_Cu ),  In30_Cu,
 
     LAYER_PAD_BK_NETNAMES, LAYER_PAD_BK,
-    NETNAMES_LAYER_INDEX( B_Cu ), B_Cu, B_Mask, B_Adhes, B_Paste, B_SilkS,
+    NETNAMES_LAYER_INDEX( B_Cu ), B_Cu, B_Mask, B_Adhes, B_Paste, B_SilkS, B_CrtYd, B_Fab,
 
     LAYER_MOD_TEXT_BK,
     LAYER_WORKSHEET

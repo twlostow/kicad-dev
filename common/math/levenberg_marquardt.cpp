@@ -44,6 +44,7 @@ void LM_SOLVER::evaluateJacobian( double* params, double* jac, int m, int n, voi
 
     for( auto param : self->m_params )
     {
+        //printf("** Set Param %p\n", param );
         for( int i = 0; i < param->LmGetDimension(); i++ )
         {
             param->LmSetValue( i, params[pindex] );
@@ -55,7 +56,7 @@ void LM_SOLVER::evaluateJacobian( double* params, double* jac, int m, int n, voi
 
     for( auto eqn : self->m_equations )
     {
-        printf( "** Do eqn %p [%d]\n", eqn, eqn->LmGetEquationCount() );
+        //printf( "** Do eqn %p [%d]\n", eqn, eqn->LmGetEquationCount() );
 
         for( int p = 0; p < eqn->LmGetEquationCount(); p++ )
         {
@@ -105,7 +106,7 @@ bool LM_SOLVER::Solve()
         }
     }
 
-    printf( "Solve: params %d meas %d\n", m_m, m_n );
+    //printf( "Solve[%p]: params %d meas %d\n", this, m_m, m_n );
 
     for( int i = 0; i < m_n; i++ )
         x_vec[i] = 0.0;
@@ -119,7 +120,7 @@ bool LM_SOLVER::Solve()
 
     if( rv < 0 )
     {
-        printf( "Solve failed.\n" );
+      //  printf( "Solve failed.\n" );
         rv = false;
     }
     else
@@ -132,7 +133,7 @@ bool LM_SOLVER::Solve()
             for( int i = 0; i < param->LmGetDimension(); i++ )
             {
                 param->LmSetValue( i, p_vec[pindex] );
-                printf( "Param %d: %.10f %.10f\n", pindex, p_vec[pindex], param->LmGetValue( i ) );
+                //printf( "Param %d: %.10f %.10f\n", pindex, p_vec[pindex], param->LmGetValue( i ) );
                 pindex++;
             }
         }

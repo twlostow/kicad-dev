@@ -178,6 +178,17 @@ public:
             if( !item->IsPrimary() )
                 continue;
 
+            auto bb = item->GetParent()->ViewBBox();
+
+            gal->SetIsFill(false);
+            gal->SetIsStroke( true );
+
+            gal->DrawRectangle( bb.GetPosition(), bb.GetEnd() );
+
+            gal->SetIsFill( true );
+            gal->SetIsStroke( false );
+
+
             for( auto anchor : item->GetAnchors() )
             {
                 //if( anchor->IsSolvable() )
@@ -456,7 +467,7 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
                     BOARD_COMMIT commit( this );
 
                     for( auto item : m_solver->Items() )
-                        //if( item->IsPrimary() )
+                        if( item->IsPrimary() )
                         {
                             commit.Modify( item->GetParent() );
                             commitToBoardItem( item, item->GetParent() );
@@ -545,7 +556,7 @@ void OUTLINE_EDITOR::updateEditedAnchor( const TOOL_EVENT& aEvent )
         anchor = m_solver->FindAnchor( aEvent.DragOrigin(), snapRadius );
     }
 
-    printf("upd %p\n", anchor);
+    //printf("upd %p\n", anchor);
 
     if( m_editedAnchor != anchor )
         setEditedAnchor( anchor );
@@ -553,7 +564,7 @@ void OUTLINE_EDITOR::updateEditedAnchor( const TOOL_EVENT& aEvent )
 
 int OUTLINE_EDITOR::modifiedSelection( const TOOL_EVENT& aEvent )
 {
-    printf("ModifiedSEL[outl]!\n");
+    //printf("ModifiedSEL[outl]!\n");
     updateOutline();
     return 0;
 }

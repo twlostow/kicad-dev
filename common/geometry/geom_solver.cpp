@@ -1,17 +1,17 @@
 #include <cmath>
 #include <cstdio>
+#include <deque>
 #include <memory>
 #include <set>
 #include <vector>
-#include <deque>
 
 #include <wx/wx.h>
 
 #include <math/vector2d.h>
 
+#include <geometry/geom_solver.h>
 #include <geometry/point_set.h>
 #include <geometry/seg.h>
-#include <geometry/geom_solver.h>
 
 
 void GS_SOLVER::Add( GS_ITEM* aItem )
@@ -22,31 +22,31 @@ void GS_SOLVER::Add( GS_ITEM* aItem )
 
 static int mround( double x )
 {
-    return (int)floor(x+0.5);
+    return (int) floor( x + 0.5 );
 }
 
 bool GS_SOLVER::Run()
 {
- //   printf("LM: %d equations, %d parameters\n", equationCount, pindex );
+    //   printf("LM: %d equations, %d parameters\n", equationCount, pindex );
 
     LM_SOLVER solver( 1000 );
 
-    
-    printf("Solver: Anchors: %d constraints %d\n", m_anchors.size(), m_constraints.size() );
+
+    //printf("Solver: Anchors: %d constraints %d\n", m_anchors.size(), m_constraints.size() );
 
     m_constraints.clear();
 
-   
+
     for( auto item : m_items )
     {
         for( auto c : item->Constraints() )
         {
-            m_constraints.push_back(c);
+            m_constraints.push_back( c );
         }
     }
 
-    
-   /*for( auto a : GetAnchors() )
+
+    /*for( auto a : GetAnchors() )
     {
         if( a->IsSolvable() )
         {
@@ -59,23 +59,38 @@ bool GS_SOLVER::Run()
 
     for( auto constraint : m_constraints )
     {
-        solver.AddSolvable( constraint );
+        //printf("** add constraint %p\n", constraint );
+        if( constraint->GetParent()->IsPrimary() )
+        {
+            solver.AddSolvable( constraint );
+        }
     }
 
-    for ( auto anchor : m_anchors )
+    for( auto anchor : m_anchors )
     {
-        printf("Proicess anchor %p\n", anchor );
-        if ( anchor->IsSolvable() && anchor->GetParent()->IsPrimary() )
+        //    printf("** test anchor %p solv %d prim %d\n", anchor,  !!anchor->IsSolvable(), !!anchor->GetParent()->IsPrimary() );
+
+        if( anchor->IsSolvable() && anchor->GetParent()->IsPrimary() )
+        {
+            printf( "** add anchor %p %.3f %.3f, parent %p type %d\n", anchor, anchor->GetPos().x,
+                    anchor->GetPos().y, anchor->GetParent(), anchor->GetParent()->Type() );
+            auto parent = anchor->GetParent();
+
+            for( auto pa : parent->GetAnchors() )
+            {
+                //        printf("      -> parent %p parent-anchor %p anchor-parent %p\n", parent, pa, pa->GetParent() );
+            }
             solver.AddParameter( anchor );
+        }
     }
 
     for( auto a : m_anchors )
     {
 
-        printf("****** %d %d \n", solver.GetSolvableCount(), solver.GetParameterCount() * 2 ); // fixme
+        //printf("****** %d %d \n", solver.GetSolvableCount(), solver.GetParameterCount() * 2 ); // fixme
         if( a->IsSolvable() && a->GetParent()->IsPrimary() )
         {
-            printf("Create null constraint for %p\n", a );
+            //            printf("** create null constraint for %p\n", a );
 
             solver.AddSolvable( new GS_NULL_CONSTRAINT( a ) );
 
@@ -90,7 +105,7 @@ bool GS_SOLVER::Run()
     for( auto item : m_items )
         item->SyncAnchors();
 
-    printf("Solver: %d\n", !!m_resultOK );
+    //  printf("Solver: %d\n", !!m_resultOK );
 
     return m_resultOK;
 }
@@ -146,63 +161,71 @@ static void solve_parallel()
 }
 
 
-
 #endif
 
-void GS_SOLVER::FindOutlines( GS_ITEM *rootItem )
+void GS_SOLVER::FindOutlines( GS_ITEM* rootItem )
 {
-    std::deque<GS_ANCHOR*>  Q;
-    std::set<GS_ANCHOR*>    processed;
+    std::deque<GS_ANCHOR*> Q;
+    std::set<GS_ANCHOR*>   processed;
     std::set<GS_ITEM*> outlineItems;
 
-    outlineItems.insert(rootItem);
+    outlineItems.insert( rootItem );
+
+    printf( "FindOutlines: %d anchors\n", m_anchors.size() );
+
+    for( auto a : m_anchors )
+    {
+        if( a->IsSolvable() )
+            printf( "- a %.3f %.3f owner %p\n", a->GetPos().x, a->GetPos().y, a->GetParent() );
+    }
 
     for( auto item : m_items )
     {
-        item->SetPrimary ( false );
+        item->SetPrimary( false );
     }
 
     for( auto a : rootItem->GetAnchors() )
     {
         Q.push_back( a );
-     //   processed.insert( a );
     }
 
-    printf("FindOutlines: init Q %d\n", Q.size() );
+    printf( "FindOutlines: init Q %d\n", Q.size() );
 
     while( !Q.empty() )
     {
         auto current = Q.front();
         Q.pop_front();
+        processed.insert( current );
 
-        auto scanLinks = [&] ( GS_ANCHOR* anchor )
+        for( const auto litem : current->CLinkedItems() )
         {
-            processed.insert( anchor );
+            printf( "scan link %p\n", litem );
+            bool match = false;
+            outlineItems.insert( litem );
 
-            printf("scan anchor %p\n", anchor);
-            for( const auto litem : anchor->CLinkedItems() )
+            for( auto ll : litem->GetAnchors() )
             {
-                printf("scan link %p\n", litem);
+                if( anchorsEqual( ll, current ) )
+                {
+                    match = true;
+                    break;
+                }
+            }
+
+            if( match )
+            {
                 for( auto ll : litem->GetAnchors() )
                 {
-                    printf("scan la %p\n", ll);
-                    if( processed.find( ll ) != processed.end() )
+                    if( processed.find( ll ) == processed.end() )
                     {
-                                     printf("Scan %p\n", ll);
-                                     processed.insert( ll );
-                                     Q.push_back( ll );
-                                     outlineItems.insert( litem );
-                                 }
-                             }
-                         };
-        };
-
-        for(auto anchor : m_anchors )
-            if( anchor->GetPos() ==  current->GetPos() && (processed.find(anchor) == processed.end() ) )
-                scanLinks (anchor);
+                        Q.push_back( ll );
+                    }
+                }
+            }
+        }
     }
-
-    for( auto item : outlineItems )
+    
+    for( auto item : outlineItems  )
     {
         item->SetPrimary( true );
     }
@@ -223,7 +246,7 @@ GS_ANCHOR* GS_SOLVER::FindAnchor( VECTOR2D pos, double snapRadius )
     {
         auto d = anchor->GetPos() - pos;
 
-        printf( "d %d %d\n", d.x, d.y );
+        //printf( "d %d %d\n", d.x, d.y );
 
         if( abs( d.x ) <= snapRadius && abs( d.y ) <= snapRadius )
             return anchor;

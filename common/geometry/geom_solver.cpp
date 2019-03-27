@@ -29,7 +29,7 @@ bool GS_SOLVER::Run()
 {
     //   printf("LM: %d equations, %d parameters\n", equationCount, pindex );
 
-    LM_SOLVER solver( 1000 );
+    LM_SOLVER solver;
 
 
     //printf("Solver: Anchors: %d constraints %d\n", m_anchors.size(), m_constraints.size() );
@@ -62,7 +62,7 @@ bool GS_SOLVER::Run()
         //printf("** add constraint %p\n", constraint );
         if( constraint->GetParent()->IsPrimary() )
         {
-            solver.AddSolvable( constraint );
+            solver.AddEquation( constraint );
         }
     }
 
@@ -87,14 +87,14 @@ bool GS_SOLVER::Run()
     for( auto a : m_anchors )
     {
 
-        //printf("****** %d %d \n", solver.GetSolvableCount(), solver.GetParameterCount() * 2 ); // fixme
-        if( a->IsSolvable() && a->GetParent()->IsPrimary() )
+        //printf("****** %d %d \n", solver.GetEquationCount(), solver.GetParameterCount() * 2 ); // fixme
+        if( a->IsSolvable() && a->GetParent()->IsPrimary() && a->IsMoved() )
         {
-            //            printf("** create null constraint for %p\n", a );
+                        printf("** create null constraint for %p\n", a );
 
-            solver.AddSolvable( new GS_NULL_CONSTRAINT( a ) );
+            solver.AddEquation( new GS_NULL_CONSTRAINT( a ) );
 
-            if( solver.GetSolvableCount() >= solver.GetParameterCount() * 2 )
+            if( solver.GetEquationCount() >= solver.GetParameterCount() * 2 )
                 break;
         }
     }

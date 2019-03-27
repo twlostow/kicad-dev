@@ -71,6 +71,11 @@ public:
         return (index == 0 ? m_pos.x : m_pos.y );
     }
 
+    virtual double LmGetInitialValue( int index ) override
+    {
+        return (index == 0 ? m_originPos.x : m_originPos.y );
+    }
+
     const VECTOR2D& GetPos() const
     {
         return m_pos;
@@ -209,7 +214,7 @@ protected:
 };
 
 
-class GS_CONSTRAINT : public LM_SOLVABLE {
+class GS_CONSTRAINT : public LM_EQUATION {
 
     public:
         GS_CONSTRAINT( GS_ITEM* aParent ) : m_parent ( aParent ) {};
@@ -332,31 +337,7 @@ public:
 
     std::vector<GS_ITEM*>& Items() { return m_items; }
 private:
-    #if 0
-    struct COMPARE_ANCHORS
-    {
-        bool operator()( const GS_ANCHOR* a, const GS_ANCHOR* b ) const
-        {
-            bool equal = anchorsEqual( a, b);
 
-            auto c = LexicographicalCompare( a->m_pos, b->m_pos );
-            //printf("comp %p %p %d %d %d %d %d %d -> %d\n", a, b, (int)a->m_pos.x, (int)a->m_pos.y, (int)b->m_pos.x, (int)b->m_pos.y, !!a->m_solvable, !!b->m_solvable, c  );
-            if( a->m_solvable && b->m_solvable )
-            {
-                if( !c || equal )
-                    return false;
-
-            return c < 0;
-            }
-            else
-            {
-                if( c != 0 )
-                    return c < 0;
-                return a->m_index < b->m_index;
-            }
-        }
-    };
-    #endif
 
     //GS_ANCHOR **m_anchorMap;
     std::unique_ptr<LM_SOLVER> m_solver;
@@ -470,9 +451,13 @@ public:
 
     GS_ARC( const VECTOR2I& start, const VECTOR2I& end, const VECTOR2I& center ) : GS_ITEM( 3, GST_ARC )
     {
-        m_arc.ConstructFromCenterAndCorners( start, end, center );
+        Update( start, end, center );
     }
 
+    void Update( const VECTOR2I& start, const VECTOR2I& end, const VECTOR2I& center )
+    {
+        m_arc.ConstructFromCenterAndCorners( start, end, center );
+    }
 
     virtual void CreateAnchors( GS_SOLVER* aSolver ) override
     {
@@ -597,22 +582,103 @@ public:
 
 class GS_CONSTRAINT_ARC_FIXED_ANGLES : public GS_CONSTRAINT
 {
+public:
     GS_CONSTRAINT_ARC_FIXED_ANGLES( GS_ARC* aArc ) : GS_CONSTRAINT( aArc ) {
     };
 
     virtual int LmGetEquationCount()
     {
-        return 2;
+        return 4;
     }
 
-  virtual void LmFunc( double *x )
-  {
+    virtual void LmFunc( double *x )
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+        auto a2 = m_parent->Anchor(2);
+        
+        auto p0_orig = a0->GetOriginPos();
+        auto p1_orig = a1->GetOriginPos();
+        auto pc_orig = a2->GetOriginPos();
 
-  }
+        VECTOR2D d0_orig = p0_orig - pc_orig;
+        VECTOR2D d1_orig = p1_orig - pc_orig;
+
+        auto a0_orig = atan2( d0_orig.y, d0_orig.x ) * 180.0 / M_PI;
+        auto a1_orig = atan2( d1_orig.y, d1_orig.x ) * 180.0 / M_PI;
+
+        auto p0_cur = a0->GetPos();
+        auto p1_cur = a1->GetPos();
+        auto pc_cur = a2->GetPos();
+
+        VECTOR2D d0_cur = p0_cur - pc_cur;
+        VECTOR2D d1_cur = p1_cur - pc_cur;
+
+        auto a0_cur = atan2( d0_cur.y, d0_cur.x ) * 180.0 / M_PI;
+        auto a1_cur = atan2( d1_cur.y, d1_cur.x ) * 180.0 / M_PI;
+
+        printf("d0_cur %.1f %.1f d1_cur %.1f %.1f\n", d0_cur.x, d0_cur.y, d1_cur.x, d1_cur.y );
+        printf("a0_orig %.1f a1 %.1f cur %.1f %.1f\n", a0_orig, a1_orig, a0_cur, a1_cur );
+
+        //double l0x_cur = d0_cur.x * d0_cur.x + d0_cur.y * d0_cur.y;
+        //double l1y_cur = d1_cur.x * d1_cur.x + d1_cur.y * d1_cur.y;
+
+        x[0] = a0_orig - a0_cur;
+        x[1] = a1_orig - a1_cur;
+        x[2] = d0_orig.x - d0_cur.x - d1_orig.x + d1_cur.x;
+        x[3] = d0_orig.y - d0_cur.y - d1_orig.y + d1_cur.y;
+
+    }
+
+    static double pow2( double x )
+    {
+        return x*x;
+    }
 
   virtual void LmDFunc( double *dx, int equationIndex )
   {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+        auto a2 = m_parent->Anchor(2);
+        
+        auto p0_cur = a0->GetPos();
+        auto p1_cur = a1->GetPos();
+        auto pc_cur = a2->GetPos();
 
+      if( equationIndex == 0 )
+      {
+        // d(a0) / d(coordinate)
+            dx[ a0->LmGetIndex() ] = -180.0*(-p0_cur.y + pc_cur.y)/(M_PI*(pow2(p0_cur.x - pc_cur.x) + pow2(p0_cur.y - pc_cur.y)));
+            dx[ a0->LmGetIndex() + 1 ] = -180.0*(p0_cur.x - pc_cur.x)/(M_PI*(pow2(p0_cur.x - pc_cur.x) + pow2(p0_cur.y - pc_cur.y)));
+            dx[ a1->LmGetIndex() ] = 0.0;
+            dx[ a1->LmGetIndex() + 1 ] = 0.0;
+            dx[ a2->LmGetIndex() ] = 180.0*(-p0_cur.y + pc_cur.y)/(M_PI*(pow2(p0_cur.x - pc_cur.x) + pow2(p0_cur.y - pc_cur.y)));
+            dx[ a2->LmGetIndex() + 1] = 180.0*(p0_cur.x - pc_cur.x)/(M_PI*(pow2(p0_cur.x - pc_cur.x) + pow2(p0_cur.y - pc_cur.y)));
+      } else if (equationIndex == 1) {
+          // d(a1) / d(coordinate)
+            dx [ a0->LmGetIndex() ] = 0.0;
+            dx [ a0->LmGetIndex() + 1 ] = 0.0;
+            dx [ a1->LmGetIndex() ] =-180.0*(-p1_cur.y + pc_cur.y)/(M_PI*(pow2(p1_cur.x - pc_cur.x) + pow2(p1_cur.y - pc_cur.y)));
+            dx [ a1->LmGetIndex() + 1 ] = -180.0*(p1_cur.x - pc_cur.x)/(M_PI*(pow2(p1_cur.x - pc_cur.x) + pow2(p1_cur.y - pc_cur.y)));
+            dx [ a2->LmGetIndex() ] = 180.0*(-p1_cur.y + pc_cur.y)/(M_PI*(pow2(p1_cur.x - pc_cur.x) + pow2(p1_cur.y - pc_cur.y)));
+            dx [ a2->LmGetIndex() + 1 ] = 180.0*(p1_cur.x - pc_cur.x)/(M_PI*(pow2(p1_cur.x - pc_cur.x) + pow2(p1_cur.y - pc_cur.y)));
+
+      } else if (equationIndex == 2) {
+            dx [ a0->LmGetIndex() ] = -1.0;
+            dx [ a0->LmGetIndex() + 1 ] = 0.0;
+            dx [ a1->LmGetIndex() ] = 1.0;
+            dx [ a1->LmGetIndex() + 1 ] = 0.0;
+            dx [ a2->LmGetIndex() ] = 0.0;
+            dx [ a2->LmGetIndex() + 1 ] = 0.0;
+      } else {
+            dx [ a0->LmGetIndex() ] = 0.0;
+            dx [ a0->LmGetIndex() + 1 ] = -1.0;
+            dx [ a1->LmGetIndex() ] = 0.0;
+            dx [ a1->LmGetIndex() + 1 ] = 1.0;
+            dx [ a2->LmGetIndex() ] = 0.0;
+            dx [ a2->LmGetIndex() + 1 ] = 0.0;
+
+      }
   }
 
 };

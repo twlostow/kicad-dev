@@ -393,14 +393,6 @@ set( COMMON_SRCS
     math/math_util.cpp
     math/levenberg_marquardt.cpp
 
-    math/levmar-2.6/lm.c
-    math/levmar-2.6/Axb.c
-    math/levmar-2.6/misc.c
-    math/levmar-2.6/lmlec.c
-    math/levmar-2.6/lmbc.c
-    math/levmar-2.6/lmblec.c
-    math/levmar-2.6/lmbleic.c
-
     tool/action_manager.cpp
     tool/action_menu.cpp
     tool/action_toolbar.cpp

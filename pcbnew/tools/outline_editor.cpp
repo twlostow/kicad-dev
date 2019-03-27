@@ -93,10 +93,13 @@ static void commitToBoardItem( const GS_ITEM* aItem, BOARD_ITEM *aBoardItem )
             auto s = static_cast<DRAWSEGMENT*> ( aBoardItem );
             auto gs = static_cast<const GS_ARC*> ( aItem );
 
+            SHAPE_ARC arc;
+            arc.ConstructFromCenterAndCorners( gs->CAnchor(0)->GetPos(),gs->CAnchor(1)->GetPos(),gs->CAnchor(2)->GetPos());
+
             s->SetShape( S_ARC );
-            s->SetArcStart( (wxPoint) gs->GetArc().GetP0() );
-            s->SetCenter( (wxPoint) gs->GetArc().GetCenter() );
-            s->SetAngle( gs->GetArc().GetCentralAngle() * 10.0);
+            s->SetArcStart( (wxPoint) arc.GetP0() );
+            s->SetCenter( (wxPoint) arc.GetCenter() );
+            s->SetAngle( arc.GetCentralAngle() * 10.0);
 
         break;
         }
@@ -288,6 +291,8 @@ GS_ITEM* OUTLINE_EDITOR::addToSolver( BOARD_ITEM* aItem, bool aPrimary )
                 auto s = new GS_ARC( ds->GetArcStart(), ds->GetArcEnd(), ds->GetCenter() );
                 s->SetParent( aItem );
                 s->SetPrimary( aPrimary );
+
+                s->AddConstraint( new GS_CONSTRAINT_ARC_FIXED_ANGLES ( s ) );
 
             /*    if( ds->GetUserFlags() & DSF_CONSTRAIN_START_ANGLE )
                     s->Constrain( CS_START_ANGLE, true );

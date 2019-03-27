@@ -1,17 +1,46 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2018-2019 CERN
+ * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 #ifndef __LEVENBERG_MARQUARDT_H
 #define __LEVENBERG_MARQUARDT_H
 
 #include <functional>
+#include <memory>
 #include <vector>
+
+class LM_SOLVER_IMPL;
 
 class LM_PARAMETER 
 {
     friend class LM_SOLVER;
+    friend class LM_SOLVER_IMPL;
 
     public:
         virtual int LmGetDimension() = 0;
         virtual void LmSetValue( int index, double value ) = 0;
         virtual double LmGetValue( int index ) = 0;
+        virtual double LmGetInitialValue( int index ) = 0;
 
         int LmGetIndex() const { return m_paramIndex; };
 
@@ -19,9 +48,10 @@ class LM_PARAMETER
         int m_paramIndex;
 };
 
-class LM_SOLVABLE
+class LM_EQUATION
 {
     friend class LM_SOLVER;
+    friend class LM_SOLVER_IMPL;
 
     public:
         //virtual int LmGetParameterCount() = 0;
@@ -33,65 +63,21 @@ class LM_SOLVABLE
         int m_eqnIndex;
 };
 
+
 class LM_SOLVER
 {
 public:
-//    typedef void* USER_DATA;
-//    typedef std::function<double(double *p, int index, int dindex, USER_DATA*)> DFUNC;
-//    typedef std::function<double(double *p, int index, USER_DATA*)> FUNC;
+    LM_SOLVER();
 
-    LM_SOLVER( int itmax_ = 100 )
-    {
-        m_itmax = itmax_;
-        m_m = 0;
-        m_n = 0;
-        init();
-    }
 
-    void AddParameter ( LM_PARAMETER *aParam )
-    {
-        m_params.push_back( aParam );
-        //printf("mm %d\n", m_m);
-        aParam->m_paramIndex = m_m;
-        printf("addParam %p dx %d\n", aParam, aParam->m_paramIndex);
-        m_m += aParam->LmGetDimension();
-    }
-
-    void AddSolvable( LM_SOLVABLE* aSolvable )
-    {
-        aSolvable->m_eqnIndex = m_n;
-        printf("solv %p eqnidx %d\n", aSolvable, aSolvable->m_eqnIndex);
-        m_n += aSolvable->LmGetEquationCount();
-        m_equations.push_back( aSolvable );
-    }
-
+    void AddParameter ( LM_PARAMETER *aParam );
+    void AddEquation( LM_EQUATION* aEqn );
     bool Solve();
-
-    int GetSolvableCount() const
-    {
-        return m_equations.size();
-    }
-
-    int GetParameterCount() const
-    {
-        return m_params.size();
-    }
-
+    int GetEquationCount() const;
+    int GetParameterCount() const;
 private:
-
-    void init();
-
-    static void evaluateFunc( double *p, double *hx, int m, int n, void *adata);
-    static void evaluateJacobian( double *p, double *j, int m, int n, void *adata);
-
-    int m_m; // parameter vector dimension
-    int m_n; // measurement vector dimension
-    int m_itmax; // max number of iterations
-
-    std::vector<LM_SOLVABLE*> m_equations;
-    std::vector<LM_PARAMETER*> m_params;
-
-    double *m_workmem;
+    std::shared_ptr<LM_SOLVER_IMPL> m_pimpl;
 };
+
 
 #endif

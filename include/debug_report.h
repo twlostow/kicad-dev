@@ -49,21 +49,19 @@ public:
      */
     static void GenerateReport( wxDebugReport::Context ctx );
 
-    void buildVersionInfo( wxString& aMsg );
-    void buildModulesInfo( wxString& aMsg );
-    void buildExceptionContextInfo ( wxString& aMsg );
+    void SetAdditionalInfo( const wxString& aInfo );
 
-    bool AddTimestamp();
-
-    const wxString& GetReportText() const
-    {
-        return m_reportText;
-    }
+    const wxString GetReportText() const;
 
     bool AddContext( wxDebugReport::Context ctx );
 
 private:
+    void buildVersionInfo( wxString& aMsg );
+    void buildModulesInfo( wxString& aMsg );
+    void buildExceptionContextInfo( wxString& aMsg );
+
     wxString m_reportText;
+    wxString m_additionalInfo;
 };
 
 #endif

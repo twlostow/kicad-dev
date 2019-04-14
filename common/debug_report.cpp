@@ -22,11 +22,12 @@
  */
 
 #include <thread>
+#include <vector>
 
 #include <debug_report.h>
 
-#include <wx/debugrpt.h>
 #include <wx/base64.h>
+#include <wx/debugrpt.h>
 #include <wx/progdlg.h>
 
 #include <dialogs/dialog_crash_report_base.h>
@@ -39,10 +40,16 @@
 
 #include <aboutinfo.h>
 
+#include <boost/version.hpp>
+
 #include <wx/datetime.h>
-#include <wx/ffile.h>
 #include <wx/dynlib.h>
+#include <wx/ffile.h>
 #include <wx/filename.h>
+#include <wx/wx.h>
+
+// where to upload the reports. Currently Orson's machine.
+#define DEBUG_REPORT_URL "https://orson.net.pl/kicad_bug"
 
 extern std::string GetKicadCurlVersion();
 extern std::string GetCurlLibVersion();
@@ -50,8 +57,8 @@ extern std::string GetCurlLibVersion();
 class DIALOG_CRASH_REPORT_PREVIEW : public DIALOG_CRASH_REPORT_PREVIEW_BASE
 {
 public:
-	DIALOG_CRASH_REPORT_PREVIEW( wxWindow* parent, const wxString& aText ) :
-        DIALOG_CRASH_REPORT_PREVIEW_BASE( parent )
+    DIALOG_CRASH_REPORT_PREVIEW( wxWindow* parent, const wxString& aText )
+            : DIALOG_CRASH_REPORT_PREVIEW_BASE( parent )
     {
         m_text->ChangeValue( aText );
     }
@@ -61,59 +68,63 @@ public:
 class DIALOG_CRASH_REPORT : public DIALOG_CRASH_REPORT_BASE
 {
 public:
-    DIALOG_CRASH_REPORT( DEBUG_REPORT* aReport = nullptr ) :
-        DIALOG_CRASH_REPORT_BASE( nullptr )
+    DIALOG_CRASH_REPORT( DEBUG_REPORT* aReport = nullptr ) : DIALOG_CRASH_REPORT_BASE( nullptr )
     {
         m_report = aReport;
     }
 
-	~DIALOG_CRASH_REPORT()
+    ~DIALOG_CRASH_REPORT()
     {
-
     }
 
-    DEBUG_REPORT *GetReport() const{ return m_report ;}
+    DEBUG_REPORT* GetReport() const
+    {
+        return m_report;
+    }
 
     virtual void OnViewReport( wxCommandEvent& event ) override
     {
-        DIALOG_CRASH_REPORT_PREVIEW preview( nullptr, m_report->GetReportText() );
+        m_report->SetAdditionalInfo( m_additionalInfo->GetValue() );
+
+        DIALOG_CRASH_REPORT_PREVIEW preview( this, m_report->GetReportText() );
 
         preview.ShowModal();
     }
 
     virtual void OnSendReport( wxCommandEvent& event ) override
     {
+        m_report->SetAdditionalInfo( m_additionalInfo->GetValue() );
+
         auto rpt = m_report->GetReportText();
         bool ok = true, done = false;
 
-        wxString encoded = wxBase64Encode( (const char*) rpt.c_str(), rpt.length() ); 
+        wxString encoded = wxBase64Encode( (const char*) rpt.c_str(), rpt.length() );
 
-        auto senderThreadFunc = [&]( ) {
+        auto senderThreadFunc = [&]() {
             KICAD_CURL_EASY curl;
-            curl.SetPostData( (const char *) encoded.c_str() );
-            curl.SetURL( "http://pcbe15262:8051" );
-            
+            curl.SetPostData( (const char*) encoded.c_str() );
+            curl.SetURL( DEBUG_REPORT_URL );
+
             try
             {
-                printf("Uploading...\n");
                 curl.Perform();
-                printf("Done\n");
             }
-            catch ( ... )
+            catch( ... )
             {
                 ok = false;
             }
             done = true;
         };
 
-        std::thread senderThread ( senderThreadFunc );
+        std::thread senderThread( senderThreadFunc );
 
-        wxProgressDialog dlg( _("Sending report..." ), _("The crash report is being uploaded. Please wait..."),
-                            100,    // range
-                            this,   // parent 
-                            wxPD_APP_MODAL |
-                            wxPD_SMOOTH // - makes indeterminate mode bar on WinXP very small
-                            );
+        wxProgressDialog dlg(
+                _( "Sending report..." ), 
+                _( "The crash report is being uploaded. Please wait..." ),
+                100,                         // range
+                this,                        // parent
+                wxPD_APP_MODAL | wxPD_SMOOTH // - makes indeterminate mode bar on WinXP very small
+        );
 
         while( !done && senderThread.joinable() )
         {
@@ -125,14 +136,15 @@ public:
 
         if( !ok )
         {
-            wxMessageBox( wxT("Error sending cebug report.") );
+            wxMessageBox( wxT( "Error sending cebug report." ) );
             return;
         }
-        m_btnSendReport->SetLabel( _("Report sent") );
+
+        m_btnSendReport->SetLabel( _( "Report sent" ) );
         m_btnSendReport->Enable( false );
     }
 
-	virtual void OnExitKicad( wxCommandEvent& event ) override
+    virtual void OnExitKicad( wxCommandEvent& event ) override
     {
         auto app = wxApp::GetInstance();
         EndModal( false );
@@ -147,7 +159,8 @@ private:
 static const wxString formatHex( uint64_t addr )
 {
     char tmp[1024];
-    snprintf(tmp, 1024, "%p", (size_t) addr);
+
+    snprintf( tmp, 1024, "%p", (void*) addr );
     return wxString( tmp );
 }
 
@@ -160,15 +173,14 @@ void DEBUG_REPORT::GenerateReport( wxDebugReport::Context ctx )
 
     DIALOG_CRASH_REPORT crashDialog( &report );
 
-    //crashDialog.SetVisible( true );
-    crashDialog.ShowModal( );
+    crashDialog.ShowModal();
 }
 
 #if !wxCHECK_VERSION( 3, 1, 2 ) && wxUSE_STACKWALKER
 class YAML_STACK_WALKER : public wxStackWalker
 {
 public:
-    YAML_STACK_WALKER( )
+    YAML_STACK_WALKER()
     {
         m_isOk = false;
         m_msg << "stack-trace:\n";
@@ -187,8 +199,8 @@ public:
 protected:
     virtual void OnStackFrame( const wxStackFrame& frame ) override;
 
-    bool       m_isOk;
-    wxString   m_msg;
+    bool     m_isOk;
+    wxString m_msg;
 };
 
 // ============================================================================
@@ -205,20 +217,24 @@ void YAML_STACK_WALKER::OnStackFrame( const wxStackFrame& frame )
 
     auto func = frame.GetName();
 
-    m_msg << indent4 << "- frame " <<  frame.GetLevel() << ": " << eol;
+    m_msg << indent4 << "- frame " << frame.GetLevel() << ": " << eol;
+
     if( !func.empty() )
     {
         m_msg << indent4 << indent4 << "function: " << func << eol;
     }
 
-    m_msg << indent4 << indent4 << "offset:  " << formatHex(frame.GetOffset()) << eol;
-    m_msg << indent4 << indent4 << "address: " << formatHex(wxPtrToUInt( frame.GetAddress() )) << eol;
+    m_msg << indent4 << indent4 << "offset:  " << formatHex( frame.GetOffset() ) << eol;
+    m_msg << indent4 << indent4 << "address: " << formatHex( wxPtrToUInt( frame.GetAddress() ) )
+          << eol;
 }
 #endif
 
-void DEBUG_REPORT::buildVersionInfo(wxString& aMsg)
+
+void DEBUG_REPORT::buildVersionInfo( wxString& aMsg )
 {
     ABOUT_APP_INFO info;
+
     info.Build( nullptr );
 
     // DO NOT translate information in the msg_version string
@@ -226,8 +242,8 @@ void DEBUG_REPORT::buildVersionInfo(wxString& aMsg)
     wxString eol = "\n";
     wxString indent4 = "    ";
 
-    #define ON "ON" << eol
-    #define OFF "OFF" << eol
+#define ON "ON" << eol
+#define OFF "OFF" << eol
 
     wxPlatformInfo platform;
     aMsg << "application: " << info.GetAppName() << eol;
@@ -260,14 +276,13 @@ void DEBUG_REPORT::buildVersionInfo(wxString& aMsg)
 
     major = wxPlatformInfo().Get().GetToolkitMajorVersion();
     minor = wxPlatformInfo().Get().GetToolkitMinorVersion();
-    aMsg << " GTK+ " <<  major << "." << minor;
+    aMsg << " GTK+ " << major << "." << minor;
 #endif
 
     aMsg << eol;
 
     aMsg << indent4 << "boost: " << ( BOOST_VERSION / 100000 ) << wxT( "." )
-                      << ( BOOST_VERSION / 100 % 1000 ) << wxT( "." )
-                      << ( BOOST_VERSION % 100 ) << eol;
+         << ( BOOST_VERSION / 100 % 1000 ) << wxT( "." ) << ( BOOST_VERSION % 100 ) << eol;
 
 #ifdef KICAD_USE_OCC
     aMsg << indent4 << "opencascade-technology: " << OCC_VERSION_COMPLETE << eol;
@@ -282,19 +297,19 @@ void DEBUG_REPORT::buildVersionInfo(wxString& aMsg)
 #endif
 
     aMsg << indent4 << "compiler: ";
-#if defined(__clang__)
+#if defined( __clang__ )
     aMsg << "Clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
-#elif defined(__GNUG__)
+#elif defined( __GNUG__ )
     aMsg << "GCC " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
-#elif defined(_MSC_VER)
+#elif defined( _MSC_VER )
     aMsg << "Visual C++ " << _MSC_VER;
-#elif defined(__INTEL_COMPILER)
+#elif defined( __INTEL_COMPILER )
     aMsg << "Intel C++ " << __INTEL_COMPILER;
 #else
     aMsg << "Other Compiler ";
 #endif
 
-#if defined(__GXX_ABI_VERSION)
+#if defined( __GXX_ABI_VERSION )
     aMsg << " with C++ ABI " << __GXX_ABI_VERSION << eol;
 #else
     aMsg << " without C++ ABI";
@@ -382,15 +397,19 @@ void DEBUG_REPORT::buildVersionInfo(wxString& aMsg)
     aMsg << OFF;
 #endif
 
+#undef ON
+#undef OFF
+
     aMsg << eol;
 }
 
+
 void DEBUG_REPORT::buildModulesInfo( wxString& aMsg )
 {
-    wxDynamicLibraryDetailsArray modules(wxDynamicLibrary::ListLoaded());
-    const size_t count = modules.GetCount();
+    wxDynamicLibraryDetailsArray modules( wxDynamicLibrary::ListLoaded() );
+    const size_t                 count = modules.GetCount();
 
-    if ( !count )
+    if( !count )
         return;
 
     wxString eol = "\n";
@@ -398,25 +417,26 @@ void DEBUG_REPORT::buildModulesInfo( wxString& aMsg )
 
     aMsg << "modules:" << eol;
 
-    for ( size_t n = 0; n < count; n++ )
+    for( size_t n = 0; n < count; n++ )
     {
         const wxDynamicLibraryDetails& info = modules[n];
-        void *addr = NULL;
-        size_t len = 0;
+        void*                          addr = NULL;
+        size_t                         len = 0;
 
         wxString path = info.GetPath();
-        if ( path.empty() )
+        if( path.empty() )
             path = info.GetName();
 
         aMsg << indent4 << "- " << path << ": " << eol;
-        if ( info.GetAddress(&addr, &len) )
+        if( info.GetAddress( &addr, &len ) )
         {
             aMsg << indent4 << indent4 << "base:    " << formatHex( (uint64_t) addr ) << eol;
             aMsg << indent4 << indent4 << "size:    " << formatHex( (uint64_t) len ) << eol;
         }
 
         wxString ver = info.GetVersion();
-        if ( !ver.empty() )
+
+        if( !ver.empty() )
         {
             aMsg << indent4 << indent4 << "version: " << ver << eol;
         }
@@ -424,12 +444,13 @@ void DEBUG_REPORT::buildModulesInfo( wxString& aMsg )
     aMsg << eol;
 }
 
-void DEBUG_REPORT::buildExceptionContextInfo ( wxString& aMsg )
+
+void DEBUG_REPORT::buildExceptionContextInfo( wxString& aMsg )
 {
 #if wxUSE_CRASHREPORT
-    //printf("BuildExceptInfo\n");
     wxCrashContext c;
-    if ( !c.code )
+
+    if( !c.code )
         return;
 
     wxString eol = "\n";
@@ -437,9 +458,10 @@ void DEBUG_REPORT::buildExceptionContextInfo ( wxString& aMsg )
 
     aMsg << "exception-context:" << eol;
 
-    aMsg << indent4 << "code:     " << formatHex(c.code) << eol; 
-    aMsg << indent4 << "name:     " << c.GetExceptionString() << eol; 
-    aMsg << indent4 << "address:  " << formatHex(c.addr) << eol; -
+    aMsg << indent4 << "code:     " << formatHex( c.code ) << eol;
+    aMsg << indent4 << "name:     " << c.GetExceptionString() << eol;
+    aMsg << indent4 << "address:  " << formatHex( c.addr ) << eol;
+    -
 
 #ifdef __INTEL__
     aMsg << indent4 << "x86-registers:  " << eol;
@@ -464,14 +486,13 @@ void DEBUG_REPORT::buildExceptionContextInfo ( wxString& aMsg )
 }
 
 
-
 bool DEBUG_REPORT::AddContext( wxDebugReport::Context ctx )
 {
     wxString reportText;
 
-    reportText += wxString::Format("KiCad crash report, version 1.0\n");
-    reportText += wxT("--------------------------------------------------\n\n");
-    
+    reportText += wxString::Format( "KiCad crash report, version 1.0\n" );
+    reportText += wxT( "--------------------------------------------------\n\n" );
+
     wxString verInfo;
     wxString modInfo;
     wxString exceptInfo;
@@ -479,11 +500,16 @@ bool DEBUG_REPORT::AddContext( wxDebugReport::Context ctx )
     buildVersionInfo( verInfo );
     buildModulesInfo( modInfo );
     buildExceptionContextInfo( exceptInfo );
-    
+
+    reportText += verInfo;
+    reportText += modInfo;
+    reportText += exceptInfo;
+
 #if wxUSE_STACKWALKER
     YAML_STACK_WALKER sw;
 
 #if wxUSE_ON_FATAL_EXCEPTION
+
     if( ctx == wxDebugReport::Context_Exception )
     {
         sw.WalkFromException();
@@ -494,19 +520,32 @@ bool DEBUG_REPORT::AddContext( wxDebugReport::Context ctx )
         sw.Walk();
     }
 
-    reportText += verInfo;
-    reportText += modInfo;
-    reportText += exceptInfo;
-
     if( sw.IsOk() )
     {
         reportText += sw.GetMessage();
     }
 
-    //printf("%s", (const char *) reportText.c_str() );
+#endif
 
     m_reportText = reportText;
 
     return true;
 }
-#endif // !wxCHECK_VERSION(3, 1, 2) && wxUSE_STACKWALKER
+
+
+void DEBUG_REPORT::SetAdditionalInfo( const wxString& aInfo )
+{
+    m_additionalInfo = aInfo;
+}
+
+const wxString DEBUG_REPORT::GetReportText() const
+{
+    auto reportText = m_reportText;
+
+    reportText += wxT( "\n" );
+    reportText += wxT( "Additional information from the user:\n" );
+    reportText += m_additionalInfo;
+    reportText += wxT( "\n" );
+
+    return reportText;
+}

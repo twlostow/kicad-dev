@@ -280,6 +280,7 @@ std::vector<SHAPE*> SHAPE_FILE_IO::ReadGroup()
             }
         }
     }
+}
 
 void SHAPE_FILE_IO::BeginGroup( const std::string& aName )
 {

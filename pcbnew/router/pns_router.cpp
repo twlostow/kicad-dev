@@ -124,7 +124,7 @@ const ITEM_SET ROUTER::QueryHoverItems( const VECTOR2I& aP )
 }
 
 
-bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM* aStartItem, int aDragMode )
+bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM_SET& aItems, int aDragMode )
 {
 
     if( aDragMode & DM_FREE_ANGLE )
@@ -132,11 +132,10 @@ bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM* aStartItem, int aDragMode 
     else
         m_forceMarkObstaclesMode = false;
 
-    if( !aStartItem || aStartItem->OfKind( ITEM::SOLID_T ) )
+    if( !aItems.Size() )
         return false;
 
-    m_placer.reset( new LINE_PLACER( this ) );
-    m_placer->Start( aP, aStartItem );
+    ITEM_SET primitives = aItems;
 
     if( aItems[0]->OfKind( ITEM::SOLID_T ) )
         m_dragger.reset ( new COMPONENT_DRAGGER( this ) );
@@ -144,7 +143,7 @@ bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM* aStartItem, int aDragMode 
         m_dragger.reset( new DRAGGER( this ) );
 
     m_dragger->SetMode( aDragMode );
-    m_dragger->SetWorld( m_world.get() );
+//    m_dragger->SetWorld( m_world.get() );
     m_dragger->SetDebugDecorator ( m_iface->GetDebugDecorator () );
 
     if( m_dragger->Start ( aP, primitives ) )

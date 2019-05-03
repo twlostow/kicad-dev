@@ -430,6 +430,8 @@ class SHAPE_POLY_SET : public SHAPE
          */
         SHAPE_POLY_SET( const SHAPE_POLY_SET& aOther, bool aDeepCopy = false );
 
+        ~SHAPE_POLY_SET();
+
         /**
          * Function GetRelativeIndices
          *
@@ -862,6 +864,9 @@ class SHAPE_POLY_SET : public SHAPE
 
         /// @copydoc SHAPE::Format()
         const std::string Format() const override;
+
+        /// @copydoc SHAPE::Move()
+        bool Parse( std::stringstream& aStream ) override;
 
         /// @copydoc SHAPE::Move()
         void Move( const VECTOR2I& aVector ) override;

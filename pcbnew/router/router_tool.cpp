@@ -964,6 +964,7 @@ int ROUTER_TOOL::mainLoop( PNS::ROUTER_MODE aMode )
         }
         else if( evt->Action() == TA_UNDO_REDO_POST || evt->Action() == TA_MODEL_CHANGE )
         {
+            printf("Sync: %d\n",  evt->Action() );
             m_router->SyncWorld();
         }
         else if( evt->IsMotion() )
@@ -1026,7 +1027,8 @@ void ROUTER_TOOL::performDragging( int aMode )
             return;
     }
 
-    bool dragStarted = m_router->StartDragging( m_startSnapPoint, m_startItem, aMode );
+	#warning startdrag
+//    bool dragStarted = m_router->StartDragging( m_startSnapPoint, m_startItem, aMode );
 
     if( !dragStarted )
         return;
@@ -1163,9 +1165,9 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
 
     m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
     m_router->SyncWorld();
-    m_startItem = m_router->GetWorld()->FindItemByParent( item );
+    m_dragItems = m_router->GetWorld()->FindItemsByParent( item );
 
-    if( m_startItem && m_startItem->IsLocked() )
+    if( m_dragItems.Size() > 0 && m_dragItems.AnyLocked() )
     {
         KIDIALOG dlg( frame(), _( "The selected item is locked." ), _( "Confirmation" ),
                       wxOK | wxCANCEL | wxICON_WARNING );
@@ -1177,10 +1179,10 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
     }
 
     VECTOR2I p0 = controls()->GetCursorPosition( false );
-    auto p = snapToItem( true, m_startItem, p0 );
+    auto p = p0;//snapToItem( true, m_startItem, p0 );
     int dragMode = aEvent.Parameter<int64_t> ();
 
-    bool dragStarted = m_router->StartDragging( p, m_startItem, dragMode );
+    bool dragStarted = m_router->StartDragging( p0, m_dragItems, dragMode );
 
     if( !dragStarted )
         return 0;

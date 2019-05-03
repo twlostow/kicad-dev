@@ -157,6 +157,8 @@ public:
 
     virtual bool IsSolid() const = 0;
 
+    virtual bool Parse( std::stringstream& aStream );
+
     virtual const std::string Format( ) const;
 
 protected:

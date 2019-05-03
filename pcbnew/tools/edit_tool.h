@@ -195,6 +195,18 @@ public:
     }
 
 private:
+
+    /**
+     * Function uniqueSelected()
+     *
+     * Get a single selected item of a certain type
+     *
+     * @tparam T type of item to select
+     * @return pointer to the item (of type T), or nullptr if there isn't
+     * a single selected item, or it's not of the right type.
+     */
+    template<class T> T* uniqueSelected();
+
     ///> Selection tool used for obtaining selected items
     SELECTION_TOOL* m_selectionTool;
 

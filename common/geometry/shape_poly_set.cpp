@@ -1092,6 +1092,65 @@ const std::string SHAPE_POLY_SET::Format() const
 }
 
 
+bool SHAPE_POLY_SET::Parse( std::stringstream& aStream )
+{
+    std::string tmp;
+
+    aStream >> tmp;
+
+    if( tmp != "polyset" )
+        return false;
+
+    aStream >> tmp;
+
+    int n_polys = atoi( tmp.c_str() );
+
+    if( n_polys < 0 )
+        return false;
+
+    for( int i = 0; i < n_polys; i++ )
+    {
+        POLYGON paths;
+
+        aStream >> tmp;
+
+        if( tmp != "poly" )
+            return false;
+
+        aStream >> tmp;
+        int n_outlines = atoi( tmp.c_str() );
+
+        if( n_outlines < 0 )
+            return false;
+
+        for( int j = 0; j < n_outlines; j++ )
+        {
+            SHAPE_LINE_CHAIN outline;
+
+            outline.SetClosed( true );
+
+            aStream >> tmp;
+            int n_vertices = atoi( tmp.c_str() );
+
+            for( int v = 0; v < n_vertices; v++ )
+            {
+                VECTOR2I p;
+
+                aStream >> tmp; p.x = atoi( tmp.c_str() );
+                aStream >> tmp; p.y = atoi( tmp.c_str() );
+                outline.Append( p );
+            }
+
+            paths.push_back( outline );
+        }
+
+        m_polys.push_back( paths );
+    }
+
+    return true;
+}
+
+
 const BOX2I SHAPE_POLY_SET::BBox( int aClearance ) const
 {
     BOX2I bb;

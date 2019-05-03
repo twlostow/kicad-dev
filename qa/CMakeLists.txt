@@ -54,5 +54,5 @@ add_subdirectory( pcbnew_tools )
 
 # add_subdirectory( pcb_test_window )
 add_subdirectory( gal/gal_pixel_alignment )
-add_subdirectory( pns_test_window )
-add_subdirectory( shape_viewer )
+#add_subdirectory( pns_test_window )
+#add_subdirectory( shape_viewer )

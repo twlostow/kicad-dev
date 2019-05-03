@@ -25,6 +25,13 @@
 
 #include <geometry/shape.h>
 
+bool SHAPE::Parse( std::stringstream& aStream )
+{
+    assert( false );
+    return false;
+}
+
+
 const std::string SHAPE::Format() const
 {
     assert( false );

@@ -1569,3 +1569,17 @@ int EDIT_TOOL::cutToClipboard( const TOOL_EVENT& aEvent )
 
     return 0;
 }
+
+template<class T>
+T* EDIT_TOOL::uniqueSelected()
+{
+    auto& selection = m_selectionTool->RequestSelection(
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector )
+            { EditToolSelectionFilter( aCollector, EXCLUDE_TRANSIENTS ); } );
+
+    if( selection.Size() != 1 )
+        return nullptr;
+
+    auto item = selection[0];
+    return dyn_cast<T*>( item );
+}

@@ -635,7 +635,7 @@ bool LINE_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
 }
 
 
-bool LINE_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem )
+bool LINE_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinish )
 {
     bool realEnd = false;
     int lastV;

@@ -328,6 +328,8 @@ bool TOOL_MANAGER::invokeTool( TOOL_BASE* aTool )
 {
     wxASSERT( aTool != NULL );
 
+    printf("invoke-tool %p %s\n", aTool, aTool->GetName().c_str() );
+
     TOOL_EVENT evt( TC_COMMAND, TA_ACTIVATE, aTool->GetName() );
     processEvent( evt );
 
@@ -639,12 +641,14 @@ bool TOOL_MANAGER::dispatchActivation( const TOOL_EVENT& aEvent )
 {
     if( aEvent.IsActivate() )
     {
+        printf("dispatch-activate %s\n", aEvent.GetCommandStr()->c_str() );
         wxString cmdStr( *aEvent.GetCommandStr() );
 
         std::map<std::string, TOOL_STATE*>::iterator tool = m_toolNameIndex.find( *aEvent.GetCommandStr() );
 
         if( tool != m_toolNameIndex.end() )
         {
+            printf("runTool %p\n",tool->second->theTool );
             runTool( tool->second->theTool );
             return true;
         }

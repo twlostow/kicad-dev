@@ -94,19 +94,6 @@ bool SCH_MOVE_TOOL::Init()
 }
 
 
-void SCH_MOVE_TOOL::Reset( RESET_REASON aReason )
-{
-    printf("sch-move-tool-reset\n");
-    if( aReason == MODEL_RELOAD )
-    {
-        m_moveInProgress = false;
-        m_moveOffset = { 0, 0 };
-
-        // Init variables used by every drawing tool
-        m_controls = getViewControls();
-        m_frame = getEditFrame<SCH_EDIT_FRAME>();
-    }
-}
 
 /* TODO - Tom/Jeff
   - add preferences option "Move origin: always cursor / item origin"
@@ -140,7 +127,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     };
 
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
-
+    printf("Here we are2\n");
     controls->SetSnapping( true );
     VECTOR2I originalCursorPos = controls->GetCursorPosition();
 
@@ -153,12 +140,17 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     if( selection.Empty() )
         return 0;
 
-    if( aEvent.IsAction( &EE_ACTIONS::move ) || aEvent.IsAction( &EE_ACTIONS::moveActivate ) )
+    bool doMove =  aEvent.IsAction( &EE_ACTIONS::move ) ||
+                    ( aEvent.IsAction( &EE_ACTIONS::moveActivate ) && m_frame->GetDragActionIsMove() );
+    bool doDrag =  aEvent.IsAction( &EE_ACTIONS::drag ) ||
+                    ( aEvent.IsAction( &EE_ACTIONS::moveActivate ) && !m_frame->GetDragActionIsMove() );
+
+    if( doMove )
     {
         m_frame->SetToolID( ID_SCH_MOVE, wxCURSOR_DEFAULT, _( "Move Items" ) );
         moveMode = true;
     }
-    else
+    else if ( doDrag )
     {
         m_frame->SetToolID( ID_SCH_DRAG, wxCURSOR_DEFAULT, _( "Drag Items" ) );
         moveMode = false;
@@ -191,6 +183,8 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
         // New items will already be on the undo list
         appendUndo = true;
     }
+
+    printf("Here we are\n");
 
     // Main loop: keep receiving events
     do
@@ -467,7 +461,6 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
 
         switch( test->Type() )
         {
-        default:
         case SCH_LINE_T:
         {
             // Select wires/busses that are connected at one end and/or the other.  Any
@@ -669,6 +662,7 @@ bool SCH_MOVE_TOOL::updateModificationPoint( SELECTION& aSelection )
 
 void SCH_MOVE_TOOL::setTransitions()
 {
+    Go( &SCH_MOVE_TOOL::Main,               EE_ACTIONS::moveActivate.MakeEvent() );
     Go( &SCH_MOVE_TOOL::Main,               EE_ACTIONS::move.MakeEvent() );
     Go( &SCH_MOVE_TOOL::Main,               EE_ACTIONS::drag.MakeEvent() );
 }

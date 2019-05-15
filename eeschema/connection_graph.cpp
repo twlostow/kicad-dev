@@ -1663,9 +1663,6 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
 SCH_CONNECTION* CONNECTION_GRAPH::matchBusMember(
         SCH_CONNECTION* aBusConnection, SCH_CONNECTION* aSearch )
 {
-    if( !aBusConnection ) // fixme: does this mask some deeper bug - tom?
-        return nullptr;
-
     wxASSERT( aBusConnection->IsBus() );
 
     SCH_CONNECTION* match = nullptr;

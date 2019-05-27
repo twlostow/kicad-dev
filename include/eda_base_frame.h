@@ -407,6 +407,8 @@ public:
     bool PostCommandMenuEvent( int evt_type );
 
     const wxString& GetAboutTitle() const { return m_AboutTitle; }
+
+    void OnSimulateCrash( wxCommandEvent& event );
 };
 
 

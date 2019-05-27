@@ -36,6 +36,7 @@
 #include <dialog_shim.h>
 #include <eda_doc.h>
 #include <id.h>
+#include <confirm.h>
 #include <kiface_i.h>
 #include <pgm_base.h>
 #include <trace_helpers.h>
@@ -77,6 +78,7 @@ BEGIN_EVENT_TABLE( EDA_BASE_FRAME, wxFrame )
     EVT_MENU( wxID_INDEX, EDA_BASE_FRAME::GetKicadHelp )
     EVT_MENU( ID_HELP_GET_INVOLVED, EDA_BASE_FRAME::GetKicadContribute )
     EVT_MENU( wxID_ABOUT, EDA_BASE_FRAME::GetKicadAbout )
+    EVT_MENU( ID_SIMULATE_CRASH, EDA_BASE_FRAME::OnSimulateCrash )
 END_EVENT_TABLE()
 
 EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
@@ -259,6 +261,14 @@ void EDA_BASE_FRAME::AddStandardHelpMenu( wxMenuBar* aMenuBar )
                  _( "Displays current hotkeys table and corresponding commands" ),
                  KiBitmap( hotkeys_xpm ) );
 
+    #ifdef KICAD_CRASH_REPORTER
+        helpMenu->AppendSeparator();
+
+        AddMenuItem( helpMenu, ID_SIMULATE_CRASH,
+                    _( "Force KiCad crash" ),
+                    _( "Will crash KiCad. For testing of the Debug Report feature." ),
+                    KiBitmap( help_xpm ) );
+    #endif
     helpMenu->AppendSeparator();
     AddMenuItem( helpMenu, ID_HELP_GET_INVOLVED, _( "Get &Involved" ),
                  _( "Open \"Contribute to KiCad\" in a web browser" ),
@@ -699,3 +709,16 @@ bool EDA_BASE_FRAME::PostCommandMenuEvent( int evt_type )
     return false;
 }
 
+#ifdef KICAD_CRASH_REPORTER
+
+void EDA_BASE_FRAME::OnSimulateCrash( wxCommandEvent& event )
+{
+    bool crash = IsOK( this, _("Clicking on OK will crash KiCad. Did you save?" ) );
+
+    if(!crash)
+        return;
+
+    * (volatile int *) 0xdeafbeef = 0xcafebabe;
+}
+
+#endif

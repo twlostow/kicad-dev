@@ -1096,7 +1096,7 @@ int DRAWING_TOOL::PlaceImportedGraphics( const TOOL_EVENT& aEvent )
         else
             commit.Add( item );
 
-        it->release();
+        ptr.release();
     }
 
     if( !dlg.IsPlacementInteractive() )

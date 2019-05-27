@@ -26,7 +26,7 @@
 #ifndef __OUTLINE_EDITOR_H
 #define __OUTLINE_EDITOR_H
 
-#include <tools/pcb_tool.h>
+#include <tools/pcb_tool_base.h>
 #include <memory>
 
 namespace KIGFX
@@ -47,7 +47,7 @@ class GEOM_PREVIEW;
  *
  * Tool that displays edit points allowing to modify items by dragging the points.
  */
-class OUTLINE_EDITOR : public PCB_TOOL
+class OUTLINE_EDITOR : public PCB_TOOL_BASE
 {
 public:
     OUTLINE_EDITOR();

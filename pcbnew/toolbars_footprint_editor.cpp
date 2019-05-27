@@ -149,7 +149,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateVToolbar()
 
     KiScaledSeparator( m_drawToolBar, this );
     m_drawToolBar->Add( PCB_ACTIONS::placePad,       ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PCB_ACTIONS::drawLine,       ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PCB_ACTIONS::drawOutline,       ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawCircle,     ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawArc,        ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawPolygon,    ACTION_TOOLBAR::TOGGLE );

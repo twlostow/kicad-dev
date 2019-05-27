@@ -221,7 +221,7 @@ private:
 
 
 OUTLINE_EDITOR::OUTLINE_EDITOR() :
-    PCB_TOOL( "pcbnew.OutlineEditor" ), m_selectionTool( NULL )
+    PCB_TOOL_BASE( "pcbnew.OutlineEditor" ), m_selectionTool( NULL )
 {
     m_solver.reset( new GS_SOLVER );
     m_geomPreview.reset( new GEOM_PREVIEW( m_solver ) );
@@ -494,9 +494,9 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
             // break;
         }
         else if(
-            evt->Matches( m_selectionTool->ClearedEvent )
-            || evt->Matches( m_selectionTool->UnselectedEvent )
-            || evt->Matches( m_selectionTool->SelectedEvent ) )
+            evt->Matches( EVENTS::ClearedEvent )
+            || evt->Matches( EVENTS::UnselectedEvent )
+            || evt->Matches( EVENTS::SelectedEvent ) )
         {
             break;
         }
@@ -520,10 +520,10 @@ int OUTLINE_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
 void OUTLINE_EDITOR::setTransitions()
 {
-    Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::SelectedEvent );
-    Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::UnselectedEvent );
-    Go( &OUTLINE_EDITOR::OnSelectionChange, SELECTION_TOOL::ClearedEvent );
-    Go( &OUTLINE_EDITOR::modifiedSelection, PCB_ACTIONS::selectionModified.MakeEvent() );
+    Go( &OUTLINE_EDITOR::OnSelectionChange, EVENTS::SelectedEvent );
+    Go( &OUTLINE_EDITOR::OnSelectionChange, EVENTS::UnselectedEvent );
+    Go( &OUTLINE_EDITOR::OnSelectionChange, EVENTS::ClearedEvent );
+    //Go( &OUTLINE_EDITOR::modifiedSelection, PCB_ACTIONS::selectionModified.MakeEvent() );
     Go( &OUTLINE_EDITOR::FilletCorner, filletCorner.MakeEvent() );
 }
 

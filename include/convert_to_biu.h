@@ -107,6 +107,12 @@ constexpr inline double Iu2Mils( int iu )
 constexpr int ARC_LOW_DEF  = Millimeter2iu( 0.02 );
 constexpr int ARC_HIGH_DEF = Millimeter2iu( 0.005 );
 
+#else
+
+constexpr int ARC_LOW_DEF  = 0;
+constexpr int ARC_HIGH_DEF = 0;
+
+
 #endif
 
 #endif  // CONVERT_TO_BIU_H_

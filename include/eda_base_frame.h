@@ -458,6 +458,8 @@ public:
     virtual void RefreshCanvas() { };
 
     const wxString& GetAboutTitle() const { return m_AboutTitle; }
+
+    void OnSimulateCrash( wxCommandEvent& event );
 };
 
 

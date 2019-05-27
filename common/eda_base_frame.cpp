@@ -29,6 +29,7 @@
 #include <dialog_shim.h>
 #include <eda_doc.h>
 #include <id.h>
+#include <confirm.h>
 #include <kiface_i.h>
 #include <pgm_base.h>
 #include <trace_helpers.h>
@@ -75,6 +76,7 @@ BEGIN_EVENT_TABLE( EDA_BASE_FRAME, wxFrame )
     EVT_MENU_OPEN( EDA_BASE_FRAME::OnMenuOpen )
     EVT_MENU_CLOSE( EDA_BASE_FRAME::OnMenuOpen )
     EVT_MENU_HIGHLIGHT_ALL( EDA_BASE_FRAME::OnMenuOpen )
+    EVT_MENU( ID_SIMULATE_CRASH, EDA_BASE_FRAME::OnSimulateCrash )
 END_EVENT_TABLE()
 
 EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
@@ -371,6 +373,15 @@ void EDA_BASE_FRAME::AddStandardHelpMenu( wxMenuBar* aMenuBar )
     helpMenu->Add( ACTIONS::help );
     helpMenu->Add( ACTIONS::gettingStarted );
     helpMenu->Add( ACTIONS::listHotKeys );
+    #ifdef KICAD_CRASH_REPORTER
+        helpMenu->AppendSeparator();
+
+        AddMenuItem( helpMenu, ID_SIMULATE_CRASH,
+                    _( "Force KiCad crash" ),
+                    _( "Will crash KiCad. For testing of the Debug Report feature." ),
+                    KiBitmap( help_xpm ) );
+    #endif
+    helpMenu->AppendSeparator();
     helpMenu->Add( ACTIONS::getInvolved );
 
     helpMenu->AppendSeparator();
@@ -738,3 +749,16 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
 }
 
 
+#ifdef KICAD_CRASH_REPORTER
+
+void EDA_BASE_FRAME::OnSimulateCrash( wxCommandEvent& event )
+{
+    bool crash = IsOK( this, _("Clicking on OK will crash KiCad. Did you save?" ) );
+
+    if(!crash)
+        return;
+
+    * (volatile int *) 0xdeafbeef = 0xcafebabe;
+}
+
+#endif

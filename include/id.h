@@ -249,6 +249,8 @@ enum main_id
     ID_TB_OPTIONS_SHOW_PADS_SKETCH,
 
     ID_DIALOG_ERC,      ///< eeschema ERC modeless dialog ID
+    ID_SIMULATE_CRASH,
+
 
     // IDs specifics to a sub-application (Eeschema, Kicad manager....) start here
     //

@@ -49,6 +49,8 @@
 #include <debug_report.h>
 
 
+static void InstallWindowsExceptionHandler();
+
 // Only a single KIWAY is supported in this single_top top level component,
 // which is dedicated to loading only a single DSO.
 KIWAY    Kiway( &Pgm(), KFCTL_STANDALONE );
@@ -261,7 +263,7 @@ struct APP_SINGLE_TOP : public wxApp
     }
 #endif
 
-#if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
+#if wxUSE_ON_FATAL_EXCEPTION || ( (defined(_WIN32) || defined(_WIN64)) && defined( KICAD_CRASH_REPORTER ) )
     void OnFatalException() override
     {
         DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);

@@ -48,6 +48,12 @@
 #include <wx/filename.h>
 #include <wx/wx.h>
 
+// for OpenCascade/OCE version info...
+#if defined( KICAD_USE_OCC ) | defined( KICAD_USE_OCE )
+    #include <Standard_Version.hxx>
+#endif
+
+
 // where to upload the reports. Currently Orson's machine.
 #define DEBUG_REPORT_URL "https://orson.net.pl/kicad_bug"
 

@@ -234,6 +234,17 @@ struct APP_KICAD : public wxApp
         {
             wxSetEnv ( wxT("UBUNTU_MENUPROXY" ), wxT( "0" ) );
         }
+
+        // Force the use of X11 backend (or wayland-x11 compatibilty layer).  This is required until wxWidgets
+        // supports the Wayland compositors
+        wxSetEnv( wxT( "GDK_BACKEND" ), wxT( "x11" ) );
+
+        // Disable overlay scrollbars as they mess up wxWidgets window sizing and cause excessive redraw requests
+        wxSetEnv( wxT( "GTK_OVERLAY_SCROLLING" ), wxT( "0" ) );
+
+        // Set GTK2-style input instead of xinput2.  This disables touchscreen and smooth scrolling
+        // Needed to ensure that we are not getting multiple mouse scroll events
+        wxSetEnv( wxT( "GDK_CORE_DEVICE_EVENTS" ), wxT( "1" ) );
 #endif
     }
 
@@ -278,7 +289,7 @@ struct APP_KICAD : public wxApp
         return -1;
     }
 
-#if wxUSE_ON_FATAL_EXCEPTION && defined( KICAD_CRASH_REPORTER )
+#if wxUSE_ON_FATAL_EXCEPTION || ( (defined(_WIN32) || defined(_WIN64)) && defined( KICAD_CRASH_REPORTER ) )
     void OnFatalException() override
     {
         DEBUG_REPORT::GenerateReport(wxDebugReport::Context_Exception);

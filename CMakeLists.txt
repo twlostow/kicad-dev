@@ -602,8 +602,8 @@ include( MinGWResourceCompiler )
 # if wxGraphicsContext not used, because the cairo printing system uses this library
 if( WIN32 )
     if( USE_WX_GRAPHICS_CONTEXT )
-    find_package( GdiPlus )
-    check_find_package_result( GDI_PLUS_FOUND "GDI+" )
+        find_package( GdiPlus )
+        check_find_package_result( GDI_PLUS_FOUND "GDI+" )
     else()
         # if WX_GRAPHICS_CONTEXT is not used we just need the gdiplus library for cairo printing
         set( GDI_PLUS_LIBRARIES gdiplus )
@@ -668,9 +668,9 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
         set( PythonInterp_FIND_VERSION 3.3 )
         set( PythonLibs_FIND_VERSION 3.3 )
     else()
-    # force a python version < 3.0
-    set( PythonInterp_FIND_VERSION 2.6 )
-    set( PythonLibs_FIND_VERSION 2.6 )
+        # force a python version < 3.0
+        set( PythonInterp_FIND_VERSION 2.6 )
+        set( PythonLibs_FIND_VERSION 2.6 )
     endif()
 
     find_package( PythonInterp )
@@ -726,7 +726,7 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
     # although is used for all components, should be a harmless hit for something like eeschema
     # so long as unused search paths are at the end like this.
     set( INC_AFTER ${INC_AFTER} ${PYTHON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/scripting )
-        endif()
+endif()
 
 #
 # Find wxWidgets library, required
@@ -748,14 +748,14 @@ if( KICAD_SCRIPTING_WXPYTHON )
     else()
         # Use the same toolkit as wxPython otherwise there will be a symbol conflict
         set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} "--toolkit=${WXPYTHON_TOOLKIT}" )
-        endif()
+    endif()
 
     # Require the same wxWidgets version as is used by wxPython
     set( wxWidgets_REQ_VERSION ${WXPYTHON_WXVERSION} )
 else()
     # Require wxWidgets 3.0.0 as the minimum when wxPython is disabled
     set( wxWidgets_REQ_VERSION 3.0.0 )
-        endif()
+endif()
 
 # See line 49 of CMakeModules/FindwxWidgets.cmake
 set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} --static=no )

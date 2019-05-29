@@ -142,7 +142,7 @@ public:
 
         if( !ok )
         {
-            wxMessageBox( wxT( "Error sending cebug report." ) );
+            wxMessageBox( _( "Error sending debug report." ) );
             return;
         }
 

@@ -70,7 +70,7 @@ void ABOUT_APP_INFO::Build( EDA_BASE_FRAME* aParent )
 
     /* KiCad build version */
     wxString version;
-    version << GetBuildVersion()
+    version << ::GetBuildVersion()
 #ifdef DEBUG
             << ", debug"
 #else

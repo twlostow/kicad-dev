@@ -753,7 +753,7 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
 
 void EDA_BASE_FRAME::OnSimulateCrash( wxCommandEvent& event )
 {
-    bool crash = IsOK( this, _("Clicking on OK will crash KiCad. Did you save?" ) );
+    bool crash = IsOK( this, _("Clicking Yes will crash KiCad. Did you save?" ) );
 
     if(!crash)
         return;

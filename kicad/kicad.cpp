@@ -47,6 +47,10 @@
 
 #include "kicad.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+static void InstallWindowsExceptionHandler();
+#endif
+
 
 // a dummy to quiet linking with EDA_BASE_FRAME::config();
 #include <kiface_i.h>
@@ -220,8 +224,13 @@ struct APP_KICAD : public wxApp
 {
     APP_KICAD(): wxApp()
     {
-#if wxUSE_ON_FATAL_EXCEPTION
+
+#if defined( KICAD_CRASH_REPORTER )
+    #if defined(_WIN32) || defined(_WIN64)
+        InstallWindowsExceptionHandler();
+    #elif defined(wxUSE_ON_FATAL_EXCEPTION)
         wxHandleFatalExceptions();
+    #endif
 #endif
 
 #if defined (__LINUX__)
@@ -317,3 +326,37 @@ PROJECT& Prj()
     return Kiway.Prj();
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+// implement Windows exception handler, as wx doesn't have one...
+
+#include <windows.h>
+#include <winbase.h>
+
+static ::LONG CALLBACK vectoredExceptionHandler( ::PEXCEPTION_POINTERS ep )
+{
+    switch( ep->ExceptionRecord->ExceptionCode )
+    {
+        case EXCEPTION_ACCESS_VIOLATION:
+        // fixme implement other stuff here
+            break;
+
+        default:
+            return EXCEPTION_CONTINUE_EXECUTION;
+    }
+
+    auto app = wxApp::GetInstance ();
+
+    static_cast<APP_KICAD*>(app)->OnFatalException();
+
+    ExitProcess(0);
+
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+
+static void InstallWindowsExceptionHandler()
+{
+    ::AddVectoredExceptionHandler( 1, vectoredExceptionHandler );
+}
+
+#endif

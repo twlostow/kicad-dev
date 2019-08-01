@@ -182,7 +182,7 @@ void DEBUG_REPORT::GenerateReport( wxDebugReport::Context ctx )
     crashDialog.ShowModal();
 }
 
-#if !wxCHECK_VERSION( 3, 1, 2 ) && wxUSE_STACKWALKER
+#if wxUSE_STACKWALKER
 class YAML_STACK_WALKER : public wxStackWalker
 {
 public:

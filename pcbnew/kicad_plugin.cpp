@@ -1326,6 +1326,12 @@ void PCB_IO::format( D_PAD* aPad, int aNestLevel ) const
     m_out->Print( aNestLevel, "(pad %s %s %s",
                   m_out->Quotew( aPad->GetName() ).c_str(),
                   type, shape );
+
+    if ( aPad->HasId() )
+    {
+        m_out->Print(0," (id %llx)", aPad->GetId() );
+    }
+
     m_out->Print( 0, " (at %s", FormatInternalUnits( aPad->GetPos0() ).c_str() );
 
     if( aPad->GetOrientation() != 0.0 )
@@ -1655,6 +1661,11 @@ void PCB_IO::format( TRACK* aTrack, int aNestLevel ) const
 
         m_out->Print( aNestLevel, "(via" );
 
+        if ( aTrack->HasId() )
+        {
+            m_out->Print(0," (id %llx)", aTrack->GetId() );
+        }
+
         via->LayerPair( &layer1, &layer2 );
 
         switch( via->GetViaType() )
@@ -1690,6 +1701,11 @@ void PCB_IO::format( TRACK* aTrack, int aNestLevel ) const
         m_out->Print( aNestLevel, "(segment (start %s) (end %s) (width %s)",
                       FormatInternalUnits( aTrack->GetStart() ).c_str(), FormatInternalUnits( aTrack->GetEnd() ).c_str(),
                       FormatInternalUnits( aTrack->GetWidth() ).c_str() );
+
+        if ( aTrack->HasId() )
+        {
+            m_out->Print(0," (id %llx)", aTrack->GetId() );
+        }
 
         m_out->Print( 0, " (layer %s)", m_out->Quotew( aTrack->GetLayerName() ).c_str() );
     }

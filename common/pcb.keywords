@@ -117,6 +117,7 @@ hatch_orientation
 hatch_smoothing_level
 hatch_smoothing_value
 hide
+id
 italic
 justify
 keepout

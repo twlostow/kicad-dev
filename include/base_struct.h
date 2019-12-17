@@ -180,6 +180,8 @@ protected:
     EDA_ITEM*     m_Parent;       ///< Linked list: Link (parent struct)
     timestamp_t   m_TimeStamp;    ///< Time stamp used for logical links
 
+    uint64_t      m_id;
+
     /// Set to true to override the visibility setting of the item.
     bool          m_forceVisible;
 
@@ -211,6 +213,10 @@ public:
     {
         return m_StructType;
     }
+
+    virtual bool HasId() const;
+    virtual void SetId( uint64_t id );
+    virtual uint64_t GetId( ) const;
 
     void SetTimeStamp( timestamp_t aNewTimeStamp ) { m_TimeStamp = aNewTimeStamp; }
     timestamp_t GetTimeStamp() const { return m_TimeStamp; }

@@ -62,6 +62,7 @@ enum textbox {
 EDA_ITEM::EDA_ITEM( EDA_ITEM* parent, KICAD_T idType )
 {
     initVars();
+    m_id = 0;
     m_StructType = idType;
     m_Parent     = parent;
 }
@@ -70,6 +71,7 @@ EDA_ITEM::EDA_ITEM( EDA_ITEM* parent, KICAD_T idType )
 EDA_ITEM::EDA_ITEM( KICAD_T idType )
 {
     initVars();
+    m_id = 0;
     m_StructType = idType;
 }
 
@@ -751,4 +753,20 @@ const EDA_RECT EDA_RECT::GetBoundingBoxRotated( wxPoint aRotCenter, double aAngl
     bbox.SetEnd( end );
 
     return bbox;
+}
+
+
+bool EDA_ITEM::HasId() const 
+{
+    return m_id != 0;
+}
+
+void EDA_ITEM::SetId( uint64_t id )
+{
+    m_id = id;
+}
+
+uint64_t EDA_ITEM::GetId() const
+{
+    return m_id;
 }

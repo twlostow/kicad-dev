@@ -2841,6 +2841,10 @@ D_PAD* PCB_PARSER::parseD_PAD( MODULE* aParent )
 
     switch( token )
     {
+    case T_id:
+        pad->SetId( parseHex() );
+        break;
+
     case T_thru_hole:
         pad->SetAttribute( PAD_ATTRIB_STANDARD );
         break;
@@ -3296,6 +3300,10 @@ TRACK* PCB_PARSER::parseTRACK()
 
         switch( token )
         {
+        case T_id:
+            track->SetId( parseHex() );
+            break;
+
         case T_start:
             pt.x = parseBoardUnits( "start x" );
             pt.y = parseBoardUnits( "start y" );
@@ -3360,6 +3368,10 @@ VIA* PCB_PARSER::parseVIA()
 
         switch( token )
         {
+        case T_id:
+            via->SetId( parseHex() );
+            break;
+
         case T_blind:
             via->SetViaType( VIA_BLIND_BURIED );
             break;

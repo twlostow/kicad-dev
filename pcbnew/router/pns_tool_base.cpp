@@ -421,4 +421,27 @@ const VECTOR2I TOOL_BASE::snapToItem( bool aEnabled, ITEM* aItem, VECTOR2I aP)
     return anchor;
 }
 
+static uint64_t getNextId()
+{
+    static uint64_t idCount = 1;
+    uint64_t rv = idCount++;
+    return rv;
+}
+
+void TOOL_BASE::assignIDs( BOARD *aBoard )
+{
+    for( auto t : aBoard->Tracks() )
+        if( !t->HasId() )
+            t->SetId( getNextId() );
+
+    for( auto m : aBoard->Modules() )
+        for( auto p : m->Pads() )
+            if(!p->HasId())
+                p->SetId( getNextId() );
+}
+
+
+
+
+
 }

@@ -52,6 +52,7 @@ public:
     ROUTER* Router() const;
 
 protected:
+    void assignIDs( BOARD* aBoard );
     bool checkSnap( ITEM* aItem );
     const VECTOR2I snapToItem( bool aEnabled, ITEM* aItem, VECTOR2I aP);
     virtual ITEM* pickSingleItem( const VECTOR2I& aWhere, int aNet = -1, int aLayer = -1,
@@ -81,5 +82,6 @@ protected:
 };
 
 }
+
 
 #endif

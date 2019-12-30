@@ -46,9 +46,12 @@ using namespace std::placeholders;
 #include <tools/selection_tool.h>
 #include <tools/grid_helper.h>
 
+#include <pcb_string_io.h>
+
 #include "router_tool.h"
 #include "pns_segment.h"
 #include "pns_router.h"
+#include "pns_logger.h"
 
 using namespace KIGFX;
 
@@ -454,9 +457,33 @@ void ROUTER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
         switch( aEvent.KeyCode() )
         {
         case '0':
+        {
+            auto logger = m_router->Logger();
+            printf("logger %p\n", logger );
+            if( ! logger )
+                return;
+            
+            FILE *f = fopen("/tmp/pns.log", "wb");
             wxLogTrace( "PNS", "saving drag/route log...\n" );
-            m_router->DumpLog();
+            assignIDs( board() );
+
+            const auto& events = logger->GetEvents();
+
+            for( auto evt : events)
+            {
+                uint64_t id = 0;
+                if( evt.item && evt.item->Parent() )
+                    id = evt.item->Parent()->GetId();
+
+                fprintf(f, "event %d %d %d %lld\n", evt.p.x, evt.p.y, evt.type, id );
+            }
+
+            auto brdStr = PCB_STRING_IO::FormatBoard( board() );
+            fprintf(f,"board\n%s\n", brdStr.c_str() );
+            fclose(f);
+
             break;
+        }
         }
     }
 #endif
@@ -888,6 +915,8 @@ int ROUTER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
     // Prime the pump
     if( aEvent.HasPosition() )
         m_toolMgr->PrimeTool( m_startSnapPoint );
+
+    assignIDs( board() );
 
     // Main loop: keep receiving events
     while( TOOL_EVENT* evt = Wait() )

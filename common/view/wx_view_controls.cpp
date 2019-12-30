@@ -69,9 +69,12 @@ WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW* aView, wxScrolledCanvas* aParentPanel 
     bool enableZoomNoCenter = false;
     bool enableAutoPan = true;
 
-    Pgm().CommonSettings()->Read( ENBL_MOUSEWHEEL_PAN_KEY, &enableMousewheelPan, false );
-    Pgm().CommonSettings()->Read( ENBL_ZOOM_NO_CENTER_KEY, &enableZoomNoCenter, false );
-    Pgm().CommonSettings()->Read( ENBL_AUTO_PAN_KEY, &enableAutoPan, true );
+    if( Pgm().CommonSettings() )
+    {
+        Pgm().CommonSettings()->Read( ENBL_MOUSEWHEEL_PAN_KEY, &enableMousewheelPan, false );
+        Pgm().CommonSettings()->Read( ENBL_ZOOM_NO_CENTER_KEY, &enableZoomNoCenter, false );
+        Pgm().CommonSettings()->Read( ENBL_AUTO_PAN_KEY, &enableAutoPan, true );
+    }
 
     m_settings.m_enableMousewheelPan = enableMousewheelPan;
     m_settings.m_warpCursor = !enableZoomNoCenter;

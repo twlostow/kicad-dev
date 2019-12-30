@@ -89,6 +89,11 @@ public:
 
     PCB_RENDER_SETTINGS();
 
+    void SetZoneDisplayMode( DISPLAY_ZONE_MODE mode )
+    {
+        m_displayZone = mode;
+    }
+
     /// @copydoc RENDER_SETTINGS::ImportLegacyColors()
     void ImportLegacyColors( const COLORS_DESIGN_SETTINGS* aSettings ) override;
 

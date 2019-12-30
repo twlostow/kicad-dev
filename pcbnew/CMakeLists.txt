@@ -289,6 +289,7 @@ set( PCBNEW_CLASS_SRCS
     pcbnew_config.cpp
     pcbnew_printout.cpp
     pcb_legacy_draw_utils.cpp
+    pcb_string_io.cpp
     pcbplot.cpp
     plot_board_layers.cpp
     plot_brditems_plotter.cpp

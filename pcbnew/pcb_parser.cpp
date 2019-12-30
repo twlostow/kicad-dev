@@ -1,4 +1,4 @@
-/*
+    /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 CERN
@@ -2841,10 +2841,6 @@ D_PAD* PCB_PARSER::parseD_PAD( MODULE* aParent )
 
     switch( token )
     {
-    case T_id:
-        pad->SetId( parseHex() );
-        break;
-
     case T_thru_hole:
         pad->SetAttribute( PAD_ATTRIB_STANDARD );
         break;
@@ -2916,6 +2912,11 @@ D_PAD* PCB_PARSER::parseD_PAD( MODULE* aParent )
 
         switch( token )
         {
+        case T_id:
+            pad->SetId( parseHex() );
+            NeedRIGHT();
+            break;
+
         case T_size:
             sz.SetWidth( parseBoardUnits( "width value" ) );
             sz.SetHeight( parseBoardUnits( "height value" ) );
@@ -3370,6 +3371,7 @@ VIA* PCB_PARSER::parseVIA()
         {
         case T_id:
             via->SetId( parseHex() );
+            NeedRIGHT();
             break;
 
         case T_blind:

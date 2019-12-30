@@ -61,6 +61,7 @@ class VIA;
 class RULE_RESOLVER;
 class SHOVE;
 class DRAGGER;
+class LOGGER;
 
 enum ROUTER_MODE {
     PNS_MODE_ROUTE_SINGLE = 1,
@@ -162,6 +163,7 @@ public:
     const std::vector<int> GetCurrentNets() const;
 
     void DumpLog();
+    LOGGER* Logger();
 
     RULE_RESOLVER* GetRuleResolver() const
     {
@@ -271,6 +273,7 @@ private:
     ROUTING_SETTINGS m_settings;
     SIZES_SETTINGS m_sizes;
     ROUTER_MODE m_mode;
+    LOGGER* m_logger;
 
     wxString m_toolStatusbarName;
     wxString m_failureReason;

@@ -64,6 +64,8 @@ ROUTER::ROUTER()
     m_state = IDLE;
     m_mode = PNS_MODE_ROUTE_SINGLE;
 
+    m_logger = new LOGGER;
+
     // Initialize all other variables:
     m_lastNode = nullptr;
     m_iterLimit = 0;
@@ -84,6 +86,7 @@ ROUTER::~ROUTER()
 {
     ClearWorld();
     theRouter = nullptr;
+    delete m_logger;
 }
 
 
@@ -136,12 +139,15 @@ bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM* aStartItem, int aDragMode 
 
     m_placer = std::make_unique<LINE_PLACER>( this );
     m_placer->Start( aP, aStartItem );
-
+    m_placer->SetLogger( m_logger );
+    m_placer->SetDebugDecorator ( m_iface->GetDebugDecorator () );
+    
     m_dragger = std::make_unique<DRAGGER>( this );
     m_dragger->SetMode( aDragMode );
     m_dragger->SetWorld( m_world.get() );
     m_dragger->SetDebugDecorator ( m_iface->GetDebugDecorator () );
-
+    m_dragger->SetLogger( m_logger );
+    
     if( m_dragger->Start ( aP, aStartItem ) )
         m_state = DRAG_SEGMENT;
     else
@@ -208,6 +214,12 @@ bool ROUTER::StartRouting( const VECTOR2I& aP, ITEM* aStartItem, int aLayer )
     m_placer->UpdateSizes ( m_sizes );
     m_placer->SetLayer( aLayer );
     m_placer->SetDebugDecorator ( m_iface->GetDebugDecorator () );
+    m_placer->SetLogger( m_logger );
+
+    if( m_logger )
+    {
+        m_logger->Log( LOGGER::EVT_START_ROUTE, aP, aStartItem );
+    }
 
     bool rv = m_placer->Start( aP, aStartItem );
 
@@ -230,6 +242,11 @@ void ROUTER::DisplayItems( const ITEM_SET& aItems )
 void ROUTER::Move( const VECTOR2I& aP, ITEM* endItem )
 {
     m_currentEnd = aP;
+
+    if( m_logger )
+    {
+        m_logger->Log( LOGGER::EVT_MOVE, aP, endItem );
+    }
 
     switch( m_state )
     {
@@ -374,6 +391,12 @@ bool ROUTER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinish )
 {
     bool rv = false;
 
+    if( m_logger )
+    {
+        m_logger->Log( LOGGER::EVT_FIX, aP, aEndItem );
+    }
+
+
     switch( m_state )
     {
     case ROUTE_TRACK:
@@ -472,26 +495,9 @@ int ROUTER::GetCurrentLayer() const
 }
 
 
-void ROUTER::DumpLog()
+LOGGER* ROUTER::Logger()
 {
-    LOGGER* logger = nullptr;
-
-    switch( m_state )
-    {
-    case DRAG_SEGMENT:
-        logger = m_dragger->Logger();
-        break;
-
-    case ROUTE_TRACK:
-        logger = m_placer->Logger();
-        break;
-
-    default:
-        break;
-    }
-
-    if( logger )
-        logger->Save( "/tmp/shove.log" );
+    return m_logger;
 }
 
 

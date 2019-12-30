@@ -59,11 +59,6 @@ public:
     SHOVE( NODE* aWorld, ROUTER* aRouter );
     ~SHOVE();
 
-    virtual LOGGER* Logger() override
-    {
-        return &m_logger;
-    }
-
     SHOVE_STATUS ShoveLines( const LINE& aCurrentHead );
     SHOVE_STATUS ShoveMultiLines( const ITEM_SET& aHeadSet );
 
@@ -147,7 +142,6 @@ private:
 
     OPT_LINE                    m_newHead;
 
-    LOGGER                      m_logger;
     VIA*                        m_draggedVia;
 
     int                         m_iter;

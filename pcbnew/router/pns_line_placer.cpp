@@ -387,6 +387,8 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 
     WALKAROUND::WALKAROUND_STATUS wf = walkaround.Route( initTrack, walkFull, false );
 
+    Dbg()->AddLine( walkFull.CLine(), 2, 100000 );
+
     switch( Settings().OptimizerEffort() )
     {
     case OE_LOW:
@@ -1190,8 +1192,8 @@ void LINE_PLACER::updateLeadingRatLine()
     SHAPE_LINE_CHAIN ratLine;
     TOPOLOGY topo( m_lastNode );
 
-    if( topo.LeadingRatLine( &current, ratLine ) )
-        Dbg()->AddLine( ratLine, 5, 10000 );
+    //if( topo.LeadingRatLine( &current, ratLine ) )
+        //Dbg()->AddLine( ratLine, 5, 10000 );
 }
 
 
@@ -1269,12 +1271,5 @@ void LINE_PLACER::GetModifiedNets( std::vector<int>& aNets ) const
     aNets.push_back( m_currentNet );
 }
 
-LOGGER* LINE_PLACER::Logger()
-{
-    if( m_shove )
-        return m_shove->Logger();
-
-    return NULL;
-}
 
 }

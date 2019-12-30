@@ -345,11 +345,11 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
     assert( obstacleLine.LayersOverlap( &shovedLine ) );
 
 #ifdef DEBUG
-    m_logger.NewGroup( "on-colliding-segment", m_iter );
-    m_logger.Log( &tmp, 0, "obstacle-segment" );
-    m_logger.Log( &aCurrent, 1, "current-line" );
-    m_logger.Log( &obstacleLine, 2, "obstacle-line" );
-    m_logger.Log( &shovedLine, 3, "shoved-line" );
+    Logger()->NewGroup( "on-colliding-segment", m_iter );
+    Logger()->Log( &tmp, 0, "obstacle-segment" );
+    Logger()->Log( &aCurrent, 1, "current-line" );
+    Logger()->Log( &obstacleLine, 2, "obstacle-line" );
+    Logger()->Log( &shovedLine, 3, "shoved-line" );
 #endif
 
     if( rv == SH_OK )
@@ -386,10 +386,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingLine( LINE& aCurrent, LINE& aObstacle )
     SHOVE_STATUS rv = ProcessSingleLine( aCurrent, aObstacle, shovedLine );
 
     #ifdef DEBUG
-        m_logger.NewGroup( "on-colliding-line", m_iter );
-        m_logger.Log( &aObstacle, 0, "obstacle-line" );
-        m_logger.Log( &aCurrent, 1, "current-line" );
-        m_logger.Log( &shovedLine, 3, "shoved-line" );
+        Logger()->NewGroup( "on-colliding-line", m_iter );
+        Logger()->Log( &aObstacle, 0, "obstacle-line" );
+        Logger()->Log( &aCurrent, 1, "current-line" );
+        Logger()->Log( &shovedLine, 3, "shoved-line" );
     #endif
 
     if( rv == SH_OK )
@@ -454,10 +454,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
     std::set<ITEM*> cluster = topo.AssembleCluster( aObstacle, aCurrent.Layers().Start() );
 
 #ifdef DEBUG
-    m_logger.NewGroup( "on-colliding-solid-cluster", m_iter );
+    Logger()->NewGroup( "on-colliding-solid-cluster", m_iter );
     for( ITEM* item : cluster )
     {
-        m_logger.Log( item, 0, "cluster-entry" );
+        Logger()->Log( item, 0, "cluster-entry" );
     }
 #endif
 
@@ -536,10 +536,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
     walkaroundLine.SetRank( nextRank );
 
 #ifdef DEBUG
-    m_logger.NewGroup( "on-colliding-solid", m_iter );
-    m_logger.Log( aObstacle, 0, "obstacle-solid" );
-    m_logger.Log( &aCurrent, 1, "current-line" );
-    m_logger.Log( &walkaroundLine, 3, "walk-line" );
+    Logger()->NewGroup( "on-colliding-solid", m_iter );
+    Logger()->Log( aObstacle, 0, "obstacle-solid" );
+    Logger()->Log( &aCurrent, 1, "current-line" );
+    Logger()->Log( &walkaroundLine, 3, "walk-line" );
 #endif
 
     popLineStack();
@@ -681,13 +681,13 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
     }
 
 #ifdef DEBUG
-    m_logger.Log( aVia, 0, "obstacle-via" );
+    Logger()->Log( aVia, 0, "obstacle-via" );
 #endif
 
     pushedVia->SetRank( aCurrentRank - 1 );
 
 #ifdef DEBUG
-    m_logger.Log( pushedVia.get(), 1, "pushed-via" );
+    Logger()->Log( pushedVia.get(), 1, "pushed-via" );
 #endif
 
     if( aVia->Marker() & MK_HEAD )      // push
@@ -730,8 +730,8 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
         }
 
 #ifdef DEBUG
-        m_logger.Log( &lp.first, 2, "fan-pre" );
-        m_logger.Log( &lp.second, 3, "fan-post" );
+        Logger()->Log( &lp.first, 2, "fan-pre" );
+        Logger()->Log( &lp.second, 3, "fan-post" );
 #endif
     }
 
@@ -761,8 +761,8 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia )
     if( aCurrent->OfKind( ITEM::LINE_T ) )
     {
 #ifdef DEBUG
-         m_logger.NewGroup( "push-via-by-line", m_iter );
-         m_logger.Log( aCurrent, 4, "current" );
+         Logger()->NewGroup( "push-via-by-line", m_iter );
+         Logger()->Log( aCurrent, 4, "current" );
 #endif
 
         currentLine = (LINE*) aCurrent;
@@ -846,10 +846,10 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
             if( st != SH_OK )
             {
 #ifdef DEBUG
-                m_logger.NewGroup( "on-reverse-via-fail-shove", m_iter );
-                m_logger.Log( aObstacleVia, 0, "the-via" );
-                m_logger.Log( &aCurrent, 1, "current-line" );
-                m_logger.Log( &shoved, 3, "shoved-line" );
+                Logger()->NewGroup( "on-reverse-via-fail-shove", m_iter );
+                Logger()->Log( aObstacleVia, 0, "the-via" );
+                Logger()->Log( &aCurrent, 1, "current-line" );
+                Logger()->Log( &shoved, 3, "shoved-line" );
 #endif
 
                 return st;
@@ -863,9 +863,9 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
     if( !n )
     {
 #ifdef DEBUG
-        m_logger.NewGroup( "on-reverse-via-fail-lonevia", m_iter );
-        m_logger.Log( aObstacleVia, 0, "the-via" );
-        m_logger.Log( &aCurrent, 1, "current-line" );
+        Logger()->NewGroup( "on-reverse-via-fail-lonevia", m_iter );
+        Logger()->Log( aObstacleVia, 0, "the-via" );
+        Logger()->Log( &aCurrent, 1, "current-line" );
 #endif
 
         LINE head( aCurrent );
@@ -885,10 +885,10 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
         shoved.AppendVia( aCurrent.Via() );
 
 #ifdef DEBUG
-    m_logger.NewGroup( "on-reverse-via", m_iter );
-    m_logger.Log( aObstacleVia, 0, "the-via" );
-    m_logger.Log( &aCurrent, 1, "current-line" );
-    m_logger.Log( &shoved, 3, "shoved-line" );
+    Logger()->NewGroup( "on-reverse-via", m_iter );
+    Logger()->Log( aObstacleVia, 0, "the-via" );
+    Logger()->Log( &aCurrent, 1, "current-line" );
+    Logger()->Log( &shoved, 3, "shoved-line" );
 #endif
     int currentRank = aCurrent.Rank();
     replaceLine( aCurrent, shoved );
@@ -1166,7 +1166,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     m_lineStack.clear();
     m_optimizerQueue.clear();
     m_newHead = OPT_LINE();
-    m_logger.Clear();
+    Logger()->Clear();
 
     // Pop NODEs containing previous shoves which are no longer necessary
     //
@@ -1191,15 +1191,15 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     head.Mark( MK_HEAD );
     head.SetRank( 100000 );
 
-    m_logger.NewGroup( "initial", 0 );
-    m_logger.Log( &head, 0, "head" );
+    Logger()->NewGroup( "initial", 0 );
+    Logger()->Log( &head, 0, "head" );
 
     if( head.EndsWithVia() )
     {
         std::unique_ptr< VIA >headVia = Clone( head.Via() );
         headVia->Mark( MK_HEAD );
         headVia->SetRank( 100000 );
-        m_logger.Log( headVia.get(), 0, "head-via" );
+        Logger()->Log( headVia.get(), 0, "head-via" );
         m_currentNode->Add( std::move( headVia ) );
     }
 
@@ -1275,7 +1275,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveMultiLines( const ITEM_SET& aHeadSet )
 
     m_lineStack.clear();
     m_optimizerQueue.clear();
-    m_logger.Clear();
+    Logger()->Clear();
 
     VIA_HANDLE dummyVia;
 
@@ -1305,13 +1305,13 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveMultiLines( const ITEM_SET& aHeadSet )
             std::unique_ptr< VIA > headVia = Clone( head.Via() );
             headVia->Mark( MK_HEAD );
             headVia->SetRank( 100000 );
-            m_logger.Log( headVia.get(), 0, "head-via" );
+            Logger()->Log( headVia.get(), 0, "head-via" );
             m_currentNode->Add( std::move( headVia ) );
         }
     }
 
-    m_logger.NewGroup( "initial", 0 );
-    //m_logger.Log( head, 0, "head" );
+    Logger()->NewGroup( "initial", 0 );
+    //Logger()->Log( head, 0, "head" );
 
     st = shoveMainLoop();
 

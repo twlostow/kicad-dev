@@ -33,7 +33,7 @@ ROUTING_SETTINGS& ALGO_BASE::Settings() const
 
 LOGGER* ALGO_BASE::Logger()
 {
-    return NULL;
+    return m_logger;
 }
 
 }

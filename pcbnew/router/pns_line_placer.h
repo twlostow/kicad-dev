@@ -187,8 +187,6 @@ public:
 
     void GetModifiedNets( std::vector<int>& aNets ) const override;
 
-    LOGGER* Logger() override;
-
     /**
      * Function SplitAdjacentSegments()
      *

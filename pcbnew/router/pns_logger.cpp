@@ -48,6 +48,7 @@ LOGGER::~LOGGER()
 void LOGGER::Clear()
 {
     m_theLog.str( std::string() );
+    m_events.clear();
     m_groupOpened = false;
 }
 
@@ -202,7 +203,30 @@ void LOGGER::Save( const std::string& aFilename )
     wxLogTrace( "PNS", "Saving to '%s' [%p]", aFilename.c_str(), f );
     const std::string s = m_theLog.str();
     fwrite( s.c_str(), 1, s.length(), f );
+
+    for ( const auto evt : m_events )
+    {
+        uint64_t id = 0;
+        if( evt.item && evt.item->Parent() )
+            id = evt.item->Parent()->GetId();
+        fprintf(f, "event %d %d %d %llx\n",
+        evt.type, evt.p.x, evt.p.y, id );
+    }
+
     fclose( f );
 }
 
+void LOGGER::Log( EventType evt, VECTOR2I pos, const ITEM* item )
+{
+    EventEntry ent;
+
+    ent.type = evt;
+    ent.p = pos;
+    ent.item = item;
+
+    m_events.push_back( ent );
+
 }
+
+}
+

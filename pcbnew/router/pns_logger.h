@@ -39,6 +39,21 @@ class ITEM;
 class LOGGER
 {
 public:
+
+    enum EventType {
+        EVT_START_ROUTE = 0,
+        EVT_START_DRAG,
+        EVT_FIX,
+        EVT_MOVE
+    };
+
+    struct EventEntry {
+        VECTOR2I p;
+        EventType type;
+        const ITEM* item;
+        uint64_t itemId;
+    };
+
     LOGGER();
     ~LOGGER();
 
@@ -48,12 +63,19 @@ public:
     void NewGroup( const std::string& aName, int aIter = 0 );
     void EndGroup();
 
+    void Log( EventType evt, VECTOR2I pos, const ITEM* item = nullptr );
     void Log( const ITEM* aItem, int aKind = 0, const std::string& aName = std::string() );
     void Log( const SHAPE_LINE_CHAIN *aL, int aKind = 0, const std::string& aName = std::string() );
     void Log( const VECTOR2I& aStart, const VECTOR2I& aEnd, int aKind = 0,
               const std::string& aName = std::string() );
 
+    const std::vector<EventEntry>& GetEvents()
+    {
+        return m_events;
+    }
+
 private:
+    std::vector<EventEntry> m_events;
     void dumpShape( const SHAPE* aSh );
 
     bool m_groupOpened;

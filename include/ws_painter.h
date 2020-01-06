@@ -51,7 +51,7 @@ public:
     WS_RENDER_SETTINGS();
 
     /// @copydoc RENDER_SETTINGS::GetColor()
-    virtual const COLOR4D& GetColor( const VIEW_ITEM* aItem, int aLayer ) const override;
+    virtual const COLOR4D GetColor( const VIEW_ITEM* aItem, int aLayer ) const override;
 
     inline bool IsBackgroundDark() const override
     {

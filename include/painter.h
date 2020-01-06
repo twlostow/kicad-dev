@@ -173,7 +173,7 @@ public:
      * @param aLayer is the layer.
      * @return The color.
      */
-    virtual const COLOR4D& GetColor( const VIEW_ITEM* aItem, int aLayer ) const = 0;
+    virtual const COLOR4D GetColor( const VIEW_ITEM* aItem, int aLayer ) const = 0;
 
     float GetWorksheetLineWidth() const
     {

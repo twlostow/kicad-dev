@@ -52,7 +52,7 @@ WS_RENDER_SETTINGS::WS_RENDER_SETTINGS()
 }
 
 
-const COLOR4D& WS_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
+const COLOR4D WS_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
 {
     const EDA_ITEM* item = dynamic_cast<const EDA_ITEM*>( aItem );
 

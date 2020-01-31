@@ -747,3 +747,18 @@ const EDA_RECT EDA_RECT::GetBoundingBoxRotated( wxPoint aRotCenter, double aAngl
 
     return bbox;
 }
+
+
+uint32_t EDA_ITEM::GetUserFlags() const
+{
+    return (m_Status >> 32);
+}
+
+
+void EDA_ITEM::SetUserFlags( uint32_t aFlags, int value )
+{
+    m_Status &= ~ ((uint64_t)aFlags << 32);
+
+    if( value )
+        m_Status |= ((uint64_t)aFlags << 32);
+}

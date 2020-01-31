@@ -95,6 +95,11 @@ public:
         m_seg.B += aVector;
     }
 
+    const SHAPE_LINE_CHAIN ConvertToPolyline( bool aWire, int aOffset, double aApproximationAccuracy ) override;
+
+    /// @copydoc SHAPE::Format()
+    const std::string Format() const override;
+
 private:
     SEG m_seg;
     int m_width;

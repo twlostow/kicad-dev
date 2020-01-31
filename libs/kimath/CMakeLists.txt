@@ -14,6 +14,7 @@ set( KIMATH_SRCS
     src/geometry/shape_file_io.cpp
     src/geometry/shape_line_chain.cpp
     src/geometry/shape_poly_set.cpp
+    src/geometry/shape_segment.cpp
 
     src/math/levenberg_marquardt.cpp
     src/math/util.cpp

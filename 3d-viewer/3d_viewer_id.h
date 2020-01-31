@@ -12,6 +12,9 @@
  * Please change the value of ROOM_FOR_3D_VIEWER if too small.
  */
 
+#ifndef __3D_VIEWER_ID_H
+#define __3D_VIEWER_ID_H
+
 #include <id.h>        // Generic Id.
 
 enum id_3dview_frm
@@ -119,3 +122,5 @@ enum id_3dview_frm
 
     ID_END_COMMAND_3D = ID_KICAD_3D_VIEWER_END,
 };
+
+#endif

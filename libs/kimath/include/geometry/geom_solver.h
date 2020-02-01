@@ -1,0 +1,461 @@
+#ifndef __GEOM_SOLVER_H
+#define __GEOM_SOLVER_H
+
+#include <cmath>
+#include <cstdio>
+#include <memory>
+#include <set>
+#include <vector>
+
+#include <wx/wx.h>
+
+#include <geometry/point_set.h>
+#include <geometry/seg.h>
+#include <geometry/shape_arc.h>
+#include <math/vector2d.h>
+
+#include <math/levenberg_marquardt.h>
+
+enum GS_CONSTRAINT_TYPE
+{
+    GSC_FIXED_POS = ( 1 << 0 ),
+    GSC_SEGMENT_SLOPE = ( 1 << 1 ),
+    GSC_SEGMENT_LENGTH = ( 1 << 2 )
+};
+
+enum GS_ITEM_TYPE
+{
+    GST_SEGMENT = 0,
+    GST_ARC
+};
+
+class GS_ITEM;
+class GS_SOLVER;
+class BOARD_ITEM;
+
+class GS_ANCHOR : public LM_PARAMETER
+{
+public:
+    GS_ANCHOR( VECTOR2D aPos, bool aIsSolvable, GS_ITEM* aParent = nullptr )
+            : m_pos( aPos ),
+              m_originPos( aPos ),
+              m_solvable( aIsSolvable ),
+              //m_index( getNextIndex() ),
+              m_fixed( false ),
+              m_parent( aParent )
+    {
+    }
+
+    virtual ~GS_ANCHOR()
+    {
+    }
+
+    friend class GS_SOLVER;
+
+    GS_ITEM* GetParent() const
+    {
+        return m_parent;
+    }
+    void SetParent( GS_ITEM* aParent )
+    {
+        m_parent = aParent;
+    }
+
+    virtual int LmGetDimension() override
+    {
+        return 2;
+    };
+
+    virtual void LmSetValue( int index, double value ) override
+    {
+        if( index == 0 )
+            m_pos.x = value;
+        else
+            m_pos.y = value;
+    }
+
+    virtual double LmGetValue( int index ) override
+    {
+        return ( index == 0 ? m_pos.x : m_pos.y );
+    }
+
+    virtual double LmGetInitialValue( int index ) override
+    {
+        return ( index == 0 ? m_originPos.x : m_originPos.y );
+    }
+
+    const VECTOR2D& GetPos() const
+    {
+        return m_pos;
+    }
+
+    const VECTOR2D& GetOriginPos() const
+    {
+        return m_originPos;
+    }
+
+    void SetPos( const VECTOR2D& aPos )
+    {
+        m_pos = aPos;
+        m_originPos = aPos;
+    }
+
+    bool IsSolvable() const
+    {
+        return m_solvable;
+    }
+
+    bool IsMoved() const
+    {
+        return m_displacement != VECTOR2D( 0, 0 );
+    }
+
+    const VECTOR2D& GetDisplacement() const
+    {
+        return m_displacement;
+    }
+
+    void SetDisplacement( const VECTOR2D& aV )
+    {
+        m_displacement = aV;
+        m_hasDisplacement = true;
+    }
+
+    bool HasDisplacement() const
+    {
+        return m_hasDisplacement;
+    }
+
+    std::vector<GS_ITEM*>& LinkedItems()
+    {
+        return m_linkedItems;
+    }
+    const std::vector<GS_ITEM*>& CLinkedItems() const
+    {
+        return m_linkedItems;
+    }
+
+    void Link( GS_ITEM* aItem )
+    {
+        m_linkedItems.push_back( aItem );
+    }
+
+    void SetFixed( bool aFixed )
+    {
+        m_fixed = aFixed;
+    }
+
+    bool IsFixed() const
+    {
+        return m_fixed;
+    }
+
+private:
+    static int getNextIndex()
+    {
+        static int currentIndex = 0;
+        return ( currentIndex++ );
+    }
+
+    bool                  m_hasDisplacement = false;
+    int                   m_parameterIndex;
+    bool                  m_fixed;
+    bool                  m_solvable;
+    VECTOR2D              m_originPos;
+    VECTOR2D              m_pos;
+    VECTOR2D              m_displacement;
+    std::vector<GS_ITEM*> m_linkedItems;
+    GS_ITEM*              m_parent;
+    //int                   m_index;
+};
+
+class GS_CONSTRAINT;
+
+class GS_ITEM
+{
+public:
+    GS_ITEM( int aAnchorCount, GS_ITEM_TYPE aType )
+    {
+        //printf("Create item [%p, %d anchors]\n", this, aAnchorCount );
+        m_anchors.resize( aAnchorCount );
+        m_type = aType;
+        m_parent = nullptr;
+        m_isPrimary = false;
+    }
+
+    virtual void AddConstraint( GS_CONSTRAINT* aConstraint )
+    {
+        m_constraints.push_back( aConstraint );
+    }
+
+    int GetConstraintCount() const
+    {
+        return m_constraints.size();
+    }
+
+    std::vector<GS_CONSTRAINT*> Constraints()
+    {
+        return m_constraints;
+    }
+
+    virtual void CreateAnchors( GS_SOLVER* aSolver ) = 0;
+    virtual void UpdateAnchors(){};
+
+    GS_ANCHOR* Anchor( int index )
+    {
+        return m_anchors[index];
+    }
+
+    const GS_ANCHOR* CAnchor( int index ) const
+    {
+        return m_anchors[index];
+    }
+
+    GS_ITEM_TYPE Type() const
+    {
+        return m_type;
+    }
+
+    void SetParent( BOARD_ITEM* aParent )
+    {
+        m_parent = aParent;
+    }
+    BOARD_ITEM* GetParent() const
+    {
+        return m_parent;
+    }
+
+    const std::vector<GS_ANCHOR*>& GetAnchors() const
+    {
+        return m_anchors;
+    }
+
+    bool IsPrimary() const
+    {
+        return m_isPrimary;
+    }
+    void SetPrimary( bool aPrim )
+    {
+        m_isPrimary = aPrim;
+    }
+
+    virtual void SyncAnchors(){};
+
+protected:
+    BOARD_ITEM*                 m_parent;
+    GS_ITEM_TYPE                m_type;
+    bool                        m_isPrimary;
+    std::vector<GS_ANCHOR*>     m_anchors;
+    std::vector<GS_CONSTRAINT*> m_constraints;
+};
+
+class GS_SEGMENT : public GS_ITEM
+{
+public:
+    GS_SEGMENT( SEG aSeg ) : GS_ITEM( 3, GST_SEGMENT ), m_seg( aSeg )
+    {
+    }
+
+    GS_SEGMENT( const VECTOR2I& aA, const VECTOR2I& aB )
+            : GS_ITEM( 3, GST_SEGMENT ), m_seg( SEG( aA, aB ) )
+    {
+    }
+
+    virtual void CreateAnchors( GS_SOLVER* aSolver ) override;
+    virtual void SyncAnchors() override;
+
+private:
+    SEG m_seg;
+};
+
+
+class GS_SOLVER
+{
+public:
+    typedef std::vector<GS_ANCHOR*> ANCHOR_SET;
+
+    GS_SOLVER(){};
+    ~GS_SOLVER(){};
+
+    void Add( GS_ITEM* aItem );
+    bool Run();
+
+    GS_ANCHOR* CreateAnchor( const VECTOR2D& aPos, bool aSolvable );
+
+    int GetAnchorCount() const
+    {
+        return m_anchors.size();
+    }
+
+    const ANCHOR_SET& GetAnchors() const
+    {
+        return m_anchors;
+    }
+
+    void MoveAnchor( GS_ANCHOR* aAnchor, const VECTOR2D& aNewPos )
+    {
+        aAnchor->SetDisplacement( aNewPos - aAnchor->GetOriginPos() );
+    }
+
+    void AddConstraint( GS_CONSTRAINT* constraint )
+    {
+        m_constraints.push_back( constraint );
+    }
+
+    void Clear();
+    void FindOutlines( GS_ITEM* rootItem );
+    bool IsResultOK() const
+    {
+        return m_resultOK;
+    };
+
+    GS_ANCHOR*             FindAnchor( VECTOR2D pos, double snapRadius );
+
+    std::vector<GS_ITEM*>& Items()
+    {
+        return m_items;
+    }
+
+private:
+    GS_ANCHOR* findFixedAnchor( GS_ANCHOR *aMovedAnchor );
+
+    std::unique_ptr<LM_SOLVER>  m_solver;
+    std::vector<GS_ITEM*>       m_items;
+    std::vector<GS_CONSTRAINT*> m_constraints;
+    ANCHOR_SET                  m_anchors;
+    bool                        m_resultOK;
+};
+
+class GS_CONSTRAINT : public LM_EQUATION
+{
+public:
+    GS_CONSTRAINT( GS_ITEM* aParent ) : m_parent( aParent ){};
+    virtual ~GS_CONSTRAINT(){};
+
+    GS_ITEM* GetParent() const
+    {
+        return m_parent;
+    }
+
+protected:
+    GS_ITEM* m_parent;
+};
+
+class GS_POSITION_CONSTRAINT : public GS_CONSTRAINT
+{
+public:
+    GS_POSITION_CONSTRAINT( GS_ANCHOR* aAnchor ) : GS_CONSTRAINT( nullptr )
+    {
+        m_anchor = aAnchor;
+    };
+
+    virtual int  LmGetEquationCount();
+    virtual void LmFunc( double* x );
+    virtual void LmDFunc( double* dx, int equationIndex );
+
+private:
+    GS_ANCHOR* m_anchor;
+};
+
+class GS_ARC : public GS_ITEM
+{
+public:
+    GS_ARC( SHAPE_ARC aArc ) : GS_ITEM( 3, GST_ARC ), m_arc( aArc )
+    {
+    }
+
+    GS_ARC( const VECTOR2I& start, const VECTOR2I& end, const VECTOR2I& center )
+            : GS_ITEM( 3, GST_ARC )
+    {
+        Update( start, end, center );
+    }
+
+    void             Update( const VECTOR2I& start, const VECTOR2I& end, const VECTOR2I& center );
+    virtual void     CreateAnchors( GS_SOLVER* aSolver ) override;
+    const SHAPE_ARC& GetArc() const
+    {
+        return m_arc;
+    }
+
+private:
+    SHAPE_ARC m_arc;
+};
+
+class GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION : public GS_CONSTRAINT
+{
+public:
+    GS_CONSTRAINT_SEGMENT_FIXED_DIRECTION( GS_SEGMENT* aSeg ) : GS_CONSTRAINT( aSeg ){};
+
+    virtual int  LmGetEquationCount();
+    virtual void LmFunc( double* x );
+    virtual void LmDFunc( double* dx, int equationIndex );
+};
+
+#if 0
+class GS_CONSTRAINT_SEGMENT_FIXED_LENGTH : public GS_CONSTRAINT
+{
+public:
+    GS_CONSTRAINT_SEGMENT_FIXED_LENGTH( GS_SEGMENT* aSeg ) : GS_CONSTRAINT( aSeg ) { };
+
+    virtual int LmGetEquationCount()
+    {
+        return 1;
+    }
+
+    virtual void LmFunc( double *x )  
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+
+        auto d_new = (a1->GetPos() - a0->GetPos()).EuclideanNorm();
+        auto d_old = (a1->GetOriginPos() - a0->GetOriginPos()).EuclideanNorm();
+
+        //printf("a0 : %.2f %.2f a1 %.2f %.2f\n", a0->GetPos().x, a0->GetPos().y, a1->GetPos().x, a1->GetPos().y );
+
+        double error = d_old - d_new;
+        //printf("----------- d_new %.10f %.10f d_old %.10f %.10f err %.10f\n", d_new.x, d_new.y, d_old.x, d_old.y, error);
+        x[0] = error;
+    };
+
+    virtual void LmDFunc( double *dx, int equationIndex )
+    {
+        auto a0 = m_parent->Anchor(0);
+        auto a1 = m_parent->Anchor(1);
+        auto d_new = (a1->GetPos() - a0->GetPos());
+        auto d_old = (a1->GetOriginPos() - a0->GetOriginPos());
+
+        // 4 parameters involved
+        // d_new.x = a1.x - a0.x
+        // d_new.y = a1.y - a0.y
+        // l_old = const
+        // l_new = sqrt( d_new.x^2 + d_new.y ^ 2 )
+        // err = l_old - l_new
+        // derr/d(a0.x) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (-2*a0.x)
+        // derr/d(a0.y) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (-2*a0.y)
+        // derr/d(a1.x) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (2*a1.x)
+        // derr/d(a1.y) = -sqrt( x*x + y*y ) = 1/(2*sqrt()) * (2*a1.y)
+
+        //d(b - a)^2 / db = 2(b-a)
+
+        double s = sqrt( d_new.x * d_new.x + d_new.y * d_new.y );
+
+        dx [ a0->LmGetIndex() ] =  1.0 * s * a0->GetPos().x; // derr / d(a0.x)
+        dx [ a0->LmGetIndex() + 1 ] =  1.0 * s * a0->GetPos().y; // derr / d(a0.y)
+        dx [ a1->LmGetIndex() ] =  -1.0 * s * a1->GetPos().y; // derr / d(a1.x)
+        dx [ a1->LmGetIndex() + 1 ] =  -1.0 * s * a1->GetPos().y; // derr / d(a1.y)
+    };
+
+};
+#endif
+
+class GS_CONSTRAINT_ARC_FIXED_ANGLES : public GS_CONSTRAINT
+{
+public:
+    GS_CONSTRAINT_ARC_FIXED_ANGLES( GS_ARC* aArc ) : GS_CONSTRAINT( aArc ){};
+
+    virtual int  LmGetEquationCount();
+    virtual void LmFunc( double* x );
+    virtual void LmDFunc( double* dx, int equationIndex );
+};
+
+#endif

@@ -828,6 +828,8 @@ public:
 
     virtual void SwapData( BOARD_ITEM* aImage ) override;
 
+    virtual const std::vector<ANCHOR*> GetAnchors() override;
+
 #if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
 #endif

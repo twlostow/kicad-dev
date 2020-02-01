@@ -109,7 +109,8 @@ public:
     double  GetStartAngle() const;
     double  GetEndAngle() const;
 
-/*
+
+    bool ConstructFromCenterAndCorners( VECTOR2I aP0, VECTOR2I aP1, VECTOR2D aCenter );
     bool ConstructFromCorners( VECTOR2I aP0, VECTOR2I aP1, double aCenterAngle );
     bool ConstructFromCircle( VECTOR2I aP0, double aRadius );
 
@@ -119,7 +120,6 @@ public:
             double aStartAngle,
             double aCenterAngle,
             double aRadius );
-*/
 
     /**
      * Constructs a SHAPE_LINE_CHAIN of segments from a given arc

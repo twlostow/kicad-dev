@@ -103,7 +103,7 @@
 #include <cassert>
 #include <vector>
 
-#include "levenberg_marquardt.h"
+#include <math/levenberg_marquardt.h>
 
 #define NEGATIVE_INFINITY ( -INFINITY )
 

@@ -28,8 +28,6 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_arc.h>
 
-#include <class_drawsegment.h>
-
 void OUTLINE_SHAPE_BUILDER::constructAngledSegs( bool startDiagonal,
         bool is45degree,
         VECTOR2I& a,

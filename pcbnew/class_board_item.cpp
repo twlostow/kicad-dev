@@ -32,6 +32,7 @@
 #include <common.h>
 #include <pcbnew.h>
 #include <wx/debug.h>
+#include <anchor.h>
 
 #include <class_board.h>
 #include <string>
@@ -130,8 +131,15 @@ void BOARD_ITEM::SwapData( BOARD_ITEM* aImage )
 
 }
 
+
 void BOARD_ITEM::TransformShapeWithClearanceToPolygon(
         SHAPE_POLY_SET& aCornerBuffer, int aClearanceValue, int aError, bool ignoreLineWidth ) const
 {
     wxASSERT_MSG( false, "Called TransformShapeWithClearanceToPolygon() on unsupported BOARD_ITEM." );
 };
+
+
+const std::vector<ANCHOR*> BOARD_ITEM::GetAnchors()
+{
+    return std::vector<ANCHOR*>();
+}

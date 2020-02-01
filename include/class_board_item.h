@@ -41,6 +41,7 @@ class BOARD;
 class BOARD_ITEM_CONTAINER;
 class SHAPE_POLY_SET;
 class PCB_BASE_FRAME;
+class ANCHOR;
 
 
 /**
@@ -300,6 +301,16 @@ public:
      */
     virtual void TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
             int aClearanceValue, int aError = ARC_LOW_DEF, bool ignoreLineWidth = false ) const;
+
+    /**
+     * Function GetAnchors()
+     * Returns a set of anchors attached to the item. The anchors can be used for snapping
+     * or mechanical constraints.
+     *
+     * @return A std::vector containg a list of anchors. Pointer ownership belongs to the caller.
+     */
+
+    virtual const std::vector<ANCHOR*> GetAnchors();
 };
 
 #endif /* BOARD_ITEM_STRUCT_H */

@@ -52,7 +52,7 @@ OPT<TOOL_EVENT> PCB_ACTIONS::TranslateLegacyId( int aId )
 
 // DRAWING_TOOL
 //
-TOOL_ACTION PCB_ACTIONS::drawLine( "pcbnew.InteractiveDrawing.line",
+TOOL_ACTION PCB_ACTIONS::drawOutline( "pcbnew.InteractiveDrawing.outline",
         AS_GLOBAL,
         MD_SHIFT + MD_CTRL + 'L', LEGACY_HK_NAME( "Draw Line" ),
         _( "Draw Line" ), _( "Draw a line" ),
@@ -1176,3 +1176,15 @@ TOOL_ACTION PCB_ACTIONS::dragFreeAngle( "pcbnew.InteractiveRouter.DragFreeAngle"
         _( "Drags the nearest joint in the track without restricting the track angle." ),
         move_xpm );
 
+
+TOOL_ACTION PCB_ACTIONS::switchOutlinePosture( "pcbnew.InteractiveDrawing.outlinePosture",
+            AS_CONTEXT, '/', "?",
+                _( "Switch Outline Posture" ), _( "Switch the outline posture" ) );
+
+TOOL_ACTION PCB_ACTIONS::switchOutlineShape( "pcbnew.InteractiveDrawing.switchOutlineShape",
+                AS_CONTEXT, ' ', "?",
+                _( "Switch Outline Shape" ), _( "Switch the outline shape (line, corner, arc)" ) );
+
+TOOL_ACTION PCB_ACTIONS::changeCornerRadius( "pcbnew.InteractiveDrawing.changeCornerRadius",
+                AS_CONTEXT, 0, "?",
+                _( "Change Corner Radius" ), _( "Change the outline's corner radius" ) );

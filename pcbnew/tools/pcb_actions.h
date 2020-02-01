@@ -143,9 +143,8 @@ public:
     static TOOL_ACTION drag45Degree;
     static TOOL_ACTION dragFreeAngle;
 
-
     // Drawing Tool Activations
-    static TOOL_ACTION drawLine;
+    static TOOL_ACTION drawOutline;
     static TOOL_ACTION drawPolygon;
     static TOOL_ACTION drawCircle;
     static TOOL_ACTION drawArc;
@@ -163,7 +162,11 @@ public:
     static TOOL_ACTION deleteLastPoint;
     static TOOL_ACTION closeZoneOutline;
 
-    /// Increase width of currently drawn line
+    static TOOL_ACTION switchOutlinePosture;
+    static TOOL_ACTION switchOutlineShape;
+    static TOOL_ACTION changeCornerRadius;
+
+    /// Increase width of currently drawn lines
     static TOOL_ACTION incWidth;
 
     /// Decrease width of currently drawn line

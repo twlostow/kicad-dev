@@ -156,6 +156,8 @@ set( COMMON_ABOUT_DLG_SRCS
     )
 
 set( COMMON_DLG_SRCS
+    dialogs/dialog_ask_for_value.cpp
+    dialogs/dialog_ask_for_value_base.cpp
     dialogs/dialog_color_picker.cpp
     dialogs/dialog_color_picker_base.cpp
     dialogs/dialog_configure_paths.cpp

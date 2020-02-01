@@ -86,6 +86,7 @@
 #include <netlist_reader/pcb_netlist.h>
 #include <wx/wupdlock.h>
 #include <dialog_drc.h>     // for DIALOG_DRC_WINDOW_NAME definition
+#include <tools/outline_editor.h>
 
 #if defined(KICAD_SCRIPTING) || defined(KICAD_SCRIPTING_WXPYTHON)
 #include <python_scripting.h>
@@ -426,7 +427,8 @@ void PCB_EDIT_FRAME::setupTools()
     m_toolManager->RegisterTool( new GLOBAL_EDIT_TOOL );
     m_toolManager->RegisterTool( new PAD_TOOL );
     m_toolManager->RegisterTool( new DRAWING_TOOL );
-    m_toolManager->RegisterTool( new POINT_EDITOR );
+    m_toolManager->RegisterTool( new OUTLINE_EDITOR );
+    //m_toolManager->RegisterTool( new POINT_EDITOR );
     m_toolManager->RegisterTool( new PCBNEW_CONTROL );
     m_toolManager->RegisterTool( new PCB_EDITOR_CONTROL );
     m_toolManager->RegisterTool( new PCB_INSPECTION_TOOL );

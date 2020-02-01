@@ -65,6 +65,7 @@
 #include "tools/pcbnew_picker_tool.h"
 #include "tools/pad_tool.h"
 #include "tools/pcb_actions.h"
+#include "tools/outline_editor.h"
 
 
 BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
@@ -790,7 +791,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->RegisterTool( new EDIT_TOOL );
     m_toolManager->RegisterTool( new PAD_TOOL );
     m_toolManager->RegisterTool( new DRAWING_TOOL );
-    m_toolManager->RegisterTool( new POINT_EDITOR );
+    m_toolManager->RegisterTool( new OUTLINE_EDITOR );
     m_toolManager->RegisterTool( new PCBNEW_CONTROL );
     m_toolManager->RegisterTool( new MODULE_EDITOR_TOOLS );
     m_toolManager->RegisterTool( new ALIGN_DISTRIBUTE_TOOL );

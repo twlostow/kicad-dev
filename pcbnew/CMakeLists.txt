@@ -311,6 +311,7 @@ set( PCBNEW_CLASS_SRCS
 
     tools/drawing_tool.cpp
     tools/edit_tool.cpp
+    tools/outline_editor.cpp
     tools/global_edit_tool.cpp
     tools/grid_helper.cpp
     tools/microwave_tool.cpp

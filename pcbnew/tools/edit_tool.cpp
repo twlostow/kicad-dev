@@ -52,6 +52,8 @@ using namespace std::placeholders;
 #include <router/router_tool.h>
 #include <dialogs/dialog_move_exact.h>
 #include <dialogs/dialog_track_via_properties.h>
+#include <dialogs/dialog_graphic_arc_properties.h>
+#include <dialogs/dialog_graphic_segment_properties.h>
 #include <preview_items/ruler_item.h>
 #include <board_commit.h>
 
@@ -566,6 +568,68 @@ int EDIT_TOOL::ChangeTrackWidth( const TOOL_EVENT& aEvent )
 }
 
 
+int EDIT_TOOL::invokePropertiesDialog( const SELECTION& aSelection )
+{
+    if( ( SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) )( aSelection ) )
+    {
+        /*if ( changeTrackWidthOnClick( aSelection ) )
+        {
+            return 0;
+        }*/
+    }
+
+    if ( SELECTION_CONDITIONS::OnlyType( PCB_CONSTRAINT_LINEAR_T ) ( aSelection ) )
+    {
+        #if 0
+        DIALOG_LINEAR_CONSTRAINT_PROPERTIES dlg( frame(), aSelection, *m_commit );
+
+        if( dlg.ShowModal() )
+        {
+        //    dlg.Apply( *m_commit );
+            m_commit->Push( _( "Edit linear constraint properties" ) );
+        }
+        #endif
+        return 1;
+    }
+
+    if ( SELECTION_CONDITIONS::OnlyType( PCB_LINE_T ) ( aSelection ) )
+    {
+        auto allArcs = std::all_of( aSelection.begin(), aSelection.end(), []( EDA_ITEM *item ){ return static_cast<DRAWSEGMENT*>( item )->GetShape() == S_ARC; } );
+        auto allSegs = std::all_of( aSelection.begin(), aSelection.end(), []( EDA_ITEM *item ){ return static_cast<DRAWSEGMENT*>( item )->GetShape() == S_SEGMENT; } );
+
+        if ( allSegs )
+        {
+            DIALOG_GRAPHIC_SEGMENT_PROPERTIES dlg( frame(), aSelection );
+
+            if( dlg.ShowModal() )
+            {
+                dlg.Apply( *m_commit );
+                m_commit->Push( _( "Edit graphic segment properties" ) );
+            }
+            return 1;
+        }
+        else if ( allArcs )
+        {
+            DIALOG_GRAPHIC_ARC_PROPERTIES dlg( frame(), aSelection );
+
+            if( dlg.ShowModal() )
+            {
+                dlg.Apply( *m_commit );
+                m_commit->Push( _( "Edit graphic arc properties" ) );
+            }
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+
+
 int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
 {
     PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
@@ -580,7 +644,7 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
             DIALOG_TRACK_VIA_PROPERTIES dlg( editFrame, selection, *m_commit );
             dlg.ShowQuasiModal();       // QuasiModal required for NET_SELECTOR
     }
-    else if( selection.Size() == 1 ) // Properties are displayed when there is only one item selected
+    if( !invokePropertiesDialog( selection ) && selection.Size() == 1 )
     {
         // Display properties dialog
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( selection.Front() );

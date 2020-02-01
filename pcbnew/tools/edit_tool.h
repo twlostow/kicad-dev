@@ -184,6 +184,7 @@ private:
     bool isInteractiveDragEnabled() const;
 
     bool pickCopyReferencePoint( VECTOR2I& aReferencePoint );
+    int invokePropertiesDialog( const SELECTION& aSelection );
 
 private:
     SELECTION_TOOL* m_selectionTool;   // Selection tool used for obtaining selected items

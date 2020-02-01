@@ -930,7 +930,7 @@ void PCB_IO::format( DRAWSEGMENT* aSegment, int aNestLevel ) const
         m_out->Print( 0, " (tstamp %lX)", (unsigned long)aSegment->GetTimeStamp() );
 
     if( aSegment->GetStatus() )
-        m_out->Print( 0, " (status %X)", aSegment->GetStatus() );
+        m_out->Print( 0, " (status %llX)", aSegment->GetStatus() );
 
     m_out->Print( 0, ")\n" );
 }

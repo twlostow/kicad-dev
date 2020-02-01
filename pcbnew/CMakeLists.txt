@@ -50,6 +50,10 @@ include_directories(
     )
 
 set( PCBNEW_DIALOGS
+    dialogs/dialog_graphic_arc_properties.cpp
+    dialogs/dialog_graphic_arc_properties_base.cpp
+    dialogs/dialog_graphic_segment_properties.cpp
+    dialogs/dialog_graphic_segment_properties_base.cpp
     dialogs/dialog_filter_selection.cpp
     dialogs/dialog_filter_selection_base.cpp
     dialogs/dialog_board_setup.cpp

@@ -1456,10 +1456,11 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
                 evt->IsPrime() ? evt->Position() : m_controls->GetMousePosition(), layers );
         m_controls->ForceCursorPosition( true, cursorPos );
 
-        if( ( sourceZone && sourceZone->GetHV45() ) || constrainAngle || evt->Modifier( MD_CTRL ) )
+/*        if( ( sourceZone && sourceZone->GetHV45() ) || constrainAngle || evt->Modifier( MD_CTRL ) )
             polyGeomMgr.SetLeaderMode( POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );
         else
-            polyGeomMgr.SetLeaderMode( POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
+            polyGeomMgr.SetLeaderMode( POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );*/
+            // fixme: use OUTLINE_SHAPE_BUILDER
 
         auto cleanup = [&] () {
             polyGeomMgr.Reset();
@@ -1536,8 +1537,9 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
                 if( !started )
                 {
                     started = true;
-                    constrainAngle = ( polyGeomMgr.GetLeaderMode() ==
-                            POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );
+                    constrainAngle = false;
+                    /*( polyGeomMgr.GetLeaderMode() ==
+                            POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );*/
                     m_controls->SetAutoPan( true );
                     m_controls->CaptureCursor( true );
                 }

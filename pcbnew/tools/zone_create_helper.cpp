@@ -61,7 +61,7 @@ std::unique_ptr<ZONE_CONTAINER> ZONE_CREATE_HELPER::createNewZone( bool aKeepout
     zoneInfo.m_CurrentZone_Layer = m_params.m_layer;
     zoneInfo.m_NetcodeSelection = board.GetHighLightNetCode();
     zoneInfo.SetIsKeepout( m_params.m_keepout );
-    zoneInfo.m_Zone_45_Only = ( m_params.m_leaderMode == POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );
+    //zoneInfo.m_Zone_45_Only = ( m_params.m_leaderMode == POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );
 
     if( m_params.m_mode != ZONE_MODE::GRAPHIC_POLYGON )
     {
@@ -250,8 +250,8 @@ bool ZONE_CREATE_HELPER::OnFirstPoint( POLYGON_GEOM_MANAGER& aMgr )
 
             m_parentView.SetVisible( &m_previewItem, true );
 
-            aMgr.SetLeaderMode( m_zone->GetHV45() ? POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45
-                                                  : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
+            //aMgr.SetLeaderMode( m_zone->GetHV45() ? POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45
+            //                                      : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
         }
     }
 
@@ -289,12 +289,13 @@ void ZONE_CREATE_HELPER::OnComplete( const POLYGON_GEOM_MANAGER& aMgr )
         // In DEG45 mode, we may have intermediate points in the leader that should be
         // included as they are shown in the preview.  These typically maintain the
         // 45 constraint
-        if( aMgr.GetLeaderMode() == POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 )
+        /*if( aMgr.GetLeaderMode() == POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 )
         {
             const auto& pts = aMgr.GetLeaderLinePoints();
             for( int i = 1; i < pts.PointCount(); i++ )
                 outline->Append( pts.CPoint( i ) );
-        }
+        }*/
+        // FIXME
 
         outline->Outline( 0 ).SetClosed( true );
         outline->RemoveNullSegments();

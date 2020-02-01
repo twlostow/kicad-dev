@@ -68,8 +68,9 @@ public:
      * @param aValue is the new value.
      */
     virtual void SetValue( int aValue );
-
-    void SetValue( wxString aValue );
+    virtual void SetValue( wxString aValue );
+    virtual void SetValue( boost::optional<int> aValue );
+    virtual void SetValue( boost::optional<double> aValue );
 
     /**
      * Function ChangeValue
@@ -86,6 +87,7 @@ public:
      * Returns the current value in Internal Units.
      */
     virtual long long int GetValue();
+    virtual double GetValueDbl();
 
     /**
      * Function IsIndeterminate

@@ -149,7 +149,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateVToolbar()
 
     KiScaledSeparator( m_drawToolBar, this );
     m_drawToolBar->Add( PCB_ACTIONS::placePad, ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PCB_ACTIONS::drawLine, ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PCB_ACTIONS::drawOutline, ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawCircle, ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawArc, ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawPolygon, ACTION_TOOLBAR::TOGGLE );
@@ -249,7 +249,7 @@ void FOOTPRINT_EDIT_FRAME::SyncToolbars()
     {
         // If there is no footprint loaded, disable the editing tools
         m_drawToolBar->Toggle( PCB_ACTIONS::placePad,        false, false );
-        m_drawToolBar->Toggle( PCB_ACTIONS::drawLine,        false, false );
+        m_drawToolBar->Toggle( PCB_ACTIONS::drawOutline,        false, false );
         m_drawToolBar->Toggle( PCB_ACTIONS::drawCircle,      false, false );
         m_drawToolBar->Toggle( PCB_ACTIONS::drawArc,         false, false );
         m_drawToolBar->Toggle( PCB_ACTIONS::drawPolygon,     false, false );
@@ -263,7 +263,7 @@ void FOOTPRINT_EDIT_FRAME::SyncToolbars()
     else
     {
         TOGGLE_TOOL( m_drawToolBar, PCB_ACTIONS::placePad );
-        TOGGLE_TOOL( m_drawToolBar, PCB_ACTIONS::drawLine );
+        TOGGLE_TOOL( m_drawToolBar, PCB_ACTIONS::drawOutline );
         TOGGLE_TOOL( m_drawToolBar, PCB_ACTIONS::drawCircle );
         TOGGLE_TOOL( m_drawToolBar, PCB_ACTIONS::drawArc );
         TOGGLE_TOOL( m_drawToolBar, PCB_ACTIONS::drawPolygon );

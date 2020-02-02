@@ -213,7 +213,7 @@ bool ZONE_CONTAINER::UnFill()
 }
 
 
-const wxPoint ZONE_CONTAINER::GetPosition() const
+wxPoint ZONE_CONTAINER::GetPosition() const
 {
     return (wxPoint) GetCornerPosition( 0 );
 }

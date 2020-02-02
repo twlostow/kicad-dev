@@ -65,7 +65,7 @@ void DRAWSEGMENT::SetPosition( const wxPoint& aPos )
 }
 
 
-const wxPoint DRAWSEGMENT::GetPosition() const
+wxPoint DRAWSEGMENT::GetPosition() const
 {
     if( m_Shape == S_POLYGON )
         return (wxPoint) m_Poly.CVertex( 0 );
@@ -300,7 +300,7 @@ void DRAWSEGMENT::RebuildBezierToSegmentsPointsList( int aMinSegLen )
 }
 
 
-const wxPoint DRAWSEGMENT::GetCenter() const
+wxPoint DRAWSEGMENT::GetCenter() const
 {
     wxPoint c;
 
@@ -332,7 +332,7 @@ const wxPoint DRAWSEGMENT::GetCenter() const
 }
 
 
-const wxPoint DRAWSEGMENT::GetArcEnd() const
+wxPoint DRAWSEGMENT::GetArcEnd() const
 {
     wxPoint endPoint( m_End );         // start of arc
 
@@ -354,7 +354,7 @@ const wxPoint DRAWSEGMENT::GetArcEnd() const
 }
 
 
-const wxPoint DRAWSEGMENT::GetArcMid() const
+wxPoint DRAWSEGMENT::GetArcMid() const
 {
     wxPoint endPoint( m_End );
 

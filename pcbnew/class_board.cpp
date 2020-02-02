@@ -180,7 +180,7 @@ void BOARD::BuildConnectivity()
 }
 
 
-const wxPoint BOARD::GetPosition() const
+wxPoint BOARD::GetPosition() const
 {
     return ZeroOffset;
 }

@@ -47,6 +47,7 @@ add_subdirectory( pcbnew_utils )
 add_subdirectory( unit_test_utils )
 
 # Unit tests
+add_subdirectory( pns_geom )
 add_subdirectory( common )
 add_subdirectory( pcbnew )
 add_subdirectory( eeschema )

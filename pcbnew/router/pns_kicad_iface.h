@@ -46,7 +46,6 @@ public:
     PNS_KICAD_IFACE_BASE();
     ~PNS_KICAD_IFACE_BASE();
 
-    void SetRouter( PNS::ROUTER* aRouter ) override;
     void SetHostTool( PCB_TOOL_BASE* aTool );
     void SetDisplayOptions( const PCB_DISPLAY_OPTIONS* aDispOptions );
 
@@ -80,7 +79,7 @@ protected:
     bool syncGraphicalItem( PNS::NODE* aWorld, DRAWSEGMENT* aItem );
     bool syncZone( PNS::NODE* aWorld, ZONE_CONTAINER* aZone );
 
-    PNS::ROUTER* m_router;
+    PNS::NODE* m_world;
     BOARD* m_board;
 };
 

@@ -45,6 +45,11 @@
 #include <dialog_find.h>
 #include <dialog_filter_selection.h>
 
+#include "selection_tool.h"
+
+class SELECTION_TOOL::PRIV
+{
+};
 
 static struct IFACE : public KIFACE_I
 {
@@ -267,3 +272,18 @@ void ROUTER_TOOL::NeighboringSegmentFilter( const VECTOR2I&, GENERAL_COLLECTOR& 
 {
 }
 
+#if 0
+void SELECTION_TOOL::RemoveItemFromSel(BOARD_ITEM*, bool) {}
+
+void SELECTION_TOOL::RebuildSelection() {}
+
+bool SELECTION_TOOL::Init() {};
+
+    /// @copydoc TOOL_BASE::Reset()
+void SELECTION_TOOL::Reset( RESET_REASON aReason ) {}
+
+void SELECTION_TOOL::setTransitions() {}
+
+SELECTION_TOOL::SELECTION_TOOL() : PCB_TOOL_BASE("selectionToolMockup") {}
+SELECTION_TOOL::~SELECTION_TOOL(){}
+#endif

@@ -97,13 +97,13 @@ PCB_BASE_FRAME::~PCB_BASE_FRAME()
 
 EDA_3D_VIEWER* PCB_BASE_FRAME::Get3DViewerFrame()
 {
-    return dynamic_cast<EDA_3D_VIEWER*>( FindWindowByName( QUALIFIED_VIEWER3D_FRAMENAME( this ) ) );
+//    return dynamic_cast<EDA_3D_VIEWER*>( FindWindowByName( QUALIFIED_VIEWER3D_FRAMENAME( this ) ) );
 }
 
 
 void PCB_BASE_FRAME::Update3DView( bool aForceReload, const wxString* aTitle )
 {
-    EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
+    /*EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
 
     if( draw3DFrame )
     {
@@ -111,7 +111,7 @@ void PCB_BASE_FRAME::Update3DView( bool aForceReload, const wxString* aTitle )
             draw3DFrame->SetTitle( *aTitle );
 
         draw3DFrame->NewDisplay( aForceReload );
-    }
+    }*/
 }
 
 
@@ -398,7 +398,7 @@ void PCB_BASE_FRAME::ShowChangedLanguage()
 
 EDA_3D_VIEWER* PCB_BASE_FRAME::CreateAndShow3D_Frame()
 {
-    EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
+    /*EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
 
     if( !draw3DFrame )
         draw3DFrame = new EDA_3D_VIEWER( &Kiway(), this, _( "3D Viewer" ) );
@@ -415,7 +415,7 @@ EDA_3D_VIEWER* PCB_BASE_FRAME::CreateAndShow3D_Frame()
     if( wxWindow::FindFocus() != draw3DFrame )
         draw3DFrame->SetFocus();
 
-    return draw3DFrame;
+    return draw3DFrame;*/
 }
 
 
@@ -772,10 +772,10 @@ void PCB_BASE_FRAME::CommonSettingsChanged( bool aEnvVarsChanged )
     RecreateToolbars();
 
     // The 3D viewer isn't in the Kiway, so send its update manually
-    EDA_3D_VIEWER* viewer = Get3DViewerFrame();
+    //EDA_3D_VIEWER* viewer = Get3DViewerFrame();
 
-    if( viewer )
-        viewer->CommonSettingsChanged( aEnvVarsChanged );
+    //f() viewer )
+      //  viewer->CommonSettingsChanged( aEnvVarsChanged );
 }
 
 

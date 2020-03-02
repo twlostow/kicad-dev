@@ -561,7 +561,6 @@ void ROUTER::SetMode( ROUTER_MODE aMode )
 void ROUTER::SetInterface( ROUTER_IFACE *aIface )
 {
     m_iface = aIface;
-    m_iface->SetRouter( this );
 }
 
 void ROUTER::BreakSegment( ITEM *aItem, const VECTOR2I& aP )

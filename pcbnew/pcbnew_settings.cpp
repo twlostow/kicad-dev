@@ -658,9 +658,9 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     fpedit->Load();
 
     // Same with 3D viewer
-    auto viewer3d = Pgm().GetSettingsManager().GetAppSettings<EDA_3D_VIEWER_SETTINGS>( false );
+    /*auto viewer3d = Pgm().GetSettingsManager().GetAppSettings<EDA_3D_VIEWER_SETTINGS>( false );
     viewer3d->MigrateFromLegacy( aCfg );
-    viewer3d->Load();
+    viewer3d->Load();*/
 
     return ret;
 }

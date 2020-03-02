@@ -94,7 +94,6 @@ enum DRAG_MODE
         ROUTER_IFACE() {};
         virtual ~ROUTER_IFACE() {};
 
-        virtual void SetRouter( ROUTER* aRouter ) = 0;
         virtual void SyncWorld( NODE* aNode ) = 0;
         virtual void AddItem( ITEM* aItem ) = 0;
         virtual void RemoveItem( ITEM* aItem ) = 0;

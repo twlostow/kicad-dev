@@ -90,7 +90,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry, bool a
     PCB_BASE_FRAME*     frame = (PCB_BASE_FRAME*) m_toolMgr->GetToolHolder();
     auto                connectivity = board->GetConnectivity();
     std::set<EDA_ITEM*> savedModules;
-    SELECTION_TOOL*     selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
+    //SELECTION_TOOL*     selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     bool                itemsDeselected = false;
 
     if( Empty() )
@@ -174,7 +174,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry, bool a
 
                 if( boardItem->IsSelected() )
                 {
-                    selTool->RemoveItemFromSel( boardItem, true /* quiet mode */ );
+                    //selTool->RemoveItemFromSel( boardItem, true /* quiet mode */ );
                     itemsDeselected = true;
                 }
 
@@ -408,8 +408,8 @@ void BOARD_COMMIT::Revert()
     if ( !m_editModules )
         connectivity->RecalculateRatsnest();
 
-    SELECTION_TOOL* selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
-    selTool->RebuildSelection();
+    //SELECTION_TOOL* selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
+    //se/Tool->RebuildSelection();
 
     clear();
 }

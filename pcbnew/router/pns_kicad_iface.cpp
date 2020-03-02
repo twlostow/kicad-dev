@@ -70,7 +70,7 @@ typedef VECTOR2I::extended_type ecoord;
 class PNS_PCBNEW_RULE_RESOLVER : public PNS::RULE_RESOLVER
 {
 public:
-    PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER* aRouter );
+    PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER_IFACE* aRouterIface );
     virtual ~PNS_PCBNEW_RULE_RESOLVER();
 
     virtual bool CollideHoles( const PNS::ITEM* aA, const PNS::ITEM* aB,
@@ -96,8 +96,8 @@ private:
     int localPadClearance( const PNS::ITEM* aItem ) const;
     int matchDpSuffix( const wxString& aNetName, wxString& aComplementNet, wxString& aBaseDpName );
 
-    PNS::ROUTER* m_router;
-    BOARD*       m_board;
+    PNS::ROUTER_IFACE* m_routerIface;
+    BOARD*             m_board;
 
     std::vector<CLEARANCE_ENT> m_netClearanceCache;
     std::unordered_map<const D_PAD*, int> m_localClearanceCache;
@@ -105,13 +105,10 @@ private:
 };
 
 
-PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER* aRouter ) :
-    m_router( aRouter ),
+PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER_IFACE* aRouterIface ) :
+    m_routerIface( aRouterIface ),
     m_board( aBoard )
 {
-    PNS::NODE* world = m_router->GetWorld();
-
-    PNS::TOPOLOGY topo( world );
     m_netClearanceCache.resize( m_board->GetNetCount() );
 
     // Build clearance cache for net classes
@@ -530,7 +527,7 @@ PNS_KICAD_IFACE_BASE::PNS_KICAD_IFACE_BASE()
 {
     m_ruleResolver = nullptr;
     m_board = nullptr;
-    m_router = nullptr;
+    m_world = nullptr;
     m_debugDecorator = nullptr;
     m_router = nullptr;
 }
@@ -1149,6 +1146,8 @@ void PNS_KICAD_IFACE_BASE::SyncWorld( PNS::NODE *aWorld )
 {
     int worstPadClearance = 0;
 
+    m_world = aWorld;
+
     if( !m_board )
     {
         wxLogTrace( "PNS", "No board attached, aborting sync." );
@@ -1228,7 +1227,7 @@ void PNS_KICAD_IFACE_BASE::SyncWorld( PNS::NODE *aWorld )
     int worstRuleClearance = m_board->GetDesignSettings().GetBiggestClearanceValue();
 
     delete m_ruleResolver;
-    m_ruleResolver = new PNS_PCBNEW_RULE_RESOLVER( m_board, m_router );
+    m_ruleResolver = new PNS_PCBNEW_RULE_RESOLVER( m_board, this );
 
     aWorld->SetRuleResolver( m_ruleResolver );
     aWorld->SetMaxClearance( 4 * std::max(worstPadClearance, worstRuleClearance ) );
@@ -1481,12 +1480,6 @@ void PNS_KICAD_IFACE::UpdateNet( int aNetCode )
 PNS::RULE_RESOLVER* PNS_KICAD_IFACE_BASE::GetRuleResolver()
 {
     return m_ruleResolver;
-}
-
-
-void PNS_KICAD_IFACE_BASE::SetRouter( PNS::ROUTER* aRouter )
-{
-    m_router = aRouter;
 }
 
 

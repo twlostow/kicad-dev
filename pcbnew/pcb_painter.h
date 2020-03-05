@@ -99,7 +99,7 @@ public:
     virtual void LoadColors( const COLOR_SETTINGS* aSettings ) override;
 
     /// @copydoc RENDER_SETTINGS::GetColor()
-    virtual const COLOR4D& GetColor( const VIEW_ITEM* aItem, int aLayer ) const override;
+    virtual const COLOR4D GetColor( const VIEW_ITEM* aItem, int aLayer ) const override;
 
     /**
      * Function SetSketchMode
@@ -169,7 +169,21 @@ public:
         return m_globalRatsnestlines;
     }
 
+    void SetZoneDisplayMode( DISPLAY_ZONE_MODE mode )
+    {
+        m_displayZone = mode;
+    }
+
+    void SetColorDimFactor( double aFactor )
+    {
+        m_colorDimFactor = aFactor;
+    }
+
 protected:
+
+    const COLOR4D& getColorUndimmed( const VIEW_ITEM* aItem, int aLayer ) const;
+
+
     ///> Flag determining if items on a given layer should be drawn as an outline or a filled item
     bool    m_sketchMode[GAL_LAYER_ID_END];
 
@@ -214,6 +228,9 @@ protected:
 
     ///> Color used for highlighting selection candidates
     COLOR4D m_selectionCandidateColor;
+
+    ///> Global color dim factor (1.0 = full brigtness), 
+    double m_colorDimFactor = 0.0f;
 };
 
 

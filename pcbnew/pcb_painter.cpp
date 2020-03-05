@@ -218,7 +218,13 @@ void PCB_RENDER_SETTINGS::LoadDisplayOptions( const PCB_DISPLAY_OPTIONS& aOption
 }
 
 
-const COLOR4D& PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
+const COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
+{
+    return getColorUndimmed( aItem, aLayer ).Darkened( m_colorDimFactor );
+}
+
+
+const COLOR4D& PCB_RENDER_SETTINGS::getColorUndimmed( const VIEW_ITEM* aItem, int aLayer ) const
 {
     int netCode = -1;
     const EDA_ITEM* item = dynamic_cast<const EDA_ITEM*>( aItem );

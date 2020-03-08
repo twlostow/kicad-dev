@@ -90,7 +90,7 @@ int COMBINED_UTILITY::HandleCommandLine( int argc, char** argv ) const
         if( arg1 == "-h" )
         {
             printUsage( argv[0], std::cout );
-            return RET_CODES::OK;
+            return RET_CODES::NO_ACTION;
         }
         else if( arg1 == "-l" )
         {

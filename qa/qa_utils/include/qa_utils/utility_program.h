@@ -40,6 +40,9 @@ enum RET_CODES
     /// Tool exited OK
     OK = 0,
 
+    /// No command line action taken (empty arguments)
+    NO_ACTION = 3,
+
     /// The command line was not correct for the tool
     BAD_CMDLINE = 1,
 

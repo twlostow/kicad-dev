@@ -22,6 +22,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#define USE_TOOL_MANAGER
+
 #include <wx/timer.h>
 #include <wx/math.h>
 #include <wx/log.h>
@@ -62,70 +64,16 @@
 
 #include "pcb_test_frame.h"
 
-IMPLEMENT_APP( GAL_TEST_APP )
-
 using namespace KIGFX;
 
-bool GAL_TEST_APP::OnInit()
+void PCB_TEST_FRAME_BASE::SetBoard( std::shared_ptr<BOARD> b )
 {
-    if( !wxApp::OnInit() )
-        return false;
+    m_board = b;
 
-    // Create the main frame window
-    auto frame = CreateMainFrame( (const char*) m_filename.c_str() );
-
-    return frame != nullptr;
-}
-
-
-void GAL_TEST_APP::OnInitCmdLine( wxCmdLineParser& parser )
-{
-    parser.AddOption( "f", wxEmptyString, "Open board file" );
-    wxApp::OnInitCmdLine( parser );
-}
-
-
-bool GAL_TEST_APP::OnCmdLineParsed( wxCmdLineParser& parser )
-{
-    wxString filename;
-
-    if( parser.Found( "f", &filename ) )
-    {
-        m_filename = filename;
-    }
-
-    return true;
-}
-
-
-class TEST_ACTIONS : public ACTIONS
-{
-public:
-
-    virtual ~TEST_ACTIONS() {};
-
-    virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) override
-    {
-        return NULLOPT;
-    }
-};
-
-void PCB_TEST_FRAME::OnMenuFileOpen( wxCommandEvent& WXUNUSED( event ) )
-{
-}
-
-
-void PCB_TEST_FRAME::OnMotion( wxMouseEvent& aEvent )
-{
-    aEvent.Skip();
-}
-
-
-void PCB_TEST_FRAME::SetBoard( BOARD* b )
-{
-    m_board.reset( b );
     m_board->GetConnectivity()->Build( m_board.get() );
     m_galPanel->DisplayBoard( m_board.get() );
+    m_galPanel->UpdateColors();
+
 #ifdef USE_TOOL_MANAGER
     m_toolManager->SetEnvironment( m_board.get(), m_galPanel->GetView(),
             m_galPanel->GetViewControls(), nullptr );
@@ -135,7 +83,7 @@ void PCB_TEST_FRAME::SetBoard( BOARD* b )
 }
 
 
-BOARD* PCB_TEST_FRAME::LoadAndDisplayBoard( const std::string& filename )
+BOARD* PCB_TEST_FRAME_BASE::LoadAndDisplayBoard( const std::string& filename )
 {
     PLUGIN::RELEASER pi( new PCB_IO );
     BOARD* brd = nullptr;
@@ -153,35 +101,26 @@ BOARD* PCB_TEST_FRAME::LoadAndDisplayBoard( const std::string& filename )
         return nullptr;
     }
 
-    SetBoard( brd );
+    //SetBoard( brd );
 
     return brd;
 }
 
-
-PCB_TEST_FRAME::PCB_TEST_FRAME( wxFrame* frame, const wxString& title, const wxPoint& pos,
-        const wxSize& size, long style, PCB_DRAW_PANEL_GAL::GAL_TYPE aGalType ) :
-    wxFrame( frame, wxID_ANY, title, pos, size, style )
+class TEST_ACTIONS : public ACTIONS
 {
-    // Make a menubar
-    wxMenu* fileMenu = new wxMenu;
+    virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) override
+    {
+        return OPT<TOOL_EVENT> ();
+    }
+};
 
-    fileMenu->Append( wxID_OPEN, wxT( "&Open..." ) );
-    fileMenu->AppendSeparator();
-    fileMenu->Append( wxID_EXIT, wxT( "E&xit" ) );
-    wxMenuBar* menuBar = new wxMenuBar;
-    menuBar->Append( fileMenu, wxT( "&File" ) );
-    SetMenuBar( menuBar );
-
-    Show( true );
-    Maximize();
-    Raise();
-
+void PCB_TEST_FRAME_BASE::createView( wxWindow *aParent, PCB_DRAW_PANEL_GAL::GAL_TYPE aGalType )
+{
     KIGFX::GAL_DISPLAY_OPTIONS options;
 
     options.gl_antialiasing_mode = KIGFX::OPENGL_ANTIALIASING_MODE::NONE; //SUPERSAMPLING_X4;
 
-    m_galPanel = std::make_unique<PCB_DRAW_PANEL_GAL>( this, -1, wxPoint( 0,
+    m_galPanel = std::make_shared<PCB_DRAW_PANEL_GAL>( aParent, -1, wxPoint( 0,
                             0 ), wxDefaultSize, options, aGalType );
 
     m_galPanel->SetEvtHandlerEnabled( true );
@@ -196,8 +135,8 @@ PCB_TEST_FRAME::PCB_TEST_FRAME( wxFrame* frame, const wxString& title, const wxP
     gal->SetGridSize( VECTOR2D( 100000.0, 100000.0 ) );
     gal->SetGridOrigin( VECTOR2D( 0.0, 0.0 ) );
 
-    m_galPanel->Connect( wxEVT_MOTION,
-            wxMouseEventHandler( PCB_TEST_FRAME::OnMotion ), NULL, this );
+    //m_galPanel->Connect( wxEVT_MOTION,
+            //wxMouseEventHandler( PCB_TEST_FRAME::OnMotion ), NULL, this );
 
     m_galPanel->GetViewControls()->ShowCursor( true );
 
@@ -209,25 +148,24 @@ PCB_TEST_FRAME::PCB_TEST_FRAME( wxFrame* frame, const wxString& title, const wxP
     m_pcbActions = std::make_unique<TEST_ACTIONS>( );
     m_toolDispatcher = std::make_unique<TOOL_DISPATCHER>( m_toolManager.get(), m_pcbActions.get() );
 
-    m_toolManager->RegisterTool( new SELECTION_TOOL );
+    //m_toolManager->RegisterTool( new SELECTION_TOOL );
+    createUserTools();
 
     m_toolManager->InitTools();
     m_galPanel->SetEventDispatcher( m_toolDispatcher.get() );
-    m_toolManager->InvokeTool( "common.InteractiveSelection" );
+    m_toolManager->InvokeTool( "test.DefaultTool" );
 #endif
 
-    SetBoard( new BOARD );
+    //SetBoard( std::make_shared<BOARD>( new BOARD ));
+}
+
+PCB_TEST_FRAME_BASE::PCB_TEST_FRAME_BASE()
+{
+
 }
 
 
-PCB_TEST_FRAME::~PCB_TEST_FRAME()
+PCB_TEST_FRAME_BASE::~PCB_TEST_FRAME_BASE()
 {
-}
 
-
-// Intercept menu commands
-void PCB_TEST_FRAME::OnExit( wxCommandEvent& WXUNUSED( event ) )
-{
-    // true is to force the frame to close
-    Close( true );
 }

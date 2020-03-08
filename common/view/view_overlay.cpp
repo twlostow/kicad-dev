@@ -131,7 +131,8 @@ struct VIEW_OVERLAY::COMMAND_POLY_POLYLINE : public VIEW_OVERLAY::COMMAND
 
     virtual void Execute( VIEW* aView ) const override
     {
-        aView->GetGAL()->DrawPolyline( m_polyLine );
+        for( int i = 0; i < m_polyLine.SegmentCount(); i++ )
+            aView->GetGAL()->DrawLine( m_polyLine.CSegment(i).A, m_polyLine.CSegment(i).B );
     }
 
     SHAPE_LINE_CHAIN m_polyLine;
@@ -345,6 +346,7 @@ void VIEW_OVERLAY::Polyline( const VECTOR2D aPointList[], int aListSize )
 
 void VIEW_OVERLAY::Polyline( const SHAPE_LINE_CHAIN& aLineChain )
 {
+    m_commands.push_back( new COMMAND_POLY_POLYLINE( aLineChain ) );
 }
 
 

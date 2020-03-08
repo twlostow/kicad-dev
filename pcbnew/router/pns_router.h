@@ -107,6 +107,8 @@ enum DRAG_MODE
         virtual void EraseView() = 0;
         virtual void UpdateNet( int aNetCode ) = 0;
 
+        virtual PNS::NODE* GetWorld() const = 0;
+
         virtual RULE_RESOLVER* GetRuleResolver() = 0;
         virtual DEBUG_DECORATOR* GetDebugDecorator() = 0;
 };

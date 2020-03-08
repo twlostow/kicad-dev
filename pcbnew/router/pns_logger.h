@@ -39,6 +39,21 @@ class ITEM;
 class LOGGER
 {
 public:
+
+    enum EventType {
+        EVT_START_ROUTE = 0,
+        EVT_START_DRAG,
+        EVT_FIX,
+        EVT_MOVE
+    };
+
+    struct EventEntry {
+        VECTOR2I p;
+        EventType type;
+        const ITEM* item;
+        uint64_t itemId;
+    };
+
     LOGGER();
     ~LOGGER();
 

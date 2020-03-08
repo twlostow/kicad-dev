@@ -273,21 +273,6 @@ bool AREA_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, con
     return p1_in || p2_in;
 }
 
-class JOINT_CACHE
-    {
-    public:
-        JOINT_CACHE( NODE *aWorld, int aLayer, int aMaxJoints );
-
-        bool CheckInside( const VECTOR2I& aPos ) const;
-
-    private:
-
-        struct ENTRY {
-            JOINT* joint;
-            int score;
-        };
-};
-
 
 bool PRESERVE_VERTEX_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aCurrentPath, const SHAPE_LINE_CHAIN& aReplacement )
 {
@@ -387,7 +372,7 @@ static bool pointInside2( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aP )
 
 
 bool KEEP_TOPOLOGY_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aCurrentPath, const SHAPE_LINE_CHAIN& aReplacement )
-        {
+{
     SHAPE_LINE_CHAIN encPoly = aOriginLine->CLine().Slice( aVertex1, aVertex2 );
 
     // fixme: this is a remarkably shitty implementation...
@@ -1024,7 +1009,6 @@ bool OPTIMIZER::Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld, const VEC
     {
         auto c = new PRESERVE_VERTEX_CONSTRAINT( aWorld, aV );
         opt.AddConstraint( c );
-        //printf("pres-v %d %d\n", aV.x, aV.y );
     }
 
     if ( aEffortLevel & KEEP_TOPOLOGY )
@@ -1032,6 +1016,13 @@ bool OPTIMIZER::Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld, const VEC
         auto c = new KEEP_TOPOLOGY_CONSTRAINT( aWorld );
         opt.AddConstraint( c );
     }
+
+    if ( aEffortLevel & RESTRICT_AREA )
+    {
+        //auto c = new AREA_CONSTRAINT( aWorld );
+        //opt.AddConstraint( c );
+    }
+
 
     return opt.Optimize( aLine );
 }

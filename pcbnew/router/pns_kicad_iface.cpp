@@ -84,7 +84,10 @@ public:
 
     virtual wxString NetName( int aNet ) override;
 
+    void InferDiffPairConstraints();
+    
 private:
+
     struct CLEARANCE_ENT
     {
         int coupledNet;
@@ -92,14 +95,24 @@ private:
         int clearance;
     };
 
+    struct DP_CONSTRAINT 
+    {
+        int net_n, net_p;
+        int layer;
+        int gap;
+        int coupledLength;
+    };
+
     int holeRadius( const PNS::ITEM* aItem ) const;
     int localPadClearance( const PNS::ITEM* aItem ) const;
     int matchDpSuffix( const wxString& aNetName, wxString& aComplementNet, wxString& aBaseDpName );
+    void extractDiffPairConstraints ( PNS::NODE* node, int net_p, int net_n );
 
     PNS::ROUTER_IFACE* m_routerIface;
     BOARD*             m_board;
 
     std::vector<CLEARANCE_ENT> m_netClearanceCache;
+    std::vector<DP_CONSTRAINT> m_inferredDiffPairConstraints;
     std::unordered_map<const D_PAD*, int> m_localClearanceCache;
     int m_defaultClearance;
 };
@@ -405,6 +418,212 @@ bool PNS_PCBNEW_RULE_RESOLVER::DpNetPair( PNS::ITEM* aItem, int& aNetP, int& aNe
     return true;
 }
 
+void PNS_PCBNEW_RULE_RESOLVER::InferDiffPairConstraints()
+{
+    // this is a hell of a hack. Since we don't have (yet) any means of defining differential pair constraints,
+    // we just infer them from the existing traces on the board...
+
+    std::map<int, int> diffPairs;
+
+    // FIXMe: GetNetInfo copies f***ing pointers...
+    const auto& netinfo = m_board->GetNetInfo();
+
+    int n_nets = netinfo.GetNetCount();
+
+    #ifdef DEBUG
+        printf("inferDiffPairConstraints():\n");
+    #endif
+
+    for (int net = 0 ; net < n_nets; net++ )
+    {
+        int coupled = DpCoupledNet( net );
+        if( coupled > 0 && diffPairs.find( coupled ) == diffPairs.end() )
+        {
+            diffPairs[net] = coupled;
+        }
+    }
+
+    for( auto p : diffPairs )
+    {
+        extractDiffPairConstraints ( m_routerIface->GetWorld(), p.first, p.second );
+    }
+}
+
+
+static bool commonParallelProjection( SEG p, SEG n, SEG &pClip, SEG& nClip )
+{
+    SEG n_proj_p( p.LineProject( n.A ), p.LineProject( n.B ) );
+
+    int64_t t_a = 0;
+    int64_t t_b = p.TCoef( p.B );
+
+    int64_t tproj_a = p.TCoef( n_proj_p.A );
+    int64_t tproj_b = p.TCoef( n_proj_p.B );
+
+    if( t_b < t_a )
+        std::swap( t_b, t_a );
+
+    if( tproj_b < tproj_a )
+        std::swap( tproj_b, tproj_a );
+
+    if( t_b <= tproj_a )
+        return false;
+
+    if( t_a >= tproj_b )
+        return false;
+
+    int64_t t[4] = { 0, p.TCoef( p.B ), p.TCoef( n_proj_p.A ), p.TCoef( n_proj_p.B ) };
+    std::vector<int64_t> tv( t, t + 4 );
+    std::sort( tv.begin(), tv.end() ); // fixme: awful and disgusting way of finding 2 midpoints
+
+    int64_t pLenSq = p.SquaredLength();
+
+    VECTOR2I dp = p.B - p.A;
+    pClip.A.x = p.A.x + rescale( (int64_t)dp.x, tv[1], pLenSq );
+    pClip.A.y = p.A.y + rescale( (int64_t)dp.y, tv[1], pLenSq );
+
+    pClip.B.x = p.A.x + rescale( (int64_t)dp.x, tv[2], pLenSq );
+    pClip.B.y = p.A.y + rescale( (int64_t)dp.y, tv[2], pLenSq );
+
+    nClip.A = n.LineProject( pClip.A );
+    nClip.B = n.LineProject( pClip.B );
+
+    return true;
+}
+
+
+template <typename T1, typename T2>
+typename std::map<T1, T2>::iterator findClosestKey( std::map<T1, T2> & data, T1 key)
+{
+    if (data.size() == 0) {
+        return data.end();
+    }
+
+    auto lower = data.lower_bound(key);
+
+    if (lower == data.end()) // If none found, return the last one.
+        return std::prev(lower);
+
+    if (lower == data.begin())
+        return lower;
+
+    // Check which one is closest.
+    auto previous = std::prev(lower);
+    if ((key - previous->first) < (lower->first - key))
+        return previous;
+
+    return lower;
+}
+
+
+
+void PNS_PCBNEW_RULE_RESOLVER::extractDiffPairConstraints( PNS::NODE* node, int net_p, int net_n )
+{
+    std::set<PNS::ITEM*> pendingItems, complementItems;
+
+    node->AllItemsInNet( net_p, pendingItems, PNS::ITEM::SEGMENT_T | PNS::ITEM::ARC_T );
+    node->AllItemsInNet( net_n, complementItems, PNS::ITEM::SEGMENT_T | PNS::ITEM::ARC_T );
+
+    while( pendingItems.size() )
+    {
+        PNS::LINE l = node->AssembleLine( static_cast<PNS::LINKED_ITEM*>( *pendingItems.begin() ) );
+
+        std::map<int, int> gapMap;
+        std::map<PNS::LINKED_ITEM*, int> coupledCandidates;
+
+        for( auto li : l.LinkedSegments() )
+        {
+            pendingItems.erase( li );
+            auto sp = dyn_cast<PNS::SEGMENT*> ( li );
+
+            if(!sp)
+                continue;
+
+            for ( auto ci : complementItems )
+            {
+                auto sn = dyn_cast<PNS::SEGMENT*> ( ci );
+
+                if( !sn->Layers().Overlaps( sp->Layers() ))
+                    continue;
+
+                auto ssp = sp->Seg();
+                auto ssn = sn->Seg();
+
+                if( ssp.ApproxParallel(ssn) )
+                {
+                    SEG ca, cb;
+                    bool coupled = commonParallelProjection( ssp, ssn, ca, cb );
+
+                    if( coupled )
+                    {
+                        int len = ca.Length();
+                        int gap = (int)(ca.A - cb.A).EuclideanNorm() - (sp->Width()+sn->Width()) / 2;
+
+                        auto closestGap = findClosestKey( gapMap, gap );
+
+                        coupledCandidates[sn] = gap;
+
+                        if( closestGap == gapMap.end() || std::abs(closestGap->first - gap) > 50 )
+                        {
+                            gapMap[gap] = len;
+                        }
+                        else
+                        {
+                            closestGap->second += len;
+                        }
+                    }
+                }
+            }
+        }
+
+        int bestGap = -1;
+        int maxLength = 0;
+
+        for( auto i : gapMap )
+        {
+            if( i.second > maxLength )
+            {
+                maxLength = i.second;
+                bestGap = i.first;
+            }
+        }
+
+        bool pendingCandidates = true;
+
+        while ( pendingCandidates )
+        {
+            pendingCandidates = false;
+
+            for ( auto c : coupledCandidates )
+            {
+                if( std::abs(c.second - bestGap ) < 50 )
+                {
+                    PNS::LINE l_coupled = node->AssembleLine( c.first );
+
+                    for( auto li : l_coupled.LinkedSegments() )
+                        coupledCandidates.erase( li );
+
+#ifdef DEBUG
+                    printf("Orig line : %d segs, coupled line: %d segs, nets : %d/%d\n", l.SegmentCount(), l_coupled.SegmentCount(), l.Net(), l_coupled.Net() );
+#endif
+
+                    DP_CONSTRAINT cnstr;
+
+                    cnstr.net_p = l.Net();
+                    cnstr.net_n = l_coupled.Net();
+                    cnstr.gap = bestGap;
+                    cnstr.layer = l.Layer();
+                    cnstr.coupledLength = 0; // RFU
+
+                    m_inferredDiffPairConstraints.push_back( cnstr );
+
+                    pendingCandidates = true;
+                    break;
+                }
+            }
+        }
+    }
+}
 
 class PNS_PCBNEW_DEBUG_DECORATOR: public PNS::DEBUG_DECORATOR
 {
@@ -1231,6 +1450,8 @@ void PNS_KICAD_IFACE_BASE::SyncWorld( PNS::NODE *aWorld )
 
     aWorld->SetRuleResolver( m_ruleResolver );
     aWorld->SetMaxClearance( 4 * std::max(worstPadClearance, worstRuleClearance ) );
+
+    m_ruleResolver->InferDiffPairConstraints();
 }
 
 

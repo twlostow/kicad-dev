@@ -64,6 +64,11 @@ public:
 
     void SetDebugDecorator( PNS::DEBUG_DECORATOR *aDec );
 
+    virtual PNS::NODE* GetWorld() const override
+    {
+        return m_world;
+    };
+
     PNS::RULE_RESOLVER* GetRuleResolver() override;
     PNS::DEBUG_DECORATOR* GetDebugDecorator() override;
 

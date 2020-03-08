@@ -102,7 +102,8 @@ public:
         MERGE_OBTUSE    = 0x04,
         FANOUT_CLEANUP    = 0x08,
         KEEP_TOPOLOGY = 0x10,
-        PRESERVE_VERTEX = 0x20
+        PRESERVE_VERTEX = 0x20,
+        RESTRICT_AREA = 0x40
     };
 
     OPTIMIZER( NODE* aWorld );

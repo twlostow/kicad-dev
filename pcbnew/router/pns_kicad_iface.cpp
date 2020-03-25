@@ -113,6 +113,7 @@ private:
 
     std::vector<CLEARANCE_ENT> m_netClearanceCache;
     std::vector<DP_CONSTRAINT> m_inferredDiffPairConstraints;
+    std::vector<int> m_dpCoupledNets;
     std::unordered_map<const D_PAD*, int> m_localClearanceCache;
     int m_defaultClearance;
 };
@@ -274,7 +275,34 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
     if( pad_b > 0 )
         cl_b = pad_b;
 
-    return std::max( cl_a, cl_b );
+    int cl_ab = std::max(cl_a, cl_b);
+
+    if( net_a >= 0 )
+    {
+        int coupled = m_dpCoupledNets[ net_a ];
+
+
+        if ( coupled >= 0 )
+        {
+
+            // it's a diff pair
+            // fixme: optimize
+            for( const auto& cnstr : m_inferredDiffPairConstraints )
+            {
+                bool netsMatch = (cnstr.net_p == net_a && cnstr.net_n == net_b) ||
+                                 (cnstr.net_n == net_a && cnstr.net_p == net_b);
+
+
+                if( cnstr.layer == aA->Layer() && netsMatch )
+                {
+                    cl_ab = std::max(cl_ab, cnstr.gap );
+                    break;
+                }
+            }
+        }
+    }
+
+    return cl_ab;
 }
 
 
@@ -434,9 +462,13 @@ void PNS_PCBNEW_RULE_RESOLVER::InferDiffPairConstraints()
         printf("inferDiffPairConstraints():\n");
     #endif
 
+    m_dpCoupledNets.resize( n_nets + 1 );
+
     for (int net = 0 ; net < n_nets; net++ )
     {
         int coupled = DpCoupledNet( net );
+        m_dpCoupledNets[net] = coupled > 0 ? coupled : -1;
+
         if( coupled > 0 && diffPairs.find( coupled ) == diffPairs.end() )
         {
             diffPairs[net] = coupled;
@@ -602,10 +634,6 @@ void PNS_PCBNEW_RULE_RESOLVER::extractDiffPairConstraints( PNS::NODE* node, int 
 
                     for( auto li : l_coupled.LinkedSegments() )
                         coupledCandidates.erase( li );
-
-#ifdef DEBUG
-                    printf("Orig line : %d segs, coupled line: %d segs, nets : %d/%d\n", l.SegmentCount(), l_coupled.SegmentCount(), l.Net(), l_coupled.Net() );
-#endif
 
                     DP_CONSTRAINT cnstr;
 

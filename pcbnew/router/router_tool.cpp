@@ -48,11 +48,15 @@ using namespace std::placeholders;
 #include <tools/pcb_actions.h>
 #include <tools/selection_tool.h>
 #include <tools/grid_helper.h>
+#include <kicad_plugin.h>
 
 #include "router_tool.h"
 #include "pns_segment.h"
 #include "pns_router.h"
 #include "pns_itemset.h"
+#include "pns_logger.h"
+
+#include "pns_kicad_iface.h"
 
 using namespace KIGFX;
 
@@ -471,9 +475,36 @@ void ROUTER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
         switch( aEvent.KeyCode() )
         {
         case '0':
+        {
+            auto logger = m_router->Logger();
+            if( ! logger )
+                return;
+            
+            FILE *f = fopen("/tmp/pns.log", "wb");
             wxLogTrace( "PNS", "saving drag/route log...\n" );
-            m_router->DumpLog();
+
+            const auto& events = logger->GetEvents();
+
+            for( auto evt : events)
+            {
+                wxString id = "null";
+                if( evt.item && evt.item->Parent() )
+                    id = evt.item->Parent()->m_Uuid.AsString();
+
+                fprintf(f, "event %d %d %d %s\n", evt.p.x, evt.p.y, evt.type, (const char*) id.c_str() );
+            }
+
+            fclose(f);
+
+            // Export as *.kicad_pcb format, using a strategy which is specifically chosen
+            // as an example on how it could also be used to send it to the system clipboard.
+
+            PCB_IO  pcb_io;
+
+            pcb_io.Save("/tmp/pns.dump", m_iface->GetBoard(), nullptr );
+
             break;
+        }
         }
     }
 #endif

@@ -307,68 +307,6 @@ bool PRESERVE_VERTEX_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOrig
 }
 
 
-// fixme: integrate into SHAPE_LINE_CHAIN, check corner cases against current PointInside implementation
-static bool pointInside2( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aP )
-{
-    if( !aL.IsClosed() || aL.SegmentCount() < 3 )
-        return false;
-
-    // returns 0 if false, +1 if true, -1 if pt ON polygon boundary
-    int result  = 0;
-    size_t cnt  = aL.PointCount();
-
-    auto ip = aL.CPoint( 0 );
-
-    for( size_t i = 1; i <= cnt; ++i )
-    {
-        auto ipNext = (i == cnt ? aL.CPoint( 0 ) : aL.CPoint( i ));
-
-        if( ipNext.y == aP.y )
-        {
-            if( (ipNext.x ==aP.x) || ( ip.y ==aP.y
-                                        && ( (ipNext.x >aP.x) == (ip.x <aP.x) ) ) )
-                return -1;
-	}
-
-        if( (ip.y <aP.y) != (ipNext.y <aP.y) )
-        {
-            if( ip.x >=aP.x )
-            {
-                if( ipNext.x >aP.x )
-                    result = 1 - result;
-                else
-                {
-                    double d = (double) (ip.x -aP.x) * (ipNext.y -aP.y) -
-                               (double) (ipNext.x -aP.x) * (ip.y -aP.y);
-
-                    if( !d )
-                        return -1;
-
-                    if( (d > 0) == (ipNext.y > ip.y) )
-                        result = 1 - result;
-                }
-            }
-            else
-            {
-                if( ipNext.x >aP.x )
-                {
-                    double d = (double) (ip.x -aP.x) * (ipNext.y -aP.y) -
-                               (double) (ipNext.x -aP.x) * (ip.y -aP.y);
-
-                    if( !d )
-                        return -1;
-
-                    if( (d > 0) == (ipNext.y > ip.y) )
-                        result = 1 - result;
-                }
-            }
-        }
-
-        ip = ipNext;
-    }
-
-    return result > 0;
-}
 
 
 bool KEEP_TOPOLOGY_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOriginLine, const SHAPE_LINE_CHAIN& aCurrentPath, const SHAPE_LINE_CHAIN& aReplacement )
@@ -392,7 +330,7 @@ bool KEEP_TOPOLOGY_CONSTRAINT::Check ( int aVertex1, int aVertex2, LINE* aOrigin
         if ( j->Net() == aOriginLine->Net() )
             continue;
 
-        if ( pointInside2( encPoly, j->Pos() ) )
+        if ( encPoly.PointInside2( j->Pos() ) )
             {
             bool falsePositive = false;
             for( int k = 0; k < encPoly.PointCount(); k++)

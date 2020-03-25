@@ -1011,3 +1011,66 @@ double SHAPE_LINE_CHAIN::Area() const
 
     return -area * 0.5;
 }
+
+// fixme: check corner cases against current PointInside implementation
+bool SHAPE_LINE_CHAIN::PointInside2( const VECTOR2I& aP ) const
+{
+    if( !IsClosed() || SegmentCount() < 3 )
+        return false;
+
+    // returns 0 if false, +1 if true, -1 if pt ON polygon boundary
+    int result  = 0;
+    size_t cnt  = PointCount();
+
+    auto ip = CPoint( 0 );
+
+    for( size_t i = 1; i <= cnt; ++i )
+    {
+        auto ipNext = (i == cnt ? CPoint( 0 ) : CPoint( i ));
+
+        if( ipNext.y == aP.y )
+        {
+            if( (ipNext.x ==aP.x) || ( ip.y ==aP.y
+                                        && ( (ipNext.x >aP.x) == (ip.x <aP.x) ) ) )
+                return -1;
+	}
+
+        if( (ip.y <aP.y) != (ipNext.y <aP.y) )
+        {
+            if( ip.x >=aP.x )
+            {
+                if( ipNext.x >aP.x )
+                    result = 1 - result;
+                else
+                {
+                    double d = (double) (ip.x -aP.x) * (ipNext.y -aP.y) -
+                               (double) (ipNext.x -aP.x) * (ip.y -aP.y);
+
+                    if( !d )
+                        return -1;
+
+                    if( (d > 0) == (ipNext.y > ip.y) )
+                        result = 1 - result;
+                }
+            }
+            else
+            {
+                if( ipNext.x >aP.x )
+                {
+                    double d = (double) (ip.x -aP.x) * (ipNext.y -aP.y) -
+                               (double) (ipNext.x -aP.x) * (ip.y -aP.y);
+
+                    if( !d )
+                        return -1;
+
+                    if( (d > 0) == (ipNext.y > ip.y) )
+                        result = 1 - result;
+                }
+            }
+        }
+
+        ip = ipNext;
+    }
+
+    return result > 0;
+}

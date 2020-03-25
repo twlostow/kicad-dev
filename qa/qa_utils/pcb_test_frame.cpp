@@ -30,6 +30,10 @@
 #include <wx/popupwin.h>
 #include <wx/cmdline.h>
 
+
+#include <pgm_base.h>
+#include <settings/settings_manager.h>
+#include <settings/color_settings.h>
 #include <layers_id_colors_and_visibility.h>
 
 #include <gal/graphics_abstraction_layer.h>
@@ -122,7 +126,8 @@ void PCB_TEST_FRAME_BASE::createView( wxWindow *aParent, PCB_DRAW_PANEL_GAL::GAL
 
     m_galPanel = std::make_shared<PCB_DRAW_PANEL_GAL>( aParent, -1, wxPoint( 0,
                             0 ), wxDefaultSize, options, aGalType );
-
+    m_galPanel->UpdateColors();
+    
     m_galPanel->SetEvtHandlerEnabled( true );
     m_galPanel->SetFocus();
     m_galPanel->Show( true );
@@ -168,4 +173,11 @@ PCB_TEST_FRAME_BASE::PCB_TEST_FRAME_BASE()
 PCB_TEST_FRAME_BASE::~PCB_TEST_FRAME_BASE()
 {
 
+}
+
+void PCB_TEST_FRAME_BASE::LoadSettings()
+{
+    auto cs = Pgm().GetSettingsManager().GetColorSettings();
+    cs->SetColorContext( COLOR_CONTEXT::PCB );
+    cs->Load();
 }

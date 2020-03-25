@@ -583,8 +583,8 @@ public:
      *                      generated.
      * @return true if the point is inside the shape (edge is not treated as being inside).
      */
-     bool PointInside( const VECTOR2I& aPt, int aAccuracy = 0, bool aUseBBoxCache = false ) const;
-
+    bool PointInside( const VECTOR2I& aPt, int aAccuracy = 0, bool aUseBBoxCache = false ) const;
+    bool PointInside2( const VECTOR2I& aP ) const;
 
     /**
      * Function PointOnEdge()

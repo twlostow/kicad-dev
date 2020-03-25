@@ -70,6 +70,22 @@ private:
     std::vector<STAGE> m_stages;
 };
 
+
+class POSTURE_SOLVER
+{
+public:
+    POSTURE_SOLVER();
+    ~POSTURE_SOLVER();
+
+    void Clear();
+    void AddTrailPoint( const VECTOR2I& aP );
+
+    DIRECTION_45 GetPosture( const VECTOR2I& aP );
+
+private:
+    SHAPE_LINE_CHAIN m_trail;
+};
+
 /**
  * LINE_PLACER
  *

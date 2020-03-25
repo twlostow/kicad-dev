@@ -109,18 +109,21 @@ LINE SHOVE::assembleLine( const LINKED_ITEM* aSeg, int* aIndex )
 // visually "outwards" of the line/via applying pressure on it. Unfortunately there's no
 // mathematical concept of orientation of an open curve, so we use some primitive heuristics:
 // if the shoved line wraps around the start of the "pusher", it's likely shoved in wrong direction.
-bool SHOVE::checkBumpDirection( const LINE& aCurrent, const LINE& aShoved ) const
+
+// Update: there's no concept of an orientation of an open curve, but nonetheless I'm dumb as f**k. The old and the new 'shoved'
+// curves put together make a closed polygon... Tom, learn the f**ing high school geometry!
+
+bool SHOVE::checkBumpDirection( const LINE& aCurrent, const LINE& aObstacle, const LINE& aShoved ) const
 {
-    const SEG& ss = aCurrent.CSegment( 0 );
+    SHAPE_LINE_CHAIN encPoly = aObstacle.CLine();
 
-    int dist = getClearance( &aCurrent, &aShoved );
+    encPoly.Append( aShoved.CLine().Reverse() );
+    encPoly.SetClosed( true );
 
-    dist += aCurrent.Width() / 2;
-    dist += aShoved.Width() / 2;
+    if( encPoly.PointInside2( aCurrent.CPoint(0) ) )
+        return false;
 
-    const VECTOR2I ps = ss.A - ( ss.B - ss.A ).Resize( dist );
-
-    return !aShoved.CLine().PointOnEdge( ps );
+    return true;
 }
 
 
@@ -218,7 +221,7 @@ SHOVE::SHOVE_STATUS SHOVE::processHullSet( LINE& aCurrent, LINE& aObstacle,
             continue;
         }
 
-        if( !checkBumpDirection( aCurrent, l ) )
+        if( !checkBumpDirection( aCurrent, aObstacle, l ) )
         {
             wxLogTrace( "PNS", "attempt %d fail direction-check", attempt );
             aShoved.SetShape( l.CLine() );
@@ -234,6 +237,10 @@ SHOVE::SHOVE_STATUS SHOVE::processHullSet( LINE& aCurrent, LINE& aObstacle,
 
         bool colliding = m_currentNode->CheckColliding( &l, &aCurrent, ITEM::ANY_T, m_forceClearance );
 
+        char str[128];
+        sprintf(str,"att-%d-shoved", attempt);
+        Dbg()->AddLine( l.CLine(), 3, 20000, str );
+        
         if( ( aCurrent.Marker() & MK_HEAD ) && !colliding )
         {
             JOINT* jtStart = m_currentNode->FindJoint( aCurrent.CPoint( 0 ), &aCurrent );
@@ -308,6 +315,10 @@ SHOVE::SHOVE_STATUS SHOVE::ProcessSingleLine( LINE& aCurrent, LINE& aObstacle, L
         if( viaOnEnd )
             hulls.push_back( aCurrent.Via().Hull( clearance, w ) );
 
+        char str[128];
+        sprintf(str,"current-cl-%d", clearance );
+        Dbg()->AddLine( aCurrent.CLine(), 5, 20000, str );
+
         rv = processHullSet( aCurrent, aObstacle, aShoved, hulls );
     }
 
@@ -347,7 +358,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
 
     assert( obstacleLine.LayersOverlap( &shovedLine ) );
 
-#ifdef DEBUG
+#if 0
     m_logger.NewGroup( "on-colliding-segment", m_iter );
     m_logger.Log( &tmp, 0, "obstacle-segment" );
     m_logger.Log( &aCurrent, 1, "current-line" );
@@ -408,7 +419,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
 
     assert( obstacleLine.LayersOverlap( &shovedLine ) );
 
-#ifdef DEBUG
+#if 0
     m_logger.NewGroup( "on-colliding-segment", m_iter );
     m_logger.Log( &tmp, 0, "obstacle-segment" );
     m_logger.Log( &aCurrent, 1, "current-line" );
@@ -449,7 +460,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingLine( LINE& aCurrent, LINE& aObstacle )
 
     SHOVE_STATUS rv = ProcessSingleLine( aCurrent, aObstacle, shovedLine );
 
-    #ifdef DEBUG
+    #if 0
         m_logger.NewGroup( "on-colliding-line", m_iter );
         m_logger.Log( &aObstacle, 0, "obstacle-line" );
         m_logger.Log( &aCurrent, 1, "current-line" );
@@ -517,7 +528,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
 
     std::set<ITEM*> cluster = topo.AssembleCluster( aObstacle, aCurrent.Layers().Start() );
 
-#ifdef DEBUG
+#if 0
     m_logger.NewGroup( "on-colliding-solid-cluster", m_iter );
     for( ITEM* item : cluster )
     {
@@ -599,7 +610,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
     replaceLine( aCurrent, walkaroundLine );
     walkaroundLine.SetRank( nextRank );
 
-#ifdef DEBUG
+#if 0
     m_logger.NewGroup( "on-colliding-solid", m_iter );
     m_logger.Log( aObstacle, 0, "obstacle-solid" );
     m_logger.Log( &aCurrent, 1, "current-line" );
@@ -748,13 +759,13 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
         }
     }
 
-#ifdef DEBUG
+#if 0
     m_logger.Log( aVia, 0, "obstacle-via" );
 #endif
 
     pushedVia->SetRank( aCurrentRank - 1 );
 
-#ifdef DEBUG
+#if 0
     m_logger.Log( pushedVia.get(), 1, "pushed-via" );
 #endif
 
@@ -797,7 +808,7 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
             m_currentNode->Remove( lp.first );
         }
 
-#ifdef DEBUG
+#if 0
         m_logger.Log( &lp.first, 2, "fan-pre" );
         m_logger.Log( &lp.second, 3, "fan-post" );
 #endif
@@ -828,7 +839,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia )
 
     if( aCurrent->OfKind( ITEM::LINE_T ) )
     {
-#ifdef DEBUG
+#if 0
          m_logger.NewGroup( "push-via-by-line", m_iter );
          m_logger.Log( aCurrent, 4, "current" );
 #endif
@@ -913,7 +924,7 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
 
             if( st != SH_OK )
             {
-#ifdef DEBUG
+#if 0
                 m_logger.NewGroup( "on-reverse-via-fail-shove", m_iter );
                 m_logger.Log( aObstacleVia, 0, "the-via" );
                 m_logger.Log( &aCurrent, 1, "current-line" );
@@ -930,7 +941,7 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
 
     if( !n )
     {
-#ifdef DEBUG
+#if 0
         m_logger.NewGroup( "on-reverse-via-fail-lonevia", m_iter );
         m_logger.Log( aObstacleVia, 0, "the-via" );
         m_logger.Log( &aCurrent, 1, "current-line" );
@@ -952,7 +963,7 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
     if( aCurrent.EndsWithVia() )
         shoved.AppendVia( aCurrent.Via() );
 
-#ifdef DEBUG
+#if 0
     m_logger.NewGroup( "on-reverse-via", m_iter );
     m_logger.Log( aObstacleVia, 0, "the-via" );
     m_logger.Log( &aCurrent, 1, "current-line" );
@@ -1057,6 +1068,8 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
     LINE currentLine = m_lineStack.back();
     NODE::OPT_OBSTACLE nearest;
     SHOVE_STATUS st = SH_NULL;
+
+    Dbg()->SetIteration( aIter );
 
     for( ITEM::PnsKind search_order : { ITEM::SOLID_T, ITEM::VIA_T, ITEM::SEGMENT_T } )
     {
@@ -1259,7 +1272,9 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     m_lineStack.clear();
     m_optimizerQueue.clear();
     m_newHead = OPT_LINE();
+#if 0
     m_logger.Clear();
+#endif
 
     // Pop NODEs containing previous shoves which are no longer necessary
     //
@@ -1284,15 +1299,16 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     head.Mark( MK_HEAD );
     head.SetRank( 100000 );
 
+#if 0
     m_logger.NewGroup( "initial", 0 );
     m_logger.Log( &head, 0, "head" );
+#endif
 
     if( head.EndsWithVia() )
     {
         std::unique_ptr< VIA >headVia = Clone( head.Via() );
         headVia->Mark( MK_HEAD );
         headVia->SetRank( 100000 );
-        m_logger.Log( headVia.get(), 0, "head-via" );
         m_currentNode->Add( std::move( headVia ) );
     }
 
@@ -1368,7 +1384,9 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveMultiLines( const ITEM_SET& aHeadSet )
 
     m_lineStack.clear();
     m_optimizerQueue.clear();
+#if 0
     m_logger.Clear();
+#endif
 
     VIA_HANDLE dummyVia;
 
@@ -1398,13 +1416,9 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveMultiLines( const ITEM_SET& aHeadSet )
             std::unique_ptr< VIA > headVia = Clone( head.Via() );
             headVia->Mark( MK_HEAD );
             headVia->SetRank( 100000 );
-            m_logger.Log( headVia.get(), 0, "head-via" );
             m_currentNode->Add( std::move( headVia ) );
         }
     }
-
-    m_logger.NewGroup( "initial", 0 );
-    //m_logger.Log( head, 0, "head" );
 
     st = shoveMainLoop();
 
@@ -1578,6 +1592,16 @@ void SHOVE::runOptimizer( NODE* aNode )
             if( !( line.Marker() & MK_HEAD ) )
             {
                 LINE optimized;
+
+                auto resolver = Router()->GetInterface()->GetRuleResolver();
+
+                int coupled = resolver->DpCoupledNet( line.Net() );
+
+                if( coupled > 0 )
+                {
+                    //printf("trying to optimize DP [%d, %d]\n", line.Net(), coupled );
+                    continue;
+                }
 
                 if( optimizer.Optimize( &line, &optimized ) )
                 {

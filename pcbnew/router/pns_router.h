@@ -63,6 +63,7 @@ class RULE_RESOLVER;
 class SHOVE;
 class DRAGGER;
 class DRAG_ALGO;
+class LOGGER;
 
 enum ROUTER_MODE {
     PNS_MODE_ROUTE_SINGLE = 1,
@@ -171,6 +172,7 @@ public:
     const std::vector<int> GetCurrentNets() const;
 
     void DumpLog();
+    LOGGER* Logger();
 
     RULE_RESOLVER* GetRuleResolver() const
     {
@@ -267,7 +269,7 @@ private:
     NODE*                   m_lastNode;
 
     std::unique_ptr< PLACEMENT_ALGO > m_placer;
-    std::unique_ptr< DRAG_ALGO >        m_dragger;
+    std::unique_ptr< DRAG_ALGO >      m_dragger;
     std::unique_ptr< SHOVE >          m_shove;
 
     ROUTER_IFACE* m_iface;
@@ -281,6 +283,7 @@ private:
     ROUTING_SETTINGS* m_settings;
     SIZES_SETTINGS m_sizes;
     ROUTER_MODE m_mode;
+    LOGGER* m_logger;
 
     wxString m_toolStatusbarName;
     wxString m_failureReason;

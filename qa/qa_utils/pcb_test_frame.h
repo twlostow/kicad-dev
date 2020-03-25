@@ -58,6 +58,8 @@ public:
     std::shared_ptr < PCB_DRAW_PANEL_GAL > GetPanel() { return m_galPanel; }
     std::shared_ptr < BOARD > GetBoard() { return m_board; }
 
+    void LoadSettings();
+
 protected:
 
     void createView( wxWindow *aParent, PCB_DRAW_PANEL_GAL::GAL_TYPE aGalType = PCB_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );

@@ -69,6 +69,11 @@ public:
         return m_world;
     };
 
+    BOARD* GetBoard() const 
+    {
+        return m_board;
+    }
+
     PNS::RULE_RESOLVER* GetRuleResolver() override;
     PNS::DEBUG_DECORATOR* GetDebugDecorator() override;
 

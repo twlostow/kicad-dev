@@ -972,6 +972,11 @@ bool LINE_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
 
     initPlacement();
 
+    m_postureSolver.Clear();
+    m_postureSolver.AddTrailPoint( aP );
+    m_postureSolver.SetTollerance( m_head.Width() );
+    m_postureSolver.SetDefaultDirections( m_initial_direction, DIRECTION_45::UNDEFINED );
+
     NODE *n;
 
     if ( m_shove )
@@ -1064,6 +1069,7 @@ bool LINE_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
     }
 
     updateLeadingRatLine();
+    m_postureSolver.AddTrailPoint( aP );
     return true;
 }
 
@@ -1197,6 +1203,12 @@ bool LINE_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinis
             m_shove->AddLockedSpringbackNode( m_currentNode );
         }
     
+        
+        m_postureSolver.Clear();
+        m_postureSolver.SetTollerance( m_head.Width() );
+        m_postureSolver.AddTrailPoint( m_currentStart );
+        m_postureSolver.SetDefaultDirections( m_initial_direction, d_last );
+
         m_placementCorrect = true;
     }
     else
@@ -1294,9 +1306,9 @@ void LINE_PLACER::removeLoops( NODE* aNode, LINE& aLatest )
         {
             total++;
 
-            if( !( line.ContainsSegment( seg ) ) && line.SegmentCount() )
+            if( !( line.ContainsLink( seg ) ) && line.SegmentCount() )
             {
-                for( auto ss : line.LinkedSegments() )
+                for( auto ss : line.Links() )
                     toErase.insert( ss );
 
                 removedCount++;
@@ -1359,10 +1371,14 @@ void LINE_PLACER::SetOrthoMode( bool aOrthoMode )
 }
 
 
-bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aInvertPosture )
+bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead )
 {
     SHAPE_LINE_CHAIN l;
     int initial_radius = 0;
+
+    auto guessedDir = m_postureSolver.GetPosture( aP );
+
+    printf("GuesedDir: %s\n", guessedDir.Format().c_str() );
 
     if( m_p_start == aP )
     {
@@ -1380,8 +1396,9 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aInver
             if( Settings().GetRounded()  && !m_orthoMode )
                 initial_radius = Settings().GetMaxRadius();
 
-            if ( aInvertPosture )
-                l = m_direction.Right().BuildInitialTrace( m_p_start, aP, false, initial_radius );
+
+            if( !m_tail.PointCount() )
+                l = guessedDir.BuildInitialTrace( m_p_start, aP, false, initial_radius );
             else
                 l = m_direction.BuildInitialTrace( m_p_start, aP, false, initial_radius );
         }
@@ -1491,4 +1508,91 @@ int FIXED_TAIL::StageCount() const
     return m_stages.size();
 }
 
+POSTURE_SOLVER::POSTURE_SOLVER() {}
+POSTURE_SOLVER::~POSTURE_SOLVER() {}
+
+void POSTURE_SOLVER::Clear()
+{
+    m_trail.Clear();
 }
+
+void POSTURE_SOLVER::AddTrailPoint( const VECTOR2I& aP )
+{
+    if( m_trail.SegmentCount() == 0 )
+    {
+        m_trail.Append(aP);
+    } else {
+        SEG s_new ( m_trail.CPoint(-1), aP );
+        
+        for( int i = 0; i < m_trail.SegmentCount() - 1; i++ )
+        {
+            const auto& s_trail = m_trail.CSegment(i);
+            if( s_trail.Distance( s_new ) <= m_tollerance )
+            {
+                m_trail = m_trail.Slice( 0, i );
+                break;
+            }
+        }
+        
+        m_trail.Append( aP );
+    }
+
+    m_trail.Simplify();
+
+   // auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+    //dbg->AddLine(m_trail, 5, 100000 );
+    
+}
+
+DIRECTION_45 POSTURE_SOLVER::GetPosture( const VECTOR2I& aP )
+{
+    if( m_trail.PointCount() < 2)
+        return m_initDirection;
+
+    auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+    auto p0 = m_trail.CPoint(0);
+    auto bb = m_trail.BBox();
+
+    double refArea = bb.GetArea();
+
+    int dx = aP.x - p0.x;
+    int dy = aP.y - p0.y;
+
+    SHAPE_LINE_CHAIN straight = m_trail;
+
+    if( abs(dy) > abs(dx ))
+    {
+        straight.Append( p0.x, p0.y + dy);
+    } else {
+        straight.Append( p0.x + dx, p0.y );
+    }
+
+    straight.SetClosed(true);
+    double areaS = straight.Area();
+
+    auto trk =  DIRECTION_45().BuildInitialTrace( p0, aP, true );
+    SHAPE_LINE_CHAIN diag (trk);
+    diag.Append(m_trail.Reverse());
+    diag.SetClosed(true);
+
+    //dbg->AddLine(diag, 1, 100000 );
+
+    double areaDiag = diag.Area();
+
+    double ratio = abs(areaS) / (fabs(areaDiag) + 1.0);
+
+    if( ratio > areaRatioThreshold)
+        return DIRECTION_45::NE;
+    else if ( ratio < 1.0 / areaRatioThreshold )
+        return DIRECTION_45::N;
+    else if ( m_lastSegDirection != DIRECTION_45::UNDEFINED )
+        return m_lastSegDirection;
+    else
+        return m_initDirection;
+    
+}
+
+}
+

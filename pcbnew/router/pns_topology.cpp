@@ -182,7 +182,7 @@ bool TOPOLOGY::followTrivialPath( LINE* aLine, bool aLeft, ITEM_SET& aSet, std::
 
         VECTOR2I anchor = aLeft ? aLine->CPoint( 0 ) : aLine->CPoint( -1 );
         LINKED_ITEM* last =
-                aLeft ? aLine->LinkedSegments().front() : aLine->LinkedSegments().back();
+                aLeft ? aLine->Links().front() : aLine->Links().back();
         JOINT* jt = m_world->FindJoint( anchor, aLine );
 
     assert( jt != NULL );
@@ -286,22 +286,58 @@ const ITEM_SET TOPOLOGY::ConnectedItems( ITEM* aStart, int aKindMask )
 bool commonParallelProjection( SEG p, SEG n, SEG &pClip, SEG& nClip );
 
 
-bool TOPOLOGY::AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair )
+bool TOPOLOGY::AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair, bool aUseSearchSet, std::vector<LINK_HOLDER*> aSearchSet )
 {
     int refNet = aStart->Net();
-    int coupledNet = m_world->GetRuleResolver()->DpCoupledNet( refNet );
+    auto resolver = m_world->GetRuleResolver();
 
-    if( coupledNet < 0 )
+    if( ! resolver->DpBelongsToDiffPair( aStart ) )
         return false;
+
+    int coupledNet = resolver->DpCoupledNet( refNet );
 
     std::set<ITEM*> coupledItems;
 
-    m_world->AllItemsInNet( coupledNet, coupledItems );
+    //printf("sarchSet %d %d\n", !!aUseSearchSet, aSearchSet.size() );
 
-    SEGMENT* coupledSeg = NULL, *refSeg;
+    if( aUseSearchSet )
+    {
+        for ( auto item : aSearchSet )
+        {
+           // printf("Scan item %p net %d links %d\n", item, item->Net(), item->LinkCount() );
+            if( item->Net() == coupledNet )
+            {
+                for( auto link : item->Links() )
+                {
+                    coupledItems.insert( link );
+                }
+            }
+        }
+    }
+    else
+    {
+        m_world->AllItemsInNet( coupledNet, coupledItems );
+    }
+
+    //printf("CoupeldItems: %d\n", coupledItems.size() );
+
+    SEGMENT* coupledSeg = NULL;
+    std::vector<SEGMENT*> refSegs;
     int minDist = std::numeric_limits<int>::max();
 
-    if( ( refSeg = dyn_cast<SEGMENT*>( aStart ) ) != NULL )
+    if( auto refSeg = dyn_cast<SEGMENT*>( aStart ) )
+        refSegs.push_back(refSeg);
+    else if ( auto l = dyn_cast<LINE*>( aStart ) )
+    {
+        for( auto link : l->Links() )
+            if( auto rseg = dyn_cast<SEGMENT*>( link ) )
+                refSegs.push_back(rseg);
+    }
+
+
+    SEGMENT* matchRefSeg = nullptr;
+
+    for( auto refSeg : refSegs )
     {
         for( ITEM* item : coupledItems )
         {
@@ -319,20 +355,17 @@ bool TOPOLOGY::AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair )
                     {
                         minDist = dist;
                         coupledSeg = s;
+                        matchRefSeg = refSeg;
                     }
                 }
             }
         }
     }
-    else
-    {
-        return false;
-    }
 
     if( !coupledSeg )
         return false;
 
-    LINE lp = m_world->AssembleLine( refSeg );
+    LINE lp = m_world->AssembleLine( matchRefSeg );
     LINE ln = m_world->AssembleLine( coupledSeg );
 
     if( m_world->GetRuleResolver()->DpNetPolarity( refNet ) < 0 )
@@ -342,11 +375,11 @@ bool TOPOLOGY::AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair )
 
     int gap = -1;
 
-    if( refSeg->Seg().ApproxParallel( coupledSeg->Seg() ) )
+    if( matchRefSeg->Seg().ApproxParallel( coupledSeg->Seg() ) )
     {
         // Segments are parallel -> compute pair gap
-        const VECTOR2I refDir       = refSeg->Anchor( 1 ) - refSeg->Anchor( 0 );
-        const VECTOR2I displacement = refSeg->Anchor( 1 ) - coupledSeg->Anchor( 1 );
+        const VECTOR2I refDir       = matchRefSeg->Anchor( 1 ) - matchRefSeg->Anchor( 0 );
+        const VECTOR2I displacement = matchRefSeg->Anchor( 1 ) - coupledSeg->Anchor( 1 );
         gap = (int) std::abs( refDir.Cross( displacement ) / refDir.EuclideanNorm() ) - lp.Width();
     }
 
@@ -354,6 +387,12 @@ bool TOPOLOGY::AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair )
     aPair.SetWidth( lp.Width() );
     aPair.SetLayers( lp.Layers() );
     aPair.SetGap( gap );
+
+    for( auto l : lp.Links() )
+        aPair.Link(l);
+
+    for( auto l : ln.Links() )
+        aPair.Link(l);
 
     return true;
 }

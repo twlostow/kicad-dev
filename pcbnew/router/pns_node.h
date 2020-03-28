@@ -57,6 +57,15 @@ class NODE;
 class RULE_RESOLVER
 {
 public:
+
+    struct DP_CONSTRAINT
+    {
+        int net_n, net_p;
+        int layer;
+        int gap;
+        int coupledLength;
+    };
+
     virtual ~RULE_RESOLVER() {}
 
     virtual bool CollideHoles( const ITEM* aA, const ITEM* aB,
@@ -65,8 +74,10 @@ public:
     virtual int Clearance( const ITEM* aA, const ITEM* aB ) const = 0;
     virtual int Clearance( int aNetCode ) const = 0;
     virtual int DpCoupledNet( int aNet ) = 0;
+    virtual DP_CONSTRAINT DpQueryConstraint( const ITEM* aItem ) const = 0;
     virtual int DpNetPolarity( int aNet ) = 0;
     virtual bool DpNetPair( ITEM* aItem, int& aNetP, int& aNetN ) = 0;
+    virtual bool DpBelongsToDiffPair( const ITEM* aItem ) const  = 0;
 
     virtual wxString NetName( int aNet ) = 0;
 };

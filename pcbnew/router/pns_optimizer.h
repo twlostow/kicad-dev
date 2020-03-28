@@ -143,6 +143,7 @@ public:
 
     bool extractPadGrids( std::vector<JOINT*>& aPadJoints );
     void BuildPadGrids();
+    void OptimizeLineQueue( std::vector<LINE>& aLines );
 
 private:
     static const int MaxCachedItems = 256;
@@ -157,6 +158,7 @@ private:
         bool m_isStatic;
     };
 
+    void buildGatewaysForDp( DIFF_PAIR* aPairir );
     bool mergeObtuse( LINE* aLine );
     bool mergeFull( LINE* aLine );
     bool removeUglyCorners( LINE* aLine );

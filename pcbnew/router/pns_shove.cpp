@@ -272,11 +272,11 @@ SHOVE::SHOVE_STATUS SHOVE::processHullSet( LINE& aCurrent, LINE& aObstacle,
  */
 SHOVE::SHOVE_STATUS SHOVE::ProcessSingleLine( LINE& aCurrent, LINE& aObstacle, LINE& aShoved )
 {
-    aShoved.ClearSegmentLinks();
+    aShoved.ClearLinks();
 
     bool obstacleIsHead = false;
 
-    for( auto s : aObstacle.LinkedSegments() )
+    for( auto s : aObstacle.Links() )
     {
         if( s->Marker() & MK_HEAD )
         {
@@ -299,6 +299,8 @@ SHOVE::SHOVE_STATUS SHOVE::ProcessSingleLine( LINE& aCurrent, LINE& aObstacle, L
         int n_segs = aCurrent.SegmentCount();
 
         int clearance = getClearance( &aCurrent, &aObstacle ) + 1;
+
+        Dbg()->Message( wxString::Format( "shove process-single: cur net %d obs %d cl %d", aCurrent.Net(), aObstacle.Net(), clearance ) ); 
 
         HULL_SET hulls;
 
@@ -565,7 +567,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
         if( status != WALKAROUND::DONE )
             continue;
 
-        walkaroundLine.ClearSegmentLinks();
+        walkaroundLine.ClearLinks();
         walkaroundLine.Unmark();
     	walkaroundLine.Line().Simplify();
 
@@ -752,7 +754,7 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
                 lp.first.Reverse();
 
             lp.second = lp.first;
-            lp.second.ClearSegmentLinks();
+            lp.second.ClearLinks();
             lp.second.DragCorner( p0_pushed, lp.second.CLine().Find( p0 ) );
             lp.second.AppendVia( *pushedVia );
             draggedLines.push_back( lp );
@@ -902,11 +904,11 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
 {
     int n = 0;
     LINE cur( aCurrent );
-    cur.ClearSegmentLinks();
+    cur.ClearLinks();
 
     JOINT* jt = m_currentNode->FindJoint( aObstacleVia->Pos(), aObstacleVia );
     LINE shoved( aCurrent );
-    shoved.ClearSegmentLinks();
+    shoved.ClearLinks();
 
     cur.RemoveVia();
     unwindLineStack( &aCurrent );
@@ -950,7 +952,7 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
         LINE head( aCurrent );
         head.Line().Clear();
         head.AppendVia( *aObstacleVia );
-        head.ClearSegmentLinks();
+        head.ClearLinks();
 
         SHOVE_STATUS st = ProcessSingleLine( head, aCurrent, shoved );
 
@@ -985,7 +987,7 @@ void SHOVE::unwindLineStack( LINKED_ITEM* aSeg )
 {
     for( std::vector<LINE>::iterator i = m_lineStack.begin(); i != m_lineStack.end() ; )
     {
-        if( i->ContainsSegment( aSeg ) )
+        if( i->ContainsLink( aSeg ) )
             i = m_lineStack.erase( i );
         else
             i++;
@@ -993,7 +995,7 @@ void SHOVE::unwindLineStack( LINKED_ITEM* aSeg )
 
     for( std::vector<LINE>::iterator i = m_optimizerQueue.begin(); i != m_optimizerQueue.end() ; )
     {
-        if( i->ContainsSegment( aSeg ) )
+        if( i->ContainsLink( aSeg ) )
             i = m_optimizerQueue.erase( i );
         else
             i++;
@@ -1009,7 +1011,7 @@ void SHOVE::unwindLineStack( ITEM* aItem )
     {
         LINE* l = static_cast<LINE*>( aItem );
 
-        for( auto seg : l->LinkedSegments() )
+        for( auto seg : l->Links() )
             unwindLineStack( seg );
     }
 }
@@ -1042,9 +1044,9 @@ void SHOVE::popLineStack( )
     {
         bool found = false;
 
-        for( auto s : l.LinkedSegments() )
+        for( auto s : l.Links() )
         {
-            if( i->ContainsSegment( s ) )
+            if( i->ContainsLink( s ) )
             {
                 i = m_optimizerQueue.erase( i );
                 found = true;
@@ -1267,7 +1269,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
         return SH_INCOMPLETE;
 
     LINE head( aCurrentHead );
-    head.ClearSegmentLinks();
+    head.ClearLinks();
 
     m_lineStack.clear();
     m_optimizerQueue.clear();
@@ -1400,7 +1402,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveMultiLines( const ITEM_SET& aHeadSet )
     {
         const LINE* headOrig = static_cast<const LINE*>( item );
         LINE head( *headOrig );
-        head.ClearSegmentLinks();
+        head.ClearLinks();
 
         m_currentNode->Add( head );
 
@@ -1537,81 +1539,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveDraggingVia( const VIA_HANDLE aOldVia, const VEC
 void SHOVE::runOptimizer( NODE* aNode )
 {
     OPTIMIZER optimizer( aNode );
-    int optFlags = 0;
-    int n_passes = 0;
-
-    PNS_OPTIMIZATION_EFFORT effort = Settings().OptimizerEffort();
-
-    OPT_BOX2I area = totalAffectedArea();
-
-    int maxWidth = 0;
-
-    for( LINE& line : m_optimizerQueue )
-        maxWidth = std::max( line.Width(), maxWidth );
-
-    if( area )
-        area->Inflate( 10 * maxWidth );
-
-    switch( effort )
-    {
-    case OE_LOW:
-        optFlags = OPTIMIZER::MERGE_OBTUSE;
-        n_passes = 1;
-        break;
-
-    case OE_MEDIUM:
-        optFlags = OPTIMIZER::MERGE_SEGMENTS;
-
-        if( area )
-            optimizer.SetRestrictArea( *area );
-
-        n_passes = 2;
-        break;
-
-    case OE_FULL:
-        optFlags = OPTIMIZER::MERGE_SEGMENTS;
-        n_passes = 2;
-        break;
-
-    default:
-        break;
-    }
-
-    if( Settings().SmartPads() )
-        optFlags |= OPTIMIZER::SMART_PADS;
-
-    optimizer.SetEffortLevel( optFlags );
-    optimizer.SetCollisionMask( ITEM::ANY_T );
-
-    for( int pass = 0; pass < n_passes; pass++ )
-    {
-        std::reverse( m_optimizerQueue.begin(), m_optimizerQueue.end() );
-
-        for( LINE& line : m_optimizerQueue)
-        {
-            if( !( line.Marker() & MK_HEAD ) )
-            {
-                LINE optimized;
-
-                auto resolver = Router()->GetInterface()->GetRuleResolver();
-
-                int coupled = resolver->DpCoupledNet( line.Net() );
-
-                if( coupled > 0 )
-                {
-                    //printf("trying to optimize DP [%d, %d]\n", line.Net(), coupled );
-                    continue;
-                }
-
-                if( optimizer.Optimize( &line, &optimized ) )
-                {
-                    aNode->Remove( line );
-                    line.SetShape( optimized.CLine() );
-                    aNode->Add( line );
-                }
-            }
-        }
-    }
+    optimizer.OptimizeLineQueue( m_optimizerQueue );
 }
 
 

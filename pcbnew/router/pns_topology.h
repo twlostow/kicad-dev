@@ -56,13 +56,13 @@ public:
     int64_t ShortestConnectionLength( ITEM* aFrom, ITEM* aTo );
 
     const ITEM_SET AssembleTrivialPath( ITEM* aStart );
-    const DIFF_PAIR AssembleDiffPair( SEGMENT* aStart );
+    
 
     int DpCoupledNet( int aNet );
     int DpNetPolarity( int aNet );
     const LINE DpCoupledLine( LINE* aLine );
-    bool AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair );
 
+    bool AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPairRef, bool aUseSearchSet = false, std::vector<LINK_HOLDER*> aSearchSet = {} );
     const std::set<ITEM*> AssembleCluster( ITEM* aStart, int aLayer );
 
 private:

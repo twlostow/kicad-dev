@@ -81,6 +81,8 @@ public:
     virtual int DpCoupledNet( int aNet ) override;
     virtual int DpNetPolarity( int aNet ) override;
     virtual bool DpNetPair( PNS::ITEM* aItem, int& aNetP, int& aNetN ) override;
+    virtual DP_CONSTRAINT DpQueryConstraint( const PNS::ITEM* aItem ) const override;
+    virtual bool DpBelongsToDiffPair( const PNS::ITEM* aItem ) const override;
 
     virtual wxString NetName( int aNet ) override;
 
@@ -93,14 +95,6 @@ private:
         int coupledNet;
         int dpClearance;
         int clearance;
-    };
-
-    struct DP_CONSTRAINT 
-    {
-        int net_n, net_p;
-        int layer;
-        int gap;
-        int coupledLength;
     };
 
     int holeRadius( const PNS::ITEM* aItem ) const;
@@ -302,6 +296,7 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
         }
     }
 
+    
     return cl_ab;
 }
 
@@ -390,6 +385,25 @@ int PNS_PCBNEW_RULE_RESOLVER::DpCoupledNet( int aNet )
     }
 
     return -1;
+}
+
+bool PNS_PCBNEW_RULE_RESOLVER::DpBelongsToDiffPair( const PNS::ITEM* aItem ) const
+{
+    return m_dpCoupledNets[ aItem->Net() ] >= 0;
+}
+
+PNS::RULE_RESOLVER::DP_CONSTRAINT PNS_PCBNEW_RULE_RESOLVER::DpQueryConstraint( const PNS::ITEM* aItem ) const
+{
+    int net = aItem->Net();
+    int layer = aItem->Layer();
+
+    for( const auto& cnstr : m_inferredDiffPairConstraints )
+    {
+        if( cnstr.layer == layer && ( cnstr.net_n == net || cnstr.net_p == net ) )
+            return cnstr;
+    }
+
+    return DP_CONSTRAINT();
 }
 
 
@@ -563,7 +577,7 @@ void PNS_PCBNEW_RULE_RESOLVER::extractDiffPairConstraints( PNS::NODE* node, int 
         std::map<int, int> gapMap;
         std::map<PNS::LINKED_ITEM*, int> coupledCandidates;
 
-        for( auto li : l.LinkedSegments() )
+        for( auto li : l.Links() )
         {
             pendingItems.erase( li );
             auto sp = dyn_cast<PNS::SEGMENT*> ( li );
@@ -632,7 +646,7 @@ void PNS_PCBNEW_RULE_RESOLVER::extractDiffPairConstraints( PNS::NODE* node, int 
                 {
                     PNS::LINE l_coupled = node->AssembleLine( c.first );
 
-                    for( auto li : l_coupled.LinkedSegments() )
+                    for( auto li : l_coupled.Links() )
                         coupledCandidates.erase( li );
 
                     DP_CONSTRAINT cnstr;

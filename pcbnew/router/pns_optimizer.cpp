@@ -32,6 +32,7 @@
 #include "pns_node.h"
 #include "pns_solid.h"
 #include "pns_optimizer.h"
+#include "pns_topology.h"
 
 #include "pns_utils.h"
 #include "pns_router.h"
@@ -190,14 +191,14 @@ void OPTIMIZER::removeCachedSegments( LINE* aLine, int aStartVertex, int aEndVer
 {
     if( !aLine->IsLinked() ) return;
 
-    LINE::SEGMENT_REFS& segs = aLine->LinkedSegments();
+    auto links = aLine->Links();
 
     if( aEndVertex < 0 )
         aEndVertex += aLine->PointCount();
 
     for( int i = aStartVertex; i < aEndVertex - 1; i++ )
     {
-        LINKED_ITEM* s = segs[i];
+        LINKED_ITEM* s = links[i];
         m_cacheTags.erase( s );
         m_cache.Remove( s );
     }
@@ -525,7 +526,10 @@ bool OPTIMIZER::Optimize( LINE* aLine, LINE* aResult )
     if( !aResult )
         aResult = aLine;
     else
+    {
         *aResult = *aLine;
+        aResult->ClearLinks();
+    }
 
     m_keepPostures = false;
 
@@ -1219,10 +1223,78 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
     return true;
 }
 
+static OPT_VECTOR2I projectVectorOnLineChain( const SHAPE_LINE_CHAIN& lc, VECTOR2I p0, VECTOR2I dir )
+{
+    VECTOR2I::extended_type best_dist = VECTOR2I::ECOORD_MAX, dist;
+    OPT_VECTOR2I rv;
+
+    for(int i = 0; i < lc.SegmentCount(); i++)
+    {
+        SEG s(p0, p0 + dir);
+
+        auto ip = s.IntersectLines( lc.CSegment(i ) );
+
+        if( ip && lc.CSegment(i).Contains( *ip) )
+        {
+            dist = (*ip - p0 ).SquaredEuclideanNorm();
+            if( dist < best_dist )
+            {
+                best_dist = dist;
+                rv = *ip;
+            }
+        }
+    }
+    return rv;
+}
+
+void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair )
+{
+    auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+    const auto& lp = aPair->CP();
+    const auto& ln = aPair->CN();
+
+    printf("buildGwsForDp\n");
+
+    for( int i = 1; i < lp.PointCount() - 1; i ++ )
+    {
+        auto v = lp.CPoint(i);
+        auto s_prev = lp.CSegment(i-1);
+        auto s_next = lp.CSegment(i+1);
+        auto d_prev = DIRECTION_45( s_prev );
+        auto d_next = DIRECTION_45( s_prev );
+        
+        auto prj_prev = projectVectorOnLineChain( ln, v, d_prev.Right().Right().ToVector() );
+        auto prj_next = projectVectorOnLineChain( ln, v, d_next.Right().Right().ToVector() );
+
+        if(prj_prev)
+        {
+            auto dist = (*prj_prev - v).EuclideanNorm() - aPair->Width();
+            printf("pdist %d gap %d\n", dist, aPair->Gap() );
+            if( aPair->GapConstraint().Matches( dist ) )
+            {
+                dbg->AddPoint(v, 4, "gw-prev");
+                dbg->AddPoint(*prj_prev, 1);
+            }
+        }
+        if(prj_next)
+        {
+            auto dist = (*prj_next - v).EuclideanNorm() - aPair->Width();
+            if( aPair->GapConstraint().Matches( dist ) )
+            {
+                dbg->AddPoint(v, 4, "gw-next");
+                dbg->AddPoint(*prj_next, 1);
+            }
+        }
+    }
+    
+}
 
 bool OPTIMIZER::Optimize( DIFF_PAIR* aPair )
 {
-    return mergeDpSegments( aPair );
+    aPair->ClearLinks();
+    buildGatewaysForDp( aPair );
+    return false; mergeDpSegments( aPair );
 }
 
 static int64_t shovedArea( const SHAPE_LINE_CHAIN& aOld, const SHAPE_LINE_CHAIN& aNew )
@@ -1398,4 +1470,153 @@ void Tighten( NODE *aNode, SHAPE_LINE_CHAIN& aOldLine, LINE& aNewLine, LINE& aOp
     //dbg->AddLine ( current, 4, 100000 );
 }
 
+
+std::vector<LINK_HOLDER*> pruneDpSegments( std::vector<DIFF_PAIR*>& aPairs, std::vector<LINE>& origLines )
+{
+    std::vector<LINK_HOLDER*> queue;
+    std::set<DIFF_PAIR*> processedPairs;
+
+    for (auto& line : origLines)
+    {
+        bool found= false;
+
+        for( auto& diffPair: aPairs )
+        {
+            int i = 0;
+
+            for( auto link : diffPair->Links() )
+            {
+                if ( diffPair->ContainsLink( link ) )
+                    found = true;
+                
+                if( found && processedPairs.find( diffPair ) == processedPairs.end() )
+                {
+                    queue.push_back( diffPair );
+                    processedPairs.insert(diffPair);
+                }
+
+                if( found )
+                    break;
+            }
+            if(found)
+                break;
+        }
+
+        if(!found)
+            queue.push_back( &line );
+    }
+
+    
+
+    return queue;
 }
+
+void OPTIMIZER::OptimizeLineQueue( std::vector<LINE>& aLines )
+{
+    
+    int optFlags = MERGE_SEGMENTS;
+    int n_passes = 1;
+
+    auto router = ROUTER::GetInstance();
+    auto resolver = router->GetInterface()->GetRuleResolver();
+    auto dbg = router->GetInterface()->GetDebugDecorator();
+    //)->AddLine(optimized.CLine(), 6, 100000 );
+
+    if( router->Settings().SmartPads() )
+        optFlags |= OPTIMIZER::SMART_PADS;
+
+    std::vector<LINK_HOLDER*> queue;
+    std::vector<DIFF_PAIR*> diffPairs;
+
+    TOPOLOGY topo(m_world);
+
+    // find differential pairs & their associated constraints and prune them from the line queue
+    for ( auto &line : aLines )
+        queue.push_back( &line );
+    
+    for( auto &line : aLines )
+    {
+
+        //printf("printf scan L %d %d %d\n", line.Net(), resolver->DpBelongsToDiffPair( &line),  line.SegmentCount() );
+        if( resolver->DpBelongsToDiffPair( &line ) && line.LinkCount() > 0 && line.SegmentCount() > 0 )
+        {
+            DIFF_PAIR *dp = new DIFF_PAIR;
+
+            if( topo.AssembleDiffPair( &line, *dp, true, queue ) )
+            {
+         //       printf("DP [%d %d segs %d %d]\n", dp->NetN(), dp->NetP(), dp->CP().SegmentCount(), dp->CN().SegmentCount() );
+                diffPairs.push_back(dp);
+            } else {
+                delete dp;
+            }
+        }
+    };
+
+    queue = pruneDpSegments( diffPairs, aLines );
+
+    for( auto item :queue )
+    {
+        dbg->Message( wxString::Format( "---> optq %s %p %x\n", item->KindStr().c_str(), item, item->Marker() ) );
+        
+    }
+
+    SetEffortLevel( optFlags );
+    SetCollisionMask( ITEM::ANY_T );
+
+
+  #if 1
+    for( int pass = 0; pass < n_passes; pass++ )
+    {
+        std::reverse( queue.begin(), queue.end() );
+
+        for( auto qitem : queue )
+        {
+            if( qitem->Marker() & MK_HEAD )
+                continue;
+
+            if( auto origLine = dyn_cast<LINE*>( qitem ) )
+            {
+                LINE optimized(*origLine);
+                optimized.ClearLinks();
+              //  printf("Fixme: optimze LINE LC %d\n\n", optimized.LinkCount() );
+
+                if( resolver->DpBelongsToDiffPair( qitem ) )
+                    continue;
+                
+               
+                
+                if( Optimize( origLine, &optimized ) )
+                {
+                    dbg->AddLine(origLine->CLine(), 3, 30000 ,"orig-line" );
+                    dbg->AddLine(optimized.CLine(), 6, 30000 ,"opt-line" );
+                    
+                    m_world->Remove( origLine );
+                    //printf("Fixme: optimze2 LINE LC %d\n\n", optimized.LinkCount() );
+
+
+                    m_world->Add( optimized );
+                }
+            } else if ( auto origDp = dyn_cast<DIFF_PAIR*>( qitem ) )
+            {
+                //printf("Fixme: optimze DP\n");
+                DIFF_PAIR optimized( *origDp );
+                if ( Optimize( &optimized ))
+                {
+                    dbg->AddLine(origDp->PLine().CLine(),3,30000,"dp-orig-line-p");
+                    dbg->AddLine(origDp->NLine().CLine(),3,30000,"dp-orig-line-n");
+                    m_world->Remove( origDp->PLine() );
+                    m_world->Remove( origDp->NLine() );
+                    dbg->AddLine(optimized.PLine().CLine(),3,30000,"dp-opt-line-p");
+                    dbg->AddLine(optimized.NLine().CLine(),3,30000,"dp-opt-line-n");
+                    m_world->Add( optimized.PLine() );
+                    m_world->Add( optimized.NLine() );
+                }
+            }
+            
+        }
+    }
+    #endif
+}
+
+}
+

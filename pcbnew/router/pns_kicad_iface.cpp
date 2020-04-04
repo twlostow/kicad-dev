@@ -805,14 +805,15 @@ PNS_KICAD_IFACE::PNS_KICAD_IFACE()
 
 PNS_KICAD_IFACE_BASE::~PNS_KICAD_IFACE_BASE()
 {
-    delete m_ruleResolver;
-    delete m_debugDecorator;
 }
 
 
 PNS_KICAD_IFACE::~PNS_KICAD_IFACE()
 {
-     if( m_previewItems )
+    delete m_ruleResolver;
+    delete m_debugDecorator;
+
+    if( m_previewItems )
     {
         m_previewItems->FreeItems();
         delete m_previewItems;

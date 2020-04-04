@@ -30,6 +30,7 @@
 
 #include "range.h"
 
+#include "pns_diff_pair.h"
 
 namespace PNS {
 
@@ -39,6 +40,7 @@ class LINE;
 class DIFF_PAIR;
 class ITEM;
 class JOINT;
+
 
 /**
  * COST_ESTIMATOR
@@ -158,7 +160,7 @@ private:
         bool m_isStatic;
     };
 
-    void buildGatewaysForDp( DIFF_PAIR* aPairir );
+    void buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& gws );
     bool mergeObtuse( LINE* aLine );
     bool mergeFull( LINE* aLine );
     bool removeUglyCorners( LINE* aLine );

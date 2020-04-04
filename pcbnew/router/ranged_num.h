@@ -45,6 +45,11 @@ template <class T> class RANGED_NUM {
             return ( aOther >= m_value - m_toleranceMinus && aOther <= m_value + m_tolerancePlus );
         }
 
+        void SetTollerance( int aTollerance )
+        {
+            m_tolerancePlus = m_toleranceMinus = aTollerance;
+        }
+
     private:
         T m_value, m_tolerancePlus, m_toleranceMinus;
 };

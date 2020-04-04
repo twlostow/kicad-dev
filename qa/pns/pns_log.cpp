@@ -91,22 +91,17 @@ void PNS_TEST_ENVIRONMENT::ReplayLog ( PNS_LOG_FILE* aLog, int aStartEventIndex,
 
     createRouter();
 
-    //printf("events: %d\n", aLog->Events().size() );
-
     for( auto evt : aLog->Events() )
     {
-      //  printf("Etyep %d\n", evt.type);
         auto item = aLog->ItemById(evt);
         ITEM* ritem = item ? m_router->GetWorld()->FindItemByParent( item ) : nullptr;
-        //printf("  rtr: %d %p %p\n", evt.itemId, item, ritem );
-        
+
         switch(evt.type)
         {
             case LOGGER::EVT_START_ROUTE:
             {
                 m_debugDecorator.NewStage("start", 0);
-                printf("  rtr start-route (%d, %d) %p \n", evt.p.x, evt.p.y, ritem);
-                
+//                printf("  rtr start-route (%d, %d) %p \n", evt.p.x, evt.p.y, ritem);
                 m_router->StartRouting( evt.p, ritem, ritem ? ritem->Layers().Start() : F_Cu );
                 break;
             }
@@ -120,10 +115,9 @@ void PNS_TEST_ENVIRONMENT::ReplayLog ( PNS_LOG_FILE* aLog, int aStartEventIndex,
             default:
             break;
         }
-    
 
         auto traces = m_router->Placer()->Traces();
-        
+
         for ( const auto& t : traces.CItems() )
         {
             const LINE *l  = static_cast<LINE*>(t.item);
@@ -131,7 +125,6 @@ void PNS_TEST_ENVIRONMENT::ReplayLog ( PNS_LOG_FILE* aLog, int aStartEventIndex,
 
             m_debugDecorator.AddLine( sh, 4, 10000 );
         }
-
 
         auto node = m_router->Placer()->CurrentNode(true);
         if(!node)
@@ -141,12 +134,14 @@ void PNS_TEST_ENVIRONMENT::ReplayLog ( PNS_LOG_FILE* aLog, int aStartEventIndex,
 
         node->GetUpdatedItems( removed, added );
 
+        bool first = true;
         for( auto t : added )
         {
             if( t->OfKind( PNS::ITEM::SEGMENT_T ) )
             {
                 auto s = static_cast<PNS::SEGMENT*>(t);
-                m_debugDecorator.AddSegment( s->Seg(), 2 );
+                m_debugDecorator.AddSegment( s->Seg(), 2, first ? "node-added-items" : "" );
+                first = false;
             }
         }
     }
@@ -163,51 +158,97 @@ PNS_TEST_DEBUG_DECORATOR::STAGE& PNS_TEST_DEBUG_DECORATOR::currentStage()
     return m_stages.back();
 }
 
+
+void PNS_TEST_DEBUG_DECORATOR::BeginGroup( std::string name )
+{
+    auto &st = currentStage();
+    DEBUG_ENT ent;
+
+    ent.m_name = name;
+    ent.m_iter = m_iter;
+    st.m_entries.push_back( ent );
+
+    m_grouping = true;
+}
+
+
+void PNS_TEST_DEBUG_DECORATOR::EndGroup( )
+{
+    m_grouping = false;
+}
+
+
 void PNS_TEST_DEBUG_DECORATOR::AddPoint( VECTOR2I aP, int aColor,  const std::string aName )
 {
     auto &st = currentStage();
+    auto sh = new SHAPE_LINE_CHAIN;
 
-    SHAPE_ENT ent;
+    sh->Append(aP.x-100000, aP.y-100000);
+    sh->Append(aP.x+100000, aP.y+100000);
+    sh->Append(aP.x, aP.y);
+    sh->Append(aP.x-100000, aP.y+100000);
+    sh->Append(aP.x+100000, aP.y-100000);
 
-    ent.m_shape = new SHAPE_CIRCLE ( aP, 1 );
-    ent.m_color = aColor;
-    ent.m_width = 1;
-    ent.m_iter = m_iter;
-    st.m_shapes.push_back( ent );
-   //dec_dbg("add-point");
+    if( !m_grouping ) // new debug entry
+    {
+        DEBUG_ENT ent;
+
+        ent.m_shapes.push_back( sh );
+        ent.m_color = aColor;
+        ent.m_width = 30000;
+        ent.m_iter = m_iter;
+        ent.m_name = aName;
+        st.m_entries.push_back( ent );
+    } else {
+        DEBUG_ENT& ent = st.m_entries.back();
+        ent.m_name += " " + aName;
+        ent.m_shapes.push_back( sh );
+    }
+
 
 }
 
 void PNS_TEST_DEBUG_DECORATOR::AddLine( const SHAPE_LINE_CHAIN& aLine, int aType, int aWidth,  const std::string aName )
 {
- //   dec_dbg("add-line");
-
     auto &st = currentStage();
+    auto sh = new SHAPE_LINE_CHAIN ( aLine );
 
-    SHAPE_ENT ent;
-
-    ent.m_shape = new SHAPE_LINE_CHAIN ( aLine );
-    ent.m_color = aType;
-    ent.m_width = aWidth;
-    ent.m_name = aName;
-    ent.m_iter = m_iter;
-    st.m_shapes.push_back( ent );
+    if( !m_grouping ) // new debug entry
+    {
+        DEBUG_ENT ent;
+        ent.m_shapes.push_back( sh );
+        ent.m_color = aType;
+        ent.m_width = aWidth;
+        ent.m_name = aName;
+        ent.m_iter = m_iter;
+        st.m_entries.push_back( ent );
+    } else {
+        DEBUG_ENT& ent = st.m_entries.back();
+        ent.m_name += " " + aName;
+        ent.m_shapes.push_back( sh );
+    };
 
 }
 
 void PNS_TEST_DEBUG_DECORATOR::AddSegment( SEG aS, int aColor,  const std::string aName )
 {
-   auto &st = currentStage();
+    auto &st = currentStage();
+    auto sh = new SHAPE_LINE_CHAIN ( { aS.A, aS.B } );
 
-    SHAPE_ENT ent;
-
-    ent.m_shape = new SHAPE_LINE_CHAIN ( { aS.A, aS.B } );
-    ent.m_color = aColor;
-    ent.m_width = 10000;
-    ent.m_name = aName;
-    ent.m_iter = m_iter;
-    st.m_shapes.push_back( ent );
-
+    if( !m_grouping ) // new debug entry
+    {
+        DEBUG_ENT ent;
+        ent.m_shapes.push_back( sh );
+        ent.m_color = aColor;
+        ent.m_width = 10000;
+        ent.m_name = aName;
+        ent.m_iter = m_iter;
+        st.m_entries.push_back( ent );
+    } else {
+        DEBUG_ENT& ent = st.m_entries.back();
+        ent.m_name += " " + aName;
+        ent.m_shapes.push_back( sh );
+    };
 }
 
 void PNS_TEST_DEBUG_DECORATOR::AddBox( BOX2I aB, int aColor,  const std::string aName )
@@ -224,11 +265,9 @@ void PNS_TEST_DEBUG_DECORATOR::Message( const wxString msg )
 {
     auto &st = currentStage();
 
-    SHAPE_ENT ent;
-
-    ent.m_shape = nullptr;
+    DEBUG_ENT ent;
     ent.m_msg = msg.c_str();
-    st.m_shapes.push_back( ent );
+    st.m_entries.push_back( ent );
 }
 
 void PNS_TEST_DEBUG_DECORATOR::Clear()
@@ -247,12 +286,15 @@ BOX2I PNS_TEST_DEBUG_DECORATOR::GetStageExtents(int stage) const
     BOX2I bb;
     bool first = true;
 
-    for ( auto sh : st.m_shapes )
+    for ( auto& ent : st.m_entries )
     {
-        if ( first )
-            bb = sh.m_shape->BBox();
-        else
-            bb.Merge( sh.m_shape->BBox() );
+        for( auto sh : ent.m_shapes )
+        {
+            if ( first )
+                bb = sh->BBox();
+            else
+                bb.Merge( sh->BBox() );
+        }
     }
 
     return bb;

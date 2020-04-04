@@ -1133,6 +1133,11 @@ bool OPTIMIZER::mergeDpStep( DIFF_PAIR* aPair, bool aTryP, int step )
     int64_t clenPre = aPair->CoupledLength( currentPath, coupledPath );
     int64_t budget = clenPre / 10; // fixme: come up with somethig more intelligent here...
 
+    
+    auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+    dbg->Message(wxString::Format("mergeDpstep=%d n=%d", step, n_segs ));
+
     while( n < n_segs - step )
     {
         const SEG s1    = currentPath.CSegment( n );
@@ -1140,6 +1145,9 @@ bool OPTIMIZER::mergeDpStep( DIFF_PAIR* aPair, bool aTryP, int step )
 
         DIRECTION_45 dir1( s1 );
         DIRECTION_45 dir2( s2 );
+
+        dbg->AddPoint( s1.A, 4 );
+        dbg->AddPoint( s2.B, 6 );
 
         if( dir1.IsObtuse( dir2 ) )
         {
@@ -1188,6 +1196,8 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
     int step_p = aPair->CP().SegmentCount() - 2;
     int step_n = aPair->CN().SegmentCount() - 2;
 
+    printf("MergeDPSegs: step %d %d\n", step_p, step_n);
+
     while( 1 )
     {
         int n_segs_p = aPair->CP().SegmentCount();
@@ -1223,78 +1233,79 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
     return true;
 }
 
-static OPT_VECTOR2I projectVectorOnLineChain( const SHAPE_LINE_CHAIN& lc, VECTOR2I p0, VECTOR2I dir )
+static int projectVectorOnLineChain( const SHAPE_LINE_CHAIN& lc, VECTOR2I p0, RANGED_NUM<int> gap, int width, std::vector<VECTOR2I>& aOut )
 {
     VECTOR2I::extended_type best_dist = VECTOR2I::ECOORD_MAX, dist;
     OPT_VECTOR2I rv;
 
     for(int i = 0; i < lc.SegmentCount(); i++)
     {
-        SEG s(p0, p0 + dir);
+        auto s = lc.CSegment(i);
+        VECTOR2I pp = s.LineProject( p0 );
 
-        auto ip = s.IntersectLines( lc.CSegment(i ) );
-
-        if( ip && lc.CSegment(i).Contains( *ip) )
+        if( s.Distance( pp ) < 10000 ) // fixme: contains?
         {
-            dist = (*ip - p0 ).SquaredEuclideanNorm();
-            if( dist < best_dist )
+            dist = (pp - p0 ).EuclideanNorm() - width;
+            printf("dist %d gap %d\n", dist, gap);
+            if( gap.Matches(dist) )
             {
-                best_dist = dist;
-                rv = *ip;
+                aOut.emplace_back( pp );
             }
         }
     }
-    return rv;
+    return aOut.size();
 }
 
-void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair )
+void diagonalizeGw( VECTOR2I pP, VECTOR2I pN, const SHAPE_LINE_CHAIN& lP, const SHAPE_LINE_CHAIN& lN, int gap )
+{
+
+}
+
+void buildGatewaysForSide( DIFF_PAIR* aPair, const SHAPE_LINE_CHAIN& lA, const SHAPE_LINE_CHAIN& lB,
+        std::vector<DP_GATEWAY>& gws, bool swap )
 {
     auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
-
-    const auto& lp = aPair->CP();
-    const auto& ln = aPair->CN();
-
-    printf("buildGwsForDp\n");
-
-    for( int i = 1; i < lp.PointCount() - 1; i ++ )
+    for( int i = 0; i < lA.PointCount(); i++ )
     {
-        auto v = lp.CPoint(i);
-        auto s_prev = lp.CSegment(i-1);
-        auto s_next = lp.CSegment(i+1);
-        auto d_prev = DIRECTION_45( s_prev );
-        auto d_next = DIRECTION_45( s_prev );
-        
-        auto prj_prev = projectVectorOnLineChain( ln, v, d_prev.Right().Right().ToVector() );
-        auto prj_next = projectVectorOnLineChain( ln, v, d_next.Right().Right().ToVector() );
+        auto                  v = lA.CPoint( i );
+        std::vector<VECTOR2I> candidates;
+        projectVectorOnLineChain( lB, v, aPair->GapConstraint(), aPair->Width(), candidates );
 
-        if(prj_prev)
+
+        char str[128];
+        sprintf( str, "v%d", i );
+
+        for( const auto& prj : candidates )
         {
-            auto dist = (*prj_prev - v).EuclideanNorm() - aPair->Width();
-            printf("pdist %d gap %d\n", dist, aPair->Gap() );
-            if( aPair->GapConstraint().Matches( dist ) )
-            {
-                dbg->AddPoint(v, 4, "gw-prev");
-                dbg->AddPoint(*prj_prev, 1);
-            }
-        }
-        if(prj_next)
-        {
-            auto dist = (*prj_next - v).EuclideanNorm() - aPair->Width();
-            if( aPair->GapConstraint().Matches( dist ) )
-            {
-                dbg->AddPoint(v, 4, "gw-next");
-                dbg->AddPoint(*prj_next, 1);
-            }
+            dbg->Message(wxString::Format("v%d %d %d %d %d\n", i, v.x, v.y, prj.x, prj.y ));
+            dbg->BeginGroup( str );
+            dbg->AddPoint( v, 5 );
+            dbg->AddPoint( prj, 4 );
+            dbg->AddSegment( SEG( v, prj ), 2 );
+            if( swap )
+                gws.emplace_back( prj, v, false );
+            else
+                gws.emplace_back( v, prj, false );
+
+            dbg->EndGroup();
         }
     }
-    
+}
+
+void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& gws )
+{
+    const auto& lp = aPair->CP();
+    const auto& ln = aPair->CN();
+    buildGatewaysForSide( aPair, lp, ln, gws, false );
+    buildGatewaysForSide( aPair, ln, lp, gws, true );
 }
 
 bool OPTIMIZER::Optimize( DIFF_PAIR* aPair )
 {
+    std::vector<DP_GATEWAY> gateways;
     aPair->ClearLinks();
-    buildGatewaysForDp( aPair );
-    return false; mergeDpSegments( aPair );
+    //buildGatewaysForDp( aPair, gateways );
+    return mergeDpSegments( aPair );
 }
 
 static int64_t shovedArea( const SHAPE_LINE_CHAIN& aOld, const SHAPE_LINE_CHAIN& aNew )

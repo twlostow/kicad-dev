@@ -329,6 +329,8 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
         set( CMAKE_CXX_FLAGS "-ffloat-store ${CMAKE_CXX_FLAGS}" )
     endif()
 
+    add_compile_options (-fdiagnostics-color=always)
+
     # Establish -Wall early, so specialized relaxations of this may come
     # subsequently on the command line, such as in pcbnew/github/CMakeLists.txt
     set( CMAKE_C_FLAGS   "-Wall ${CMAKE_C_FLAGS}" )

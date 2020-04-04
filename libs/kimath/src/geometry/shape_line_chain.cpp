@@ -820,6 +820,7 @@ const VECTOR2I SHAPE_LINE_CHAIN::NearestPoint( const VECTOR2I& aP ) const
     int min_d = INT_MAX;
     int nearest = 0;
 
+
     for( int i = 0; i < SegmentCount(); i++ )
     {
         int d = CSegment( i ).Distance( aP );

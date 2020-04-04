@@ -1,3 +1,24 @@
+/*
+ * KiRouter - a push-and-(sometimes-)shove PCB router
+ *
+ * Copyright (C) 2013-2020 CERN
+ * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef __PNS_LOG_H
 #define __PNS_LOG_H
 
@@ -46,6 +67,7 @@ public:
         KIID uuid;
     };
 
+    // loads a board file and associated P&s event log
     bool Load( const std::string& logName, const std::string boardName );
 
     BOARD_CONNECTED_ITEM* ItemById( const EVENT_ENTRY& evt )
@@ -54,10 +76,8 @@ public:
 
         for( auto item : m_board->AllConnectedItems() )
         {
-         //   printf("scan %p\n", item);
             if( item->m_Uuid == evt.uuid )
             {
-           //     printf("found %p\n", item);
                 parent = item;
                 break;
             };
@@ -66,11 +86,11 @@ public:
         return parent;
     }
 
-
     std::vector<EVENT_ENTRY>& Events()
     {
         return m_events;
     }
+
     std::shared_ptr<BOARD> GetBoard() const
     {
         return m_board;
@@ -90,12 +110,20 @@ private:
 class PNS_TEST_DEBUG_DECORATOR : public PNS::DEBUG_DECORATOR
 {
 public:
-    struct SHAPE_ENT
+    struct DEBUG_ENT
     {
-        SHAPE* m_shape;
+        ~DEBUG_ENT()
+        {
+            for( auto s : m_shapes )
+            {
+                //delete s;
+            }
+        }
+
+        std::vector<SHAPE*> m_shapes;
         int    m_color;
         int    m_width;
-        int                    m_iter;
+        int    m_iter;
         std::string m_name;
         std::string m_msg;
     };
@@ -104,7 +132,7 @@ public:
     {
         std::string            m_name;
         int                    m_iter;
-        std::vector<SHAPE_ENT> m_shapes;
+        std::vector<DEBUG_ENT> m_entries;
     };
 
     PNS_TEST_DEBUG_DECORATOR()
@@ -129,21 +157,26 @@ public:
     virtual void AddDirections(
             VECTOR2D aP, int aMask, int aColor, const std::string aName = "" ) override;
     virtual void Clear() override;
-
     virtual void NewStage( const std::string& name, int iter ) override;
 
+    virtual void BeginGroup( const std::string name ) override;
+    virtual void EndGroup() override;
+    
     int GetStageCount() const
     {
         return m_stages.size();
     }
+
     const STAGE& GetStage( int index ) const
     {
         return m_stages[index];
     }
+
     BOX2I GetStageExtents( int stage ) const;
 
-
 private:
+
+    bool m_grouping;
     STAGE& currentStage();
     int m_iter;
     std::vector<STAGE> m_stages;

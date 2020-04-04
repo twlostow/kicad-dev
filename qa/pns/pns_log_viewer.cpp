@@ -163,48 +163,52 @@ void PNS_LOG_VIEWER_FRAME::drawLoggedItems( int iter )
 
     auto st = dbgd->GetStage( iter );
 
-    for( auto& sh : st.m_shapes )
+    for( auto& ent : st.m_entries )
     {
-        if ( !m_itemList->IsChecked(itemID ) || !sh.m_shape )
+        if ( !m_itemList->IsChecked(itemID ) || !ent.m_shapes.size() )
         {
             itemID++;
             continue;
         }
 
-        m_overlay->SetIsStroke( true );
-        m_overlay->SetIsFill( false );
-        m_overlay->SetStrokeColor( assignColor( sh.m_color ) );
-        m_overlay->SetLineWidth( sh.m_width );
-
-        switch( sh.m_shape->Type() )
+        for( auto& sh : ent.m_shapes )
         {
-        case SH_CIRCLE:
-        {
-            auto cir = static_cast<SHAPE_CIRCLE*>( sh.m_shape );
-            m_overlay->Circle( cir->GetCenter(), cir->GetRadius() );
 
-            break;
-        }
-        case SH_LINE_CHAIN:
-        {
-            auto lc = static_cast<SHAPE_LINE_CHAIN*>( sh.m_shape );
-            //  printf("DrawLC PC %d\n", lc->PointCount() );
+            m_overlay->SetIsStroke( true );
+            m_overlay->SetIsFill( false );
+            m_overlay->SetStrokeColor( assignColor( ent.m_color ) );
+            m_overlay->SetLineWidth( ent.m_width );
 
-            if( itemID == m_selectedItem )
+            switch( sh->Type() )
             {
-                m_overlay->SetLineWidth( sh.m_width * 2 );
-                m_overlay->SetStrokeColor( COLOR4D(1.0, 1.0, 1.0, 1.0) );
-            }
-
-            for( int i = 0; i < lc->SegmentCount(); i++ )
+            case SH_CIRCLE:
             {
-                auto s = lc->CSegment( i );
-                m_overlay->Line( s.A, s.B );
+                auto cir = static_cast<SHAPE_CIRCLE*>( sh );
+                m_overlay->Circle( cir->GetCenter(), cir->GetRadius() );
+
+                break;
             }
-            break;
-        }
-        default:
-            break;
+            case SH_LINE_CHAIN:
+            {
+                auto lc = static_cast<SHAPE_LINE_CHAIN*>( sh );
+                //  printf("DrawLC PC %d\n", lc->PointCount() );
+
+                if( itemID == m_selectedItem )
+                {
+                    m_overlay->SetLineWidth( ent.m_width * 2 );
+                    m_overlay->SetStrokeColor( COLOR4D(1.0, 1.0, 1.0, 1.0) );
+                }
+
+                for( int i = 0; i < lc->SegmentCount(); i++ )
+                {
+                    auto s = lc->CSegment( i );
+                    m_overlay->Line( s.A, s.B );
+                }
+                break;
+            }
+            default:
+                break;
+            }
         }
         itemID++;
     }
@@ -407,8 +411,6 @@ void PNS_LOG_VIEWER_FRAME::updateDumpPanel( int iter )
 
     m_selectedItem = -1;
 
-    //printf("updateDump: %d\n", iter);
-
     if( count <= 0 )
         return;
 
@@ -423,47 +425,17 @@ void PNS_LOG_VIEWER_FRAME::updateDumpPanel( int iter )
 
 
 
-    for( auto& sh : st.m_shapes )
+    for( auto& ent : st.m_entries )
     {
-        if( sh.m_shape )
-            dumpStrings.Add( wxString::Format( "shape: %s [iter %d]", sh.m_name.c_str(), sh.m_iter ) );
+        if( ent.m_shapes.size() )
+            dumpStrings.Add( wxString::Format( "Shapes: %s [iter %d]", ent.m_name.c_str(), ent.m_iter ) );
         else
-            dumpStrings.Add( sh.m_msg );
-
-        #if 0
-        case SH_CIRCLE:
-            dumpStrings.Add( wxString::Format( "// shape: circle ", sh.m_name.c_str() ) );
-            break;
-        case SH_LINE_CHAIN:
-        {
-            wxString s = wxString::Format( "%s : ", sh.m_name.c_str() );
-            auto lc = static_cast<SHAPE_LINE_CHAIN*>( sh.m_shape );
-            //  printf("DrawLC PC %d\n", lc->PointCount() );
-            s += wxString::Format("auto sh = SHAPE_LINE_CHAIN(");
-            for( int i = 0; i < lc->PointCount(); i++ )
-            {
-                auto p = lc->CPoint( i );
-                s += wxString::Format("%d, %d", p.x, p.y );
-
-                if ( i != lc->PointCount() - 1 )
-                    s += ",";
-                
-            }
-            s += "); ";
-            if ( lc->IsClosed() )
-                s += "sh.SetClosed(true); ";
-            dumpStrings.Add(s);
-            break;
-        }
-        default:
-            break;
-            #endif
+            dumpStrings.Add( ent.m_msg );
     }
 
     m_itemList->Clear();
     m_itemList->Append( dumpStrings );
-    
-    
+
     for(unsigned int i = 0; i < m_itemList->GetCount(); i++)
         m_itemList->Check(i, true);
 }

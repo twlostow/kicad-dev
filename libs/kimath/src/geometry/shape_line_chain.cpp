@@ -552,7 +552,7 @@ int SHAPE_LINE_CHAIN::Intersect( const SHAPE_LINE_CHAIN& aChain, INTERSECTIONS& 
 }
 
 
-int SHAPE_LINE_CHAIN::PathLength( const VECTOR2I& aP ) const
+int SHAPE_LINE_CHAIN::PathLength( const VECTOR2I& aP, int aThreshold ) const
 {
     int sum = 0;
 
@@ -561,7 +561,7 @@ int SHAPE_LINE_CHAIN::PathLength( const VECTOR2I& aP ) const
         const SEG seg = CSegment( i );
         int d = seg.Distance( aP );
 
-        if( d <= 1 )
+        if( d <= aThreshold  )
         {
             sum += ( aP - seg.A ).EuclideanNorm();
             return sum;

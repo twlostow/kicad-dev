@@ -571,7 +571,7 @@ public:
      * @return: path length in Euclidean metric or negative if aP does not belong to
      * the line chain.
      */
-    int PathLength( const VECTOR2I& aP ) const;
+    int PathLength( const VECTOR2I& aP, int aThreshold = 1 ) const;
 
     /**
      * Function PointInside()

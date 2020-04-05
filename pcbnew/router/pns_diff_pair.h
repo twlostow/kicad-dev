@@ -109,6 +109,16 @@ public:
         m_hasEntryLines = true;
     }
 
+    void SetOriginDistance( int d )
+    {
+        m_originDistance = d;
+    }
+
+    int OriginDistance() const 
+    {
+        return m_originDistance;
+    }
+
     const SHAPE_LINE_CHAIN& EntryP() const { return m_entryP; }
     const SHAPE_LINE_CHAIN& EntryN() const { return m_entryN; }
     const DIFF_PAIR Entry() const ;
@@ -127,6 +137,7 @@ private:
     bool m_isDiagonal;
     int m_allowedEntryAngles;
     int m_priority;
+    int m_originDistance;
 };
 
 /**
@@ -360,7 +371,7 @@ public:
 
     DIFF_PAIR* Clone() const override { assert( false ); return NULL; }
 
-    virtual void ClearLinks()
+    virtual void ClearLinks() override
     {
         m_links.clear();
         m_line_p.ClearLinks();

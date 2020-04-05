@@ -30,7 +30,7 @@ if( BUILD_GITHUB_PLUGIN )
     set( GITHUB_PLUGIN_LIBRARIES github_plugin )
 endif()
 
-add_dependencies( pnsrouter pcbcommon pcad2kicadpcb ${GITHUB_PLUGIN_LIBRARIES} )
+add_dependencies( pnsrouter pcbcommon pcad2kicadpcb altium2kicadpcb ${GITHUB_PLUGIN_LIBRARIES} )
 
 add_executable( test_pns
 #  test_pns.cpp
@@ -89,6 +89,7 @@ target_link_libraries( test_pns
     bitmaps
     gal
     pcad2kicadpcb
+    altium2kicadpcb
     common
     pcbcommon
     ${GITHUB_PLUGIN_LIBRARIES}

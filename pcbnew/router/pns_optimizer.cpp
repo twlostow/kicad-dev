@@ -1136,7 +1136,6 @@ bool OPTIMIZER::mergeDpStep( DIFF_PAIR* aPair, bool aTryP, int step )
     
     auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
 
-    dbg->Message(wxString::Format("mergeDpstep=%d n=%d", step, n_segs ));
 
     while( n < n_segs - step )
     {
@@ -1158,6 +1157,7 @@ bool OPTIMIZER::mergeDpStep( DIFF_PAIR* aPair, bool aTryP, int step )
 
             newRef = currentPath;
             newRef.Replace( s1.Index(), s2.Index(), bypass );
+
 
             deltaUni = aPair->CoupledLength ( newRef, coupledPath ) - clenPre + budget;
 
@@ -1197,6 +1197,7 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
     int step_n = aPair->CN().SegmentCount() - 2;
 
     printf("MergeDPSegs: step %d %d\n", step_p, step_n);
+    auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
 
     while( 1 )
     {
@@ -1218,11 +1219,16 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
         bool found_anything_p = false;
         bool found_anything_n = false;
 
+        dbg->Message(wxString::Format("mergeDpstep=%d n=%d", step_p, step_n, n_segs_p, n_segs_n ));
+        dbg->BeginGroup("merge-dp-step");
+
         if( step_p > 1 )
             found_anything_p = mergeDpStep( aPair, true, step_p );
 
         if( step_n > 1 )
             found_anything_n = mergeDpStep( aPair, false, step_n );
+
+        dbg->EndGroup();
 
         if( !found_anything_n && !found_anything_p )
         {
@@ -1292,20 +1298,92 @@ void buildGatewaysForSide( DIFF_PAIR* aPair, const SHAPE_LINE_CHAIN& lA, const S
     }
 }
 
+
+
+
+bool verifyDpBypass( NODE* aNode, DIFF_PAIR* aPair, const SHAPE_LINE_CHAIN& aNewP, const SHAPE_LINE_CHAIN& aNewN )
+{
+    LINE pLine ( aPair->PLine(), aNewP );
+    LINE nLine ( aPair->NLine(), aNewN );
+
+    if( aNode->CheckColliding( &pLine, &nLine, ITEM::ANY_T, aPair->Gap() - 10 ) )
+        return false;
+
+   // if( aNode->CheckColliding ( &pLine ) )
+        //return false;
+
+    //if( aNode->CheckColliding ( &nLine ) )
+      //  return false;
+
+    return true;
+}
+
 void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& gws )
 {
-    const auto& lp = aPair->CP();
-    const auto& ln = aPair->CN();
+    auto lp = aPair->CP();
+    auto ln = aPair->CN();
     buildGatewaysForSide( aPair, lp, ln, gws, false );
     buildGatewaysForSide( aPair, ln, lp, gws, true );
+
+    for( auto& gw : gws )
+    {
+        int d = lp.PathLength( gw.AnchorP(), 3 );
+        gw.SetOriginDistance( d );
+
+        lp.Split( gw.AnchorP() );
+        ln.Split( gw.AnchorP() );
+    }
+
+    std::sort( gws.begin(), gws.end(), [] ( const DP_GATEWAY&a, const DP_GATEWAY&b ){ return a.OriginDistance() < b.OriginDistance(); } );
+
+    for( auto& gw : gws )
+    {
+        int d = gw.OriginDistance();
+        printf("GW odis %d\n", d );
+    }
+
+    int step = gws.size() - 1;
+    auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+    dbg->BeginGroup("mergegws\n");
+
+    printf("Step %d\n", step );
+
+    while( step > 1 )
+    {
+        bool diagonal = true;
+        for(int i = 0; i < gws.size() - step; i++)
+        {
+            for(int diag = 0; diag < 2; diag++ )
+            {
+                const auto& gwA = gws[i];
+                const auto& gwB = gws[i+step];
+                auto bypP = DIRECTION_45().BuildInitialTrace( gwA.AnchorP(), gwB.AnchorP(), diag );
+                auto bypN = DIRECTION_45().BuildInitialTrace( gwA.AnchorN(), gwB.AnchorN(), diag );
+
+                if(verifyDpBypass( m_world, aPair, bypP, bypN ))
+                {
+                    dbg->AddLine(bypP, 4, 10000 );
+                    dbg->AddLine(bypN, 5, 10000 );
+                }
+            }
+        }
+
+        step--;
+    }
+    dbg->EndGroup();
+
 }
 
 bool OPTIMIZER::Optimize( DIFF_PAIR* aPair )
 {
     std::vector<DP_GATEWAY> gateways;
     aPair->ClearLinks();
-    //buildGatewaysForDp( aPair, gateways );
-    return mergeDpSegments( aPair );
+    buildGatewaysForDp( aPair, gateways );
+
+    
+
+    return false; //mergeDpSegments( aPair );
 }
 
 static int64_t shovedArea( const SHAPE_LINE_CHAIN& aOld, const SHAPE_LINE_CHAIN& aNew )

@@ -790,7 +790,6 @@ PNS_KICAD_IFACE_BASE::PNS_KICAD_IFACE_BASE()
     m_board = nullptr;
     m_world = nullptr;
     m_debugDecorator = nullptr;
-    m_router = nullptr;
 }
 
 

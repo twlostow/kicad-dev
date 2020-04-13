@@ -196,6 +196,8 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
 
     int m_forceClearance;
 
+    RESTRICT_CHECKER_FN m_restrictChecker;
+
     DEFAULT_OBSTACLE_VISITOR( NODE::OBSTACLES& aTab, const ITEM* aItem, int aKindMask, bool aDifferentNetsOnly ) :
         OBSTACLE_VISITOR( aItem ),
         m_tab( aTab ),
@@ -204,7 +206,8 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
         m_matchCount( 0 ),
         m_extraClearance( 0 ),
         m_differentNetsOnly( aDifferentNetsOnly ),
-        m_forceClearance( -1 )
+        m_forceClearance( -1 ),
+        m_restrictChecker( nullptr )
     {
         if( aItem && aItem->Kind() == ITEM::LINE_T )
         {
@@ -223,6 +226,9 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
 
     bool operator()( ITEM* aCandidate ) override
     {
+        if( m_restrictChecker && m_restrictChecker( aCandidate ) )
+            return true;
+
         if( !aCandidate->OfKind( m_kindMask ) )
             return true;
 
@@ -276,7 +282,7 @@ int NODE::QueryColliding( const ITEM* aItem, OBSTACLE_VISITOR& aVisitor )
 
 
 int NODE::QueryColliding( const ITEM* aItem, NODE::OBSTACLES& aObstacles, int aKindMask,
-                          int aLimitCount, bool aDifferentNetsOnly, int aForceClearance )
+                          int aLimitCount, bool aDifferentNetsOnly, int aForceClearance, OBSTACLE_VISITOR::RESTRICT_CHECKER_FN aRestrictChecker )
 {
     DEFAULT_OBSTACLE_VISITOR visitor( aObstacles, aItem, aKindMask, aDifferentNetsOnly );
 
@@ -287,6 +293,8 @@ int NODE::QueryColliding( const ITEM* aItem, NODE::OBSTACLES& aObstacles, int aK
     visitor.SetCountLimit( aLimitCount );
     visitor.SetWorld( this, NULL );
     visitor.m_forceClearance = aForceClearance;
+    visitor.m_restrictChecker = aRestrictChecker;
+
     // first, look for colliding items in the local index
     m_index->Query( aItem, m_maxClearance, visitor );
 
@@ -424,7 +432,7 @@ NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM_SET& aSet, int aKindMask )
 }
 
 
-NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM* aItemA, int aKindMask )
+NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM* aItemA, int aKindMask, OBSTACLE_VISITOR::RESTRICT_CHECKER_FN aRestrictChecker )
 {
     OBSTACLES obs;
 
@@ -439,7 +447,7 @@ NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM* aItemA, int aKindMask )
         for( int i = 0; i < l.SegmentCount(); i++ )
         {
             const SEGMENT s( *line, l.CSegment( i ) );
-            n += QueryColliding( &s, obs, aKindMask, 1 );
+            n += QueryColliding( &s, obs, aKindMask, 1, true, -1, aRestrictChecker );
 
             if( n )
                 return OPT_OBSTACLE( obs[0] );
@@ -447,13 +455,13 @@ NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM* aItemA, int aKindMask )
 
         if( line->EndsWithVia() )
         {
-            n += QueryColliding( &line->Via(), obs, aKindMask, 1 );
+            n += QueryColliding( &line->Via(), obs, aKindMask, 1, true, -1, aRestrictChecker );
 
             if( n )
                 return OPT_OBSTACLE( obs[0] );
         }
     }
-    else if( QueryColliding( aItemA, obs, aKindMask, 1 ) > 0 )
+    else if( QueryColliding( aItemA, obs, aKindMask, 1, true, -1, aRestrictChecker ) > 0 )
         return OPT_OBSTACLE( obs[0] );
 
     return OPT_OBSTACLE();

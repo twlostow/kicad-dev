@@ -130,7 +130,19 @@ public:
         return m_hasEntryLines;
     }
 
+    void SetDirections( DIRECTION_45 aDirP, DIRECTION_45 aDirN )
+    {
+        m_directionP = aDirP;
+        m_directionP = aDirN;
+    }
+
+    DIRECTION_45 DirP() const { return m_directionP; }
+    DIRECTION_45 DirN() const { return m_directionN; }
+
 private:
+    DIRECTION_45 m_directionP;
+    DIRECTION_45 m_directionN;
+
     SHAPE_LINE_CHAIN m_entryP, m_entryN;
     bool m_hasEntryLines;
     VECTOR2I m_anchorP, m_anchorN;

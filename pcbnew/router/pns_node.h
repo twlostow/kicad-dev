@@ -113,6 +113,7 @@ struct OBSTACLE
 class OBSTACLE_VISITOR {
 
 public:
+    typedef std::function<bool(const ITEM*)> RESTRICT_CHECKER_FN;
 
     OBSTACLE_VISITOR( const ITEM* aItem );
 
@@ -216,7 +217,8 @@ public:
                         int          aKindMask = ITEM::ANY_T,
                         int          aLimitCount = -1,
                         bool         aDifferentNetsOnly = true,
-                        int          aForceClearance = -1 );
+                        int          aForceClearance = -1,
+                        OBSTACLE_VISITOR::RESTRICT_CHECKER_FN aRestrictChecker = nullptr );
 
     int QueryJoints( const BOX2I& aBox, std::vector<JOINT*> & aJoints, int aLayerMask = -1, int aKindMask = ITEM::ANY_T);
 
@@ -247,7 +249,8 @@ public:
      * @return the obstacle, if found, otherwise empty.
      */
     OPT_OBSTACLE CheckColliding( const ITEM*     aItem,
-                                 int             aKindMask = ITEM::ANY_T );
+                                 int             aKindMask = ITEM::ANY_T,
+                                 OBSTACLE_VISITOR::RESTRICT_CHECKER_FN aRestrictChecker = nullptr );
 
 
     /**

@@ -98,6 +98,7 @@ PCB_BASE_FRAME::~PCB_BASE_FRAME()
 EDA_3D_VIEWER* PCB_BASE_FRAME::Get3DViewerFrame()
 {
 //    return dynamic_cast<EDA_3D_VIEWER*>( FindWindowByName( QUALIFIED_VIEWER3D_FRAMENAME( this ) ) );
+    return nullptr;
 }
 
 

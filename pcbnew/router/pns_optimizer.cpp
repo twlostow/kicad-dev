@@ -1249,7 +1249,9 @@ static int projectVectorOnLineChain( const SHAPE_LINE_CHAIN& lc, VECTOR2I p0, RA
         auto s = lc.CSegment(i);
         VECTOR2I pp = s.LineProject( p0 );
 
-        if( s.Distance( pp ) < 10000 ) // fixme: contains?
+        int dist = s.Distance( pp );
+
+        if( s.Distance( pp ) <= 1 ) // fixme: contains?
         {
             dist = (pp - p0 ).EuclideanNorm() - width;
             printf("dist %d gap %d\n", dist, gap);
@@ -1271,10 +1273,12 @@ void buildGatewaysForSide( DIFF_PAIR* aPair, const SHAPE_LINE_CHAIN& lA, const S
         std::vector<DP_GATEWAY>& gws, bool swap )
 {
     auto dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
     for( int i = 0; i < lA.PointCount(); i++ )
     {
         auto                  v = lA.CPoint( i );
         std::vector<VECTOR2I> candidates;
+
         projectVectorOnLineChain( lB, v, aPair->GapConstraint(), aPair->Width(), candidates );
 
 
@@ -1306,22 +1310,54 @@ bool verifyDpBypass( NODE* aNode, DIFF_PAIR* aPair, const SHAPE_LINE_CHAIN& aNew
     LINE pLine ( aPair->PLine(), aNewP );
     LINE nLine ( aPair->NLine(), aNewN );
 
+
+    auto ignoreItemsInOriginDiffPair = [aPair] ( const ITEM *item ) -> bool
+    {
+        return aPair->ContainsLink( reinterpret_cast<const LINKED_ITEM*>( item ) );
+    };
+
     if( aNode->CheckColliding( &pLine, &nLine, ITEM::ANY_T, aPair->Gap() - 10 ) )
         return false;
 
-   // if( aNode->CheckColliding ( &pLine ) )
-        //return false;
+    if( aNode->CheckColliding ( &pLine, ITEM::ANY_T, ignoreItemsInOriginDiffPair ) )
+        return false;
 
-    //if( aNode->CheckColliding ( &nLine ) )
-      //  return false;
+    if( aNode->CheckColliding ( &nLine, ITEM::ANY_T, ignoreItemsInOriginDiffPair ) )
+        return false;
 
     return true;
 }
+
+bool checkDpBypassObtusity( const DP_GATEWAY& gwA, const DP_GATEWAY& gwB, const SHAPE_LINE_CHAIN& bypP, const SHAPE_LINE_CHAIN& bypN )
+{
+    if( bypP.SegmentCount() < 1 || bypN.SegmentCount() < 1 )
+        return false;
+
+    auto bypDirAP = DIRECTION_45( bypP.CSegment(0) );
+    auto bypDirBP = DIRECTION_45( bypP.CSegment(-1) );
+    auto bypDirAN = DIRECTION_45( bypN.CSegment(0) );
+    auto bypDirBN = DIRECTION_45( bypN.CSegment(-1) );
+
+    const auto angleMask = DIRECTION_45::ANG_STRAIGHT | DIRECTION_45::ANG_OBTUSE;
+
+    if ( ! ( gwA.DirP().Angle( bypDirAP ) & angleMask ) )
+        return false;
+    if ( ! ( gwA.DirN().Angle( bypDirAN ) & angleMask ) )
+        return false;
+    if ( ! ( gwB.DirP().Angle( bypDirBP ) & angleMask ) )
+        return false;
+    if ( ! ( gwB.DirN().Angle( bypDirBN ) & angleMask ) )
+        return false;
+
+    return true;
+}
+
 
 void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& gws )
 {
     auto lp = aPair->CP();
     auto ln = aPair->CN();
+
     buildGatewaysForSide( aPair, lp, ln, gws, false );
     buildGatewaysForSide( aPair, ln, lp, gws, true );
 
@@ -1330,8 +1366,17 @@ void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& 
         int d = lp.PathLength( gw.AnchorP(), 3 );
         gw.SetOriginDistance( d );
 
-        lp.Split( gw.AnchorP() );
-        ln.Split( gw.AnchorP() );
+        int a = lp.Split( gw.AnchorP() );
+        int b = ln.Split( gw.AnchorN() );
+
+
+        //if( a< 0 || b < 0)
+        {
+            int da = lp.Distance( gw.AnchorP() );
+            int db = lp.Distance( gw.AnchorP() );
+            printf("split a %d b %d da %d db %d\n", a ,b, da, db );
+            
+        }
     }
 
     std::sort( gws.begin(), gws.end(), [] ( const DP_GATEWAY&a, const DP_GATEWAY&b ){ return a.OriginDistance() < b.OriginDistance(); } );
@@ -1351,7 +1396,6 @@ void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& 
 
     while( step > 1 )
     {
-        bool diagonal = true;
         for(int i = 0; i < gws.size() - step; i++)
         {
             for(int diag = 0; diag < 2; diag++ )
@@ -1361,13 +1405,25 @@ void OPTIMIZER::buildGatewaysForDp( DIFF_PAIR* aPair,  std::vector<DP_GATEWAY>& 
                 auto bypP = DIRECTION_45().BuildInitialTrace( gwA.AnchorP(), gwB.AnchorP(), diag );
                 auto bypN = DIRECTION_45().BuildInitialTrace( gwA.AnchorN(), gwB.AnchorN(), diag );
 
+                //if( !checkDpBypassObtusity( gwA, gwB, bypP, bypN ) )
+                  //  continue;
+
                 if(verifyDpBypass( m_world, aPair, bypP, bypN ))
                 {
                     dbg->AddLine(bypP, 4, 10000 );
                     dbg->AddLine(bypN, 5, 10000 );
+                    int v1p = lp.Find( gwA.AnchorP () );
+                    int v1n = ln.Find( gwA.AnchorN () );
+                    int v2p = lp.Find( gwB.AnchorP () );
+                    int v2n = ln.Find( gwB.AnchorN () );
+                    printf("repl %d %d %d %d\n", v1p, v1n, v2p, v2n );
+
+                    
                 }
             }
         }
+
+
 
         step--;
     }
@@ -1689,16 +1745,21 @@ void OPTIMIZER::OptimizeLineQueue( std::vector<LINE>& aLines )
             {
                 //printf("Fixme: optimze DP\n");
                 DIFF_PAIR optimized( *origDp );
+                m_world->Remove( origDp->PLine() );
+                m_world->Remove( origDp->NLine() );
+
                 if ( Optimize( &optimized ))
                 {
                     dbg->AddLine(origDp->PLine().CLine(),3,30000,"dp-orig-line-p");
                     dbg->AddLine(origDp->NLine().CLine(),3,30000,"dp-orig-line-n");
-                    m_world->Remove( origDp->PLine() );
-                    m_world->Remove( origDp->NLine() );
                     dbg->AddLine(optimized.PLine().CLine(),3,30000,"dp-opt-line-p");
                     dbg->AddLine(optimized.NLine().CLine(),3,30000,"dp-opt-line-n");
                     m_world->Add( optimized.PLine() );
                     m_world->Add( optimized.NLine() );
+                } else {
+                    m_world->Add( origDp->PLine() );
+                    m_world->Add( origDp->NLine() );
+
                 }
             }
             

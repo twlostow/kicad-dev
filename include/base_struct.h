@@ -341,7 +341,7 @@ public:
      */
     virtual const EDA_RECT GetBoundingBox() const;
 
-    virtual const wxPoint GetPosition() const { return wxPoint(); }
+    virtual wxPoint GetPosition() const { return wxPoint(); }
 
     /**
      * Function GetFocusPosition

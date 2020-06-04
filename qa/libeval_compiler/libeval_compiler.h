@@ -27,19 +27,22 @@
 
 #include <base_units.h>
 
-#define TR_OP_MUL 11
-#define TR_OP_DIV 12
-#define TR_OP_ADD 13
-#define TR_OP_SUB 14
-#define TR_OP_LESS 15
-#define TR_OP_GREATER 16
-#define TR_OP_LESS_EQUAL 17
-#define TR_OP_GREATER_EQUAL 18
-#define TR_OP_EQUAL 19
-#define TR_OP_NOT_EQUAL 20
-#define TR_OP_BOOL_AND 21
-#define TR_OP_BOOL_OR 22
-#define TR_OP_BOOL_NOT 23
+#define TR_OP_BINARY_MASK 0x200
+#define TR_OP_UNARY_MASK 0x100
+
+#define TR_OP_MUL 0x201
+#define TR_OP_DIV 0x202
+#define TR_OP_ADD 0x203
+#define TR_OP_SUB 0x204
+#define TR_OP_LESS 0x25
+#define TR_OP_GREATER 0x206
+#define TR_OP_LESS_EQUAL 0x207
+#define TR_OP_GREATER_EQUAL 0x208
+#define TR_OP_EQUAL 0x209
+#define TR_OP_NOT_EQUAL 0x20a
+#define TR_OP_BOOL_AND 0x20b
+#define TR_OP_BOOL_OR  0x20c
+#define TR_OP_BOOL_NOT 0x100
 #define TR_OP_FUNC_CALL 24
 
 #define TR_UOP_PUSH_VAR 1
@@ -90,7 +93,6 @@ static inline TREE_NODE* copyNode( TREE_NODE& t )
     t2->value.type      = t.value.type;
     t2->leaf[0] = t.leaf[0];
     t2->leaf[1] = t.leaf[1];
-    printf("copyNode: rv %p op %d\n", t2, t.op);
     return t2;
 }
 
@@ -150,8 +152,16 @@ public:
         m_valueDbl( aVal )
          {};
 
-      double AsDouble();
-      const std::string AsString();
+      double AsDouble() const
+      {
+          return m_valueDbl;
+      }
+
+      const std::string& AsString() const
+      {
+          return m_valueStr;
+      }
+
       VAR_TYPE_T GetType() const { return m_type; };
 
       void Set( double aValue )
@@ -164,6 +174,25 @@ public:
       {
           m_type = VT_STRING;
           m_valueStr = aValue;
+      }
+
+      void Set( const VALUE &val )
+      {
+          m_type = val.m_type;
+          m_valueDbl = val.m_valueDbl;
+          if(m_type == VT_STRING)
+            m_valueStr = val.m_valueStr;
+          
+      }
+
+
+      bool EqualTo( const VALUE* v2 ) const
+      {
+          assert ( m_type == v2->m_type );
+          if(m_type == VT_STRING)
+            return m_valueStr == v2->m_valueStr;
+          else
+            return m_valueDbl == v2->m_valueDbl;
       }
 
 private:
@@ -223,7 +252,7 @@ public:
         UOP( int op, void* arg ) : m_op( op ), m_arg( arg )
           {};
 
-        void        Exec( CONTEXT* ctx );
+        void        Exec( CONTEXT* ctx, UCODE *ucode );
         std::string Format() const;
 
     private:
@@ -258,7 +287,7 @@ public:
     }
 
     VALUE* Run();
-    void Dump();
+    std::string Dump() const;
 
     virtual VAR_REF* createVarRef( const std::string& var, const std::string& field )
     {
@@ -301,6 +330,12 @@ public:
         m_pos += aAdvance;
     }
 
+    size_t GetPos() const
+    {
+        return m_pos;
+    }
+
+
     std::string GetChars( std::function<bool( int )> cond ) const;
     bool MatchAhead( std::string match, std::function<bool( int )> stopCond ) const;
 private:
@@ -324,7 +359,6 @@ public:
     /* Used by the lemon parser */
     void parseError( const char* s );
     void parseOk();
-    void parseSetResult( double );
 
     /* Check if previous invokation of process() was successful */
     inline bool IsValid() const
@@ -332,10 +366,25 @@ public:
         return !m_parseError;
     }
 
+    const std::string GetParseErrorToken() const
+    {
+        return m_parseErrorToken;
+    }
+
+    const std::string GetParseErrorMessage() const
+    {
+        return m_parseErrorMessage;
+    }
+
+    int GetParseErrorPosition() const
+    {
+        return m_parseErrorPos;
+    }
+
     void         setRoot( LIBEVAL::TREE_NODE root );
     
     bool Compile( const std::string& aString, UCODE* aCode );
-
+    std::string DumpTree();
 
 protected:
     enum LEXER_STATE
@@ -367,7 +416,6 @@ protected:
     /* Used by processing loop */
     void parse( int token, TREE_NODE value );
 
-protected:
     void* m_parser; // the current lemon parser state machine
     int resolveUnits();
 
@@ -379,6 +427,9 @@ protected:
     /* Parse progress. Set by parser actions. */
     bool m_parseError;
     bool m_parseFinished;
+    std::string m_parseErrorMessage;
+    std::string m_parseErrorToken;
+    int m_parseErrorPos;
 
     std::unique_ptr<UNIT_RESOLVER> m_unitResolver;
 

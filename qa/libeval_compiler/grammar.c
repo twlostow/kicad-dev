@@ -975,7 +975,7 @@ static YYACTIONTYPE yy_reduce(
         break;
       case 2: /* expr ::= G_VALUE G_UNIT */
 #line 58 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_NUMBER; printf("NumWithUnit!\n"); yylhsminor.yy0.value = yymsp[-1].minor.yy0.value; yylhsminor.yy0.leaf[0] = newNode( TR_UNIT, yymsp[0].minor.yy0.value.type, ""); yylhsminor.yy0.leaf[1] = NULL; yylhsminor.yy0.valid = true; }
+{ yylhsminor.yy0.op = TR_NUMBER; yylhsminor.yy0.value = yymsp[-1].minor.yy0.value; yylhsminor.yy0.leaf[0] = newNode( TR_UNIT, yymsp[0].minor.yy0.value.type, ""); yylhsminor.yy0.leaf[1] = NULL; yylhsminor.yy0.valid = true; }
 #line 980 "grammar.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;

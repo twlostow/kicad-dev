@@ -46,81 +46,110 @@ namespace LIBEVAL
 #pragma GCC diagnostic pop
 #endif
 
-static void libeval_dbg( const char *fmt, ... )
+static void libeval_dbg( const char* fmt, ... )
 {
 #ifdef DEBUG
     va_list ap;
     va_start( ap, fmt );
-    fprintf(stderr, "libeval: ");
-    vfprintf(stderr, fmt, ap );
+    fprintf( stderr, "libeval: " );
+    vfprintf( stderr, fmt, ap );
     va_end( ap );
 #endif
 }
 
+static const std::string formatOpName( int op )
+{
+    static const struct
+    {
+        int         op;
+        std::string mnemonic;
+    } simpleOps[] = { { TR_OP_MUL, "MUL" }, { TR_OP_DIV, "DIV" }, { TR_OP_ADD, "ADD" },
+        { TR_OP_SUB, "SUB" }, { TR_OP_LESS, "LESS" }, { TR_OP_GREATER, "GREATER" },
+        { TR_OP_LESS_EQUAL, "LESS_EQUAL" }, { TR_OP_GREATER_EQUAL, "GREATER_EQUAL" },
+        { TR_OP_EQUAL, "EQUAL" }, { TR_OP_NOT_EQUAL, "NEQUAL" }, { TR_OP_BOOL_AND, "AND" },
+        { TR_OP_BOOL_OR, "OR" }, { TR_OP_BOOL_NOT, "NOT" }, { -1, "" } };
+
+    for (int i = 0; simpleOps[i].op >= 0; i++)
+        {
+            if( simpleOps[i].op == op )
+            {
+                return simpleOps[i].mnemonic;
+            }
+        }
+
+    return "???";
+}
+
+
 std::string UCODE::UOP::Format() const
 {
     char str[1024];
-    switch(m_op)
-    {
-        case TR_UOP_PUSH_VAR:
-            sprintf( str, "PUSH VAR [%p]", m_arg );
-            break;
-        case TR_UOP_PUSH_VALUE:
-            sprintf(str, "PUSH VAL [%p]", m_arg );
-            break;
-        case TR_OP_ADD:
-            sprintf(str,"ADD\n");
-            break;
-        case TR_OP_MUL:
-            sprintf(str,"MUL\n");
-            break;
 
+    switch( m_op )
+    {
+    case TR_UOP_PUSH_VAR:
+        sprintf( str, "PUSH VAR [%p]", m_arg );
+        break;
+    case TR_UOP_PUSH_VALUE:
+    {
+        auto val = reinterpret_cast<VALUE*>(m_arg);
+        if( val->GetType() == VT_NUMERIC)
+            sprintf( str, "PUSH NUM [%.10f]", val->AsDouble() );
+        else
+            sprintf( str, "PUSH STR [%s]", val->AsString().c_str() );
+        break;
+    }
+    default:
+        sprintf(str, "%s", formatOpName( m_op ).c_str() );
+        break;
     }
     return str;
 }
 
-void UCODE::Dump()
+std::string UCODE::Dump() const
+{
+    std::string rv;
+    for( auto op : m_ucode )
     {
-        printf( "ops: %lu\n", m_ucode.size() );
-        for( auto op : m_ucode )
-        {
-            printf( " %s\n", (const char*) op->Format().c_str() );
-        }
-    };
+        rv += op->Format();
+        rv += "\n";
+    }
+    return rv;
+};
 
 std::string TOKENIZER::GetChars( std::function<bool( int )> cond ) const
+{
+    std::string rv;
+    size_t      p = m_pos;
+    //   printf("p %d len %d\n", p, str.length() );
+    while( p < m_str.length() && cond( m_str[p] ) )
     {
-        std::string rv;
-        size_t         p = m_pos;
-        //   printf("p %d len %d\n", p, str.length() );
-        while( p < m_str.length() && cond( m_str[p] ) )
-        {
-            rv.append( 1, m_str[p] );
-            p++;
-        }
-        return rv;
+        rv.append( 1, m_str[p] );
+        p++;
     }
+    return rv;
+}
 
-    bool TOKENIZER::MatchAhead( std::string match, std::function<bool( int )> stopCond ) const
-    {
-        int remaining = m_str.length() - m_pos;
-        if( remaining < (int)match.length() )
-            return false;
-
-        if( m_str.substr( m_pos, match.length() ) == match )
-        {
-            return ( remaining == (int)match.length() || stopCond( m_str[m_pos + match.length()] ) );
-        }
+bool TOKENIZER::MatchAhead( std::string match, std::function<bool( int )> stopCond ) const
+{
+    int remaining = m_str.length() - m_pos;
+    if( remaining < (int) match.length() )
         return false;
+
+    if( m_str.substr( m_pos, match.length() ) == match )
+    {
+        return ( remaining == (int) match.length() || stopCond( m_str[m_pos + match.length()] ) );
     }
+    return false;
+}
 
 
 COMPILER::COMPILER()
 {
     m_localeDecimalSeparator = '.';
-    m_parseError = false;
-    m_parseFinished = false;
-    m_unitResolver.reset(new UNIT_RESOLVER);
+    m_parseError             = false;
+    m_parseFinished          = false;
+    m_unitResolver.reset( new UNIT_RESOLVER );
     m_parser = LIBEVAL::ParseAlloc( malloc );
 }
 
@@ -156,31 +185,35 @@ void COMPILER::parseOk()
 }
 
 
-
-bool COMPILER::Compile( const std::string& aString, UCODE *aCode )
+bool COMPILER::Compile( const std::string& aString, UCODE* aCode )
 {
     // Feed parser token after token until end of input.
 
     newString( aString );
-    m_tree = nullptr;
-    m_parseError = false;
+    m_tree          = nullptr;
+    m_parseError    = false;
     m_parseFinished = false;
     T_TOKEN tok;
 
-    libeval_dbg("str: '%s' empty: %d\n", aString.c_str(), !!aString.empty() );
+    libeval_dbg( "str: '%s' empty: %d\n", aString.c_str(), !!aString.empty() );
 
     if( aString.empty() )
     {
         m_parseFinished = true;
-        return generateUCode(aCode);
+        return generateUCode( aCode );
     }
 
     do
     {
         tok = getToken();
-        libeval_dbg("Token: '%d'\n", tok.token );
-
         Parse( m_parser, tok.token, tok.value, this );
+        
+        if( m_parseError )
+        {
+            m_parseErrorToken = "";
+        m_parseErrorPos = m_tokenizer.GetPos();
+            return false;
+        }
 
         if( m_parseFinished || tok.token == G_ENDS )
         {
@@ -190,9 +223,8 @@ bool COMPILER::Compile( const std::string& aString, UCODE *aCode )
         }
     } while( tok.token );
 
-    return generateUCode(aCode);
+    return generateUCode( aCode );
 }
-
 
 
 void COMPILER::newString( const std::string& aString )
@@ -207,14 +239,18 @@ void COMPILER::newString( const std::string& aString )
 COMPILER::T_TOKEN COMPILER::getToken()
 {
     T_TOKEN rv;
-    bool done = false;
-    do {
+    bool    done = false;
+    do
+    {
         //printf("-> lstate %d\n", m_lexerState);
         switch( m_lexerState )
         {
-            case LS_DEFAULT: done = lexDefault( rv ); break;
-            case LS_STRING: done = lexString( rv ); break;
-
+        case LS_DEFAULT:
+            done = lexDefault( rv );
+            break;
+        case LS_STRING:
+            done = lexString( rv );
+            break;
         }
     } while( !done );
 
@@ -222,12 +258,11 @@ COMPILER::T_TOKEN COMPILER::getToken()
 }
 
 
-
 bool COMPILER::lexString( COMPILER::T_TOKEN& aToken )
 {
-    auto str = m_tokenizer.GetChars( [] ( int c ) -> bool { return c != '"'; } );
+    auto str = m_tokenizer.GetChars( []( int c ) -> bool { return c != '"'; } );
     //printf("STR LIT '%s'\n", (const char *)str.c_str() );
-    
+
     aToken.token = G_STRING;
     strcpy( aToken.value.value.str, str.c_str() );
 
@@ -240,16 +275,16 @@ bool COMPILER::lexString( COMPILER::T_TOKEN& aToken )
 int COMPILER::resolveUnits()
 {
     int unitId = 0;
-    for ( auto unitName : m_unitResolver->GetSupportedUnits() )
+    for( auto unitName : m_unitResolver->GetSupportedUnits() )
     {
-        if( m_tokenizer.MatchAhead(unitName, [] ( int c ) -> bool { return !isalnum( c ); } ) )
+        if( m_tokenizer.MatchAhead( unitName, []( int c ) -> bool { return !isalnum( c ); } ) )
         {
-            libeval_dbg("Match unit '%s'\n", unitName.c_str() );
-            m_tokenizer.NextChar(unitName.length());
+            libeval_dbg( "Match unit '%s'\n", unitName.c_str() );
+            m_tokenizer.NextChar( unitName.length() );
             return unitId;
         }
 
-        unitId ++;
+        unitId++;
     }
 
     return -1;
@@ -257,10 +292,10 @@ int COMPILER::resolveUnits()
 
 bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
 {
-    T_TOKEN retval;
+    T_TOKEN     retval;
     std::string current;
-    size_t idx;
-    int convertFrom;
+    size_t      idx;
+    int         convertFrom;
 
     retval.token = G_ENDS;
 
@@ -270,34 +305,34 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
         return true;
     }
 
-    auto isDecimalSeparator = [ & ]( char ch ) -> bool {
+    auto isDecimalSeparator = [&]( char ch ) -> bool {
         return ( ch == m_localeDecimalSeparator || ch == '.' || ch == ',' );
     };
 
     // Lambda: get value as string, store into clToken.token and update current index.
-    auto extractNumber = [ & ]() {
+    auto extractNumber = [&]() {
         bool haveSeparator = false;
-        idx = 0;
-        auto ch = m_tokenizer.GetChar(); 
+        idx                = 0;
+        auto ch            = m_tokenizer.GetChar();
 
         do
         {
             if( isDecimalSeparator( ch ) && haveSeparator )
                 break;
 
-            current.append(1, ch);
+            current.append( 1, ch );
 
-            if( isDecimalSeparator( ch ))
+            if( isDecimalSeparator( ch ) )
                 haveSeparator = true;
 
             m_tokenizer.NextChar();
-            ch = m_tokenizer.GetChar(); 
-        } while( isdigit( ch ) || isDecimalSeparator( ch ));
+            ch = m_tokenizer.GetChar();
+        } while( isdigit( ch ) || isDecimalSeparator( ch ) );
 
         // Ensure that the systems decimal separator is used
         for( int i = current.length(); i; i-- )
-            if( isDecimalSeparator( current[ i - 1 ] ))
-                current[ i - 1 ] = m_localeDecimalSeparator;
+            if( isDecimalSeparator( current[i - 1] ) )
+                current[i - 1] = m_localeDecimalSeparator;
 
 
         //printf("-> NUM: '%s'\n", (const char *) current.c_str() );
@@ -328,9 +363,9 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
         // VALUE
         extractNumber();
         retval.token = G_VALUE;
-        strcpy(retval.value.value.str, current.c_str() );
+        strcpy( retval.value.value.str, current.c_str() );
     }
-    else if(( convertFrom = resolveUnits()) >= 0 )
+    else if( ( convertFrom = resolveUnits() ) >= 0 )
     {
         //printf("unit\n");
         // UNIT
@@ -339,10 +374,10 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
         // Example: Default is mm, unit is inch: factor is 25.4
         // The factor is assigned to the terminal UNIT. The actual
         // conversion is done within a parser action.
-        retval.token = G_UNIT;
+        retval.token            = G_UNIT;
         retval.value.value.type = convertFrom;
     }
-    else if( ch == '\"') // string literal
+    else if( ch == '\"' ) // string literal
     {
         //printf("MATCH STRING LITERAL\n");
         m_lexerState = LS_STRING;
@@ -352,48 +387,83 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
     else if( isalpha( ch ) )
     {
         //printf("ALPHA\n");
-        current = m_tokenizer.GetChars( [] ( int c ) -> bool { return isalnum( c ); } );
+        current = m_tokenizer.GetChars( []( int c ) -> bool { return isalnum( c ); } );
         //printf("Len: %d\n", current.length() );
         //printf("id '%s'\n", (const char *) current.c_str() );
-        fflush(stdout);
+        fflush( stdout );
         retval.token = G_IDENTIFIER;
-        strcpy(retval.value.value.str, current.c_str());
+        strcpy( retval.value.value.str, current.c_str() );
         m_tokenizer.NextChar( current.length() );
     }
     else
     {
-        if( m_tokenizer.MatchAhead("==", [] ( int c ) -> bool { return c != '='; } ) )
+        if( m_tokenizer.MatchAhead( "==", []( int c ) -> bool { return c != '='; } ) )
         {
             retval.token = G_EQUAL;
-            m_tokenizer.NextChar(2);
+            m_tokenizer.NextChar( 2 );
         }
-        else if( m_tokenizer.MatchAhead("&&", [] ( int c ) -> bool { return c != '&'; } ) )
+        if( m_tokenizer.MatchAhead( "<=", []( int c ) -> bool { return c != '='; } ) )
+        {
+            retval.token = G_LESS_EQUAL_THAN;
+            m_tokenizer.NextChar( 2 );
+        }
+        if( m_tokenizer.MatchAhead( ">=", []( int c ) -> bool { return c != '='; } ) )
+        {
+            retval.token = G_GREATER_EQUAL_THAN;
+            m_tokenizer.NextChar( 2 );
+        }
+        else if( m_tokenizer.MatchAhead( "&&", []( int c ) -> bool { return c != '&'; } ) )
         {
             retval.token = G_BOOL_AND;
-            m_tokenizer.NextChar(2);
+            m_tokenizer.NextChar( 2 );
         }
-        else if( m_tokenizer.MatchAhead("||", [] ( int c ) -> bool { return c != '|'; } ) )
+        else if( m_tokenizer.MatchAhead( "||", []( int c ) -> bool { return c != '|'; } ) )
         {
             retval.token = G_BOOL_OR;
-            //printf("             GOT OR\n");
-            m_tokenizer.NextChar(2);
-        } else {
+            m_tokenizer.NextChar( 2 );
+        }
+    else
+        {
 
             // Single char tokens
             switch( ch )
             {
-            case '+' :retval.token = G_PLUS;   break;
-            case '!' :retval.token = G_BOOL_NOT;  break;
-            case '-' :retval.token = G_MINUS;  break;
-            case '*' :retval.token = G_MULT;   break;
-            case '/' :retval.token = G_DIVIDE; break;
-            case '<' :retval.token = G_LESS_THAN;   break;
-            case '>' :retval.token = G_GREATER_THAN;   break;
-            case '(' :retval.token = G_PARENL; break;
-            case ')' :retval.token = G_PARENR; break;
-            case ';' :retval.token = G_SEMCOL; break;
-            case '.' :retval.token = G_STRUCT_REF; break;
-            default  :m_parseError = true;   break;   /* invalid character */
+            case '+':
+                retval.token = G_PLUS;
+                break;
+            case '!':
+                retval.token = G_BOOL_NOT;
+                break;
+            case '-':
+                retval.token = G_MINUS;
+                break;
+            case '*':
+                retval.token = G_MULT;
+                break;
+            case '/':
+                retval.token = G_DIVIDE;
+                break;
+            case '<':
+                retval.token = G_LESS_THAN;
+                break;
+            case '>':
+                retval.token = G_GREATER_THAN;
+                break;
+            case '(':
+                retval.token = G_PARENL;
+                break;
+            case ')':
+                retval.token = G_PARENR;
+                break;
+            case ';':
+                retval.token = G_SEMCOL;
+                break;
+            case '.':
+                retval.token = G_STRUCT_REF;
+                break;
+            default:
+                m_parseError = true;
+                break; /* invalid character */
             }
 
             m_tokenizer.NextChar();
@@ -404,93 +474,81 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
     return true;
 }
 
-const std::string formatNode(TREE_NODE *tok)
+const std::string formatNode( TREE_NODE* tok )
 {
     char str[1024];
- //   printf("fmt tok %p v %p ", tok, tok->value.v );
-    fflush(stdout);
-    sprintf(str, "%s", (const char *) tok->value.str );
+    //   printf("fmt tok %p v %p ", tok, tok->value.v );
+    fflush( stdout );
+    sprintf( str, "%s", (const char*) tok->value.str );
     return str;
 }
 
 
-const std::string formatOpName( int op )
+void dumpNode( std::string& buf, TREE_NODE* tok, int depth = 0 )
 {
-    switch(op)
+    char str[1024];
+    sprintf( str, "\n[%p] ", tok ); //[tok %p] ", tok);
+    buf += str;
+    for( int i = 0; i < 2 * depth; i++ )
+        buf += "  ";
+
+    if( tok->op & TR_OP_BINARY_MASK )
     {
-        case TR_OP_ADD: return "ADD";
-        case TR_OP_MUL: return "MUL";
-        case TR_OP_LESS: return "LT";
-        case TR_OP_GREATER: return "GT";
-        case TR_OP_EQUAL: return "EQ";
-        case TR_OP_BOOL_AND: return "AND";
-        case TR_OP_BOOL_OR: return "OR";
+        sprintf( str, "%s", (const char*) formatOpName( tok->op ).c_str() );
+        buf += str;
+        dumpNode( buf, tok->leaf[0], depth + 1 );
+        dumpNode( buf, tok->leaf[1], depth + 1 );
     }
-    return "???";
-}
 
-void dumpNode( TREE_NODE *tok, int depth = 0 )
-{
-
-    printf("\n[%p] ", tok); //[tok %p] ", tok);
-    for(int i = 0; i < 2*depth; i++ )
-        printf("  ");
-
-    switch(tok->op)
+    switch( tok->op )
     {
-        case TR_OP_ADD:
-        case TR_OP_MUL:
-        case TR_OP_LESS:
-        case TR_OP_GREATER:
-        case TR_OP_EQUAL:
-        case TR_OP_BOOL_AND:
-        case TR_OP_BOOL_OR:
-            printf("%s", (const char *) formatOpName( tok->op ).c_str() ); 
-            dumpNode( tok->leaf[0], depth + 1 );
-            dumpNode( tok->leaf[1], depth + 1 );
-            break;
-        case TR_NUMBER:
-            printf("NUMERIC: ");
-            printf("%s", formatNode( tok ).c_str() );
-            if( tok->leaf[0] )
-                dumpNode( tok->leaf[0], depth + 1 );
-            break;
-        case TR_STRING:
-            printf("STRING: ");
-            printf("%s", formatNode( tok ).c_str() );
-            break;
-        case TR_IDENTIFIER:
-            printf("ID: ");
-            printf("%s", formatNode( tok ).c_str() );
-            break;
-        case TR_STRUCT_REF:
-            printf("SREF: ");
-            dumpNode( tok->leaf[0], depth + 1 );
-            dumpNode( tok->leaf[1], depth + 1 );
-            break;
-        case TR_UNIT:
-            printf("UNIT: %d ", tok->value.type );
-            break;
-        default:
-            printf("OP %d", tok->op);
-            break;
+    case TR_NUMBER:
+        sprintf(str, "NUMERIC: " );
+        buf += str;
+        sprintf(str, "%s", formatNode( tok ).c_str() );
+        buf += str;
+        if( tok->leaf[0] )
+            dumpNode( buf, tok->leaf[0], depth + 1 );
+        break;
+    case TR_STRING:
+        sprintf(str, "STRING: " );
+        buf += str;
+        sprintf(str, "%s", formatNode( tok ).c_str() );
+        buf += str;
+        break;
+    case TR_IDENTIFIER:
+        sprintf(str, "ID: " );
+        buf += str;
+        sprintf(str, "%s", formatNode( tok ).c_str() );
+        buf += str;
+        break;
+    case TR_STRUCT_REF:
+        sprintf(str, "SREF: " );
+        buf += str;
+        dumpNode(buf, tok->leaf[0], depth + 1 );
+        dumpNode(buf, tok->leaf[1], depth + 1 );
+        break;
+    case TR_UNIT:
+        sprintf(str, "UNIT: %d ", tok->value.type );
+        buf += str;
+        break;
     }
 }
 
 void COMPILER::setRoot( TREE_NODE root )
 {
-    dumpNode(&root);
-    printf("\n");
     m_tree = copyNode( root );
 }
 
 
-bool COMPILER::generateUCode( UCODE *aCode )
+bool COMPILER::generateUCode( UCODE* aCode )
 {
     std::vector<TREE_NODE*> stack;
-    std::set<TREE_NODE*> visitedNodes;
+    std::set<TREE_NODE*>    visitedNodes;
 
-    auto visited = [&] ( TREE_NODE* node ) -> bool { return visitedNodes.find( node ) != visitedNodes.end(); };
+    auto visited = [&]( TREE_NODE* node ) -> bool {
+        return visitedNodes.find( node ) != visitedNodes.end();
+    };
 
     UCODE code;
 
@@ -500,70 +558,75 @@ bool COMPILER::generateUCode( UCODE *aCode )
 
     //printf("compile: tree %p\n", m_tree);
 
-    while(!stack.empty())
+    while( !stack.empty() )
     {
-        auto node = stack.back();
+        auto node           = stack.back();
         bool isTerminalNode = true;
 
-        printf("process node %p [op %d] [stack %d]\n", node, node->op, stack.size() );
+     //   printf( "process node %p [op %d] [stack %d]\n", node, node->op, stack.size() );
 
         // process terminal nodes first
-        switch(node->op)
+        switch( node->op )
         {
-            case TR_STRUCT_REF:
-            {
-                assert(node->leaf[0]->op == TR_IDENTIFIER );
-                assert(node->leaf[1]->op == TR_IDENTIFIER );
+        case TR_STRUCT_REF:
+        {
+            assert( node->leaf[0]->op == TR_IDENTIFIER );
+            assert( node->leaf[1]->op == TR_IDENTIFIER );
 
-                auto vref = aCode->createVarRef( node->leaf[0]->value.str, node->leaf[1]->value.str );
-                aCode->AddOp( TR_UOP_PUSH_VAR, vref );
-                break;
-            }
-
-            case TR_NUMBER:
-            {
-                auto son = node->leaf[0];
-
-                double value = atof( node->value.str ); // fixme: locale
-
-                if( son && son->op == TR_UNIT )
-                {
-                    printf("HandleUnit: %s unit %d\n", node->value.str, son->value.type );
-
-                    value = m_unitResolver->Convert( node->value.str, son->value.type );
-                    visitedNodes.insert( son );
-                }
-
-                aCode->AddOp( TR_UOP_PUSH_VALUE, value );
-
-                break;
-            }   
-            case TR_STRING:
-            {
-                aCode->AddOp( TR_UOP_PUSH_VALUE, node->value.str );
-                break;
-            }
-            default:
-                isTerminalNode = false;
+            auto vref = aCode->createVarRef( node->leaf[0]->value.str, node->leaf[1]->value.str );
+            aCode->AddOp( TR_UOP_PUSH_VAR, vref );
             break;
         }
 
-        visitedNodes.insert( node );
-        stack.pop_back();
-
-        if ( !isTerminalNode && node->leaf[0] && !visited( node->leaf[0] ) )
+        case TR_NUMBER:
         {
-            //printf("push: %p\n",node->leaf[0] );
-            stack.push_back(node->leaf[0] );
+            auto son = node->leaf[0];
+
+            double value = atof( node->value.str ); // fixme: locale
+
+            if( son && son->op == TR_UNIT )
+            {
+                //printf( "HandleUnit: %s unit %d\n", node->value.str, son->value.type );
+
+                value = m_unitResolver->Convert( node->value.str, son->value.type );
+                visitedNodes.insert( son );
+            }
+
+            aCode->AddOp( TR_UOP_PUSH_VALUE, value );
+
+            break;
         }
-        if ( !isTerminalNode && node->leaf[1] && !visited( node->leaf[1] ) )
+        case TR_STRING:
         {
-//            printf("push: %p\n",node->leaf[1] );
-           stack.push_back(node->leaf[1] );
+            aCode->AddOp( TR_UOP_PUSH_VALUE, node->value.str );
+            break;
+        }
+        default:
+            isTerminalNode = false;
+            break;
         }
 
-        if( !isTerminalNode )
+        if( isTerminalNode )
+        {
+            visitedNodes.insert( node );
+            stack.pop_back();
+            continue;
+        }
+
+        if( node->leaf[0] && !visited( node->leaf[0] ) )
+        {
+            stack.push_back( node->leaf[0] );
+        }
+        else if( node->leaf[1] && !visited( node->leaf[1] ) )
+        {
+            stack.push_back( node->leaf[1] );
+        }
+        else
+        {
             aCode->AddOp( node->op );
+            visitedNodes.insert( node );
+            stack.pop_back();
+        }
     }
 
 
@@ -571,26 +634,88 @@ bool COMPILER::generateUCode( UCODE *aCode )
 }
 
 
-void UCODE::UOP::Exec( CONTEXT* ctx )
+void UCODE::UOP::Exec( CONTEXT* ctx, UCODE *ucode )
 {
+
     switch( m_op )
     {
-        case TR_UOP_PUSH_VAR:
-//            ctx->Push(  );
+    case TR_UOP_PUSH_VAR:
+    {
+        auto value = ctx->AllocValue();
+        value->Set( reinterpret_cast<VAR_REF*>( m_arg )->GetValue( ucode ) );
+        ctx->Push( value );
+        break;
+    }
+    case TR_UOP_PUSH_VALUE:
+        ctx->Push( reinterpret_cast<VALUE*>( m_arg ) );
+        return;
+    default:
+        break;
+    }
+
+    if( m_op & TR_OP_BINARY_MASK )
+    {
+        auto   arg2 = ctx->Pop();
+        auto   arg1 = ctx->Pop();
+        double result;
+
+        switch( m_op )
+        {
+        case TR_OP_ADD:
+            result = arg1->AsDouble() + arg2->AsDouble();
             break;
-        case TR_UOP_PUSH_VALUE:
-            //ctx->Push( reinterpret_cast<OPERAND> )
+        case TR_OP_SUB:
+            result = arg1->AsDouble() - arg2->AsDouble();
             break;
-        /*case TR_OP_ADD:
-            ctx->Push( arg2 + arg1 );
+        case TR_OP_MUL:
+            result = arg1->AsDouble() * arg2->AsDouble();
             break;
-        case TR_OP_GREATER:
-            ctx->Push( arg2 > arg1 ? 1.0 : 0.0 );
+        case TR_OP_DIV:
+            result = arg1->AsDouble() / arg2->AsDouble();
+            break;
+        case TR_OP_LESS_EQUAL:
+            result = arg1->AsDouble() <= arg2->AsDouble() ? 1 : 0;
+            break;
+        case TR_OP_GREATER_EQUAL:
+            result = arg1->AsDouble() >= arg2->AsDouble() ? 1 : 0;
             break;
         case TR_OP_LESS:
-            ctx->Push( arg2 < arg1 ? 1.0 : 0.0 );
-            break;*/
+            result = arg1->AsDouble() < arg2->AsDouble() ? 1 : 0;
+            break;
+        case TR_OP_GREATER:
+            result = arg1->AsDouble() > arg2->AsDouble() ? 1 : 0;
+            break;
+        case TR_OP_EQUAL:
+            result = arg1->EqualTo( arg2 ) ? 1 : 0;
+            break;
+        case TR_OP_NOT_EQUAL:
+            result = arg1->EqualTo( arg2 ) ? 0 : 1;
+            break;
+        case TR_OP_BOOL_AND:
+            result = ( ( arg1->AsDouble() != 0.0 ? true : false )
+                             && ( arg2->AsDouble() != 0.0 ? true : false ) ) ?
+                             1 :
+                             0;
+            break;
+        case TR_OP_BOOL_OR:
+            result = ( ( arg1->AsDouble() != 0.0 ? true : false )
+                             || ( arg2->AsDouble() != 0.0 ? true : false ) ) ?
+                             1 :
+                             0;
+            break;
+        default:
+            result = 0.0;
+            break;
+        }
 
+        auto rp = ctx->AllocValue();
+        rp->Set( result );
+        ctx->Push( rp );
+        return;
+    }
+    else if( m_op & TR_OP_UNARY_MASK )
+    {
+        // fixme : not operator
     }
 }
 
@@ -598,10 +723,10 @@ VALUE* UCODE::Run()
 {
     CONTEXT ctx;
     for( const auto op : m_ucode )
-        op->Exec( &ctx );
+        op->Exec( &ctx, this );
 
-    assert ( ctx.SP() == 1 );
+    assert( ctx.SP() == 1 );
     return ctx.Pop();
 }
 
-}
+} // namespace LIBEVAL

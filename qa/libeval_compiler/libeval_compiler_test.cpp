@@ -41,7 +41,7 @@ public:
     PCB_VAR_REF ( PROPERTY_BASE* aProp, int aItemIndex )
         : m_prop( aProp ), m_itemIndex(aItemIndex)
     {
-        //printf("*** createVarRef %p %d\n", aProp, aItemIndex );
+        //printf("*** createVarRef %p %d\n", this, aItemIndex );
     }
 
     virtual LIBEVAL::VAR_TYPE_T GetType( const LIBEVAL::UCODE* aUcode ) const override
@@ -53,6 +53,10 @@ public:
     {
         auto ucode = static_cast<const PCB_UCODE*> (aUcode);
         auto item = ucode->GetItem( m_itemIndex );
+
+        auto any = item->Get( m_prop );
+        const wxAnyValueType *type = any.GetType();
+
         return LIBEVAL::VALUE( (double) item->Get<int>( m_prop ) );
     }
 
@@ -64,10 +68,10 @@ private:
 LIBEVAL::UCODE::VAR_REF *PCB_UCODE::createVarRef( const std::string &var, const std::string &field )
 {
     PCB_VAR_REF *rv;
-    printf("createRef: var '%s' field '%s'\n", (const char *) var.c_str(), (const char *) field.c_str() );
 
     PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
     PROPERTY_BASE* prop = propMgr.GetProperty( TYPE_HASH( TRACK ), field );
+
     rv = new PCB_VAR_REF( prop , var == "A" ? 0 : 1 );
 
     return rv;
@@ -112,7 +116,18 @@ class PCB_UNIT_RESOLVER : public LIBEVAL::UNIT_RESOLVER
 
         virtual double Convert( const std::string aString, int unitId ) const override
         {
-            return 0.0;
+            double v = atof(aString.c_str());
+            switch(unitId)
+            {
+                case 0 :
+                    return Mils2iu( v );
+                case 1:
+                    return Millimeter2iu( v );
+                case 2:
+                    return Mils2iu( v * 1000.0 );
+                default:
+                    return v;
+            }
         };
 };
 
@@ -126,14 +141,43 @@ class PCB_EXPR_COMPILER : public LIBEVAL::COMPILER
         }
 };
 
-void testEvalExpr( const std::string expr, double expectedResult, bool expectError = false )
+bool testEvalExpr( const std::string expr, double expectedResult, bool expectError = false, BOARD_ITEM* itemA = nullptr, BOARD_ITEM* itemB = nullptr )
 {
     PCB_EXPR_COMPILER compiler;
     PCB_UCODE ucode;
+    bool ok = true;
 
-    bool error = compiler.Compile( expr, &ucode );
-    ucode.Dump();
-    //double result = ucode.Run();
+    ucode.SetItems( itemA, itemB );
+
+    bool error = !compiler.Compile( expr, &ucode );
+
+    if( error )
+    {
+        if ( expectError )
+        {
+            printf("result: OK (expected parse error)\n");
+            ok = true;
+            return ok;
+        } else {
+            printf("result: FAIL (unexpected parse error)\n");
+            ok = false;
+        }
+    }
+
+    double result;
+
+    if( ok )
+    {
+        result = ucode.Run()->AsDouble();
+        ok = (result == expectedResult);
+    }
+
+    printf("result: %s (got %.10f expected: %.10f)\n", ok ? "OK" : "FAIL", result, expectedResult );
+
+    if (!ok )
+    {
+        printf("Offending code dump: \n%s\n", ucode.Dump().c_str() );
+    }
 }
 
 int main( int argc, char *argv[] )
@@ -142,51 +186,20 @@ int main( int argc, char *argv[] )
     propMgr.Rebuild();
 
     
-    testEvalExpr( "10mm + 20 mm", 30e9 );
+    testEvalExpr( "10mm + 20 mm", 30e6 );
     testEvalExpr( "3*(7+8)", 3*(7+8) );
     testEvalExpr( "3*7+8", 3*7+8 );
     testEvalExpr( "(3*7)+8", 3*7+8 );
+    testEvalExpr( "10mm + 20)", 0, true );
     
 
-    return 0;
+    TRACK trackA(nullptr);
+    TRACK trackB(nullptr);
+    
+    trackA.SetWidth( Mils2iu( 10 ));
+    trackB.SetWidth( Mils2iu( 20 ));
 
-    LIBEVAL::COMPILER compiler;
-    PCB_UCODE ucode;
+    testEvalExpr( "A.Width > B.Width", 0.0, false, &trackA, &trackB );
 
-//    auto board = loadBoard( argv[1] );
-
-    //compiler.Compile("A.NetClass==(1+2)*3   ", &ucode);
-    compiler.Compile("A.NetClass==\"HV\" || A.NetClass==\"BigClearance\"", &ucode);
-    ucode.Dump();
-
-#if 0
-
-    printf("Track segments: %d\n", board->Tracks().size() );
-
-    PROF_COUNTER cnt("run-exprs");
-    // run the microcode for all tracks
-    for( auto t1: board->Tracks() )
-    {
-        for( auto t2: board->Tracks() )
-        {
-            if ( t1->Type() != PCB_TRACE_T )
-                break;
-
-            if ( t2->Type() != PCB_TRACE_T )
-                continue;
-
-            if ( t1->GetLayer() != t2->GetLayer() )
-                continue;
-
-
-            ucode.SetItems( t1, nullptr );
-            auto result = ucode.Run();
-            (void ) result;
-        }
-        //printf("Trk %p w %d result %d\n", t1, t1->GetWidth(), (int) result );
-    }
-
-    cnt.Show();
-#endif
     return 0;
 }

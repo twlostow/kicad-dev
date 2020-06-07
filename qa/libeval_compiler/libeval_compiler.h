@@ -52,6 +52,21 @@
 namespace LIBEVAL
 {
 
+struct ERROR_STATUS
+{
+        bool pendingError;
+
+        enum STAGE {
+            CST_PARSE = 0,
+            CST_CODEGEN,
+            CST_RUNTIME
+        };
+
+        std::string message;
+        std::string failingObject;
+        int failingPosition;
+};
+
 
 enum VAR_TYPE_T
 {
@@ -161,6 +176,20 @@ public:
       {
           return m_valueStr;
       }
+
+      bool operator==( const VALUE& b ) const
+      {
+          if( m_type != b.m_type )
+            return false;
+          if( m_type == VT_NUMERIC && m_valueDbl != b.m_valueDbl )
+            return false;
+          if( m_type == VT_STRING && m_valueStr != b.m_valueStr )
+            return false;
+
+        return true;
+      }
+
+      
 
       VAR_TYPE_T GetType() const { return m_type; };
 

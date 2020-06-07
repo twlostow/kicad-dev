@@ -192,17 +192,17 @@ typedef union {
 *********** Begin parsing tables **********************************************/
 #define YY_ACTTAB_COUNT (118)
 static const YYACTIONTYPE yy_action[] = {
- /*     0 */    68,    1,    1,   19,    8,    9,   17,   16,   14,   13,
- /*    10 */    12,   11,   10,   92,   19,    7,    6,    4,    5,    3,
- /*    20 */    87,   31,    8,    9,   61,   16,   14,   13,   12,   11,
- /*    30 */    10,   32,   28,    7,    6,    4,    5,    3,   29,   20,
- /*    40 */     8,    9,   62,   16,   14,   13,   12,   11,   10,   21,
- /*    50 */    26,    7,    6,    4,    5,    3,   43,   67,   67,   27,
- /*    60 */    16,   14,   13,   12,   11,   10,   23,   24,    7,    6,
- /*    70 */     4,    5,    3,   67,   67,   67,   67,   11,   10,   90,
- /*    80 */    33,    7,    6,    4,    5,    3,   67,   67,   33,   25,
- /*    90 */     7,    6,    4,    5,    3,   33,   18,   22,   45,   66,
- /*   100 */    34,   46,    2,    4,    5,    3,   15,   66,   34,   46,
+ /*     0 */    68,    1,    1,   19,    9,   10,   17,   16,   14,   13,
+ /*    10 */    12,    4,   11,   92,   19,    8,    7,    5,    6,    3,
+ /*    20 */    87,   26,    9,   10,   61,   16,   14,   13,   12,    4,
+ /*    30 */    11,   31,   32,    8,    7,    5,    6,    3,   28,   29,
+ /*    40 */     9,   10,   62,   16,   14,   13,   12,    4,   11,   20,
+ /*    50 */    21,    8,    7,    5,    6,    3,   43,   67,   67,   27,
+ /*    60 */    16,   14,   13,   12,    4,   11,   23,   24,    8,    7,
+ /*    70 */     5,    6,    3,   67,   67,   67,   67,    4,   11,   90,
+ /*    80 */    33,    8,    7,    5,    6,    3,   67,   67,   33,   25,
+ /*    90 */     8,    7,    5,    6,    3,   33,   18,   22,   45,   66,
+ /*   100 */    34,   46,    2,    5,    6,    3,   15,   66,   34,   46,
  /*   110 */     2,   67,    3,   69,   69,   34,   46,    2,
 };
 static const YYCODETYPE yy_lookahead[] = {
@@ -240,8 +240,8 @@ static const signed char yy_reduce_ofst[] = {
 static const YYACTIONTYPE yy_default[] = {
  /*     0 */    67,   67,   67,   67,   67,   67,   67,   67,   67,   67,
  /*    10 */    67,   67,   67,   67,   67,   67,   67,   67,   67,   67,
- /*    20 */    82,   81,   75,   78,   77,   76,   80,   79,   84,   83,
- /*    30 */    87,   86,   85,   74,   71,
+ /*    20 */    81,   80,   75,   78,   77,   76,   86,   79,   83,   82,
+ /*    30 */    87,   85,   84,   74,   71,
 };
 /********** End of lemon-generated parsing tables *****************************/
 
@@ -393,14 +393,14 @@ static const char *const yyRuleName[] = {
  /*   6 */ "expr ::= expr G_GREATER_THAN expr",
  /*   7 */ "expr ::= expr G_LESS_EQUAL_THAN expr",
  /*   8 */ "expr ::= expr G_GREATER_EQUAL_THAN expr",
- /*   9 */ "expr ::= expr G_EQUAL expr",
- /*  10 */ "expr ::= expr G_NOT_EQUAL expr",
- /*  11 */ "expr ::= expr G_BOOL_AND expr",
- /*  12 */ "expr ::= expr G_BOOL_OR expr",
- /*  13 */ "expr ::= expr G_PLUS expr",
- /*  14 */ "expr ::= expr G_MINUS expr",
- /*  15 */ "expr ::= expr G_MULT expr",
- /*  16 */ "expr ::= expr G_DIVIDE expr",
+ /*   9 */ "expr ::= expr G_NOT_EQUAL expr",
+ /*  10 */ "expr ::= expr G_BOOL_AND expr",
+ /*  11 */ "expr ::= expr G_BOOL_OR expr",
+ /*  12 */ "expr ::= expr G_PLUS expr",
+ /*  13 */ "expr ::= expr G_MINUS expr",
+ /*  14 */ "expr ::= expr G_MULT expr",
+ /*  15 */ "expr ::= expr G_DIVIDE expr",
+ /*  16 */ "expr ::= expr G_EQUAL expr",
  /*  17 */ "expr ::= expr G_STRUCT_REF expr",
  /*  18 */ "expr ::= G_PARENL expr G_PARENR",
  /*  19 */ "expr ::= G_IDENTIFIER G_PARENL expr G_PARENR",
@@ -832,14 +832,14 @@ static const YYCODETYPE yyRuleInfoLhs[] = {
     28,  /* (6) expr ::= expr G_GREATER_THAN expr */
     28,  /* (7) expr ::= expr G_LESS_EQUAL_THAN expr */
     28,  /* (8) expr ::= expr G_GREATER_EQUAL_THAN expr */
-    28,  /* (9) expr ::= expr G_EQUAL expr */
-    28,  /* (10) expr ::= expr G_NOT_EQUAL expr */
-    28,  /* (11) expr ::= expr G_BOOL_AND expr */
-    28,  /* (12) expr ::= expr G_BOOL_OR expr */
-    28,  /* (13) expr ::= expr G_PLUS expr */
-    28,  /* (14) expr ::= expr G_MINUS expr */
-    28,  /* (15) expr ::= expr G_MULT expr */
-    28,  /* (16) expr ::= expr G_DIVIDE expr */
+    28,  /* (9) expr ::= expr G_NOT_EQUAL expr */
+    28,  /* (10) expr ::= expr G_BOOL_AND expr */
+    28,  /* (11) expr ::= expr G_BOOL_OR expr */
+    28,  /* (12) expr ::= expr G_PLUS expr */
+    28,  /* (13) expr ::= expr G_MINUS expr */
+    28,  /* (14) expr ::= expr G_MULT expr */
+    28,  /* (15) expr ::= expr G_DIVIDE expr */
+    28,  /* (16) expr ::= expr G_EQUAL expr */
     28,  /* (17) expr ::= expr G_STRUCT_REF expr */
     28,  /* (18) expr ::= G_PARENL expr G_PARENR */
     28,  /* (19) expr ::= G_IDENTIFIER G_PARENL expr G_PARENR */
@@ -861,14 +861,14 @@ static const signed char yyRuleInfoNRhs[] = {
    -3,  /* (6) expr ::= expr G_GREATER_THAN expr */
    -3,  /* (7) expr ::= expr G_LESS_EQUAL_THAN expr */
    -3,  /* (8) expr ::= expr G_GREATER_EQUAL_THAN expr */
-   -3,  /* (9) expr ::= expr G_EQUAL expr */
-   -3,  /* (10) expr ::= expr G_NOT_EQUAL expr */
-   -3,  /* (11) expr ::= expr G_BOOL_AND expr */
-   -3,  /* (12) expr ::= expr G_BOOL_OR expr */
-   -3,  /* (13) expr ::= expr G_PLUS expr */
-   -3,  /* (14) expr ::= expr G_MINUS expr */
-   -3,  /* (15) expr ::= expr G_MULT expr */
-   -3,  /* (16) expr ::= expr G_DIVIDE expr */
+   -3,  /* (9) expr ::= expr G_NOT_EQUAL expr */
+   -3,  /* (10) expr ::= expr G_BOOL_AND expr */
+   -3,  /* (11) expr ::= expr G_BOOL_OR expr */
+   -3,  /* (12) expr ::= expr G_PLUS expr */
+   -3,  /* (13) expr ::= expr G_MINUS expr */
+   -3,  /* (14) expr ::= expr G_MULT expr */
+   -3,  /* (15) expr ::= expr G_DIVIDE expr */
+   -3,  /* (16) expr ::= expr G_EQUAL expr */
    -3,  /* (17) expr ::= expr G_STRUCT_REF expr */
    -3,  /* (18) expr ::= G_PARENL expr G_PARENR */
    -4,  /* (19) expr ::= G_IDENTIFIER G_PARENL expr G_PARENR */
@@ -1015,51 +1015,51 @@ static YYACTIONTYPE yy_reduce(
 #line 1016 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 9: /* expr ::= expr G_EQUAL expr */
+      case 9: /* expr ::= expr G_NOT_EQUAL expr */
 #line 65 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_EQUAL; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_NOT_EQUAL; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1022 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 10: /* expr ::= expr G_NOT_EQUAL expr */
+      case 10: /* expr ::= expr G_BOOL_AND expr */
 #line 66 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_NOT_EQUAL; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_BOOL_AND; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1028 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 11: /* expr ::= expr G_BOOL_AND expr */
+      case 11: /* expr ::= expr G_BOOL_OR expr */
 #line 67 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_BOOL_AND; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_BOOL_OR; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1034 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 12: /* expr ::= expr G_BOOL_OR expr */
+      case 12: /* expr ::= expr G_PLUS expr */
 #line 68 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_BOOL_OR; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_ADD; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1040 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 13: /* expr ::= expr G_PLUS expr */
+      case 13: /* expr ::= expr G_MINUS expr */
 #line 69 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_ADD; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_SUB; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1046 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 14: /* expr ::= expr G_MINUS expr */
+      case 14: /* expr ::= expr G_MULT expr */
 #line 70 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_SUB; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_MUL; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1052 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 15: /* expr ::= expr G_MULT expr */
+      case 15: /* expr ::= expr G_DIVIDE expr */
 #line 71 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_MUL; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_DIV; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1058 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
-      case 16: /* expr ::= expr G_DIVIDE expr */
+      case 16: /* expr ::= expr G_EQUAL expr */
 #line 72 "grammar.lemon"
-{ yylhsminor.yy0.op = TR_OP_DIV; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
+{ yylhsminor.yy0.op = TR_OP_EQUAL; yylhsminor.yy0.leaf[0] = copyNode(yymsp[-2].minor.yy0); yylhsminor.yy0.leaf[1] = copyNode(yymsp[0].minor.yy0);  yylhsminor.yy0.valid=yymsp[-2].minor.yy0.valid && yymsp[0].minor.yy0.valid; }
 #line 1064 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;

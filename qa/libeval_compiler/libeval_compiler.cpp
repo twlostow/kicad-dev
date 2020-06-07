@@ -69,13 +69,13 @@ static const std::string formatOpName( int op )
         { TR_OP_EQUAL, "EQUAL" }, { TR_OP_NOT_EQUAL, "NEQUAL" }, { TR_OP_BOOL_AND, "AND" },
         { TR_OP_BOOL_OR, "OR" }, { TR_OP_BOOL_NOT, "NOT" }, { -1, "" } };
 
-    for (int i = 0; simpleOps[i].op >= 0; i++)
+    for( int i = 0; simpleOps[i].op >= 0; i++ )
+    {
+        if( simpleOps[i].op == op )
         {
-            if( simpleOps[i].op == op )
-            {
-                return simpleOps[i].mnemonic;
-            }
+            return simpleOps[i].mnemonic;
         }
+    }
 
     return "???";
 }
@@ -92,15 +92,15 @@ std::string UCODE::UOP::Format() const
         break;
     case TR_UOP_PUSH_VALUE:
     {
-        auto val = reinterpret_cast<VALUE*>(m_arg);
-        if( val->GetType() == VT_NUMERIC)
+        auto val = reinterpret_cast<VALUE*>( m_arg );
+        if( val->GetType() == VT_NUMERIC )
             sprintf( str, "PUSH NUM [%.10f]", val->AsDouble() );
         else
             sprintf( str, "PUSH STR [%s]", val->AsString().c_str() );
         break;
     }
     default:
-        sprintf(str, "%s", formatOpName( m_op ).c_str() );
+        sprintf( str, "%s", formatOpName( m_op ).c_str() );
         break;
     }
     return str;
@@ -206,12 +206,14 @@ bool COMPILER::Compile( const std::string& aString, UCODE* aCode )
     do
     {
         tok = getToken();
+        libeval_dbg( "parse: tok %d\n", tok.token );
         Parse( m_parser, tok.token, tok.value, this );
-        
+        //printf('error')
         if( m_parseError )
         {
+            //printf( "PARSE ERR\n" );
             m_parseErrorToken = "";
-        m_parseErrorPos = m_tokenizer.GetPos();
+            m_parseErrorPos   = m_tokenizer.GetPos();
             return false;
         }
 
@@ -242,7 +244,7 @@ COMPILER::T_TOKEN COMPILER::getToken()
     bool    done = false;
     do
     {
-        //printf("-> lstate %d\n", m_lexerState);
+
         switch( m_lexerState )
         {
         case LS_DEFAULT:
@@ -252,6 +254,7 @@ COMPILER::T_TOKEN COMPILER::getToken()
             done = lexString( rv );
             break;
         }
+        //printf( "-> lstate %d done %d\n", m_lexerState, !!done );
     } while( !done );
 
     return rv;
@@ -299,6 +302,7 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
 
     retval.token = G_ENDS;
 
+    //printf( "tokdone %d\n", !!m_tokenizer.Done() );
     if( m_tokenizer.Done() )
     {
         aToken = retval;
@@ -352,7 +356,7 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
             break;
     }
 
-    //printf("LEX ch '%c' pos %d\n", ch, m_tokenizer.pos );
+    libeval_dbg( "LEX ch '%c' pos %d\n", ch, m_tokenizer.GetPos() );
 
     if( ch == 0 )
     {
@@ -379,7 +383,7 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
     }
     else if( ch == '\"' ) // string literal
     {
-        //printf("MATCH STRING LITERAL\n");
+        //printf( "MATCH STRING LITERAL\n" );
         m_lexerState = LS_STRING;
         m_tokenizer.NextChar();
         return false;
@@ -395,79 +399,78 @@ bool COMPILER::lexDefault( COMPILER::T_TOKEN& aToken )
         strcpy( retval.value.value.str, current.c_str() );
         m_tokenizer.NextChar( current.length() );
     }
+    else if( m_tokenizer.MatchAhead( "==", []( int c ) -> bool { return c != '='; } ) )
+    {
+        retval.token = G_EQUAL;
+        m_tokenizer.NextChar( 2 );
+        //printf( "nc pos %d\n", m_tokenizer.GetPos() );
+    }
+    else if( m_tokenizer.MatchAhead( "<=", []( int c ) -> bool { return c != '='; } ) )
+    {
+        retval.token = G_LESS_EQUAL_THAN;
+        m_tokenizer.NextChar( 2 );
+    }
+    else if( m_tokenizer.MatchAhead( ">=", []( int c ) -> bool { return c != '='; } ) )
+    {
+        retval.token = G_GREATER_EQUAL_THAN;
+        m_tokenizer.NextChar( 2 );
+    }
+    else if( m_tokenizer.MatchAhead( "&&", []( int c ) -> bool { return c != '&'; } ) )
+    {
+        retval.token = G_BOOL_AND;
+        m_tokenizer.NextChar( 2 );
+    }
+    else if( m_tokenizer.MatchAhead( "||", []( int c ) -> bool { return c != '|'; } ) )
+    {
+        retval.token = G_BOOL_OR;
+        m_tokenizer.NextChar( 2 );
+    }
     else
     {
-        if( m_tokenizer.MatchAhead( "==", []( int c ) -> bool { return c != '='; } ) )
-        {
-            retval.token = G_EQUAL;
-            m_tokenizer.NextChar( 2 );
-        }
-        if( m_tokenizer.MatchAhead( "<=", []( int c ) -> bool { return c != '='; } ) )
-        {
-            retval.token = G_LESS_EQUAL_THAN;
-            m_tokenizer.NextChar( 2 );
-        }
-        if( m_tokenizer.MatchAhead( ">=", []( int c ) -> bool { return c != '='; } ) )
-        {
-            retval.token = G_GREATER_EQUAL_THAN;
-            m_tokenizer.NextChar( 2 );
-        }
-        else if( m_tokenizer.MatchAhead( "&&", []( int c ) -> bool { return c != '&'; } ) )
-        {
-            retval.token = G_BOOL_AND;
-            m_tokenizer.NextChar( 2 );
-        }
-        else if( m_tokenizer.MatchAhead( "||", []( int c ) -> bool { return c != '|'; } ) )
-        {
-            retval.token = G_BOOL_OR;
-            m_tokenizer.NextChar( 2 );
-        }
-    else
-        {
+        //printf( "WTF: '%c'\n", ch );
 
-            // Single char tokens
-            switch( ch )
-            {
-            case '+':
-                retval.token = G_PLUS;
-                break;
-            case '!':
-                retval.token = G_BOOL_NOT;
-                break;
-            case '-':
-                retval.token = G_MINUS;
-                break;
-            case '*':
-                retval.token = G_MULT;
-                break;
-            case '/':
-                retval.token = G_DIVIDE;
-                break;
-            case '<':
-                retval.token = G_LESS_THAN;
-                break;
-            case '>':
-                retval.token = G_GREATER_THAN;
-                break;
-            case '(':
-                retval.token = G_PARENL;
-                break;
-            case ')':
-                retval.token = G_PARENR;
-                break;
-            case ';':
-                retval.token = G_SEMCOL;
-                break;
-            case '.':
-                retval.token = G_STRUCT_REF;
-                break;
-            default:
-                m_parseError = true;
-                break; /* invalid character */
-            }
-
-            m_tokenizer.NextChar();
+        // Single char tokens
+        switch( ch )
+        {
+        case '+':
+            retval.token = G_PLUS;
+            break;
+        case '!':
+            retval.token = G_BOOL_NOT;
+            break;
+        case '-':
+            retval.token = G_MINUS;
+            break;
+        case '*':
+            retval.token = G_MULT;
+            break;
+        case '/':
+            retval.token = G_DIVIDE;
+            break;
+        case '<':
+            retval.token = G_LESS_THAN;
+            break;
+        case '>':
+            retval.token = G_GREATER_THAN;
+            break;
+        case '(':
+            retval.token = G_PARENL;
+            break;
+        case ')':
+            retval.token = G_PARENR;
+            break;
+        case ';':
+            retval.token = G_SEMCOL;
+            break;
+        case '.':
+            retval.token = G_STRUCT_REF;
+            break;
+        default:
+            m_parseError = true;
+            break; /* invalid character */
         }
+
+        m_tokenizer.NextChar();
     }
 
     aToken = retval;
@@ -503,33 +506,33 @@ void dumpNode( std::string& buf, TREE_NODE* tok, int depth = 0 )
     switch( tok->op )
     {
     case TR_NUMBER:
-        sprintf(str, "NUMERIC: " );
+        sprintf( str, "NUMERIC: " );
         buf += str;
-        sprintf(str, "%s", formatNode( tok ).c_str() );
+        sprintf( str, "%s", formatNode( tok ).c_str() );
         buf += str;
         if( tok->leaf[0] )
             dumpNode( buf, tok->leaf[0], depth + 1 );
         break;
     case TR_STRING:
-        sprintf(str, "STRING: " );
+        sprintf( str, "STRING: " );
         buf += str;
-        sprintf(str, "%s", formatNode( tok ).c_str() );
+        sprintf( str, "%s", formatNode( tok ).c_str() );
         buf += str;
         break;
     case TR_IDENTIFIER:
-        sprintf(str, "ID: " );
+        sprintf( str, "ID: " );
         buf += str;
-        sprintf(str, "%s", formatNode( tok ).c_str() );
+        sprintf( str, "%s", formatNode( tok ).c_str() );
         buf += str;
         break;
     case TR_STRUCT_REF:
-        sprintf(str, "SREF: " );
+        sprintf( str, "SREF: " );
         buf += str;
-        dumpNode(buf, tok->leaf[0], depth + 1 );
-        dumpNode(buf, tok->leaf[1], depth + 1 );
+        dumpNode( buf, tok->leaf[0], depth + 1 );
+        dumpNode( buf, tok->leaf[1], depth + 1 );
         break;
     case TR_UNIT:
-        sprintf(str, "UNIT: %d ", tok->value.type );
+        sprintf( str, "UNIT: %d ", tok->value.type );
         buf += str;
         break;
     }
@@ -563,7 +566,7 @@ bool COMPILER::generateUCode( UCODE* aCode )
         auto node           = stack.back();
         bool isTerminalNode = true;
 
-     //   printf( "process node %p [op %d] [stack %d]\n", node, node->op, stack.size() );
+        //   printf( "process node %p [op %d] [stack %d]\n", node, node->op, stack.size() );
 
         // process terminal nodes first
         switch( node->op )
@@ -634,7 +637,7 @@ bool COMPILER::generateUCode( UCODE* aCode )
 }
 
 
-void UCODE::UOP::Exec( CONTEXT* ctx, UCODE *ucode )
+void UCODE::UOP::Exec( CONTEXT* ctx, UCODE* ucode )
 {
 
     switch( m_op )

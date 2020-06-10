@@ -465,6 +465,7 @@ protected:
     TREE_NODE* m_tree;
 };
 
+
 } // namespace LIBEVAL
 
 #endif /* LIBEVAL_COMPILER_H_ */

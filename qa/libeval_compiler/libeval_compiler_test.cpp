@@ -13,9 +13,9 @@
 
 #include <profile.h>
 
-class PCB_VAR_REF;
+class PCB_EXPR_VAR_REF;
 
-class PCB_UCODE : public LIBEVAL::UCODE
+class PCB_EXPR_UCODE : public LIBEVAL::UCODE
 {
 public:
 
@@ -37,10 +37,10 @@ private:
 };
 
 
-class PCB_VAR_REF : public LIBEVAL::UCODE::VAR_REF
+class PCB_EXPR_VAR_REF : public LIBEVAL::UCODE::VAR_REF
 {
 public:
-    PCB_VAR_REF ( int aItemIndex )
+    PCB_EXPR_VAR_REF ( int aItemIndex )
         : m_itemIndex(aItemIndex)
     {
         //printf("*** createVarRef %p %d\n", this, aItemIndex );
@@ -63,7 +63,7 @@ public:
 
     virtual LIBEVAL::VALUE GetValue( const LIBEVAL::UCODE* aUcode ) const override
     {
-        auto ucode = static_cast<const PCB_UCODE*> (aUcode);
+        auto ucode = static_cast<const PCB_EXPR_UCODE*> (aUcode);
         auto item = ucode->GetItem( m_itemIndex );
 
         auto it = m_matchingTypes.find( TYPE_HASH( *item ) );
@@ -93,14 +93,14 @@ private:
     LIBEVAL::VAR_TYPE_T m_type;
 };
 
-LIBEVAL::UCODE::VAR_REF *PCB_UCODE::createVarRef( const std::string &var, const std::string &field )
+LIBEVAL::UCODE::VAR_REF *PCB_EXPR_UCODE::createVarRef( const std::string &var, const std::string &field )
 {
-    PCB_VAR_REF *rv;
+    PCB_EXPR_VAR_REF *rv;
 
     PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
 
     auto classes = propMgr.GetAllClasses();
-    auto vref = new PCB_VAR_REF( var == "A" ? 0 : 1 );
+    auto vref = new PCB_EXPR_VAR_REF( var == "A" ? 0 : 1 );
 
     for ( auto cls : classes )
     {
@@ -192,7 +192,7 @@ class PCB_EXPR_COMPILER : public LIBEVAL::COMPILER
 bool testEvalExpr( const std::string expr, LIBEVAL::VALUE expectedResult, bool expectError = false, BOARD_ITEM* itemA = nullptr, BOARD_ITEM* itemB = nullptr )
 {
     PCB_EXPR_COMPILER compiler;
-    PCB_UCODE ucode;
+    PCB_EXPR_UCODE ucode;
     bool ok = true;
 
     ucode.SetItems( itemA, itemB );
@@ -231,6 +231,35 @@ bool testEvalExpr( const std::string expr, LIBEVAL::VALUE expectedResult, bool e
     }
 
     return ok;
+}
+
+bool EvaluatePCBExpression( const std::string& aExpr, int& aResult )
+{
+    PCB_EXPR_COMPILER compiler;
+    PCB_EXPR_UCODE ucode;
+    if( !compiler.Compile( aExpr, &ucode ) )
+        return false;
+    
+    auto result = ucode.Run();
+    return true;
+}
+
+class PCB_EXPR_EVALUATOR 
+{
+public:
+    PCB_EXPR_EVALUATOR();
+    ~PCB_EXPR_EVALUATOR();
+
+    bool Evaluate( const wxString& aExpr );
+    int Result() const { return m_result; }
+    wxString GetErrorString();
+
+private:
+    bool m_error;
+    int m_result;
+
+    PCB_EXPR_COMPILER m_compiler;
+    PCB_EXPR_UCODE m_ucode;
 }
 
 int main( int argc, char *argv[] )

@@ -41,7 +41,7 @@
 #include <math/util.h>      // for KiROUND
 #include <geometry/shape_rect.h>
 #include <macros.h>
-
+#include <drc/drc_item.h>
 
 /**
  * compare 2 convex polygons and return true if distance > aDist (if no error DRC)

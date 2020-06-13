@@ -218,11 +218,13 @@ public:
 
     // List of netclasses. There is always the default netclass.
     NETCLASSES                       m_NetClasses;
+#ifndef DRC_PROTO
     std::vector<DRC_SELECTOR*>       m_DRCRuleSelectors;
     std::vector<DRC_RULE*>           m_DRCRules;
 
     // Temporary storage for rule matching.
     std::vector<DRC_SELECTOR*>       m_matched;
+#endif
 
     bool       m_MicroViasAllowed;          ///< true to allow micro vias
     bool       m_BlindBuriedViaAllowed;     ///< true to allow blind/buried vias

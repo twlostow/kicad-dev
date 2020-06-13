@@ -4,7 +4,7 @@ if( COMPILER_SUPPORTS_WARNINGS )
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARN_FLAGS_C}")
 endif()
 
-add_subdirectory( libeval )
+add_subdirectory( libeval libeval_compiler )
 
 include_directories( BEFORE ${INC_BEFORE} )
 include_directories(
@@ -402,6 +402,7 @@ set( COMMON_SRCS
     settings/settings_manager.cpp
 
     libeval/numeric_evaluator.cpp
+    libeval_compiler/libeval_compiler.cpp
     )
 
 add_library( common STATIC

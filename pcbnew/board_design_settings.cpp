@@ -93,6 +93,7 @@ public:
                 bds.m_DRCSeverities[ DRCE_OVERLAPPING_FOOTPRINTS ] = RPT_SEVERITY_IGNORE;
         }
 
+        #if 0 
         DRC_ITEM drc( 0 );
         wxString severity;
 
@@ -114,6 +115,7 @@ public:
             if( aConfig->Read( name, &severity, wxEmptyString ) )
                 bds.m_DRCSeverities[i] = mapSeverity( severity );
         }
+        #endif
 
         aConfig->SetPath( oldPath );
     }
@@ -126,6 +128,8 @@ public:
         BOARD*                 board = m_Pt_param;
         BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
         wxString               oldPath = aConfig->GetPath();
+
+#if 0
         DRC_ITEM               drc( 0 );
 
         auto mapSeverity = []( int aSeverity )
@@ -145,8 +149,8 @@ public:
 
             aConfig->Write( name, mapSeverity( bds.m_DRCSeverities[i] ) );
         }
-
         aConfig->SetPath( oldPath );
+#endif
     }
 };
 

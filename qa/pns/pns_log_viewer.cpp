@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2020 KiCad Developers.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
+
 #define USE_TOOL_MANAGER
 
 #include <wx/clipbrd.h>
@@ -675,13 +699,26 @@ int pns1_main_func( int argc, char* argv[] )
 
 static bool registered = UTILITY_REGISTRY::Register( {
         "pns1",
-        "PNS test1",
+        "PNS Dumb Test (Tom's hacks)",
         pns1_main_func,
 } );
 
 int replay_main_func( int argc, char* argv[] )
 {
     auto frame = new PNS_LOG_VIEWER_FRAME(nullptr);
+
+    if( argc >= 2 && std::string(argv[1]) == "-h")
+    {
+        printf("PNS Log (Re)player. Allows to step through the log written by the ROUTER_TOOL in debug Kicad builds. ");
+        printf("Requires a board file with UUIDs and a matching log file. Both are written to /tmp when you press '0' during routing.");
+        return 0;
+    }
+
+    if(argc < 3)
+    {
+        printf("Expected parameters: log_file.log board_file.dump\n");
+        return 0;
+    }
 
     PNS_LOG_FILE* logFile = new PNS_LOG_FILE;
     logFile->Load( argv[1], argv[2] );
@@ -694,6 +731,6 @@ int replay_main_func( int argc, char* argv[] )
 
 static bool registered2 = UTILITY_REGISTRY::Register( {
         "replay",
-        "PNS log replay",
+        "PNS Log Player",
         replay_main_func,
 } );

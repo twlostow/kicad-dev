@@ -139,6 +139,14 @@ void BOARD_ITEM::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBu
 };
 
 
+std::shared_ptr<SHAPE> BOARD_ITEM::GetEffectiveShape( PCB_LAYER_ID aLayer )
+{
+    std::shared_ptr<SHAPE> shape;
+
+    return shape;
+}
+
+
 static struct BOARD_ITEM_DESC
 {
     BOARD_ITEM_DESC()

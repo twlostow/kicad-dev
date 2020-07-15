@@ -40,6 +40,7 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_simple.h>
 #include <geometry/shape_rect.h>
+#include <geometry/shape_compound.h>
 #include <pcbnew.h>
 #include <view/view.h>
 #include <class_board.h>
@@ -199,6 +200,19 @@ const std::vector<std::shared_ptr<SHAPE>>& D_PAD::GetEffectiveShapes() const
     return m_effectiveShapes;
 }
 
+
+std::shared_ptr<SHAPE> D_PAD::GetEffectiveShape( PCB_LAYER_ID aLayer )
+{
+    std::shared_ptr<SHAPE_COMPOUND> shape( new SHAPE_COMPOUND );
+
+    if( m_shapesDirty )
+        BuildEffectiveShapes();
+    
+    for( auto s : m_effectiveShapes )
+        shape->AddShape( s->Clone() ); // fixme: use COMPOUND everywhere
+
+    return shape;
+}
 
 const SHAPE_SEGMENT* D_PAD::GetEffectiveHoleShape() const
 {

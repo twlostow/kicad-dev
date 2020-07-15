@@ -383,6 +383,7 @@ public:
      * multiple outlines and/or holes).
      */
     const std::vector<std::shared_ptr<SHAPE>>& GetEffectiveShapes() const;
+    virtual std::shared_ptr<SHAPE> GetEffectiveShape( PCB_LAYER_ID aLayer = UNDEFINED_LAYER ) override;
 
     /**
      * Function GetEffectiveHoleShape

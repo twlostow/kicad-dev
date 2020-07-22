@@ -92,6 +92,12 @@ private:
         {
         }
 
+        ~CALL_CONTEXT()
+        {
+            libcontext::release_fcontext( *m_mainStackContext );
+        }
+
+
         void SetMainStack( CONTEXT_T* aStack )
         {
             m_mainStackContext = aStack;

@@ -1305,10 +1305,24 @@ intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(fcontext_t* ofc, fcontext_t nf
 	return fiberParams[*ofc].outValue;
 }
 
+
+void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
+{
+	fiberParams.erase( ctx );
+}
+
+
 }; // namespace libcontext
 
 #ifdef __cplusplus
 };
+#else // defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386)
+
+void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
+{
+	// do nothing...
+}
 #endif
+
 
 #endif

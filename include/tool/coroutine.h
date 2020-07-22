@@ -94,7 +94,8 @@ private:
 
         ~CALL_CONTEXT()
         {
-            libcontext::release_fcontext( *m_mainStackContext );
+            if ( m_mainStackContext )
+                libcontext::release_fcontext( *m_mainStackContext );
         }
 
 
@@ -167,6 +168,10 @@ public:
 #ifdef KICAD_USE_VALGRIND
         VALGRIND_STACK_DEREGISTER( valgrind_stack );
 #endif
+        if(m_caller)
+            libcontext::release_fcontext( m_caller );
+        if(m_callee)
+            libcontext::release_fcontext( m_callee );
     }
 
 public:

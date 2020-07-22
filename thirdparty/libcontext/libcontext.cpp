@@ -1308,7 +1308,10 @@ intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext(fcontext_t* ofc, fcontext_t nf
 
 void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
 {
-	fiberParams.erase( ctx );
+	if( fiberParams.find( ctx ) != fiberParams.end() )
+	{
+		fiberParams.erase( ctx );
+	}
 }
 
 
@@ -1316,13 +1319,29 @@ void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
 
 #ifdef __cplusplus
 };
+#endif
+
 #else // defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386)
+
+#warning nowindows
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+namespace libcontext
+{
 
 void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
 {
 	// do nothing...
 }
+
+}; // namespace libcontext
+
+#ifdef __cplusplus
+};
+#endif // defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386)
+
 #endif
 
-
-#endif

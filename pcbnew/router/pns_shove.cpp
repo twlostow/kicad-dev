@@ -39,6 +39,7 @@
 #include "pns_utils.h"
 #include "pns_router.h"
 #include "pns_topology.h"
+#include "pns_hull.h"
 
 #include "time_limit.h"
 
@@ -129,22 +130,6 @@ void SHOVE::replaceLine( LINE& aOld, LINE& aNew, bool aIncludeInChangedArea, NOD
 }
 
 
-int SHOVE::getClearance( const ITEM* aA, const ITEM* aB ) const
-{
-    if( m_forceClearance >= 0 )
-        return m_forceClearance;
-
-    return m_currentNode->GetClearance( aA, aB );
-}
-
-
-int SHOVE::getHoleClearance( const ITEM* aA, const ITEM* aB ) const
-{
-    if( m_forceClearance >= 0 )
-        return m_forceClearance;
-
-    return m_currentNode->GetHoleClearance( aA, aB );
-}
 
 
 void SHOVE::sanityCheck( LINE* aOld, LINE* aNew )
@@ -158,7 +143,6 @@ SHOVE::SHOVE( NODE* aWorld, ROUTER* aRouter ) :
     ALGO_BASE( aRouter )
 {
     m_optFlagDisableMask = 0;
-    m_forceClearance = -1;
     m_root = aWorld;
     m_currentNode = aWorld;
     SetDebugDecorator( aRouter->GetInterface()->GetDebugDecorator() );
@@ -224,20 +208,13 @@ bool SHOVE::checkShoveDirection( const LINE& aCurLine, const LINE& aObstacleLine
  * can be ignored.
  */
 SHOVE::SHOVE_STATUS SHOVE::shoveLineFromLoneVia( const LINE& aCurLine, const LINE& aObstacleLine,
-                                                 LINE& aResultLine )
+                                                 LINE& aResultLine, OBSTACLE& aObstacleInfo )
 {
     // Build a hull for aCurLine's via and re-walk aObstacleLine around it.
-
     int obstacleLineWidth = aObstacleLine.Width();
-    int clearance = getClearance( &aCurLine, &aObstacleLine );
+    int clearance = aObstacleInfo.m_clearance;
 
-/*    int holeClearance = getHoleClearance( &aCurLine.Via(), &aObstacleLine );
-
-    if( holeClearance + aCurLine.Via().Drill() / 2 > clearance + aCurLine.Via().Diameter() / 2 )
-        clearance = holeClearance + aCurLine.Via().Drill() / 2 - aCurLine.Via().Diameter() / 2;
-*/
-
-    SHAPE_LINE_CHAIN hull = aCurLine.Via().Hull( clearance, obstacleLineWidth, aCurLine.Layer() );
+    SHAPE_LINE_CHAIN hull = aCurLine.Via().Hull( clearance, obstacleLineWidth );
     SHAPE_LINE_CHAIN path_cw;
     SHAPE_LINE_CHAIN path_ccw;
 
@@ -403,7 +380,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
  * aResultLine.
  */
 SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& aObstacleLine,
-                                              LINE& aResultLine )
+                                              LINE& aResultLine, OBSTACLE& aObstacleInfo )
 {
     aResultLine.ClearLinks();
 
@@ -425,7 +402,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& 
     {
         // Shove aObstacleLine to the hull of aCurLine's via.
 
-        rv = shoveLineFromLoneVia( aCurLine, aObstacleLine, aResultLine );
+        rv = shoveLineFromLoneVia( aCurLine, aObstacleLine, aResultLine, aObstacleInfo );
     }
     else
     {
@@ -434,10 +411,10 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& 
         // hull it will be at the appropriate clearance.
 
         int      obstacleLineWidth = aObstacleLine.Width();
-        int      clearance = getClearance( &aCurLine, &aObstacleLine ) + 1;
+        int      clearance = aObstacleInfo.m_clearance;
         int      currentLineSegmentCount = aCurLine.SegmentCount();
-        HULL_SET hulls;
 
+        HULL_SET hulls;
         hulls.reserve( currentLineSegmentCount + 1 );
 
         PNS_DBG( Dbg(), Message, wxString::Format( wxT( "shove process-single: cur net %d obs %d cl %d" ),
@@ -459,7 +436,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& 
             }
 
             SHAPE_LINE_CHAIN hull =
-                    seg.Hull( clearance + extra, obstacleLineWidth, aObstacleLine.Layer() );
+                    seg.Hull( clearance + extra, obstacleLineWidth );
 
             hulls.push_back( hull );
         }
@@ -467,7 +444,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& 
         if( viaOnEnd )
         {
             const VIA& via = aCurLine.Via();
-            int viaClearance = getClearance( &via, &aObstacleLine );
+            int viaClearance = aObstacleInfo.m_clearance; // getClearance( &via, &aObstacleLine );
             /*int holeClearance = getHoleClearance( &via, &aObstacleLine );
 
             if( holeClearance + via.Drill() / 2 > viaClearance + via.Diameter() / 2 )
@@ -489,7 +466,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& 
 /*
  * TODO describe....
  */
-SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacleSeg )
+SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacleSeg, OBSTACLE& aObstacleInfo )
 {
     int segIndex;
     LINE obstacleLine = assembleLine( aObstacleSeg, &segIndex );
@@ -502,7 +479,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
         return SH_TRY_WALK;
     }
 
-    SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, obstacleLine, shovedLine );
+    SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, obstacleLine, shovedLine, aObstacleInfo );
 
     const double extensionWalkThreshold = 1.0;
 
@@ -553,7 +530,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
 /*
  * TODO describe....
  */
-SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
+SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc, OBSTACLE& aObstacleInfo )
 {
     int segIndex;
     LINE obstacleLine = assembleLine( aObstacleArc, &segIndex );
@@ -563,7 +540,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
     if( obstacleLine.HasLockedSegments() )
         return SH_TRY_WALK;
 
-    SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, obstacleLine, shovedLine );
+    SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, obstacleLine, shovedLine, aObstacleInfo );
 
     const double extensionWalkThreshold = 1.0;
 
@@ -611,11 +588,11 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
 /*
  * TODO describe....
  */
-SHOVE::SHOVE_STATUS SHOVE::onCollidingLine( LINE& aCurrent, LINE& aObstacle )
+SHOVE::SHOVE_STATUS SHOVE::onCollidingLine( LINE& aCurrent, LINE& aObstacle, OBSTACLE& aObstacleInfo )
 {
     LINE shovedLine( aObstacle );
 
-    SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, aObstacle, shovedLine );
+    SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, aObstacle, shovedLine, aObstacleInfo );
 
     PNS_DBG( Dbg(), AddItem, &aObstacle, RED, 100000, wxT( "obstacle-line" ) );
     PNS_DBG( Dbg(), AddItem, &aCurrent, GREEN, 150000, wxT( "current-line" ) );
@@ -744,12 +721,13 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle, OB
         if( !m_lineStack.empty() )
         {
             LINE lastLine = m_lineStack.front();
+            OBSTACLE newobs;
 
-            if( lastLine.Collide( &walkaroundLine, m_currentNode ) )
+            if( lastLine.Collide( &walkaroundLine, m_currentNode, COLLISION_SEARCH_OPTIONS(), &newobs ) )
             {
                 LINE dummy( lastLine );
 
-                if( ShoveObstacleLine( walkaroundLine, lastLine, dummy ) == SH_OK )
+                if( ShoveObstacleLine( walkaroundLine, lastLine, dummy, newobs ) == SH_OK )
                 {
                     success = true;
                     break;
@@ -778,7 +756,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle, OB
         return SH_INCOMPLETE;
 
     return SH_OK;
-}
+};
 
 
 /*
@@ -787,6 +765,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle, OB
  */
 NODE* SHOVE::reduceSpringback( const ITEM_SET& aHeadSet, VIA_HANDLE& aDraggedVia )
 {
+    PNS_DBG( Dbg(), BeginGroup, "reduce-springback", 1 );
+
+int depth = 0;
+
     while( !m_nodeStack.empty() )
     {
         SPRINGBACK_TAG& spTag = m_nodeStack.back();
@@ -798,6 +780,15 @@ NODE* SHOVE::reduceSpringback( const ITEM_SET& aHeadSet, VIA_HANDLE& aDraggedVia
 
         OPT<OBSTACLE> obs = spTag.m_node->CheckColliding( aHeadSet );
 
+        if( obs )
+        {
+            PNS_DBG( Dbg(), AddItem, aHeadSet[0], RED, 10000, wxString::Format("head depth %d", depth ));
+            PNS_DBG( Dbg(), AddItem, obs->m_item, GREEN, 10000, wxString::Format("obstacle [%s]", obs->m_item->KindStr().c_str() ) );
+        }
+
+
+
+        depth--;
         if( !obs && !spTag.m_locked )
         {
             aDraggedVia = spTag.m_draggedVia;
@@ -812,6 +803,8 @@ NODE* SHOVE::reduceSpringback( const ITEM_SET& aHeadSet, VIA_HANDLE& aDraggedVia
         }
     }
 
+
+    PNS_DBGN( Dbg(), EndGroup );
     return m_nodeStack.empty() ? m_root : m_nodeStack.back().m_node;
 }
 
@@ -991,7 +984,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia, OB
 {
     assert( aObstacleVia );
 
-    int clearance = getClearance( aCurrent, aObstacleVia );
+    int clearance = aObstacleInfo.m_clearance; // getClearance( aCurrent, aObstacleVia );
     VECTOR2I mtv;
     int rank = -1;
 
@@ -1029,7 +1022,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia, OB
         if( currentLine->EndsWithVia() )
         {
             const VIA& currentVia = currentLine->Via();
-            int        viaClearance = getClearance( &currentVia, &vtmp );
+            int        viaClearance = aObstacleInfo.m_clearance; // getClearance( &currentVia, &vtmp );
 
             viaCollision = currentVia.Shape()->Collide( vtmp.Shape(), viaClearance, &mtvVia );
         }
@@ -1060,7 +1053,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia, OB
 /*
  * TODO describe....
  */
-SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacleVia )
+SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacleVia, OBSTACLE& aObstacleInfo )
 {
     int n = 0;
     LINE cur( aCurrent );
@@ -1082,7 +1075,7 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
 
             head.AppendVia( *aObstacleVia );
 
-            SHOVE_STATUS st = ShoveObstacleLine( head, cur, shoved );
+            SHOVE_STATUS st = ShoveObstacleLine( head, cur, shoved, aObstacleInfo );
 
             if( st != SH_OK )
             {
@@ -1114,7 +1107,7 @@ SHOVE::SHOVE_STATUS SHOVE::onReverseCollidingVia( LINE& aCurrent, VIA* aObstacle
         head.AppendVia( *aObstacleVia );
         head.ClearLinks();
 
-        SHOVE_STATUS st = ShoveObstacleLine( head, aCurrent, shoved );
+        SHOVE_STATUS st = ShoveObstacleLine( head, aCurrent, shoved, aObstacleInfo );
 
         if( st != SH_OK )
             return st;
@@ -1381,7 +1374,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
             }
             else
             {
-                st = onReverseCollidingVia( currentLine, (VIA*) ni );
+                st = onReverseCollidingVia( currentLine, (VIA*) ni, nearest.get() );
             }
 
             PNS_DBGN( Dbg(), EndGroup );
@@ -1396,7 +1389,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
             LINE revLine = assembleLine( static_cast<SEGMENT*>( ni ) );
 
             popLineStack();
-            st = onCollidingLine( revLine, currentLine );
+            st = onCollidingLine( revLine, currentLine, nearest.get() );
 
 
             if( !pushLineStack( revLine ) )
@@ -1417,7 +1410,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
             LINE revLine = assembleLine( static_cast<ARC*>( ni ) );
 
             popLineStack();
-            st = onCollidingLine( revLine, currentLine );
+            st = onCollidingLine( revLine, currentLine, nearest.get() );
 
             PNS_DBGN( Dbg(), EndGroup );
 
@@ -1440,7 +1433,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
         case ITEM::SEGMENT_T:
             PNS_DBG( Dbg(), BeginGroup, wxString::Format( "iter %d: collide-segment ", aIter ), 0 );
 
-            st = onCollidingSegment( currentLine, (SEGMENT*) ni );
+            st = onCollidingSegment( currentLine, (SEGMENT*) ni, nearest.get() );
 
             if( st == SH_TRY_WALK )
                 st = onCollidingSolid( currentLine, ni, nearest.get() );
@@ -1453,7 +1446,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
         case ITEM::ARC_T:
             PNS_DBG( Dbg(), BeginGroup, wxString::Format( "iter %d: collide-arc ", aIter ), 0 );
 
-            st = onCollidingArc( currentLine, static_cast<ARC*>( ni ) );
+            st = onCollidingArc( currentLine, static_cast<ARC*>( ni ), nearest.get() );
 
             if( st == SH_TRY_WALK )
                 st = onCollidingSolid( currentLine, ni, nearest.get() );

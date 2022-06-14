@@ -94,10 +94,11 @@ static const SHAPE_LINE_CHAIN buildHullForPrimitiveShape( const SHAPE* aShape, i
 }
 
 
-const SHAPE_LINE_CHAIN SOLID::Hull( int aClearance, int aWalkaroundThickness, int aLayer ) const
+const SHAPE_LINE_CHAIN SOLID::Hull( int aClearance, int aWalkaroundThickness ) const
 {
-    if( !ROUTER::GetInstance()->GetInterface()->IsFlashedOnLayer( this, aLayer ) )
-        return HoleHull( aClearance, aWalkaroundThickness, aLayer );
+    // FIXME: this hoes into shove/walk algos!
+    //if( !ROUTER::GetInstance()->GetInterface()->IsFlashedOnLayer( this, aLayer ) )
+      //  return HoleHull( aClearance, aWalkaroundThickness, aLayer );
 
     if( !m_shape )
         return SHAPE_LINE_CHAIN();
@@ -132,7 +133,7 @@ const SHAPE_LINE_CHAIN SOLID::Hull( int aClearance, int aWalkaroundThickness, in
 }
 
 
-const SHAPE_LINE_CHAIN SOLID::HoleHull( int aClearance, int aWalkaroundThickness, int aLayer ) const
+const SHAPE_LINE_CHAIN SOLID::HoleHull( int aClearance, int aWalkaroundThickness ) const
 {
     if( !m_hole )
         return SHAPE_LINE_CHAIN();

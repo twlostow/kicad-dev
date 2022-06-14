@@ -24,12 +24,13 @@
 #include "pns_item.h"
 #include "pns_line.h"
 #include "pns_router.h"
+#include "pns_hull.h"
 
 typedef VECTOR2I::extended_type ecoord;
 
 namespace PNS {
 
-bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode, bool aDifferentNetsOnly, int aOverrideClearance ) const
+bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode,  const COLLISION_SEARCH_OPTIONS& aOpts, OBSTACLE *aObsInfo ) const
 {
     const ROUTER_IFACE* iface = ROUTER::GetInstance()->GetInterface();
     const SHAPE*        shapeA = Shape();
@@ -38,6 +39,7 @@ bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode, bool aDifferent
     const SHAPE*        shapeB = aOther->Shape();
     const SHAPE*        holeB = aOther->Hole();
     int                 lineWidthB = 0;
+    const int           clearanceEpsilon = aNode->GetRuleResolver()->ClearanceEpsilon();
 
     // Sadly collision routines ignore SHAPE_POLY_LINE widths so we have to pass them in as part
     // of the clearance value.
@@ -48,7 +50,7 @@ bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode, bool aDifferent
         lineWidthB = static_cast<const LINE*>( aOther )->Width() / 2;
 
     // same nets? no collision!
-    if( aDifferentNetsOnly && m_net == aOther->m_net && m_net >= 0 && aOther->m_net >= 0 )
+    if( aOpts.m_differentNetsOnly && m_net == aOther->m_net && m_net >= 0 && aOther->m_net >= 0 )
         return false;
 
     // check if we are not on completely different layers first
@@ -91,21 +93,35 @@ bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode, bool aDifferent
     bool thisNotFlashed  = !iface->IsFlashedOnLayer( this, aOther->Layer() );
     bool otherNotFlashed = !iface->IsFlashedOnLayer( aOther, Layer() );
 
+    if( aObsInfo )
+    {
+        aObsInfo->m_headIsHole = false;
+        aObsInfo->m_itemIsHole = false;
+    }
+
     if( ( aNode->GetCollisionQueryScope() == NODE::CQS_ALL_RULES
           || ( thisNotFlashed || otherNotFlashed ) )
         && ( holeA || holeB ) )
     {
         int holeClearance = aNode->GetHoleClearance( this, aOther );
 
-        if( holeA && holeA->Collide( shapeB, holeClearance + lineWidthB ) )
+        if( holeA && holeA->Collide( shapeB, holeClearance + lineWidthB - clearanceEpsilon ) )
         {
-            Mark( Marker() | MK_HOLE );
+            if( aObsInfo )
+            {
+                aObsInfo->m_headIsHole = true;
+                aObsInfo->m_clearance = holeClearance;
+            }
             return true;
         }
 
-        if( holeB && holeB->Collide( shapeA, holeClearance + lineWidthA ) )
+        if( holeB && holeB->Collide( shapeA, holeClearance + lineWidthA - clearanceEpsilon ) )
         {
-            aOther->Mark( aOther->Marker() | MK_HOLE );
+            if( aObsInfo )
+            {
+                aObsInfo->m_itemIsHole = true;
+                aObsInfo->m_clearance = holeClearance;
+            }
             return true;
         }
 
@@ -113,10 +129,14 @@ bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode, bool aDifferent
         {
             int holeToHoleClearance = aNode->GetHoleToHoleClearance( this, aOther );
 
-            if( holeA->Collide( holeB, holeToHoleClearance ) )
+            if( holeA->Collide( holeB, holeToHoleClearance - clearanceEpsilon ) )
             {
-                Mark( Marker() | MK_HOLE );
-                aOther->Mark( aOther->Marker() | MK_HOLE );
+                if( aObsInfo )
+                {
+                    aObsInfo->m_headIsHole = true;
+                    aObsInfo->m_itemIsHole = true;
+                    aObsInfo->m_clearance = holeToHoleClearance;
+                }
                 return true;
             }
         }
@@ -128,14 +148,31 @@ bool ITEM::collideSimple( const ITEM* aOther, const NODE* aNode, bool aDifferent
     if( !Layers().IsMultilayer() && otherNotFlashed )
         return false;
 
-    int clearance = aOverrideClearance >= 0 ? aOverrideClearance : aNode->GetClearance( this, aOther );
-    return shapeA->Collide( shapeB, clearance + lineWidthA + lineWidthB );
+    int clearance;
+
+    if( aOpts.m_overrideClearance )
+    {
+        clearance = aOpts.m_overrideClearance;
+    }
+    else
+    {
+        clearance = aNode->GetClearance( this, aOther );
+    }
+
+    bool isColliding = shapeA->Collide( shapeB, clearance + lineWidthA + lineWidthB - clearanceEpsilon );
+
+    if( isColliding && aObsInfo )
+    {
+        aObsInfo->m_clearance = clearance;
+    }
+
+    return isColliding;
 }
 
 
-bool ITEM::Collide( const ITEM* aOther, const NODE* aNode, bool aDifferentNetsOnly, int aOverrideClearance ) const
+bool ITEM::Collide( const ITEM* aOther, const NODE* aNode, const COLLISION_SEARCH_OPTIONS& aOpts, OBSTACLE *aObsInfo ) const
 {
-    if( collideSimple( aOther, aNode, aDifferentNetsOnly, aOverrideClearance ) )
+    if( collideSimple( aOther, aNode, aOpts, aObsInfo ) )
         return true;
 
     // Special cases for "head" lines with vias attached at the end.  Note that this does not
@@ -146,7 +183,7 @@ bool ITEM::Collide( const ITEM* aOther, const NODE* aNode, bool aDifferentNetsOn
     {
         const LINE* line = static_cast<const LINE*>( this );
 
-        if( line->EndsWithVia() && line->Via().collideSimple( aOther, aNode, aDifferentNetsOnly, aOverrideClearance ) )
+        if( line->EndsWithVia() && line->Via().collideSimple( aOther, aNode, aOpts, aObsInfo ) )
             return true;
     }
 
@@ -154,7 +191,7 @@ bool ITEM::Collide( const ITEM* aOther, const NODE* aNode, bool aDifferentNetsOn
     {
         const LINE* line = static_cast<const LINE*>( aOther );
 
-        if( line->EndsWithVia() && line->Via().collideSimple( this, aNode, aDifferentNetsOnly, aOverrideClearance ) )
+        if( line->EndsWithVia() && line->Via().collideSimple( this, aNode, aOpts, aObsInfo ) )
             return true;
     }
 
@@ -181,5 +218,68 @@ std::string ITEM::KindStr() const
 ITEM::~ITEM()
 {
 }
+
+
+const SHAPE_LINE_CHAIN HULL::Shape() const
+{
+    const ITEM* item = m_offendingObstacle.m_item;
+    const ITEM* head = m_offendingObstacle.m_head;
+    NODE *node =  item->Owner();
+    int layer = head->Layer();
+    const int clearanceEpsilon = node->GetRuleResolver()->ClearanceEpsilon();
+
+    int clearance = node->GetClearance( item, head ) + head->Width() / 2;
+
+    if ( m_useClearanceEpsilon )
+        clearance -= clearanceEpsilon;
+
+    auto obstacleHull = item->Hull( clearance, 0 );
+
+    // check for if the head item is a via. if so, we need to generate the hull against
+    // the via's antipad or the via's hole depending on 
+    if( auto via = dyn_cast<VIA*>( head ) && item->OfKind( ITEM::SEGMENT_T ) )
+    {
+        // Don't use via.Drill(); it doesn't include the plating thickness
+
+        int viaHoleRadius = static_cast<const SHAPE_CIRCLE*>( via.Hole() )->GetRadius();
+        int viaClearance = node->GetClearance( item, &via );
+                               + via.Diameter() / 2;
+            int holeClearance = node->GetHoleClearance( item, &via ) + viaHoleRadius;
+
+            if ( m_useClearanceEpsilon )
+            {
+                viaClearance -= clearanceEpsilon;
+                holeClearance -= clearanceEpsilon;
+            }
+
+            if( holeClearance > viaClearance )
+                viaClearance = holeClearance;
+
+                int width = m_diameter;
+
+                        width = m_hole.GetRadius() * 2;
+    }
+
+         
+
+            if node->Get->IsFlashedOnLayer( &via,  ) )
+        width = m_hole.GetRadius() * 2;
+
+            auto obstacleHull = item->Hull( viaClearance, 0 );
+            //debugDecorator->AddLine( obstacleHull, 3 );
+
+            intersectingPts.clear();
+            HullIntersection( obstacleHull, aLine->CLine(), intersectingPts );
+
+            // obstacleHull.Intersect( aLine->CLine(), intersectingPts, true );
+
+            for( const SHAPE_LINE_CHAIN::INTERSECTION& ip : intersectingPts )
+                updateNearest( ip, obstacle.m_item, obstacleHull, false );
+        }
+
+
+
+}
+
 
 }

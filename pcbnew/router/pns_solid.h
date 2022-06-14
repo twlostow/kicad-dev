@@ -79,11 +79,9 @@ public:
 
     const SHAPE* Hole() const override { return m_hole; }
 
-    const SHAPE_LINE_CHAIN Hull( int aClearance = 0, int aWalkaroundThickness = 0,
-                                 int aLayer = -1 ) const override;
+    const SHAPE_LINE_CHAIN Hull( int aClearance = 0, int aWalkaroundThickness = 0 ) const override;
 
-    const SHAPE_LINE_CHAIN HoleHull( int aClearance, int aWalkaroundThickness,
-                                     int aLayer ) const override;
+    const SHAPE_LINE_CHAIN HoleHull( int aClearance = 0, int aWalkaroundThickness = 0 ) const override;
 
     void SetShape( SHAPE* shape )
     {

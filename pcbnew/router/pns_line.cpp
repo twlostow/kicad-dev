@@ -528,7 +528,7 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
 }
 
 
-const SHAPE_LINE_CHAIN SEGMENT::Hull( int aClearance, int aWalkaroundThickness, int aLayer ) const
+const SHAPE_LINE_CHAIN SEGMENT::Hull( int aClearance, int aWalkaroundThickness ) const
 {
    return SegmentHull( m_seg, aClearance, aWalkaroundThickness );
 }

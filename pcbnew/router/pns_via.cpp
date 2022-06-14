@@ -106,13 +106,14 @@ bool VIA::PushoutForce( NODE* aNode, const VECTOR2I& aDirection, VECTOR2I& aForc
 }
 
 
-const SHAPE_LINE_CHAIN VIA::Hull( int aClearance, int aWalkaroundThickness, int aLayer ) const
+const SHAPE_LINE_CHAIN VIA::Hull( int aClearance, int aWalkaroundThickness ) const
 {
     int cl = ( aClearance + aWalkaroundThickness / 2 );
     int width = m_diameter;
 
-    if( !ROUTER::GetInstance()->GetInterface()->IsFlashedOnLayer( this, aLayer ) )
-        width = m_hole.GetRadius() * 2;
+    // fixme: this goes to shobe/walk algho
+    //if( !ROUTER::GetInstance()->GetInterface()->IsFlashedOnLayer( this, aLayer ) )
+        //width = m_hole.GetRadius() * 2;
 
     // Chamfer = width * ( 1 - sqrt(2)/2 ) for equilateral octagon
     return OctagonalHull( m_pos - VECTOR2I( width / 2, width / 2 ),
@@ -121,7 +122,7 @@ const SHAPE_LINE_CHAIN VIA::Hull( int aClearance, int aWalkaroundThickness, int 
 }
 
 
-const SHAPE_LINE_CHAIN VIA::HoleHull( int aClearance, int aWalkaroundThickness, int aLayer ) const
+const SHAPE_LINE_CHAIN VIA::HoleHull( int aClearance, int aWalkaroundThickness ) const
 {
     int cl = ( aClearance + aWalkaroundThickness / 2 );
     int width = m_hole.GetRadius() * 2;

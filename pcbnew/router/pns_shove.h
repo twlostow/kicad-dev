@@ -69,15 +69,7 @@ public:
     SHOVE_STATUS ShoveDraggingVia( const VIA_HANDLE aOldVia, const VECTOR2I& aWhere,
                                    VIA_HANDLE& aNewVia );
     SHOVE_STATUS ShoveObstacleLine( const LINE& aCurLine, const LINE& aObstacleLine,
-                                    LINE& aResultLine );
-
-    void ForceClearance ( bool aEnabled, int aClearance )
-    {
-        if( aEnabled )
-            m_forceClearance = aClearance;
-        else
-            m_forceClearance = -1;
-    }
+                                    LINE& aResultLine, OBSTACLE& aObstacleInfo );
 
     NODE* CurrentNode();
 
@@ -125,16 +117,16 @@ private:
     bool pushSpringback( NODE* aNode, const OPT_BOX2I& aAffectedArea, VIA* aDraggedVia );
 
     SHOVE_STATUS shoveLineFromLoneVia( const LINE& aCurLine, const LINE& aObstacleLine,
-                                       LINE& aResultLine );
+                                       LINE& aResultLine, OBSTACLE& aObstacleInfo );
     bool checkShoveDirection( const LINE& aCurLine, const LINE& aObstacleLine,
                               const LINE& aShovedLine ) const;
 
-    SHOVE_STATUS onCollidingArc( LINE& aCurrent, ARC* aObstacleArc );
-    SHOVE_STATUS onCollidingLine( LINE& aCurrent, LINE& aObstacle );
-    SHOVE_STATUS onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacleSeg );
+    SHOVE_STATUS onCollidingArc( LINE& aCurrent, ARC* aObstacleArc, OBSTACLE& aObstacleInfo );
+    SHOVE_STATUS onCollidingLine( LINE& aCurrent, LINE& aObstacle, OBSTACLE& aObstacleInfo );
+    SHOVE_STATUS onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacleSeg, OBSTACLE& aObstacleInfo );
     SHOVE_STATUS onCollidingSolid( LINE& aCurrent, ITEM* aObstacle, OBSTACLE& aObstacleInfo );
     SHOVE_STATUS onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia, OBSTACLE& aObstacleInfo );
-    SHOVE_STATUS onReverseCollidingVia( LINE& aCurrent, VIA* aObstacleVia );
+    SHOVE_STATUS onReverseCollidingVia( LINE& aCurrent, VIA* aObstacleVia, OBSTACLE& aObstacleInfo );
     SHOVE_STATUS pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, int aCurrentRank );
 
     OPT_BOX2I totalAffectedArea() const;
@@ -160,8 +152,6 @@ private:
     SHOVE_STATUS shoveIteration( int aIter );
     SHOVE_STATUS shoveMainLoop();
 
-    int getClearance( const ITEM* aA, const ITEM* aB ) const;
-    int getHoleClearance( const ITEM* aA, const ITEM* aB ) const;
     bool fixupViaCollisions( const LINE* aCurrent, OBSTACLE& obs );
     void sanityCheck( LINE* aOld, LINE* aNew );
 
@@ -181,7 +171,6 @@ private:
     VIA*                        m_draggedVia;
 
     int                         m_iter;
-    int m_forceClearance;
     bool m_multiLineMode;
 
     int m_optFlagDisableMask;

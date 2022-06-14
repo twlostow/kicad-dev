@@ -230,11 +230,13 @@ bool DIFF_PAIR_PLACER::attemptWalk( NODE* aNode, DIFF_PAIR* aCurrent, DIFF_PAIR&
 
         LINE postShove( preShove );
 
-        shove.ForceClearance( true, cur.Gap() - 2 * PNS_HULL_MARGIN );
+        //shove.ForceClearance( true, cur.Gap() - 2 * PNS_HULL_MARGIN );
 
         SHOVE::SHOVE_STATUS sh1;
 
-        sh1 = shove.ShoveObstacleLine( postWalk, preShove, postShove );
+        OBSTACLE obs;
+
+        sh1 = shove.ShoveObstacleLine( postWalk, preShove, postShove, obs );
 
         if( sh1 != SHOVE::SH_OK )
             return false;

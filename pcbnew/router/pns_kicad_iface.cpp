@@ -77,12 +77,9 @@ public:
     PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER_IFACE* aRouterIface );
     virtual ~PNS_PCBNEW_RULE_RESOLVER();
 
-    virtual int Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
-                           bool aUseClearanceEpsilon = true ) override;
-    virtual int HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
-                               bool aUseClearanceEpsilon = true ) override;
-    virtual int HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
-                                     bool aUseClearanceEpsilon = true ) override;
+    virtual int Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
+    virtual int HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
+    virtual int HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
 
     virtual int DpCoupledNet( int aNet ) override;
     virtual int DpNetPolarity( int aNet ) override;
@@ -94,7 +91,7 @@ public:
                                   PNS::CONSTRAINT* aConstraint ) override;
     virtual wxString NetName( int aNet ) override;
 
-    int ClearanceEpsilon() const { return m_clearanceEpsilon; }
+    
 
     void ClearCacheForItem( const PNS::ITEM* aItem ) override;
 
@@ -120,7 +117,7 @@ private:
     PCB_VIA            m_dummyVias[2];
     int                m_clearanceEpsilon;
 
-    typedef std::tuple<const PNS::ITEM*, const PNS::ITEM*, bool> CLEARANCE_CACHE_KEY;
+    typedef std::tuple<const PNS::ITEM*, const PNS::ITEM*> CLEARANCE_CACHE_KEY;
 
     std::map<CLEARANCE_CACHE_KEY, int> m_clearanceCache;
     std::map<CLEARANCE_CACHE_KEY, int> m_holeClearanceCache;
@@ -136,10 +133,7 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard,
     m_dummyArcs{ { aBoard }, { aBoard } },
     m_dummyVias{ { aBoard }, { aBoard } }
 {
-    if( aBoard )
-        m_clearanceEpsilon = aBoard->GetDesignSettings().GetDRCEpsilon();
-    else
-        m_clearanceEpsilon = 0;
+    m_clearanceEpsilon = aBoard->GetDesignSettings().GetDRCEpsilon();
 }
 
 
@@ -303,15 +297,13 @@ bool PNS_PCBNEW_RULE_RESOLVER::QueryConstraint( PNS::CONSTRAINT_TYPE aType,
 
 void PNS_PCBNEW_RULE_RESOLVER::ClearCacheForItem( const PNS::ITEM* aItem )
 {
-    m_clearanceCache.erase( std::make_tuple( aItem, nullptr, false ) );
-    m_clearanceCache.erase( std::make_tuple( aItem, nullptr, true ) );
+    m_clearanceCache.erase( std::make_tuple( aItem, nullptr ) );
 }
 
 
-int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
-                                         bool aUseClearanceEpsilon )
+int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB )
 {
-    CLEARANCE_CACHE_KEY key( aA, aB, aUseClearanceEpsilon );
+    CLEARANCE_CACHE_KEY key( aA, aB );
     auto it = m_clearanceCache.find( key );
 
     if( it != m_clearanceCache.end() )
@@ -341,18 +333,14 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
         }
     }
 
-    if( aUseClearanceEpsilon )
-        rv -= m_clearanceEpsilon;
-
     m_clearanceCache[ key ] = rv;
     return rv;
 }
 
 
-int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
-                                             bool aUseClearanceEpsilon )
+int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB )
 {
-    CLEARANCE_CACHE_KEY key( aA, aB, aUseClearanceEpsilon );
+    CLEARANCE_CACHE_KEY key( aA, aB );
     auto it = m_holeClearanceCache.find( key );
 
     if( it != m_holeClearanceCache.end() )
@@ -370,18 +358,14 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITE
     if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_CLEARANCE, aA, aB, layer, &constraint ) )
         rv = constraint.m_Value.Min();
 
-    if( aUseClearanceEpsilon )
-        rv -= m_clearanceEpsilon;
-
     m_holeClearanceCache[ key ] = rv;
     return rv;
 }
 
 
-int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
-                                                   bool aUseClearanceEpsilon )
+int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB )
 {
-    CLEARANCE_CACHE_KEY key( aA, aB, aUseClearanceEpsilon );
+    CLEARANCE_CACHE_KEY key( aA, aB );
     auto it = m_holeToHoleClearanceCache.find( key );
 
     if( it != m_holeToHoleClearanceCache.end() )
@@ -398,9 +382,6 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PN
 
     if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, layer, &constraint ) )
         rv = constraint.m_Value.Min();
-
-    if( aUseClearanceEpsilon )
-        rv -= m_clearanceEpsilon;
 
     m_holeToHoleClearanceCache[ key ] = rv;
     return rv;

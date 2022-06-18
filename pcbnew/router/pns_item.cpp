@@ -222,22 +222,28 @@ ITEM::~ITEM()
 
 const SHAPE_LINE_CHAIN HULL::Shape() const
 {
-    const ITEM* item = m_offendingObstacle.m_item;
-    const ITEM* head = m_offendingObstacle.m_head;
+    const ITEM* item = m_offendingObstacle.m_item; // item found to be colliding against head
+    const ITEM* head = m_offendingObstacle.m_head; // item searched for collisions (either by calling QueryColliding(head) or NearestObstacle(head) )
     NODE *node =  item->Owner();
     int layer = head->Layer();
     const int clearanceEpsilon = node->GetRuleResolver()->ClearanceEpsilon();
-
-    int clearance = node->GetClearance( item, head ) + head->Width() / 2;
+    SHAPE_LINE_CHAIN obstacleHull;
+    int clearance = 0;
 
     if ( m_useClearanceEpsilon )
         clearance -= clearanceEpsilon;
 
-    auto obstacleHull = item->Hull( clearance, 0 );
+    if( ( auto seg = dyn_cast<SEGMENT*>( head ) ) && item->OfKind( ITEM::SEGMENT_T ) ) // segment to segment collision
+    {
+        clearance += node->GetClearance( item, head );
+        obstacleHull = item->Hull( clearance, seg->GetWidth() );
+    }
 
+
+    
     // check for if the head item is a via. if so, we need to generate the hull against
     // the via's antipad or the via's hole depending on 
-    if( auto via = dyn_cast<VIA*>( head ) && item->OfKind( ITEM::SEGMENT_T ) )
+    if( auto via = dyn_cast<VIA*>( head ) &&  )
     {
         // Don't use via.Drill(); it doesn't include the plating thickness
 
